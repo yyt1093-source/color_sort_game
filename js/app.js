@@ -1201,21 +1201,48 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Profile & Language Modal Event Listeners
+  function openProfileMenu() {
+    if (profileCardAvatar && userAvatar) {
+      profileCardAvatar.src = userAvatar.src;
+    }
+    if (profileCardName) {
+      profileCardName.textContent = currentUser.firstName || 'Игрок';
+    }
+    if (profileCardLevel) {
+      profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
+    }
+    if (profileModal) openModal(profileModal);
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('light');
+    }
+  }
+
   if (userProfileBtn) {
-    userProfileBtn.addEventListener('click', () => {
-      if (profileCardAvatar && userAvatar) {
-        profileCardAvatar.src = userAvatar.src;
-      }
-      if (profileCardName) {
-        profileCardName.textContent = currentUser.firstName || 'Игрок';
-      }
-      if (profileCardLevel) {
-        profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
-      }
-      if (profileModal) openModal(profileModal);
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
-        window.TelegramApp.TelegramApp.haptic('light');
-      }
+    userProfileBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openProfileMenu();
+    });
+    userProfileBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openProfileMenu();
+    }, { passive: false });
+  }
+
+  if (userAvatar) {
+    userAvatar.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openProfileMenu();
+    });
+  }
+
+  if (userName) {
+    userName.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openProfileMenu();
     });
   }
 

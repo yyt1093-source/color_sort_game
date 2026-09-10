@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47091">
+  <link rel="stylesheet" href="style.css?v=47092">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -57,21 +57,15 @@
   <div id="appContainer">
     <!-- Header -->
     <header class="game-header">
-      <div class="user-profile clickable-profile" id="userProfileBtn" title="Профиль и смена языка">
+      <button type="button" class="user-profile clickable-profile" id="userProfileBtn" title="Профиль и смена языка" aria-label="Профиль игрока">
         <div class="avatar-ring">
-          <img id="userAvatar" src="" alt="">
+          <img id="userAvatar" src="" alt="Avatar">
         </div>
         <div class="user-info">
           <span id="userName" class="user-name">Игрок</span>
-          <span id="profileSettingsHint" class="profile-hint">⚙️ Язык</span>
+          <span class="user-level-sub"><span id="levelBadgeLabel">Уровень</span> <strong id="levelDisplay">1</strong></span>
         </div>
-      </div>
-      <div class="header-center">
-        <div class="level-badge">
-          <span id="levelBadgeLabel">Уровень</span>
-          <strong id="levelDisplay">1</strong>
-        </div>
-      </div>
+      </button>
       <div class="header-right">
         <button id="leaderboardBtn" class="glass-icon-btn" title="Лидерборд">🏆</button>
         <button id="soundToggleBtn" class="glass-icon-btn" title="Звук">🔊</button>
@@ -301,12 +295,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47091"></script>
-  <script src="js/audio.js?v=47091"></script>
-  <script src="js/solver.js?v=47091"></script>
-  <script src="js/levelGenerator.js?v=47091"></script>
-  <script src="js/gameEngine.js?v=47091"></script>
-  <script src="js/renderer.js?v=47091"></script>
-  <script src="js/app.js?v=47091"></script>
+  <script src="js/telegram.js?v=47092"></script>
+  <script src="js/audio.js?v=47092"></script>
+  <script src="js/solver.js?v=47092"></script>
+  <script src="js/levelGenerator.js?v=47092"></script>
+  <script src="js/gameEngine.js?v=47092"></script>
+  <script src="js/renderer.js?v=47092"></script>
+  <script src="js/app.js?v=47092"></script>
 </body>
 </html>

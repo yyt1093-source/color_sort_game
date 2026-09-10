@@ -7,6 +7,7 @@
   let particleCtx = null;
   let activeParticles = [];
   let animFrameId = null;
+  const UNIT_HEIGHT = 25;
 
   function initRenderer(containerEl, canvasEl) {
     boardContainer = containerEl;
@@ -85,7 +86,7 @@
       segments.forEach((seg, segIdx) => {
         const isTopSegment = (segIdx === segments.length - 1);
         const segEl = document.createElement('div');
-        const segHeight = seg.unitsCount * 30;
+        const segHeight = seg.unitsCount * UNIT_HEIGHT;
 
         if (seg.isKnown) {
           let colorData = (typeof seg.colorIdx === 'number' || typeof seg.colorIdx === 'string') 
@@ -191,8 +192,8 @@
     const toMouthY = toRect.top + 6;
 
     // Set transform origin on fromEl near its neck/mouth rim
-    const originX = isToRight ? 18 : 30;
-    const originY = 12;
+    const originX = isToRight ? 15 : 25;
+    const originY = 10;
     fromEl.style.transformOrigin = `${originX}px ${originY}px`;
 
     // fromEl pivot in initial viewport coordinates
@@ -200,8 +201,8 @@
     const origPivotY = fromRect.top + originY;
 
     // Target hovering pivot: slightly above target bottle mouth
-    const destPivotX = isToRight ? (toMouthX - 16) : (toMouthX + 16);
-    const destPivotY = toMouthY - 32;
+    const destPivotX = isToRight ? (toMouthX - 14) : (toMouthX + 14);
+    const destPivotY = toMouthY - 26;
 
     const deltaX = destPivotX - origPivotX;
     const deltaY = destPivotY - origPivotY;
@@ -223,17 +224,17 @@
       // Phase 2: Smooth Continuous Pouring Liquid Stream & Fluid Rise
       // ---------------------------------------------------------
       const initialTargetLayers = (engine && engine.bottles && engine.bottles[toIdx]) ? engine.bottles[toIdx].length : 0;
-      const innerBottomY = toRect.bottom - 12;
-      const toNeckY = toRect.top + 16;
+      const innerBottomY = toRect.bottom - 10;
+      const toNeckY = toRect.top + 14;
       const toMouthX = toRect.left + toRect.width / 2;
 
       // Function to calculate stream landing surface Y inside recipient jar:
       // Empty jar (0 layers) -> stream plunges all the way to the bottom!
-      // L layers -> surface is innerBottomY - L * 30px
-      const getLandingY = (layersCount) => Math.max(toNeckY + 12, innerBottomY - (layersCount * 30));
+      // L layers -> surface is innerBottomY - L * UNIT_HEIGHT
+      const getLandingY = (layersCount) => Math.max(toNeckY + 10, innerBottomY - (layersCount * UNIT_HEIGHT));
 
       const totalPouredUnits = Math.max(1, amount || 1);
-      const totalPouredHeight = totalPouredUnits * 30;
+      const totalPouredHeight = totalPouredUnits * UNIT_HEIGHT;
 
       let currentLandingY = getLandingY(initialTargetLayers);
       const finalLandingY = getLandingY(initialTargetLayers + totalPouredUnits);
@@ -386,7 +387,7 @@
       const fromSegments = fromContainer ? Array.from(fromContainer.querySelectorAll('.liquid-layer')) : [];
       const topFromSegment = fromSegments[fromSegments.length - 1];
       if (topFromSegment) {
-        const curH = topFromSegment.offsetHeight || (parseFloat(topFromSegment.style.height) || 30);
+        const curH = topFromSegment.offsetHeight || (parseFloat(topFromSegment.style.height) || UNIT_HEIGHT);
         const newH = Math.max(0, curH - totalPouredHeight);
         topFromSegment.style.transition = `height ${totalPourDuration}ms cubic-bezier(0.22, 0.8, 0.36, 1), opacity ${totalPourDuration}ms ease`;
         topFromSegment.style.height = `${newH}px`;

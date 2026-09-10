@@ -72,19 +72,35 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  padding: 10px 14px;
-  margin-top: calc(env(safe-area-inset-top, 0px) + 40px);
+  padding: 8px 14px;
+  margin-top: calc(env(safe-area-inset-top, 0px) + 58px);
 }
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  border-radius: 14px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: all 0.2s ease;
 }
 
 .avatar-ring {
   width: 36px;
   height: 36px;
+  min-width: 36px;
   border-radius: 50%;
   border: 2px solid var(--accent);
   box-shadow: 0 0 8px var(--accent-glow);
@@ -104,43 +120,24 @@ body {
 
 .user-name {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  line-height: 1.2;
 }
 
-.user-rank {
-  font-size: 0.75rem;
-  color: var(--accent);
-}
-
-.header-center {
-  display: flex;
-  align-items: center;
-}
-
-.level-badge {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: var(--radius-md);
-  padding: 6px 14px;
-}
-
-.level-badge span {
-  font-size: 0.88rem;
-  font-weight: 700;
-  text-transform: none;
-  color: #94a3b8;
-  letter-spacing: 0.2px;
-}
-
-.level-badge strong {
-  font-size: 1.15rem;
-  font-weight: 800;
+.user-level-sub {
+  font-size: 0.74rem;
+  font-weight: 600;
   color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  line-height: 1.1;
+}
+
+.user-level-sub strong {
+  font-weight: 800;
+  color: #f1f5f9;
 }
 
 .header-right {
@@ -207,23 +204,23 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   align-content: center;
-  gap: 16px 12px;
+  gap: 13px 10px;
   margin: 0 auto;
 }
 
-.board-small { max-width: 240px; }
-.board-medium { max-width: 340px; }
-.board-large { max-width: 420px; }
-.board-xlarge { max-width: 460px; }
+.board-small { max-width: 220px; }
+.board-medium { max-width: 300px; }
+.board-large { max-width: 360px; }
+.board-xlarge { max-width: 410px; }
 
-/* Glass Bottle */
+/* Glass Bottle (compact size) */
 .glass-bottle {
-  width: 48px;
-  height: 145px;
+  width: 40px;
+  height: 122px;
   background: linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 100%);
   border: 1.5px solid rgba(255,255,255,0.3);
-  border-radius: 8px 8px 22px 22px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 8px rgba(0,0,0,0.15);
+  border-radius: 7px 7px 18px 18px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 6px rgba(0,0,0,0.15);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
@@ -237,9 +234,9 @@ body {
 }
 
 .glass-bottle.selected {
-  transform: translateY(-20px) scale(1.06);
+  transform: translateY(-16px) scale(1.05);
   border-color: var(--accent);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 8px rgba(0,0,0,0.15), 0 0 15px var(--accent-glow);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 6px rgba(0,0,0,0.15), 0 0 14px var(--accent-glow);
   animation: floatSelected 2s ease-in-out infinite;
 }
 
@@ -263,11 +260,11 @@ body {
 /* Bottle Internal */
 .bottle-rim {
   position: absolute;
-  top: -5px;
-  left: -3px;
-  right: -3px;
-  height: 7px;
-  border-radius: 5px;
+  top: -4px;
+  left: -2px;
+  right: -2px;
+  height: 6px;
+  border-radius: 4px;
   border: 1.5px solid rgba(255,255,255,0.3);
   background: rgba(255,255,255,0.25);
   z-index: 10;
@@ -276,20 +273,20 @@ body {
 .bottle-neck {
   position: absolute;
   top: 0;
-  left: 3px;
-  right: 3px;
-  height: 15px;
+  left: 2px;
+  right: 2px;
+  height: 12px;
   background: rgba(255,255,255,0.1);
   z-index: 9;
 }
 
 .liquid-container {
   width: 100%;
-  height: 120px;
+  height: 100px;
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
-  border-radius: 0 0 20px 20px;
+  border-radius: 0 0 16px 16px;
   position: relative;
   /* Smooth, clean depth without harsh vertical stripes */
   box-shadow: inset 3px 0 5px rgba(255, 255, 255, 0.12), inset -3px 0 6px rgba(0, 0, 0, 0.22);
@@ -1616,6 +1613,9 @@ body {
   border-radius: 14px;
   transition: all 0.2s ease;
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .clickable-profile:hover {
@@ -1624,17 +1624,11 @@ body {
 
 .clickable-profile:active {
   transform: scale(0.96);
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
 }
 
-.profile-hint {
-  font-size: 0.68rem;
-  color: #60a5fa;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-top: 1px;
+.clickable-profile * {
+  pointer-events: none;
 }
 
 .profile-modal-content {
