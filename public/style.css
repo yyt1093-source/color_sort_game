@@ -2003,10 +2003,6 @@ body {
   border-color: #38bdf8;
 }
 
-#adminAddShufflesBtn {
-  grid-column: span 2;
-}
-
 .admin-boost-icon {
   font-size: 1.1rem;
   flex-shrink: 0;
