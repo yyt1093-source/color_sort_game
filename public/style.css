@@ -646,7 +646,8 @@ body {
 }
 
 #closeAdModalBtn {
-  margin-top: 36px;
+  margin-top: 0;
+  align-self: flex-start;
 }
 
 /* Win Modal */
@@ -776,10 +777,64 @@ body {
 }
 
 /* Ad Modal */
+.ad-modal-content {
+  max-height: min(88vh, calc(100dvh - 32px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px 16px 18px 20px;
+  gap: 12px;
+}
+
+.ad-modal-content .ad-modal-header {
+  flex-shrink: 0;
+  margin-bottom: 6px;
+  padding-right: 4px;
+}
+
 .ad-options-grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  overflow-y: scroll; /* Forces scrollbar/slider visibility */
+  overflow-x: hidden;
+  max-height: calc(88vh - 120px);
+  padding-right: 8px;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #38bdf8 rgba(15, 23, 42, 0.7);
+}
+
+.ad-options-grid::-webkit-scrollbar {
+  width: 8px;
+  display: block;
+}
+
+.ad-options-grid::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.65);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 2px 0;
+}
+
+.ad-options-grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  border-radius: 10px;
+  border: 2px solid rgba(15, 23, 42, 0.8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  min-height: 44px;
+  cursor: grab;
+}
+
+.ad-options-grid::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 100%);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.85);
+}
+
+.ad-options-grid::-webkit-scrollbar-thumb:active {
+  cursor: grabbing;
 }
 
 .ad-card {
