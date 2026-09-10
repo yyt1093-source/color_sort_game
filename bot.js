@@ -182,22 +182,61 @@ async function handleUpdate(update) {
 }
 
 async function sendLeaderboard(chatId) {
-  const { topPlayers } = db.getLeaderboard(null, 10);
+  let topPlayers = [];
+
+  // Query SQLite
+  try {
+    const res = db.getLeaderboard(null, 10);
+    if (res && res.topPlayers) topPlayers = res.topPlayers;
+  } catch (e) {}
+
+  // Query global cloud KVDB
+  try {
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    const cloudRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json`, {
+      signal: AbortSignal.timeout(2500)
+    });
+    if (cloudRes.ok) {
+      const pairs = await cloudRes.json();
+      const cloudPlayers = pairs.map(([k, p]) => p).filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev'));
+      
+      const map = new Map();
+      topPlayers.forEach(p => map.set(String(p.telegram_id), { name: p.first_name, level: p.max_level, stars: p.stars || 0 }));
+      cloudPlayers.forEach(p => {
+        const id = String(p.telegramId);
+        const lvl = Number(p.maxLevel || p.level || 1);
+        const existing = map.get(id);
+        if (!existing || lvl > existing.level) {
+          map.set(id, { name: p.firstName || (existing ? existing.name : 'Игрок'), level: lvl, stars: p.stars || (existing ? existing.stars : 0) });
+        }
+      });
+
+      topPlayers = Array.from(map.values())
+        .sort((a, b) => b.level - a.level || (b.stars || 0) - (a.stars || 0))
+        .slice(0, 10);
+    }
+  } catch (e) {}
   
   if (!topPlayers || topPlayers.length === 0) {
-    await tgApi('sendMessage', { chat_id: chatId, text: 'Рейтинг пока пуст. Станьте первым!' });
+    await tgApi('sendMessage', { 
+      chat_id: chatId, 
+      text: '🏆 **Глобальный рейтинг игроков**\n\nПока ни один игрок не зафиксировал победу в глобальной базе данных. Пройдите первый уровень и станьте лидером!\n\n🎮 Нажмите кнопку ниже для запуска игры.',
+      parse_mode: 'Markdown'
+    });
     return;
   }
 
-  let msg = '🏆 **Топ 10 Игроков** 🏆\n\n';
+  let msg = '🏆 **Глобальный рейтинг игроков (24/7)** 🏆\n\n';
   const medals = ['🥇', '🥈', '🥉'];
 
   topPlayers.forEach((p, idx) => {
-    const medal = idx < 3 ? medals[idx] : '🏅';
-    const name = p.first_name || 'Игрок';
-    msg += `${medal} **${idx + 1}. ${name}**\n`;
-    msg += `   Уровень: ${p.max_level} | Звезды: ${p.stars} ⭐\n`;
+    const medal = idx < 3 ? medals[idx] : `*#${idx + 1}*`;
+    const name = p.name || p.first_name || 'Игрок';
+    const lvl = p.level || p.max_level || 1;
+    msg += `${medal} **${name}** — Уровень ${lvl}\n`;
   });
+
+  msg += '\n✨ Рейтинг обновляется мгновенно после каждого пройденного уровня!';
 
   await tgApi('sendMessage', {
     chat_id: chatId,

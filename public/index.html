@@ -117,8 +117,14 @@
   <div id="leaderboardModal" class="modal-overlay hidden">
     <div class="glass-modal">
       <div class="modal-header">
-        <h2>🏆 Глобальный Лидерборд</h2>
-        <button id="closeLeaderboardBtn" class="close-btn">&times;</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2>🏆 Таблица лидеров</h2>
+          <span style="font-size: 0.72rem; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 6px; border-radius: 6px; font-weight: 700;">24/7 LIVE</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button id="refreshLeaderboardBtn" class="glass-icon-btn" title="Обновить рейтинг" style="width: 32px; height: 32px; font-size: 14px;">🔄</button>
+          <button id="closeLeaderboardBtn" class="close-btn">&times;</button>
+        </div>
       </div>
       <div id="userRankBanner" class="user-rank-banner">
         <div class="rank-pos" id="modalUserPos">#—</div>

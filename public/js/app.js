@@ -252,14 +252,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Server Communication (with instant offline fallback for GitHub Pages & standalone play)
+  // Server Communication & 24/7 Global Cloud Database
+  const GLOBAL_CLOUD_BUCKET = '82kzJTUxZwwFNvg7kUSqgM';
+  const GLOBAL_CLOUD_BASE = 'https://kvdb.io/' + GLOBAL_CLOUD_BUCKET;
   const API_BASE = (typeof window !== 'undefined' && window.COLOR_SORT_API_URL)
     ? window.COLOR_SORT_API_URL
-    : ''; 
+    : '';
+
+  async function syncPlayerToCloud(user) {
+    if (!user || !user.telegramId) return;
+    const id = String(user.telegramId);
+    const isRealTelegramUser = !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id);
+
+    // 1. Send live signal to single global 24/7 cloud database
+    if (isRealTelegramUser) {
+      try {
+        const payload = {
+          telegramId: id,
+          firstName: user.firstName || 'Игрок',
+          username: user.username || '',
+          photoUrl: user.photoUrl || '',
+          maxLevel: Number(user.maxLevel || user.currentLevel || 1),
+          level: Number(user.maxLevel || user.currentLevel || 1),
+          stars: Number(user.stars || 0),
+          updatedAt: Date.now()
+        };
+        fetch(`${GLOBAL_CLOUD_BASE}/player_${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(err => console.warn('[Cloud DB Sync]', err));
+      } catch (e) {}
+    }
+
+    // 2. Also send to Express API if available
+    apiCall('/api/user/sync', 'POST', {
+      telegramId: user.telegramId,
+      firstName: user.firstName,
+      username: user.username,
+      photoUrl: user.photoUrl,
+      currentLevel: user.currentLevel,
+      maxLevel: user.maxLevel,
+      starsAdded: 0,
+      coinsAdded: 0
+    }).catch(() => {});
+  }
 
   async function apiCall(endpoint, method = 'GET', body = null) {
-    if (typeof window !== 'undefined' && window.location.hostname.includes('github.io') && !window.COLOR_SORT_API_URL) {
-      // Instant client-side mode for GitHub Pages
+    if (!API_BASE && typeof window !== 'undefined' && window.location.hostname.includes('github.io')) {
       return null;
     }
     try {
@@ -325,6 +365,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentUser = { ...currentUser, ...serverUser.user };
   }
   saveLocalUser();
+  syncPlayerToCloud(currentUser);
   updateHeaderUI();
   await initAdsgram();
 
@@ -369,14 +410,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (winTitle) winTitle.textContent = `Уровень ${levelNumber} пройден! 🎉`;
     if (winSubtext) winSubtext.textContent = `Все цвета успешно собраны! Переходим к уровню ${currentUser.currentLevel}...`;
 
-    // Non-blocking async server sync
-    apiCall('/api/user/sync', 'POST', {
-      telegramId: currentUser.telegramId,
-      currentLevel: currentUser.currentLevel,
-      maxLevel: currentUser.maxLevel,
-      starsAdded: 0,
-      coinsAdded: 0
-    }).catch(() => {});
+    // Мгновенная отправка сигнала на глобальный единственный сервер (24/7 Cloud DB + API)
+    syncPlayerToCloud(currentUser);
 
     // Show victory modal
     setTimeout(() => {
@@ -717,42 +752,175 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  async function loadLeaderboardData() {
+    if (!leaderboardList) return;
+    leaderboardList.innerHTML = `
+      <li class="leaderboard-item" style="justify-content: center; opacity: 0.7; padding: 24px 0;">
+        <span class="pulse">⏳ Загрузка живых игроков...</span>
+      </li>
+    `;
+
+    const isRealUser = currentUser.telegramId && 
+      !String(currentUser.telegramId).startsWith('guest') && 
+      !String(currentUser.telegramId).startsWith('dev') &&
+      /^\d+$/.test(String(currentUser.telegramId));
+
+    let players = [];
+
+    // 1. Fetch from single global 24/7 cloud database (never sleeps, works with PC off)
+    try {
+      const cloudRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json`, {
+        signal: AbortSignal.timeout(3500)
+      });
+      if (cloudRes.ok) {
+        const pairs = await cloudRes.json();
+        if (Array.isArray(pairs)) {
+          players = pairs
+            .map(([k, p]) => p)
+            .filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev') && /^\d+$/.test(String(p.telegramId)));
+        }
+      }
+    } catch (e) {
+      console.warn('[Leaderboard] Cloud DB fetch notice:', e.message);
+    }
+
+    // 2. Also try Express API if available
+    try {
+      const serverData = await apiCall(`/api/leaderboard?telegramId=${encodeURIComponent(currentUser.telegramId)}`);
+      if (serverData && serverData.success && Array.isArray(serverData.topPlayers)) {
+        serverData.topPlayers.forEach(sp => {
+          if (!players.some(p => String(p.telegramId) === String(sp.telegram_id))) {
+            players.push({
+              telegramId: sp.telegram_id,
+              firstName: sp.first_name,
+              username: sp.username,
+              photoUrl: sp.photo_url,
+              maxLevel: sp.max_level,
+              level: sp.max_level,
+              stars: sp.stars || 0
+            });
+          }
+        });
+      }
+    } catch (e) {}
+
+    // 3. Ensure current user is included if they are a real Telegram player
+    if (isRealUser) {
+      const selfIndex = players.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
+      const currentMaxLvl = Math.max(currentUser.maxLevel || 1, currentUser.currentLevel || 1);
+      if (selfIndex === -1) {
+        players.push({
+          telegramId: String(currentUser.telegramId),
+          firstName: currentUser.firstName || 'Игрок',
+          username: currentUser.username || '',
+          photoUrl: currentUser.photoUrl || '',
+          maxLevel: currentMaxLvl,
+          level: currentMaxLvl,
+          stars: currentUser.stars || 0
+        });
+      } else if (currentMaxLvl > (players[selfIndex].maxLevel || players[selfIndex].level || 1)) {
+        players[selfIndex].maxLevel = currentMaxLvl;
+        players[selfIndex].level = currentMaxLvl;
+      }
+    }
+
+    // 4. Strict filter: NO BOTS, ONLY REAL PLAYERS, UNIQUE BY TELEGRAM ID
+    const uniqueMap = new Map();
+    players.forEach(p => {
+      const id = String(p.telegramId);
+      if (!id || id.startsWith('guest') || id.startsWith('dev') || !/^\d+$/.test(id)) return;
+      const lvl = Number(p.maxLevel || p.level || 1);
+      const existing = uniqueMap.get(id);
+      if (!existing || lvl > (existing.maxLevel || existing.level || 1)) {
+        uniqueMap.set(id, {
+          ...p,
+          telegramId: id,
+          firstName: p.firstName || (existing ? existing.firstName : 'Игрок'),
+          maxLevel: lvl,
+          level: lvl
+        });
+      }
+    });
+
+    const sortedPlayers = Array.from(uniqueMap.values()).sort((a, b) => {
+      const diff = (b.maxLevel || b.level || 1) - (a.maxLevel || a.level || 1);
+      if (diff !== 0) return diff;
+      return (b.stars || 0) - (a.stars || 0);
+    });
+
+    // 5. Render to DOM
+    leaderboardList.innerHTML = '';
+    if (sortedPlayers.length === 0) {
+      leaderboardList.innerHTML = `
+        <li class="leaderboard-item" style="justify-content: center; flex-direction: column; text-align: center; gap: 8px; padding: 24px 12px;">
+          <span style="font-size: 28px;">🏆</span>
+          <strong>Рейтинг пока формируется</strong>
+          <span style="font-size: 0.85rem; color: #94a3b8;">Пройдите уровень через Telegram бота @sortcolors_bot, чтобы стать первым в глобальной таблице!</span>
+        </li>
+      `;
+    } else {
+      sortedPlayers.forEach((player, idx) => {
+        const rank = idx + 1;
+        const li = document.createElement('li');
+        const isSelf = isRealUser && String(player.telegramId) === String(currentUser.telegramId);
+        li.className = `leaderboard-item ${rank <= 3 ? 'top-' + rank : ''} ${isSelf ? 'is-self' : ''}`;
+        
+        const crown = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+        const nameDisplay = isSelf 
+          ? `${escapeHtml(player.firstName || 'Игрок')} <span class="self-tag">(Вы)</span>` 
+          : escapeHtml(player.firstName || 'Игрок');
+        const levelDisplayVal = player.maxLevel || player.level || 1;
+
+        li.innerHTML = `
+          <div class="player-meta">
+            <span class="rank-num">${crown}</span>
+            <div class="player-info-cell">
+              <strong>${nameDisplay}</strong>
+              ${player.username ? `<small class="player-handle">@${escapeHtml(player.username)}</small>` : ''}
+            </div>
+          </div>
+          <span class="user-rank">Уровень ${levelDisplayVal}</span>
+        `;
+        leaderboardList.appendChild(li);
+      });
+    }
+
+    // 6. Update user's personal banner
+    const myRankIdx = sortedPlayers.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
+    if (myRankIdx !== -1) {
+      const myRankNum = myRankIdx + 1;
+      const myCrown = myRankNum === 1 ? '🥇' : myRankNum === 2 ? '🥈' : myRankNum === 3 ? '🥉' : `#${myRankNum}`;
+      if (modalUserPos) modalUserPos.textContent = myCrown;
+      if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} (Вы)`;
+      if (modalUserLevel) modalUserLevel.textContent = `Макс. уровень: ${sortedPlayers[myRankIdx].maxLevel || currentUser.maxLevel}`;
+      if (userRank) userRank.textContent = `Ранг: #${myRankNum}`;
+    } else if (isRealUser) {
+      if (modalUserPos) modalUserPos.textContent = '#—';
+      if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} (Вы)`;
+      if (modalUserLevel) modalUserLevel.textContent = `Уровень: ${currentUser.maxLevel || 1}`;
+    } else {
+      if (modalUserPos) modalUserPos.textContent = 'Гость';
+      if (modalUserName) modalUserName.textContent = 'Гостевой режим';
+      if (modalUserLevel) modalUserLevel.textContent = 'Войдите через Telegram @sortcolors_bot';
+    }
+  }
+
   if (leaderboardBtn) {
     leaderboardBtn.addEventListener('click', async () => {
       if (leaderboardModal) openModal(leaderboardModal);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+      await loadLeaderboardData();
+    });
+  }
 
-      if (leaderboardList) leaderboardList.innerHTML = '<li class="leaderboard-item">Загрузка рейтинга...</li>';
-
-      const data = await apiCall(`/api/leaderboard?telegramId=${encodeURIComponent(currentUser.telegramId)}`);
-      
-      if (data && data.success && leaderboardList) {
-        leaderboardList.innerHTML = '';
-        data.topPlayers.forEach((player, idx) => {
-          const rank = idx + 1;
-          const li = document.createElement('li');
-          li.className = `leaderboard-item ${rank <= 3 ? 'top-' + rank : ''}`;
-          
-          const crown = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-          li.innerHTML = `
-            <div class="player-meta">
-              <span class="rank-num">${crown}</span>
-              <strong>${escapeHtml(player.first_name)}</strong>
-            </div>
-            <span class="user-rank">Уровень ${player.max_level}</span>
-          `;
-          leaderboardList.appendChild(li);
-        });
-
-        if (data.userRank) {
-          if (modalUserPos) modalUserPos.textContent = `#${data.userRank.rank}`;
-          if (modalUserName) modalUserName.textContent = `${data.userRank.first_name} (Вы)`;
-          if (modalUserLevel) modalUserLevel.textContent = `Макс. уровень: ${data.userRank.max_level}`;
-          if (userRank) userRank.textContent = `Ранг: #${data.userRank.rank}`;
-        }
-      } else if (leaderboardList) {
-        leaderboardList.innerHTML = '<li class="leaderboard-item">Рейтинг сохраняется в профиле. (Оффлайн режим)</li>';
-      }
+  const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
+  if (refreshLeaderboardBtn) {
+    refreshLeaderboardBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      refreshLeaderboardBtn.classList.add('rotating');
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+      await loadLeaderboardData();
+      setTimeout(() => refreshLeaderboardBtn.classList.remove('rotating'), 600);
     });
   }
 

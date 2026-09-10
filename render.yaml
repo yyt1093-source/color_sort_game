@@ -1,6 +1,6 @@
-﻿services:
+services:
   - type: web
-    name: color-sort-game
+    name: color-sort-yyt
     env: node
     plan: free
     buildCommand: npm install
@@ -16,3 +16,5 @@
         value: https://yyt1093-source.github.io/color_sort_game/
       - key: ADSGRAM_BLOCK_ID
         value: "47079"
+      - key: KVDB_BUCKET
+        value: "82kzJTUxZwwFNvg7kUSqgM"

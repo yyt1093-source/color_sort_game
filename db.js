@@ -97,8 +97,8 @@ function getUser(telegramId, defaultUserData = {}) {
 /**
  * Update user game progress
  */
-function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed = 0, undosUsed = 0, revealsUsed = 0, totalMoves = 0 }) {
-  const user = getUser(telegramId);
+function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed = 0, undosUsed = 0, revealsUsed = 0, totalMoves = 0, firstName, username, photoUrl }) {
+  const user = getUser(telegramId, { first_name: firstName, username, photo_url: photoUrl });
   if (!user) return null;
 
   const newMaxLevel = Math.max(user.max_level, maxLevel || currentLevel || user.max_level);
@@ -120,11 +120,14 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
         undos = ?,
         reveals = ?,
         total_moves = ?,
+        first_name = COALESCE(?, first_name),
+        username = COALESCE(?, username),
+        photo_url = COALESCE(?, photo_url),
         updated_at = datetime('now')
     WHERE telegram_id = ?
   `);
 
-  stmt.run(newCurrentLevel, newMaxLevel, newStars, newCoins, newHints, newUndos, newReveals, newTotalMoves, String(telegramId));
+  stmt.run(newCurrentLevel, newMaxLevel, newStars, newCoins, newHints, newUndos, newReveals, newTotalMoves, firstName || null, username || null, photoUrl || null, String(telegramId));
   return getUser(telegramId);
 }
 
@@ -187,9 +190,11 @@ function getAdRewardsCount(telegramId) {
  * Get global leaderboard + user's rank
  */
 function getLeaderboard(telegramId, limit = 50) {
+  // Only real Telegram human players (strictly NO bots or guests)
   const topStmt = db.prepare(`
     SELECT telegram_id, first_name, username, photo_url, max_level, stars, total_moves
     FROM users
+    WHERE telegram_id NOT LIKE 'guest%' AND telegram_id NOT LIKE 'dev%'
     ORDER BY max_level DESC, stars DESC
     LIMIT ?
   `);
@@ -197,13 +202,15 @@ function getLeaderboard(telegramId, limit = 50) {
   const topPlayers = topStmt.all(limit);
 
   let userRank = null;
-  if (telegramId) {
+  const isRealUser = telegramId && !String(telegramId).startsWith('guest') && !String(telegramId).startsWith('dev');
+  if (isRealUser) {
     const user = getUser(telegramId);
     if (user) {
       const rankStmt = db.prepare(`
         SELECT COUNT(*) as rank
         FROM users
-        WHERE max_level > ? OR (max_level = ? AND stars > ?)
+        WHERE (telegram_id NOT LIKE 'guest%' AND telegram_id NOT LIKE 'dev%')
+          AND (max_level > ? OR (max_level = ? AND stars > ?))
       `);
       const rankResult = rankStmt.get(user.max_level, user.max_level, user.stars);
       userRank = {
