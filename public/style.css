@@ -1224,6 +1224,8 @@ body {
   opacity: 0 !important;
   pointer-events: none !important;
   transform: scale(1.05) !important;
+  display: none !important;
+  visibility: hidden !important;
 }
 
 .start-screen-bg {
@@ -1446,6 +1448,10 @@ body {
   box-shadow: 0 10px 30px rgba(56, 189, 248, 0.55), 0 0 50px rgba(56, 189, 248, 0.4);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   animation: startBtnPulse 2.2s infinite ease-in-out;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .start-btn:active {
@@ -1453,12 +1459,9 @@ body {
   box-shadow: 0 4px 18px rgba(56, 189, 248, 0.5);
 }
 
-.start-btn-icon {
-  font-size: 1.25rem;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
-}
-
+.start-btn-icon,
 .start-btn-label {
+  pointer-events: none;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
 }
 
