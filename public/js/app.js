@@ -169,6 +169,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleDesc: 'В баночках на этом этапе уже открыты все цвета!',
       extraBottleTitle: '🎉 Успех',
       extraBottleDesc: 'Дополнительная пустая банка добавлена на поле!',
+      claimAdBtn: '▶ Смотреть рекламу',
+      adStarting: '⏳ Запуск...',
+      adClaimed: '✅ Получено! (+1)',
       adminBadge: '👑 Админ',
       adminResetSuccessTitle: '💥 Сезон сброшен!',
       adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!'
@@ -212,6 +215,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleDesc: 'У баночках на цьому етапі вже відкриті всі кольори!',
       extraBottleTitle: '🎉 Успіх',
       extraBottleDesc: 'Додаткова порожня колба додана на поле!',
+      claimAdBtn: '▶ Дивитися рекламу',
+      adStarting: '⏳ Запуск...',
+      adClaimed: '✅ Отримано! (+1)',
       adminBadge: '👑 Адмін',
       adminResetSuccessTitle: '💥 Сезон скинуто!',
       adminResetSuccessDesc: 'Всі дані гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!'
@@ -255,6 +261,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleDesc: 'All bottle colors are already revealed on this stage!',
       extraBottleTitle: '🎉 Success',
       extraBottleDesc: 'Extra empty bottle added to the board!',
+      claimAdBtn: '▶ Watch Ad',
+      adStarting: '⏳ Starting...',
+      adClaimed: '✅ Received! (+1)',
       adminBadge: '👑 Admin',
       adminResetSuccessTitle: '💥 Season Reset!',
       adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!'
@@ -298,6 +307,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleDesc: 'Alle Farben in den Flaschen sind bereits aufgedeckt!',
       extraBottleTitle: '🎉 Erfolg',
       extraBottleDesc: 'Zusätzliche leere Flasche hinzugefügt!',
+      claimAdBtn: '▶ Werbung ansehen',
+      adStarting: '⏳ Startet...',
+      adClaimed: '✅ Erhalten! (+1)',
       adminBadge: '👑 Admin',
       adminResetSuccessTitle: '💥 Saison zurückgesetzt!',
       adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!'
@@ -341,6 +353,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleDesc: 'Visi buteliukų sluoksniai jau atidengti!',
       extraBottleTitle: '🎉 Pavyko',
       extraBottleDesc: 'Papildomas tuščias buteliukas pridėtas!',
+      claimAdBtn: '▶ Žiūrėti reklamą',
+      adStarting: '⏳ Paleidžiama...',
+      adClaimed: '✅ Gauta! (+1)',
       adminBadge: '👑 Admin',
       adminResetSuccessTitle: '💥 Sezonas atstatytas!',
       adminResetSuccessDesc: 'Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!'
@@ -491,6 +506,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (profileCardLevel && typeof currentUser !== 'undefined') {
       profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
     }
+
+    document.querySelectorAll('#adModal .claim-ad-btn').forEach(btn => {
+      if (!btn.disabled && !btn.textContent.includes('⏳') && !btn.textContent.includes('✅')) {
+        btn.textContent = t('claimAdBtn');
+      }
+    });
   }
 
   // 4. App state
@@ -1467,6 +1488,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  function resetAdModalButtons() {
+    document.querySelectorAll('#adModal .claim-ad-btn').forEach(btn => {
+      btn.textContent = t('claimAdBtn') || '▶ Смотреть рекламу';
+      btn.disabled = false;
+    });
+  }
+
   if (adBonusBtn) {
     adBonusBtn.addEventListener('click', (e) => {
       if (justStartedGame) {
@@ -1474,6 +1502,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
       if (adModal) {
+        resetAdModalButtons();
         openModal(adModal);
       }
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
@@ -1497,7 +1526,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     closeAdModalBtn.addEventListener('click', () => {
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
-      if (adModal) closeModal(adModal);
+      if (adModal) {
+        closeModal(adModal);
+        resetAdModalButtons();
+      }
     });
   }
 
@@ -1506,6 +1538,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (e.target === adModal) {
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
         closeModal(adModal);
+        resetAdModalButtons();
       }
     });
   }
@@ -1518,8 +1551,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!rewardType) return;
 
       btn.disabled = true;
-      const originalText = '▶ Смотреть рекламу';
-      btn.textContent = '⏳ Запуск...';
+      const originalText = t('claimAdBtn') || '▶ Смотреть рекламу';
+      btn.textContent = t('adStarting') || '⏳ Запуск...';
 
       let adWatched = false;
       try {
@@ -1529,15 +1562,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (adWatched) {
-        const data = await apiCall('/api/ad-reward', 'POST', {
-          telegramId: currentUser.telegramId,
-          rewardType
-        });
+        try {
+          const data = await apiCall('/api/ad-reward', 'POST', {
+            telegramId: currentUser.telegramId,
+            rewardType
+          });
 
-        if (data && data.success && data.user) {
-          currentUser = { ...currentUser, ...data.user };
-        } else {
-          // Offline fallback
+          if (data && data.success && data.user) {
+            currentUser = { ...currentUser, ...data.user };
+          } else {
+            // Offline fallback
+            if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
+            else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
+            else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
+          }
+        } catch (apiErr) {
+          console.warn('[Ad API Error, fallback to local]', apiErr);
           if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
           else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
           else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
@@ -1550,21 +1590,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (rewardType === 'extra_bottle') {
           engine.addExtraBottle();
-          if (adModal) closeModal(adModal);
-          showInfoModal('🎉', 'Успех', 'Дополнительная пустая банка добавлена на поле!');
-        } else {
-          btn.textContent = '✅ Получено! (+1)';
-          setTimeout(() => {
-            btn.textContent = originalText;
-            btn.disabled = false;
-          }, 1400);
-          return;
         }
+
+        btn.textContent = t('adClaimed') || '✅ Получено! (+1)';
+        setTimeout(() => {
+          btn.textContent = t('claimAdBtn') || originalText;
+          btn.disabled = false;
+        }, 1400);
       } else {
         btn.textContent = originalText;
+        btn.disabled = false;
       }
-
-      btn.disabled = false;
     });
   });
 
