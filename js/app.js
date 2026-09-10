@@ -185,7 +185,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
       adminAllAddedMsg: '⚡ Все функции пополнены (+10) и банка добавлена!',
       adminResetSuccessTitle: '💥 Сезон сброшен!',
-      adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!'
+      adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!',
+      donateBtnLabel: 'Донат',
+      donateModalTitle: '💎 Поддержка игры',
+      donateModalDesc: 'Подключите TON кошелек и поддержите разработку игры!',
+      walletConnected: 'Кошелек подключен',
+      walletNotConnected: 'Кошелек не подключен',
+      connectWalletBtn: 'Подключить',
+      disconnectWalletBtn: 'Отключить',
+      donateChooseAmount: 'Выберите сумму доната',
+      donateCustomAmount: 'Своя сумма (TON):',
+      sendDonateBtn: (amount) => `Поддержать на ${amount} TON`,
+      connectToSendBtn: 'Подключить кошелек для доната',
+      donateManualTitle: 'Прямой перевод по адресу кошелька:',
+      copyAddrBtn: 'Копировать',
+      copyAddrSuccess: '✅ Скопировано!',
+      donateSuccess: '🎉 Огромное спасибо за поддержку игры! 💖',
+      donateCancel: 'Транзакция отменена.',
+      donateError: 'Ошибка при отправке доната. Попробуйте еще раз.'
     },
     uk: {
       langName: 'Українська',
@@ -242,7 +259,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Відкриттів додано (Всього: ${count})`,
       adminAllAddedMsg: '⚡ Всі функції поповнено (+10) та колба на полі!',
       adminResetSuccessTitle: '💥 Сезон скинуто!',
-      adminResetSuccessDesc: 'Всі данные гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!'
+      adminResetSuccessDesc: 'Всі данные гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!',
+      donateBtnLabel: 'Донат',
+      donateModalTitle: '💎 Підтримка гри',
+      donateModalDesc: 'Підключіть TON гаманець та підтримайте розробку гри!',
+      walletConnected: 'Гаманець підключено',
+      walletNotConnected: 'Гаманець не підключено',
+      connectWalletBtn: 'Підключити',
+      disconnectWalletBtn: 'Відключити',
+      donateChooseAmount: 'Оберіть суму донату',
+      donateCustomAmount: 'Своя сума (TON):',
+      sendDonateBtn: (amount) => `Підтримати на ${amount} TON`,
+      connectToSendBtn: 'Підключити гаманець для донату',
+      donateManualTitle: 'Прямий переказ за адресою гаманця:',
+      copyAddrBtn: 'Копіювати',
+      copyAddrSuccess: '✅ Скопійовано!',
+      donateSuccess: '🎉 Величезне дякуємо за підтримку гри! 💖',
+      donateCancel: 'Транзакцію скасовано.',
+      donateError: 'Помилка при відправці донату. Спробуйте ще раз.'
     },
     en: {
       langName: 'English',
@@ -299,7 +333,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Reveals added (Total: ${count})`,
       adminAllAddedMsg: '⚡ All boosters replenished (+10) and bottle added!',
       adminResetSuccessTitle: '💥 Season Reset!',
-      adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!'
+      adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!',
+      donateBtnLabel: 'Donate',
+      donateModalTitle: '💎 Support the Game',
+      donateModalDesc: 'Connect your TON wallet and support game development!',
+      walletConnected: 'Wallet connected',
+      walletNotConnected: 'Wallet not connected',
+      connectWalletBtn: 'Connect',
+      disconnectWalletBtn: 'Disconnect',
+      donateChooseAmount: 'Select donation amount',
+      donateCustomAmount: 'Custom amount (TON):',
+      sendDonateBtn: (amount) => `Support with ${amount} TON`,
+      connectToSendBtn: 'Connect wallet to donate',
+      donateManualTitle: 'Direct transfer to wallet address:',
+      copyAddrBtn: 'Copy',
+      copyAddrSuccess: '✅ Copied!',
+      donateSuccess: '🎉 Thank you so much for supporting the game! 💖',
+      donateCancel: 'Transaction was cancelled.',
+      donateError: 'Failed to send donation. Please try again.'
     },
     de: {
       langName: 'Deutsch',
@@ -356,7 +407,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Aufdeckungen hinzugefügt (Gesamt: ${count})`,
       adminAllAddedMsg: '⚡ Alle Boni aufgefüllt (+10) und Flasche hinzugefügt!',
       adminResetSuccessTitle: '💥 Saison zurückgesetzt!',
-      adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!'
+      adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!',
+      donateBtnLabel: 'Spenden',
+      donateModalTitle: '💎 Spiel unterstützen',
+      donateModalDesc: 'Verbinde deine TON-Wallet und unterstütze die Entwicklung!',
+      walletConnected: 'Wallet verbunden',
+      walletNotConnected: 'Wallet nicht verbunden',
+      connectWalletBtn: 'Verbinden',
+      disconnectWalletBtn: 'Trennen',
+      donateChooseAmount: 'Spendenbetrag wählen',
+      donateCustomAmount: 'Eigener Betrag (TON):',
+      sendDonateBtn: (amount) => `Mit ${amount} TON unterstützen`,
+      connectToSendBtn: 'Wallet verbinden zum Spenden',
+      donateManualTitle: 'Direkte Überweisung an Wallet-Adresse:',
+      copyAddrBtn: 'Kopieren',
+      copyAddrSuccess: '✅ Kopiert!',
+      donateSuccess: '🎉 Vielen Dank für deine Unterstützung! 💖',
+      donateCancel: 'Transaktion abgebrochen.',
+      donateError: 'Fehler beim Senden der Spende. Bitte versuche es erneut.'
     },
     lt: {
       langName: 'Lietuvių',
@@ -413,7 +481,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Atskleidimai pridėti (Iš viso: ${count})`,
       adminAllAddedMsg: '⚡ Viskas papildyta (+10) ir buteliukas pridėtas!',
       adminResetSuccessTitle: '💥 Sezonas atstatytas!',
-      adminResetSuccessDesc: 'Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!'
+      adminResetSuccessDesc: 'Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!',
+      donateBtnLabel: 'Parama',
+      donateModalTitle: '💎 Žaidimo parama',
+      donateModalDesc: 'Prijunkite TON piniginę ir palaikykite žaidimo kūrimą!',
+      walletConnected: 'Piniginė prijungta',
+      walletNotConnected: 'Piniginė neprijungta',
+      connectWalletBtn: 'Prijungti',
+      disconnectWalletBtn: 'Atjungti',
+      donateChooseAmount: 'Pasirinkite paramos sumą',
+      donateCustomAmount: 'Savo suma (TON):',
+      sendDonateBtn: (amount) => `Paremkite ${amount} TON`,
+      connectToSendBtn: 'Prijungti piniginę paramai',
+      donateManualTitle: 'Tiesioginis pervedimas į piniginės adresą:',
+      copyAddrBtn: 'Kopijuoti',
+      copyAddrSuccess: '✅ Nukopijuota!',
+      donateSuccess: '🎉 Nuoširdžiai ačiū už žaidimo palaikymą! 💖',
+      donateCancel: 'Mokėjimas atšauktas.',
+      donateError: 'Klaida siunčiant paramą. Bandykite dar kartą.'
     }
   };
 
@@ -487,6 +572,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   const closeAdModalBtn = document.getElementById('closeAdModalBtn');
   const adModalTitle = document.getElementById('adModalTitle');
   const adModalDesc = document.getElementById('adModalDesc');
+
+  // Donate & Wallet Elements
+  const donateBtn = document.getElementById('donateBtn');
+  const donateBtnLabel = document.getElementById('donateBtnLabel');
+  const donateModal = document.getElementById('donateModal');
+  const donateModalTitle = document.getElementById('donateModalTitle');
+  const donateModalDesc = document.getElementById('donateModalDesc');
+  const closeDonateModalBtn = document.getElementById('closeDonateModalBtn');
+  const donateWalletCard = document.getElementById('donateWalletCard');
+  const walletStatusIcon = document.getElementById('walletStatusIcon');
+  const walletStatusLabel = document.getElementById('walletStatusLabel');
+  const walletAddressPreview = document.getElementById('walletAddressPreview');
+  const connectWalletBtn = document.getElementById('connectWalletBtn');
+  const connectWalletBtnText = document.getElementById('connectWalletBtnText');
+  const disconnectWalletBtn = document.getElementById('disconnectWalletBtn');
+  const donateChooseAmountLabel = document.getElementById('donateChooseAmountLabel');
+  const donateChipsGrid = document.getElementById('donateChipsGrid');
+  const donateCustomLabel = document.getElementById('donateCustomLabel');
+  const donateCustomInput = document.getElementById('donateCustomInput');
+  const donateAmountMinusBtn = document.getElementById('donateAmountMinusBtn');
+  const donateAmountPlusBtn = document.getElementById('donateAmountPlusBtn');
+  const sendDonateBtn = document.getElementById('sendDonateBtn');
+  const sendDonateBtnText = document.getElementById('sendDonateBtnText');
+  const donateFeedbackMsg = document.getElementById('donateFeedbackMsg');
+  const donateManualTitle = document.getElementById('donateManualTitle');
+  const donateAddressText = document.getElementById('donateAddressText');
+  const copyDonateAddressBtn = document.getElementById('copyDonateAddressBtn');
+  const copyAddrBtnIcon = document.getElementById('copyAddrBtnIcon');
+  const copyAddrBtnLabel = document.getElementById('copyAddrBtnLabel');
 
   // App specific dynamic modals (may or may not exist in DOM natively)
   const loadingScreen = document.getElementById('loadingScreen');
@@ -588,6 +702,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (adminAddUndosLabel) adminAddUndosLabel.textContent = t('adminAddUndos');
     if (adminAddRevealsLabel) adminAddRevealsLabel.textContent = t('adminAddReveals');
     if (adminAddAllLabel) adminAddAllLabel.textContent = t('adminAddAll');
+
+    if (donateBtnLabel) donateBtnLabel.textContent = t('donateBtnLabel');
+    if (donateModalTitle) donateModalTitle.textContent = t('donateModalTitle');
+    if (donateModalDesc) donateModalDesc.textContent = t('donateModalDesc');
+    if (donateChooseAmountLabel) donateChooseAmountLabel.textContent = t('donateChooseAmount');
+    if (donateCustomLabel) donateCustomLabel.textContent = t('donateCustomAmount');
+    if (donateManualTitle) donateManualTitle.textContent = t('donateManualTitle');
+    if (copyAddrBtnLabel && !copyAddrBtnLabel.textContent.includes('✅')) copyAddrBtnLabel.textContent = t('copyAddrBtn');
+    if (typeof updateDonateUI === 'function') updateDonateUI();
   }
 
   // 4. App state
@@ -793,6 +916,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   syncPlayerToCloud(currentUser);
   updateHeaderUI();
   await initAdsgram();
+  initTonConnect();
 
   // 7. Bind engine callbacks FIRST so initial level render is triggered immediately
   engine.onStateChange = () => {
@@ -1436,6 +1560,306 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   });
+
+  // ==================== TON Connect & Donate Controller ====================
+  let tonConnectUI = null;
+  let isWalletConnected = false;
+  let userWalletAddress = '';
+  let selectedDonateAmount = 0.5;
+  let donateFeedbackTimer = null;
+  const DONATE_RECIPIENT_ADDRESS = localStorage.getItem('cs_donate_wallet') || 'EQBvW8Z5huBkMJYdnfHCTvMzNkVx0842_TONFARMER_OFFICIAL_DEPLOYED';
+
+  if (donateAddressText) {
+    donateAddressText.textContent = DONATE_RECIPIENT_ADDRESS;
+  }
+
+  function formatShortAddress(addr) {
+    if (!addr) return '';
+    const clean = String(addr).trim();
+    if (clean.length <= 12) return clean;
+    return `${clean.slice(0, 4)}...${clean.slice(-4)}`;
+  }
+
+  function showDonateFeedback(msg, isSuccess = true) {
+    if (!donateFeedbackMsg) return;
+    donateFeedbackMsg.textContent = msg;
+    donateFeedbackMsg.className = `donate-feedback-msg ${isSuccess ? 'success' : 'error'}`;
+    donateFeedbackMsg.classList.remove('hidden');
+    clearTimeout(donateFeedbackTimer);
+    donateFeedbackTimer = setTimeout(() => {
+      donateFeedbackMsg.classList.add('hidden');
+    }, 4000);
+  }
+
+  function updateDonateUI() {
+    // 1. Update wallet status card
+    if (isWalletConnected && userWalletAddress) {
+      if (donateWalletCard) donateWalletCard.classList.add('connected');
+      if (walletStatusIcon) walletStatusIcon.textContent = '🟢';
+      if (walletStatusLabel) walletStatusLabel.textContent = t('walletConnected');
+      if (walletAddressPreview) {
+        walletAddressPreview.textContent = formatShortAddress(userWalletAddress);
+        walletAddressPreview.classList.remove('hidden');
+      }
+      if (connectWalletBtn) connectWalletBtn.classList.add('hidden');
+      if (disconnectWalletBtn) disconnectWalletBtn.classList.remove('hidden');
+      if (sendDonateBtnText) sendDonateBtnText.textContent = t('sendDonateBtn', selectedDonateAmount);
+    } else {
+      if (donateWalletCard) donateWalletCard.classList.remove('connected');
+      if (walletStatusIcon) walletStatusIcon.textContent = '👛';
+      if (walletStatusLabel) walletStatusLabel.textContent = t('walletNotConnected');
+      if (walletAddressPreview) {
+        walletAddressPreview.textContent = '—';
+        walletAddressPreview.classList.add('hidden');
+      }
+      if (connectWalletBtn) connectWalletBtn.classList.remove('hidden');
+      if (connectWalletBtnText) connectWalletBtnText.textContent = t('connectWalletBtn');
+      if (disconnectWalletBtn) disconnectWalletBtn.classList.add('hidden');
+      if (sendDonateBtnText) sendDonateBtnText.textContent = t('connectToSendBtn');
+    }
+
+    // 2. Custom input sync
+    if (donateCustomInput && Number(donateCustomInput.value) !== selectedDonateAmount) {
+      donateCustomInput.value = selectedDonateAmount;
+    }
+  }
+
+  function handleWalletStatusChange(wallet) {
+    console.log('[TON Connect] Wallet status changed:', wallet);
+    if (wallet && wallet.account && wallet.account.address) {
+      isWalletConnected = true;
+      userWalletAddress = wallet.account.address;
+    } else {
+      isWalletConnected = false;
+      userWalletAddress = '';
+    }
+    updateDonateUI();
+  }
+
+  function initTonConnect() {
+    try {
+      if (typeof window.TON_CONNECT_UI !== 'undefined' && window.TON_CONNECT_UI.TonConnectUI) {
+        const manifestUrl = window.location.origin + '/tonconnect-manifest.json';
+        tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
+          manifestUrl: manifestUrl,
+          buttonRootId: 'tonConnectBtnContainer'
+        });
+
+        tonConnectUI.onStatusChange(handleWalletStatusChange);
+
+        if (tonConnectUI.wallet) {
+          handleWalletStatusChange(tonConnectUI.wallet);
+        } else {
+          updateDonateUI();
+        }
+        console.log('[TON Connect] Initialized successfully with manifest:', manifestUrl);
+      } else {
+        console.warn('[TON Connect] TON_CONNECT_UI not found on window. Running in fallback mode.');
+        updateDonateUI();
+      }
+    } catch (e) {
+      console.warn('[TON Connect] Initialization error:', e);
+      updateDonateUI();
+    }
+  }
+
+  // Open & Close Donate Modal
+  function openDonateModal() {
+    if (donateModal) {
+      updateDonateUI();
+      openModal(donateModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('light');
+      }
+    }
+  }
+
+  if (donateBtn) {
+    donateBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openDonateModal();
+    });
+  }
+
+  if (closeDonateModalBtn && donateModal) {
+    closeDonateModalBtn.addEventListener('click', () => {
+      closeModal(donateModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  if (donateModal) {
+    donateModal.addEventListener('click', (e) => {
+      if (e.target === donateModal) {
+        closeModal(donateModal);
+      }
+    });
+  }
+
+  // Wallet Connect / Disconnect buttons
+  if (connectWalletBtn) {
+    connectWalletBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
+      if (tonConnectUI) {
+        try {
+          await tonConnectUI.openModal();
+        } catch (err) {
+          console.warn('[TON Connect] openModal error:', err);
+        }
+      } else {
+        alert(t('donateModalDesc'));
+      }
+    });
+  }
+
+  if (disconnectWalletBtn) {
+    disconnectWalletBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+      if (tonConnectUI && tonConnectUI.connected) {
+        try {
+          await tonConnectUI.disconnect();
+          isWalletConnected = false;
+          userWalletAddress = '';
+          updateDonateUI();
+        } catch (err) {
+          console.warn('[TON Connect] disconnect error:', err);
+        }
+      }
+    });
+  }
+
+  // Donation Amount Selection (Chips & Custom)
+  function setDonationAmount(val) {
+    const num = Math.max(0.1, Math.round(Number(val) * 10) / 10);
+    selectedDonateAmount = num;
+
+    document.querySelectorAll('.donate-chip').forEach(chip => {
+      const chipAmt = Number(chip.dataset.amount);
+      chip.classList.toggle('active', chipAmt === selectedDonateAmount);
+    });
+
+    if (donateCustomInput) {
+      donateCustomInput.value = selectedDonateAmount;
+    }
+
+    if (isWalletConnected) {
+      if (sendDonateBtnText) sendDonateBtnText.textContent = t('sendDonateBtn', selectedDonateAmount);
+    }
+  }
+
+  document.querySelectorAll('.donate-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const amt = parseFloat(chip.dataset.amount);
+      if (!isNaN(amt)) {
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('selection');
+        setDonationAmount(amt);
+      }
+    });
+  });
+
+  if (donateAmountMinusBtn) {
+    donateAmountMinusBtn.addEventListener('click', () => {
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('selection');
+      setDonationAmount(Math.max(0.1, selectedDonateAmount - 0.5));
+    });
+  }
+
+  if (donateAmountPlusBtn) {
+    donateAmountPlusBtn.addEventListener('click', () => {
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('selection');
+      setDonationAmount(selectedDonateAmount + 0.5);
+    });
+  }
+
+  if (donateCustomInput) {
+    donateCustomInput.addEventListener('input', () => {
+      const val = parseFloat(donateCustomInput.value);
+      if (!isNaN(val) && val > 0) {
+        setDonationAmount(val);
+      }
+    });
+  }
+
+  // Send Donation Handler
+  if (sendDonateBtn) {
+    sendDonateBtn.addEventListener('click', async () => {
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
+
+      // If wallet not connected yet, trigger connection modal first
+      if (!isWalletConnected) {
+        if (tonConnectUI) {
+          try {
+            await tonConnectUI.openModal();
+          } catch (err) {
+            console.warn('[TON Connect] openModal error:', err);
+          }
+        }
+        return;
+      }
+
+      // If connected, execute transaction
+      if (selectedDonateAmount <= 0) {
+        showDonateFeedback('Укажите сумму доната больше 0', false);
+        return;
+      }
+
+      sendDonateBtn.classList.add('processing');
+      if (sendDonateBtnText) sendDonateBtnText.textContent = '⏳ Подтверждение...';
+
+      try {
+        const nanoAmount = (Math.floor(selectedDonateAmount * 1e9)).toString();
+        const transaction = {
+          validUntil: Math.floor(Date.now() / 1000) + 600, // 10 min
+          messages: [
+            {
+              address: DONATE_RECIPIENT_ADDRESS,
+              amount: nanoAmount,
+            }
+          ]
+        };
+
+        console.log('[TON Connect] Sending transaction:', transaction);
+        const result = await tonConnectUI.sendTransaction(transaction);
+        console.log('[TON Connect] Transaction result:', result);
+
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+        if (renderer && typeof renderer.spawnConfetti === 'function') renderer.spawnConfetti();
+
+        showDonateFeedback(t('donateSuccess'), true);
+      } catch (err) {
+        console.warn('[TON Connect] Transaction error or cancelled:', err);
+        const isUserCancel = err && (String(err).includes('cancel') || String(err).includes('User rejected') || String(err).includes('Reject'));
+        showDonateFeedback(isUserCancel ? t('donateCancel') : t('donateError'), false);
+      } finally {
+        sendDonateBtn.classList.remove('processing');
+        updateDonateUI();
+      }
+    });
+  }
+
+  // Copy Donate Address Handler
+  if (copyDonateAddressBtn) {
+    copyDonateAddressBtn.addEventListener('click', async () => {
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+      try {
+        await navigator.clipboard.writeText(DONATE_RECIPIENT_ADDRESS);
+        if (copyAddrBtnIcon) copyAddrBtnIcon.textContent = '✅';
+        if (copyAddrBtnLabel) copyAddrBtnLabel.textContent = t('copyAddrSuccess');
+        setTimeout(() => {
+          if (copyAddrBtnIcon) copyAddrBtnIcon.textContent = '📋';
+          if (copyAddrBtnLabel) copyAddrBtnLabel.textContent = t('copyAddrBtn');
+        }, 2000);
+      } catch (err) {
+        console.warn('Failed to copy address to clipboard', err);
+      }
+    });
+  }
 
   // Admin Free Boosters (No Ads) Handlers
   let adminFeedbackTimer = null;
