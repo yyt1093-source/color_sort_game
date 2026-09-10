@@ -1357,6 +1357,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (profileCardLevel) {
       profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
     }
+    if (adminFeedbackMsg) {
+      adminFeedbackMsg.classList.add('hidden');
+    }
+    const profileModalContent = document.querySelector('.profile-modal-content');
+    if (profileModalContent) {
+      profileModalContent.scrollTop = 0;
+    }
     if (profileModal) openModal(profileModal);
     if (window.TelegramApp && window.TelegramApp.TelegramApp) {
       window.TelegramApp.TelegramApp.haptic('light');
