@@ -10,16 +10,13 @@
   
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-
-  <!-- TON Connect UI SDK (Non-blocking & high availability) -->
-  <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@latest/dist/tonconnect-ui.min.js" defer></script>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47104">
+  <link rel="stylesheet" href="style.css?v=47105">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -45,7 +42,7 @@
       </div>
 
       <div class="start-footer">
-        <button type="button" id="startGameBtn" class="start-btn pulse-glow" onclick="window.dismissStartScreen && window.dismissStartScreen(event)">
+        <button id="startGameBtn" class="start-btn pulse-glow">
           <span class="start-btn-icon">▶</span>
           <span class="start-btn-label">START</span>
         </button>
@@ -53,31 +50,6 @@
       </div>
     </div>
   </div>
-
-  <script>
-    // Immediate fail-safe start trigger: enters the game 100% of the time without waiting for any async scripts
-    window.dismissStartScreen = function(e) {
-      if (e) {
-        try { e.preventDefault(); e.stopPropagation(); } catch(err){}
-      }
-      var s = document.getElementById('startScreen');
-      if (s) {
-        s.classList.add('start-screen-hidden');
-        s.style.display = 'none';
-        try { if (s.parentNode) s.parentNode.removeChild(s); } catch(err){}
-      }
-      window.__gameStarted = true;
-      if (typeof window.__triggerGameStart === 'function') {
-        try { window.__triggerGameStart(); } catch(err){}
-      }
-    };
-    var startBtnEl = document.getElementById('startGameBtn');
-    if (startBtnEl) {
-      startBtnEl.addEventListener('click', window.dismissStartScreen);
-      startBtnEl.addEventListener('touchend', window.dismissStartScreen, { passive: false });
-      startBtnEl.addEventListener('pointerdown', window.dismissStartScreen);
-    }
-  </script>
 
   <!-- Particle FX Canvas -->
   <canvas id="particleCanvas"></canvas>
@@ -95,10 +67,6 @@
         </div>
       </button>
       <div class="header-right">
-        <button id="donateBtn" class="donate-header-btn" title="Поддержать игру" aria-label="Донат">
-          <span class="donate-btn-icon">💎</span>
-          <span class="donate-btn-label" id="donateBtnLabel">Донат</span>
-        </button>
         <button id="leaderboardBtn" class="glass-icon-btn" title="Лидерборд">🏆</button>
         <button id="soundToggleBtn" class="glass-icon-btn" title="Звук">🔊</button>
       </div>
@@ -235,21 +203,6 @@
 
         <div class="admin-divider"></div>
 
-        <!-- Admin Donation Wallet Configuration -->
-        <div class="admin-wallet-box" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px;">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <strong style="font-size: 0.78rem; color: #e2e8f0;">💎 Адрес кошелька для донатов:</strong>
-            <span style="font-size: 0.68rem; color: #38bdf8; font-weight: 700;">TON</span>
-          </div>
-          <div style="display: flex; gap: 6px;">
-            <input type="text" id="adminDonateWalletInput" placeholder="UQ... или EQ..." style="flex: 1; height: 32px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; color: #f1f5f9; font-size: 0.72rem; padding: 0 8px; font-family: monospace; outline: none;">
-            <button type="button" id="adminSaveWalletBtn" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; color: #fff; border-radius: 8px; padding: 0 12px; font-size: 0.74rem; font-weight: 700; cursor: pointer; white-space: nowrap;">Сохранить</button>
-          </div>
-          <div id="adminWalletSavedMsg" class="hidden" style="color: #34d399; font-size: 0.72rem; font-weight: 600;">✅ Адрес кошелька сохранен!</div>
-        </div>
-
-        <div class="admin-divider"></div>
-
         <p class="admin-desc">Сброс сезона полностью удаляет всю информацию, обнуляет глобальный лидерборд, уровни, монеты и награды всех игроков.</p>
         <button id="adminResetSeasonBtn" class="admin-reset-season-btn">
           <span class="reset-btn-icon">🔥</span>
@@ -276,98 +229,6 @@
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
         <button id="cancelResetSeasonBtn" class="btn-cancel" style="flex: 1;">Отмена</button>
         <button id="confirmResetSeasonBtn" class="btn-confirm-danger" style="flex: 1;">🔥 Сбросить всё</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Donate & Wallet Modal -->
-  <div id="donateModal" class="modal-overlay hidden">
-    <div class="glass-modal donate-modal-content">
-      <div class="modal-ribbon-handle"></div>
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <h2 id="donateModalTitle">💎 Поддержка игры</h2>
-          <span class="donate-network-badge">TON</span>
-        </div>
-        <button id="closeDonateModalBtn" class="close-btn" title="Закрыть">&times;</button>
-      </div>
-
-      <p id="donateModalDesc" class="donate-modal-desc">Подключите TON кошелек и поддержите разработку игры!</p>
-
-      <!-- Wallet Connection Card -->
-      <div class="donate-wallet-card" id="donateWalletCard">
-        <div class="wallet-card-left">
-          <div class="wallet-icon-wrap" id="walletStatusIcon">👛</div>
-          <div class="wallet-info-meta">
-            <span class="wallet-status-label" id="walletStatusLabel">Кошелек не подключен</span>
-            <span class="wallet-address-preview hidden" id="walletAddressPreview">—</span>
-          </div>
-        </div>
-        <div class="wallet-card-action">
-          <button type="button" id="connectWalletBtn" class="wallet-action-btn">
-            <span id="connectWalletBtnText">Подключить</span>
-          </button>
-          <button type="button" id="disconnectWalletBtn" class="wallet-disconnect-btn hidden" title="Отключить">✕</button>
-        </div>
-      </div>
-
-      <!-- Hidden container for TON Connect button instance -->
-      <div id="tonConnectBtnContainer" style="display: none;"></div>
-
-      <!-- Donation Amount Selection -->
-      <div class="donate-amount-section">
-        <div class="donate-section-title">
-          <span id="donateChooseAmountLabel">Выберите сумму доната</span>
-          <span class="ton-rate-hint">💎 TON</span>
-        </div>
-        <div class="donate-chips-grid" id="donateChipsGrid">
-          <button type="button" class="donate-chip" data-amount="0.2">0.2 TON</button>
-          <button type="button" class="donate-chip active" data-amount="0.5">0.5 TON</button>
-          <button type="button" class="donate-chip" data-amount="1.0">1.0 TON</button>
-          <button type="button" class="donate-chip" data-amount="2.0">2.0 TON</button>
-          <button type="button" class="donate-chip" data-amount="5.0">5.0 TON</button>
-        </div>
-
-        <!-- Custom amount input -->
-        <div class="donate-custom-wrap">
-          <label for="donateCustomInput" id="donateCustomLabel">Своя сумма (TON):</label>
-          <div class="donate-custom-control">
-            <button type="button" id="donateAmountMinusBtn" class="donate-qty-btn">−</button>
-            <input type="number" id="donateCustomInput" min="0.1" max="1000" step="0.1" value="0.5" inputmode="decimal">
-            <button type="button" id="donateAmountPlusBtn" class="donate-qty-btn">+</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Main Action Send Button -->
-      <button type="button" id="sendDonateBtn" class="donate-main-action-btn pulse-glow">
-        <span class="donate-action-icon">💎</span>
-        <span id="sendDonateBtnText">Поддержать на 0.5 TON</span>
-      </button>
-
-      <!-- Feedback Message Container -->
-      <div id="donateFeedbackMsg" class="donate-feedback-msg hidden"></div>
-
-      <!-- Manual Direct Transfer Card -->
-      <div class="donate-manual-card">
-        <div class="manual-card-header">
-          <span class="manual-card-title" id="donateManualTitle">Прямой перевод по адресу кошелька:</span>
-        </div>
-        <div class="manual-address-row">
-          <span class="manual-address-text" id="donateAddressText">EQBvW8Z5huBkMJYdnfHCTvMzNkVx0842_TONFARMER_OFFICIAL_DEPLOYED</span>
-          <button type="button" id="copyDonateAddressBtn" class="copy-addr-btn" title="Скопировать адрес">
-            <span id="copyAddrBtnIcon">📋</span>
-            <span id="copyAddrBtnLabel">Копировать</span>
-          </button>
-        </div>
-        <div class="manual-links-row" style="display: flex; gap: 8px; margin-top: 6px;">
-          <button type="button" id="openTonkeeperBtn" class="copy-addr-btn" style="flex: 1; justify-content: center; padding: 6px 10px; font-size: 0.74rem;">
-            <span>🚀 Tonkeeper</span>
-          </button>
-          <button type="button" id="openTelegramWalletBtn" class="copy-addr-btn" style="flex: 1; justify-content: center; padding: 6px 10px; font-size: 0.74rem;">
-            <span>👛 @wallet</span>
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -506,12 +367,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47104"></script>
-  <script src="js/audio.js?v=47104"></script>
-  <script src="js/solver.js?v=47104"></script>
-  <script src="js/levelGenerator.js?v=47104"></script>
-  <script src="js/gameEngine.js?v=47104"></script>
-  <script src="js/renderer.js?v=47104"></script>
-  <script src="js/app.js?v=47104"></script>
+  <script src="js/telegram.js?v=47105"></script>
+  <script src="js/audio.js?v=47105"></script>
+  <script src="js/solver.js?v=47105"></script>
+  <script src="js/levelGenerator.js?v=47105"></script>
+  <script src="js/gameEngine.js?v=47105"></script>
+  <script src="js/renderer.js?v=47105"></script>
+  <script src="js/app.js?v=47105"></script>
 </body>
 </html>
