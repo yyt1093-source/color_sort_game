@@ -159,6 +159,7 @@
 
       if (solverObj && typeof solverObj.solve === 'function') {
         if (solverObj.isSolved && solverObj.isSolved(bottles)) continue;
+        if (bottles.some(b => b.length === capacity && b.every(c => c === b[0]))) continue;
         const solution = solverObj.solve(bottles, capacity);
         if (solution && solution.length >= Math.max(3, colorCount)) {
           return {

@@ -114,7 +114,7 @@
   </div>
 
   <!-- Leaderboard Modal -->
-  <div id="leaderboardModal" class="modal-overlay hidden" style="display: none;">
+  <div id="leaderboardModal" class="modal-overlay hidden">
     <div class="glass-modal">
       <div class="modal-header">
         <h2>🏆 Глобальный Лидерборд</h2>
@@ -134,17 +134,17 @@
   </div>
 
   <!-- Win Modal -->
-  <div id="winModal" class="modal-overlay hidden" style="display: none;">
+  <div id="winModal" class="modal-overlay hidden">
     <div class="glass-modal win-modal-content">
       <div class="win-sparkle">🎉</div>
-      <h2>Победа!</h2>
-      <p class="win-subtext">Все цвета успешно собраны!</p>
-      <button id="nextLevelBtn" class="primary-btn">Следующий уровень 🚀</button>
+      <h2 id="winModalTitle">Победа!</h2>
+      <p id="winModalSubtext" class="win-subtext">Все цвета успешно собраны!</p>
+      <button id="nextLevelBtn" class="primary-btn pulse-glow" style="margin-top: 16px; font-size: 1.1rem; padding: 14px 28px;">Следующий уровень 🚀</button>
     </div>
   </div>
 
   <!-- Restart Confirmation Modal -->
-  <div id="restartModal" class="modal-overlay hidden" style="display: none;">
+  <div id="restartModal" class="modal-overlay hidden">
     <div class="glass-modal" style="text-align:center">
       <h2>🔄 Начать заново?</h2>
       <p class="modal-desc">Весь прогресс на этом уровне будет сброшен.</p>
@@ -156,7 +156,7 @@
   </div>
 
   <!-- Ad Bonus Modal -->
-  <div id="adModal" class="modal-overlay hidden" style="display: none;">
+  <div id="adModal" class="modal-overlay hidden">
     <div class="glass-modal">
       <div class="modal-header ad-modal-header">
         <div class="ad-modal-title-group">
@@ -195,7 +195,7 @@
   </div>
 
   <!-- Info/Alert Modal (replaces native alert) -->
-  <div id="infoModal" class="modal-overlay hidden" style="display: none;">
+  <div id="infoModal" class="modal-overlay hidden">
     <div class="glass-modal" style="text-align:center">
       <div id="infoModalIcon" class="win-sparkle" style="font-size:2.5rem">ℹ️</div>
       <h2 id="infoModalTitle">Информация</h2>
@@ -207,7 +207,7 @@
     </div>
   </div>
   <!-- Fullscreen Rewarded Video Ad Modal (Adsgram UnitID: 47079) -->
-  <div id="rewardedVideoModal" class="ad-video-overlay modal-overlay hidden" style="display: none;">
+  <div id="rewardedVideoModal" class="ad-video-overlay modal-overlay hidden">
     <div class="ad-video-container">
       <div class="ad-video-topbar">
         <div class="ad-video-badge">

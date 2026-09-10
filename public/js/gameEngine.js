@@ -31,11 +31,23 @@
       this.movesCount = 0;
       this.isAnimating = false;
       this.hintHighlight = null;
+      this.isWon = false;
       
-      // Initialize revealed matrix: top layer is known, lower layers are mystery
+      // Initialize revealed matrix: top contiguous block of identical color is known, lower layers are mystery
       this.revealed = this.bottles.map(b => {
         if (b.length === 0) return [];
-        return b.map((_, idx) => idx === b.length - 1);
+        const top = b[b.length - 1];
+        let contiguous = true;
+        const rev = [];
+        for (let i = b.length - 1; i >= 0; i--) {
+          if (contiguous && b[i] === top) {
+            rev[i] = true;
+          } else {
+            contiguous = false;
+            rev[i] = false;
+          }
+        }
+        return rev;
       });
 
       exports.colors = this.colors;
@@ -157,9 +169,14 @@
           }
         }
 
-        // Uncover the newly exposed layer in the source bottle
-        if (this.bottles[fromIdx].length > 0 && this.revealed && this.revealed[fromIdx]) {
-          this.revealed[fromIdx][this.bottles[fromIdx].length - 1] = true;
+        // Uncover the newly exposed contiguous top layer in the source bottle
+        const bFrom = this.bottles[fromIdx];
+        if (bFrom.length > 0 && this.revealed && this.revealed[fromIdx]) {
+          const topColor = bFrom[bFrom.length - 1];
+          for (let i = bFrom.length - 1; i >= 0; i--) {
+            if (bFrom[i] === topColor) this.revealed[fromIdx][i] = true;
+            else break;
+          }
         }
 
         this.checkBottleCompletion(toIdx);
@@ -172,9 +189,20 @@
       }
     }
 
+    isBottleCompleted(bottle) {
+      if (!bottle || bottle.length !== this.capacity) return false;
+      const first = bottle[0];
+      return bottle.every(c => c === first);
+    }
+
+    isLevelWon() {
+      if (this.bottles.length === 0) return true;
+      return this.bottles.every(b => b.length === 0 || this.isBottleCompleted(b));
+    }
+
     checkBottleCompletion(bottleIdx) {
       const bottle = this.bottles[bottleIdx];
-      const isComplete = bottle.length === this.capacity && bottle.every(c => c === bottle[0]);
+      const isComplete = this.isBottleCompleted(bottle);
 
       if (isComplete) {
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
@@ -218,9 +246,10 @@
 
     postMoveCheck() {
       this.isAnimating = false;
-      const isWin = this.bottles.length === 0 || this.bottles.every(b => b.length === 0);
+      const isWin = this.isLevelWon();
 
-      if (isWin) {
+      if (isWin && !this.isWon) {
+        this.isWon = true;
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playVictory();
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (this.onWin) {
@@ -304,5 +333,6 @@
 
   const engineInstance = new GameEngine();
   exports.Engine = engineInstance;
+  exports.GameEngine = GameEngine;
   exports.colors = engineInstance.colors;
 })(typeof exports !== 'undefined' ? exports : (window.GameEngine = {}));
