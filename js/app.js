@@ -1194,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         showInfoModal(
           '🎨',
           'Сменить открытые цвета',
-          'У вас 0 смен цветов. Посмотрите короткую рекламу, чтобы получить смену открытых цветов!',
+          'У вас 0 смен цветов. Посмотрите короткую рекламу, чтобы получить смену открытых цветов в ячейку внизу!',
           '▶ Смотреть рекламу (+1)',
           async () => {
             const adWatched = await showRewardedAd();
@@ -1208,21 +1208,15 @@ document.addEventListener('DOMContentLoaded', async () => {
               } else {
                 currentUser.shuffles = (currentUser.shuffles || 0) + 1;
               }
-              const changed = engine.changeOpenColors();
-              if (changed) {
-                currentUser.shuffles = Math.max(0, (currentUser.shuffles || 0) - 1);
-                if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-                if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-                await apiCall('/api/user/sync', 'POST', {
-                  telegramId: currentUser.telegramId,
-                  shufflesUsed: 1
-                });
-                showInfoModal('✨', 'Цвета изменены!', 'Открытые цвета в баночках успешно изменены!');
-              } else {
-                showInfoModal('ℹ️', 'Смена цветов', 'Недостаточно баночек с жидкостью для изменения открытых цветов.');
-              }
               saveLocalUser();
               updateHeaderUI();
+              if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+              if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+              showInfoModal(
+                '🎨',
+                'Смена цветов добавлена!',
+                `+1 смена цветов добавлена в ячейку внизу (Всего: ${currentUser.shuffles || 1}).\n\nНажмите кнопку «Сменить цвета» на нижней панели, когда захотите её использовать!`
+              );
             }
           }
         );
@@ -1791,6 +1785,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       if (adModal) {
         resetAdModalButtons();
+        const grid = adModal.querySelector('.ad-options-grid');
+        if (grid) grid.scrollTop = 0;
         openModal(adModal);
       }
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
