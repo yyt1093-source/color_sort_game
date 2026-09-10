@@ -183,7 +183,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   const engine = window.GameEngine.Engine || window.GameEngine;
   const renderer = (window.GameRenderer && window.GameRenderer.GameRenderer) ? window.GameRenderer.GameRenderer : window.GameRenderer;
 
-  // Custom Modal Helpers
+  // Universal Modal Helpers
+  function openModal(el) {
+    if (!el) return;
+    el.classList.remove('hidden');
+    el.style.display = 'flex';
+  }
+
+  function closeModal(el) {
+    if (!el) return;
+    el.classList.add('hidden');
+    el.style.display = 'none';
+  }
+
+  // Custom Info Modal Helpers
   let infoModalActionCallback = null;
 
   function showInfoModal(icon, title, text, actionText = null, onAction = null) {
@@ -215,14 +228,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    if (infoModal) infoModal.classList.remove('hidden');
+    if (infoModal) openModal(infoModal);
     else alert(`${icon} ${title}\n${text}`);
   }
 
   const infoModalOkBtn = document.getElementById('infoModalOkBtn');
   if (infoModalOkBtn && infoModal) {
     infoModalOkBtn.addEventListener('click', () => {
-      infoModal.classList.add('hidden');
+      closeModal(infoModal);
       infoModalActionCallback = null;
     });
   }
@@ -230,7 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const infoModalActionBtn = document.getElementById('infoModalActionBtn');
   if (infoModalActionBtn && infoModal) {
     infoModalActionBtn.addEventListener('click', async () => {
-      infoModal.classList.add('hidden');
+      closeModal(infoModal);
       if (typeof infoModalActionCallback === 'function') {
         const cb = infoModalActionCallback;
         infoModalActionCallback = null;
@@ -239,13 +252,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Server Communication (with offline fallback for GitHub Pages & standalone play)
-  const API_BASE = (typeof window !== 'undefined' && window.location.hostname.includes('github.io'))
-    ? 'https://color-sort-game.onrender.com'
+  // Server Communication (with instant offline fallback for GitHub Pages & standalone play)
+  const API_BASE = (typeof window !== 'undefined' && window.COLOR_SORT_API_URL)
+    ? window.COLOR_SORT_API_URL
     : ''; 
+
   async function apiCall(endpoint, method = 'GET', body = null) {
+    if (typeof window !== 'undefined' && window.location.hostname.includes('github.io') && !window.COLOR_SORT_API_URL) {
+      // Instant client-side mode for GitHub Pages
+      return null;
+    }
     try {
-      const options = { method, headers: { 'Content-Type': 'application/json' } };
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const options = { 
+        method, 
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal
+      };
       if (body) options.body = JSON.stringify(body);
       
       const tg = window.Telegram && window.Telegram.WebApp;
@@ -254,10 +278,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       
       const res = await fetch(API_BASE + endpoint, options);
+      clearTimeout(timeoutId);
       if (!res.ok) return null;
       return await res.json();
     } catch (e) {
-      console.warn('[API] Оффлайн режим:', e);
       return null;
     }
   }
@@ -315,7 +339,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log(`[Game] Банка #${bottleIdx} исчезла!`);
   };
 
-  engine.onWin = async ({ levelNumber, moves }) => {
+  let isNextLevelLoading = false;
+  let winAutoAdvanceTimer = null;
+
+  async function advanceToNextLevel() {
+    if (isNextLevelLoading) return;
+    isNextLevelLoading = true;
+    if (winAutoAdvanceTimer) {
+      clearTimeout(winAutoAdvanceTimer);
+      winAutoAdvanceTimer = null;
+    }
+    closeModal(winModal);
+    await loadCurrentLevel();
+    isNextLevelLoading = false;
+  }
+
+  engine.onWin = ({ levelNumber, moves }) => {
     if (renderer && renderer.triggerWinConfetti) renderer.triggerWinConfetti();
     
     // Simple victory progression: advance level without coins, stars, or experience
@@ -323,20 +362,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentUser.maxLevel = Math.max(currentUser.maxLevel, currentUser.currentLevel);
     
     saveLocalUser();
-    updateHeaderUI();
 
-    // Sync to server
-    await apiCall('/api/user/sync', 'POST', {
+    // Update win modal message
+    const winTitle = document.getElementById('winModalTitle');
+    const winSubtext = document.getElementById('winModalSubtext');
+    if (winTitle) winTitle.textContent = `Уровень ${levelNumber} пройден! 🎉`;
+    if (winSubtext) winSubtext.textContent = `Все цвета успешно собраны! Переходим к уровню ${currentUser.currentLevel}...`;
+
+    // Non-blocking async server sync
+    apiCall('/api/user/sync', 'POST', {
       telegramId: currentUser.telegramId,
       currentLevel: currentUser.currentLevel,
       maxLevel: currentUser.maxLevel,
       starsAdded: 0,
       coinsAdded: 0
-    });
+    }).catch(() => {});
 
+    // Show victory modal
     setTimeout(() => {
-      if (winModal) winModal.classList.remove('hidden');
-    }, 600);
+      openModal(winModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+    }, 450);
+
+    // Auto-advance safeguard after 3.2s so player is never stuck
+    if (winAutoAdvanceTimer) clearTimeout(winAutoAdvanceTimer);
+    winAutoAdvanceTimer = setTimeout(() => {
+      advanceToNextLevel();
+    }, 3200);
   };
 
   // 8. Load level
@@ -436,7 +488,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
       if (restartModal) {
-        restartModal.classList.remove('hidden');
+        openModal(restartModal);
       } else if (confirm('Начать уровень заново?')) {
         engine.startLevel(currentLevelData);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
@@ -448,14 +500,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cancelRestartBtn = document.getElementById('cancelRestartBtn');
   if (confirmRestartBtn && restartModal) {
     confirmRestartBtn.addEventListener('click', () => {
-      restartModal.classList.add('hidden');
+      closeModal(restartModal);
       engine.startLevel(currentLevelData);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
     });
   }
   if (cancelRestartBtn && restartModal) {
     cancelRestartBtn.addEventListener('click', () => {
-      restartModal.classList.add('hidden');
+      closeModal(restartModal);
     });
   }
 
@@ -641,9 +693,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (nextLevelBtn) {
-    nextLevelBtn.addEventListener('click', async () => {
-      if (winModal) winModal.classList.add('hidden');
-      await loadCurrentLevel();
+    nextLevelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      advanceToNextLevel();
+    });
+  }
+
+  if (winModal) {
+    winModal.addEventListener('click', (e) => {
+      // Tapping anywhere on the win modal backdrop or card advances to the next level
+      advanceToNextLevel();
     });
   }
 
@@ -660,7 +719,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (leaderboardBtn) {
     leaderboardBtn.addEventListener('click', async () => {
-      if (leaderboardModal) leaderboardModal.classList.remove('hidden');
+      if (leaderboardModal) openModal(leaderboardModal);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
 
       if (leaderboardList) leaderboardList.innerHTML = '<li class="leaderboard-item">Загрузка рейтинга...</li>';
@@ -692,14 +751,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (userRank) userRank.textContent = `Ранг: #${data.userRank.rank}`;
         }
       } else if (leaderboardList) {
-        leaderboardList.innerHTML = '<li class="leaderboard-item">Ошибка загрузки рейтинга. (Оффлайн режим)</li>';
+        leaderboardList.innerHTML = '<li class="leaderboard-item">Рейтинг сохраняется в профиле. (Оффлайн режим)</li>';
       }
     });
   }
 
   if (closeLeaderboardBtn) {
     closeLeaderboardBtn.addEventListener('click', () => {
-      if (leaderboardModal) leaderboardModal.classList.add('hidden');
+      if (leaderboardModal) closeModal(leaderboardModal);
     });
   }
 
@@ -710,8 +769,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
       if (adModal) {
-        adModal.classList.remove('hidden');
-        adModal.style.display = 'flex';
+        openModal(adModal);
       }
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
     });
@@ -734,10 +792,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     closeAdModalBtn.addEventListener('click', () => {
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
-      if (adModal) {
-        adModal.classList.add('hidden');
-        adModal.style.display = 'none';
-      }
+      if (adModal) closeModal(adModal);
     });
   }
 
@@ -745,8 +800,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     adModal.addEventListener('click', (e) => {
       if (e.target === adModal) {
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
-        adModal.classList.add('hidden');
-        adModal.style.display = 'none';
+        closeModal(adModal);
       }
     });
   }
@@ -791,7 +845,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (rewardType === 'extra_bottle') {
           engine.addExtraBottle();
-          if (adModal) adModal.classList.add('hidden');
+          if (adModal) closeModal(adModal);
           showInfoModal('🎉', 'Успех', 'Дополнительная пустая банка добавлена на поле!');
         } else {
           btn.textContent = '✅ Получено! (+1)';

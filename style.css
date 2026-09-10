@@ -528,6 +528,10 @@ body {
 }
 
 .modal-overlay:not(.hidden) {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
   animation: fadeIn 0.25s;
 }
 
