@@ -1492,6 +1492,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (adminFeedbackMsg) {
       adminFeedbackMsg.classList.add('hidden');
     }
+    const adminDonateWalletInput = document.getElementById('adminDonateWalletInput');
+    if (adminDonateWalletInput) {
+      adminDonateWalletInput.value = DONATE_RECIPIENT_ADDRESS;
+    }
     const profileModalContent = document.querySelector('.profile-modal-content');
     if (profileModalContent) {
       profileModalContent.scrollTop = 0;
@@ -1567,7 +1571,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let userWalletAddress = '';
   let selectedDonateAmount = 0.5;
   let donateFeedbackTimer = null;
-  const DONATE_RECIPIENT_ADDRESS = localStorage.getItem('cs_donate_wallet') || 'EQBvW8Z5huBkMJYdnfHCTvMzNkVx0842_TONFARMER_OFFICIAL_DEPLOYED';
+  let DONATE_RECIPIENT_ADDRESS = localStorage.getItem('cs_donate_wallet') || 'EQBvW8Z5huBkMJYdnfHCTvMzNkVx0842_TONFARMER_OFFICIAL_DEPLOYED';
 
   if (donateAddressText) {
     donateAddressText.textContent = DONATE_RECIPIENT_ADDRESS;
@@ -1642,7 +1646,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const manifestUrl = window.location.origin + '/tonconnect-manifest.json';
         tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
           manifestUrl: manifestUrl,
-          buttonRootId: 'tonConnectBtnContainer'
+          buttonRootId: 'tonConnectBtnContainer',
+          uiPreferences: {
+            theme: 'DARK'
+          }
         });
 
         tonConnectUI.onStatusChange(handleWalletStatusChange);
@@ -1857,6 +1864,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 2000);
       } catch (err) {
         console.warn('Failed to copy address to clipboard', err);
+      }
+    });
+  }
+
+  // Direct Wallet Deep-links Handlers
+  const openTonkeeperBtn = document.getElementById('openTonkeeperBtn');
+  if (openTonkeeperBtn) {
+    openTonkeeperBtn.addEventListener('click', () => {
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
+      const nano = Math.floor(selectedDonateAmount * 1e9);
+      const url = `https://app.tonkeeper.com/transfer/${DONATE_RECIPIENT_ADDRESS}?amount=${nano}`;
+      window.open(url, '_blank');
+    });
+  }
+
+  const openTelegramWalletBtn = document.getElementById('openTelegramWalletBtn');
+  if (openTelegramWalletBtn) {
+    openTelegramWalletBtn.addEventListener('click', () => {
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
+      window.open('https://t.me/wallet', '_blank');
+    });
+  }
+
+  // Admin Donation Wallet Save Handler
+  const adminSaveWalletBtn = document.getElementById('adminSaveWalletBtn');
+  const adminWalletSavedMsg = document.getElementById('adminWalletSavedMsg');
+  if (adminSaveWalletBtn) {
+    adminSaveWalletBtn.addEventListener('click', () => {
+      const adminDonateWalletInput = document.getElementById('adminDonateWalletInput');
+      if (adminDonateWalletInput && adminDonateWalletInput.value.trim()) {
+        const val = adminDonateWalletInput.value.trim();
+        DONATE_RECIPIENT_ADDRESS = val;
+        localStorage.setItem('cs_donate_wallet', val);
+        if (donateAddressText) donateAddressText.textContent = val;
+        if (adminWalletSavedMsg) {
+          adminWalletSavedMsg.classList.remove('hidden');
+          setTimeout(() => adminWalletSavedMsg.classList.add('hidden'), 2500);
+        }
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       }
     });
   }
