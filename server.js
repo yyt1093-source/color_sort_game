@@ -287,8 +287,7 @@ app.post('/api/ad-reward', (req, res) => {
       hints: '+1 подсказка',
       undos: '+1 отмена хода',
       extra_bottle: 'Дополнительная колбочка',
-      reveal_bottle: 'Открыть цвета',
-      shuffle_colors: 'Сменить открытые цвета'
+      reveal_bottle: 'Открыть цвета'
     };
     const rewardName = rewardNames[rewardType] || rewardType;
 

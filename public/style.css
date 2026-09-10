@@ -398,7 +398,7 @@ body {
 /* Toolbar */
 .toolbar {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
