@@ -33,20 +33,11 @@
       this.hintHighlight = null;
       this.isWon = false;
       
-      // Initialize revealed matrix: top contiguous block of identical color is known, lower layers are mystery
+      // Initialize revealed matrix: ONLY the single top cell is revealed, lower layers are mystery
       this.revealed = this.bottles.map(b => {
         if (b.length === 0) return [];
-        const top = b[b.length - 1];
-        let contiguous = true;
-        const rev = [];
-        for (let i = b.length - 1; i >= 0; i--) {
-          if (contiguous && b[i] === top) {
-            rev[i] = true;
-          } else {
-            contiguous = false;
-            rev[i] = false;
-          }
-        }
+        const rev = new Array(b.length).fill(false);
+        rev[b.length - 1] = true;
         return rev;
       });
 
@@ -173,14 +164,10 @@
           }
         }
 
-        // Uncover the newly exposed contiguous top layer in the source bottle
+        // Uncover ONLY the single newly exposed top layer in the source bottle
         const bFrom = this.bottles[fromIdx];
         if (bFrom.length > 0 && this.revealed && this.revealed[fromIdx]) {
-          const topColor = bFrom[bFrom.length - 1];
-          for (let i = bFrom.length - 1; i >= 0; i--) {
-            if (bFrom[i] === topColor) this.revealed[fromIdx][i] = true;
-            else break;
-          }
+          this.revealed[fromIdx][bFrom.length - 1] = true;
         }
 
         this.checkBottleCompletion(toIdx);
