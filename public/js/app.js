@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Отмена',
       hintBtn: 'Подсказка',
       revealBtn: 'Открыть цвета',
-      extraBottleBtn: '+1 Банка',
+      extraBottleBtn: 'Пустая колба',
       adBonusBtn: 'Реклама',
       leaderboardTitle: '🏆 Таблица лидеров',
       leaderboardLive: '24/7 LIVE',
@@ -163,28 +163,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       confirmRestartBtn: 'Рестарт',
       adModalTitle: '🎁 Реклама',
       adModalDesc: 'Посмотрите короткие видео и получите бесплатные бонусы',
-      adModalBottleTitle: 'Доп. пустая банка',
-      adModalBottleDesc: '+1 пустая банка в запас',
+      adModalBottleTitle: 'Пустая колба',
+      adModalBottleDesc: '+1 пустая колба в запас',
       noMovesTitle: 'Нет ходов',
       noMovesDesc: 'Вы ещё не сделали ни одного хода на этом уровне для отмены.',
       noHintDesc: 'Подсказка не найдена на текущем этапе.',
       allColorsVisibleTitle: 'Все цвета видны',
       allColorsVisibleDesc: 'В баночках на этом этапе уже открыты все цвета!',
       extraBottleTitle: '🎉 Успех',
-      extraBottleDesc: 'Дополнительная пустая банка добавлена на поле!',
-      extraBottleModalTitle: 'Дополнительная банка',
-      extraBottleModalPrompt: 'У вас 0 дополнительных банок. Посмотрите короткую рекламу, чтобы получить пустую банку на поле!',
+      extraBottleDesc: 'Пустая колба добавлена на поле!',
+      extraBottleModalTitle: 'Пустая колба',
+      extraBottleModalPrompt: 'У вас 0 пустых колб. Посмотрите короткую рекламу, чтобы получить пустую колбу на поле!',
       claimAdBtn: '▶ Смотреть рекламу',
       adStarting: '⏳ Запуск...',
       adClaimed: '✅ Получено! (+1)',
       adminBadge: '👑 Админ',
       adminBoostersTitle: '⚡ Бесплатные функции (Без рекламы):',
-      adminAddBottle: '+1 Банка на поле',
+      adminAddBottle: '+1 Колба на поле',
       adminAddHints: '+5 Подсказок',
       adminAddUndos: '+5 Отмен хода',
       adminAddReveals: '+5 Открытий',
       adminAddAll: 'Пополнить ВСЁ сразу (+10 ко всем бонусам)',
-      adminBottleAddedMsg: '🧪 Пустая банка добавлена на поле!',
+      adminBottleAddedMsg: '🧪 Пустая колба добавлена на поле!',
       adminHintsAddedMsg: (count) => `💡 +5 Подсказок добавлено (Всего: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Отмен хода добавлено (Всего: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
@@ -599,12 +599,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (adModalTitle) adModalTitle.textContent = t('adModalTitle');
     if (adModalDesc) adModalDesc.textContent = t('adModalDesc');
     const adModalBottleTitle = document.getElementById('adModalBottleTitle');
-    if (adModalBottleTitle) adModalBottleTitle.textContent = t('adModalBottleTitle') || 'Доп. пустая банка';
+    if (adModalBottleTitle) adModalBottleTitle.textContent = t('adModalBottleTitle') || 'Пустая колба';
     const adModalBottleDesc = document.getElementById('adModalBottleDesc');
     if (adModalBottleDesc) {
       const countSpan = document.getElementById('adModalExtraBottlesCount');
       const countHtml = countSpan ? countSpan.outerHTML : '<span class="ad-user-count" id="adModalExtraBottlesCount"></span>';
-      adModalBottleDesc.innerHTML = `${t('adModalBottleDesc') || '+1 пустая банка в запас'} ${countHtml}`;
+      adModalBottleDesc.innerHTML = `${t('adModalBottleDesc') || '+1 пустая колба в запас'} ${countHtml}`;
     }
     if (nextLevelBtn) nextLevelBtn.textContent = t('nextLevelBtn');
 
@@ -1221,8 +1221,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if ((currentUser.extraBottles || 0) <= 0) {
         showInfoModal(
           '🧪',
-          t('extraBottleModalTitle') || 'Дополнительная банка',
-          t('extraBottleModalPrompt') || 'У вас 0 дополнительных банок. Посмотрите короткую рекламу, чтобы получить пустую банку на поле!',
+          t('extraBottleModalTitle') || 'Пустая колба',
+          t('extraBottleModalPrompt') || 'У вас 0 пустых колб. Посмотрите короткую рекламу, чтобы получить пустую колбу на поле!',
           t('claimAdBtn') || '▶ Смотреть рекламу (+1)',
           async () => {
             const adWatched = await showRewardedAd();
