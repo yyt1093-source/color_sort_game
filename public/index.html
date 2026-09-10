@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47107">
+  <link rel="stylesheet" href="style.css?v=47108">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -50,6 +50,24 @@
       </div>
     </div>
   </div>
+
+  <script>
+    (function() {
+      var btn = document.getElementById('startGameBtn');
+      var scr = document.getElementById('startScreen');
+      if (btn && scr) {
+        var dismiss = function() {
+          scr.style.pointerEvents = 'none';
+          scr.classList.add('start-screen-hidden');
+          setTimeout(function() {
+            scr.style.display = 'none';
+          }, 350);
+        };
+        btn.addEventListener('pointerdown', dismiss, { passive: true });
+        btn.addEventListener('click', dismiss);
+      }
+    })();
+  </script>
 
   <!-- Particle FX Canvas -->
   <canvas id="particleCanvas"></canvas>
@@ -368,12 +386,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47107"></script>
-  <script src="js/audio.js?v=47107"></script>
-  <script src="js/solver.js?v=47107"></script>
-  <script src="js/levelGenerator.js?v=47107"></script>
-  <script src="js/gameEngine.js?v=47107"></script>
-  <script src="js/renderer.js?v=47107"></script>
-  <script src="js/app.js?v=47107"></script>
+  <script src="js/telegram.js?v=47108"></script>
+  <script src="js/audio.js?v=47108"></script>
+  <script src="js/solver.js?v=47108"></script>
+  <script src="js/levelGenerator.js?v=47108"></script>
+  <script src="js/gameEngine.js?v=47108"></script>
+  <script src="js/renderer.js?v=47108"></script>
+  <script src="js/app.js?v=47108"></script>
 </body>
 </html>
