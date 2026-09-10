@@ -179,11 +179,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Подсказок',
       adminAddUndos: '+5 Отмен хода',
       adminAddReveals: '+5 Открытий',
+      adminAddShuffles: '+5 Смен цветов',
       adminAddAll: 'Пополнить ВСЁ сразу (+10 ко всем бонусам)',
       adminBottleAddedMsg: '🧪 Пустая банка добавлена на поле!',
       adminHintsAddedMsg: (count) => `💡 +5 Подсказок добавлено (Всего: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Отмен хода добавлено (Всего: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
+      adminShufflesAddedMsg: (count) => `🎨 +5 Смен цветов добавлено (Всего: ${count})`,
       adminAllAddedMsg: '⚡ Все функции пополнены (+10) и банка добавлена!',
       adminResetSuccessTitle: '💥 Сезон сброшен!',
       adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!'
@@ -237,11 +239,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Підказок',
       adminAddUndos: '+5 Відмін ходу',
       adminAddReveals: '+5 Відкриттів',
+      adminAddShuffles: '+5 Змін кольорів',
       adminAddAll: 'Поповнити ВСЕ одразу (+10 до всіх бонусів)',
       adminBottleAddedMsg: '🧪 Порожня колба додана на поле!',
       adminHintsAddedMsg: (count) => `💡 +5 Підказок додано (Всього: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Відмін ходу додано (Всього: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Відкриттів додано (Всього: ${count})`,
+      adminShufflesAddedMsg: (count) => `🎨 +5 Змін кольорів додано (Всього: ${count})`,
       adminAllAddedMsg: '⚡ Всі функції поповнено (+10) та колба на полі!',
       adminResetSuccessTitle: '💥 Сезон скинуто!',
       adminResetSuccessDesc: 'Всі данные гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!'
@@ -295,11 +299,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Hints',
       adminAddUndos: '+5 Undos',
       adminAddReveals: '+5 Color Reveals',
+      adminAddShuffles: '+5 Color Shuffles',
       adminAddAll: 'Replenish ALL (+10 to all boosters)',
       adminBottleAddedMsg: '🧪 Empty bottle added to the board!',
       adminHintsAddedMsg: (count) => `💡 +5 Hints added (Total: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Undos added (Total: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Reveals added (Total: ${count})`,
+      adminShufflesAddedMsg: (count) => `🎨 +5 Color Shuffles added (Total: ${count})`,
       adminAllAddedMsg: '⚡ All boosters replenished (+10) and bottle added!',
       adminResetSuccessTitle: '💥 Season Reset!',
       adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!'
@@ -353,11 +359,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Hinweise',
       adminAddUndos: '+5 Züge zurück',
       adminAddReveals: '+5 Aufdeckungen',
+      adminAddShuffles: '+5 Farbmischungen',
       adminAddAll: 'ALLES auffüllen (+10 auf alle Boni)',
       adminBottleAddedMsg: '🧪 Leere Flasche aufs Feld hinzugefügt!',
       adminHintsAddedMsg: (count) => `💡 +5 Hinweise hinzugefügt (Gesamt: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Züge zurück hinzugefügt (Gesamt: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Aufdeckungen hinzugefügt (Gesamt: ${count})`,
+      adminShufflesAddedMsg: (count) => `🎨 +5 Farbmischungen hinzugefügt (Gesamt: ${count})`,
       adminAllAddedMsg: '⚡ Alle Boni aufgefüllt (+10) und Flasche hinzugefügt!',
       adminResetSuccessTitle: '💥 Saison zurückgesetzt!',
       adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!'
@@ -411,11 +419,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Užuominos',
       adminAddUndos: '+5 Atšaukimai',
       adminAddReveals: '+5 Atskleidimai',
+      adminAddShuffles: '+5 Spalvų keitimai',
       adminAddAll: 'Papildyti VISKĄ (+10 visiems)',
       adminBottleAddedMsg: '🧪 Tuščias buteliukas pridėtas į lentą!',
       adminHintsAddedMsg: (count) => `💡 +5 Užuominos pridėtos (Iš viso: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Atšaukimai pridėti (Iš viso: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Atskleidimai pridėti (Iš viso: ${count})`,
+      adminShufflesAddedMsg: (count) => `🎨 +5 Spalvų keitimai pridėti (Iš viso: ${count})`,
       adminAllAddedMsg: '⚡ Viskas papildyta (+10) ir buteliukas pridėtas!',
       adminResetSuccessTitle: '💥 Sezonas atstatytas!',
       adminResetSuccessDesc: 'Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!'
@@ -524,6 +534,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const adminAddUndosLabel = document.getElementById('adminAddUndosLabel');
   const adminAddRevealsBtn = document.getElementById('adminAddRevealsBtn');
   const adminAddRevealsLabel = document.getElementById('adminAddRevealsLabel');
+  const adminAddShufflesBtn = document.getElementById('adminAddShufflesBtn');
+  const adminAddShufflesLabel = document.getElementById('adminAddShufflesLabel');
   const adminAddAllBtn = document.getElementById('adminAddAllBtn');
   const adminAddAllLabel = document.getElementById('adminAddAllLabel');
   const adminFeedbackMsg = document.getElementById('adminFeedbackMsg');
@@ -595,6 +607,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (adminAddHintsLabel) adminAddHintsLabel.textContent = t('adminAddHints');
     if (adminAddUndosLabel) adminAddUndosLabel.textContent = t('adminAddUndos');
     if (adminAddRevealsLabel) adminAddRevealsLabel.textContent = t('adminAddReveals');
+    if (adminAddShufflesLabel) adminAddShufflesLabel.textContent = t('adminAddShuffles');
     if (adminAddAllLabel) adminAddAllLabel.textContent = t('adminAddAll');
   }
 
@@ -608,7 +621,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     coins: 100,
     hints: 0,
     undos: 0,
-    reveals: 0
+    reveals: 0,
+    shuffles: 0
   };
   let currentLevelData = null;
   let justStartedGame = false;
@@ -770,12 +784,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser = { ...currentUser, ...parsed };
       } catch (e) {}
     }
-    const migrated = localStorage.getItem('cs_zero_boosters_v5');
+    if (currentUser.shuffles === undefined || currentUser.shuffles === null) {
+      currentUser.shuffles = 0;
+    }
+    const migrated = localStorage.getItem('cs_zero_boosters_v6');
     if (!migrated) {
       currentUser.hints = 0;
       currentUser.undos = 0;
       currentUser.reveals = 0;
-      localStorage.setItem('cs_zero_boosters_v5', 'true');
+      currentUser.shuffles = 0;
+      localStorage.setItem('cs_zero_boosters_v6', 'true');
       saveLocalUser();
     }
   }
@@ -927,6 +945,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
+    const shuffleBadge = document.getElementById('shuffleBadge');
+    if (shuffleBadge) {
+      const sCount = currentUser.shuffles || 0;
+      setIfDiff(shuffleBadge, sCount);
+      const isZero = sCount === 0;
+      if (shuffleBadge.classList.contains('badge-zero') !== isZero) {
+        shuffleBadge.classList.toggle('badge-zero', isZero);
+      }
+    }
+
     // Modal user counters
     const adModalHintsCount = document.getElementById('adModalHintsCount');
     if (adModalHintsCount) {
@@ -939,6 +967,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const adModalRevealsCount = document.getElementById('adModalRevealsCount');
     if (adModalRevealsCount) {
       setIfDiff(adModalRevealsCount, `(у вас: ${currentUser.reveals || 0})`);
+    }
+    const adModalShufflesCount = document.getElementById('adModalShufflesCount');
+    if (adModalShufflesCount) {
+      setIfDiff(adModalShufflesCount, `(у вас: ${currentUser.shuffles || 0})`);
     }
   }
 
@@ -1158,31 +1190,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
-      showInfoModal(
-        '🎨',
-        'Сменить открытые цвета',
-        'Посмотрите короткую рекламу, чтобы перемешать и изменить открытые цвета в баночках из наличия!',
-        '▶ Смотреть рекламу',
-        async () => {
-          const adWatched = await showRewardedAd();
-          if (adWatched) {
-            await apiCall('/api/ad-reward', 'POST', {
-              telegramId: currentUser.telegramId,
-              rewardType: 'shuffle_colors'
-            });
-            const changed = engine.changeOpenColors();
-            if (changed) {
-              if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-              if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-              updateHeaderUI();
+      if ((currentUser.shuffles || 0) <= 0) {
+        showInfoModal(
+          '🎨',
+          'Сменить открытые цвета',
+          'У вас 0 смен цветов. Посмотрите короткую рекламу, чтобы получить смену открытых цветов!',
+          '▶ Смотреть рекламу (+1)',
+          async () => {
+            const adWatched = await showRewardedAd();
+            if (adWatched) {
+              const data = await apiCall('/api/ad-reward', 'POST', {
+                telegramId: currentUser.telegramId,
+                rewardType: 'shuffle_colors'
+              });
+              if (data && data.success && data.user) {
+                currentUser = { ...currentUser, ...data.user };
+              } else {
+                currentUser.shuffles = (currentUser.shuffles || 0) + 1;
+              }
+              const changed = engine.changeOpenColors();
+              if (changed) {
+                currentUser.shuffles = Math.max(0, (currentUser.shuffles || 0) - 1);
+                if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+                if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+                await apiCall('/api/user/sync', 'POST', {
+                  telegramId: currentUser.telegramId,
+                  shufflesUsed: 1
+                });
+                showInfoModal('✨', 'Цвета изменены!', 'Открытые цвета в баночках успешно изменены!');
+              } else {
+                showInfoModal('ℹ️', 'Смена цветов', 'Недостаточно баночек с жидкостью для изменения открытых цветов.');
+              }
               saveLocalUser();
-              showInfoModal('✨', 'Цвета изменены!', 'Открытые цвета в баночках успешно изменены!');
-            } else {
-              showInfoModal('ℹ️', 'Смена цветов', 'Недостаточно баночек с жидкостью для изменения открытых цветов.');
+              updateHeaderUI();
             }
           }
-        }
-      );
+        );
+        return;
+      }
+
+      const changed = engine.changeOpenColors();
+      if (changed) {
+        currentUser.shuffles = Math.max(0, (currentUser.shuffles || 0) - 1);
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+        updateHeaderUI();
+        saveLocalUser();
+        await apiCall('/api/user/sync', 'POST', {
+          telegramId: currentUser.telegramId,
+          shufflesUsed: 1
+        });
+        showInfoModal('✨', 'Цвета изменены!', 'Открытые цвета в баночках успешно изменены!');
+      } else {
+        showInfoModal('ℹ️', 'Смена цветов', 'Недостаточно баночек с жидкостью для изменения открытых цветов.');
+      }
     });
   }
 
@@ -1541,6 +1602,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  if (adminAddShufflesBtn) {
+    adminAddShufflesBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+      currentUser.shuffles = (currentUser.shuffles || 0) + 5;
+      saveLocalUser();
+      updateHeaderUI();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+      showAdminFeedback(t('adminShufflesAddedMsg', currentUser.shuffles));
+    });
+  }
+
   if (adminAddAllBtn) {
     adminAddAllBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1549,6 +1623,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentUser.hints = (currentUser.hints || 0) + 10;
       currentUser.undos = (currentUser.undos || 0) + 10;
       currentUser.reveals = (currentUser.reveals || 0) + 10;
+      currentUser.shuffles = (currentUser.shuffles || 0) + 10;
       currentUser.coins = (currentUser.coins || 0) + 500;
       saveLocalUser();
       updateHeaderUI();
@@ -1638,6 +1713,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser.hints = 0;
         currentUser.undos = 0;
         currentUser.reveals = 0;
+        currentUser.shuffles = 0;
         saveLocalUser();
         updateHeaderUI();
 
@@ -1787,12 +1863,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
             else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
             else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
+            else if (rewardType === 'shuffle_colors' || rewardType === 'shuffles') currentUser.shuffles = (currentUser.shuffles || 0) + 1;
           }
         } catch (apiErr) {
           console.warn('[Ad API Error, fallback to local]', apiErr);
           if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
           else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
           else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
+          else if (rewardType === 'shuffle_colors' || rewardType === 'shuffles') currentUser.shuffles = (currentUser.shuffles || 0) + 1;
         }
 
         saveLocalUser();
@@ -1802,8 +1880,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (rewardType === 'extra_bottle') {
           engine.addExtraBottle();
-        } else if (rewardType === 'shuffle_colors') {
-          engine.changeOpenColors();
         }
 
         btn.textContent = t('adClaimed') || '✅ Получено! (+1)';

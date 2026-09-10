@@ -101,6 +101,7 @@
         <span class="tool-icon">🧪</span>
       </button>
       <button id="shuffleColorsBtn" class="tool-btn highlight">
+        <span class="tool-badge" id="shuffleBadge">0</span>
         <span class="tool-label" id="shuffleColorsBtnLabel">Сменить цвета</span>
         <span class="tool-icon">🎨</span>
       </button>
@@ -196,6 +197,10 @@
             <button type="button" id="adminAddRevealsBtn" class="admin-boost-btn">
               <span class="admin-boost-icon">🔮</span>
               <span class="admin-boost-label" id="adminAddRevealsLabel">+5 Открытий</span>
+            </button>
+            <button type="button" id="adminAddShufflesBtn" class="admin-boost-btn">
+              <span class="admin-boost-icon">🎨</span>
+              <span class="admin-boost-label" id="adminAddShufflesLabel">+5 Смен цветов</span>
             </button>
           </div>
           <button type="button" id="adminAddAllBtn" class="admin-add-all-btn">
@@ -323,7 +328,7 @@
         <div class="ad-card" data-reward="shuffle_colors">
           <div class="ad-card-icon">🎨</div>
           <h3 id="adModalShuffleTitle">Сменить открытые цвета</h3>
-          <p id="adModalShuffleDesc">Перемешать открытые цвета в баночках из наличия</p>
+          <p id="adModalShuffleDesc">Перемешать открытые цвета в баночках из наличия <span class="ad-user-count" id="adModalShufflesCount"></span></p>
           <button class="claim-ad-btn">▶ Смотреть рекламу</button>
         </div>
       </div>
