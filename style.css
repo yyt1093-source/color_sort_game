@@ -1436,3 +1436,171 @@ body {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
+/* ============================================================
+   🏆 Global Leaderboard Modal Styles
+   ============================================================ */
+.user-rank-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 16px;
+  padding: 12px 16px;
+  margin-bottom: 4px;
+}
+
+.rank-pos {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fbbf24;
+  min-width: 44px;
+  text-align: center;
+}
+
+.rank-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.rank-details strong {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.rank-details span {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.leaderboard-list-wrapper {
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.leaderboard-list-wrapper::-webkit-scrollbar {
+  width: 5px;
+}
+
+.leaderboard-list-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.leaderboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.leaderboard-item:hover {
+  background: rgba(51, 65, 85, 0.7);
+}
+
+.leaderboard-item.top-1 {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(30, 41, 59, 0.7));
+  border-color: rgba(234, 179, 8, 0.5);
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.15);
+}
+
+.leaderboard-item.top-2 {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(30, 41, 59, 0.7));
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.leaderboard-item.top-3 {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.18), rgba(30, 41, 59, 0.7));
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+.leaderboard-item.is-self {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(30, 41, 59, 0.85));
+  border: 1.5px solid #3b82f6;
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.3);
+}
+
+.self-tag {
+  font-size: 0.72rem;
+  background: #2563eb;
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 6px;
+  margin-left: 4px;
+  font-weight: 700;
+}
+
+.player-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.rank-num {
+  font-size: 1.15rem;
+  font-weight: 800;
+  min-width: 28px;
+  text-align: center;
+}
+
+.player-info-cell {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.player-info-cell strong {
+  font-size: 0.92rem;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.player-handle {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.user-rank {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  white-space: nowrap;
+}
+
+@keyframes spinInfinite {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rotating {
+  animation: spinInfinite 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
