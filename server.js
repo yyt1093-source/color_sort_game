@@ -251,6 +251,15 @@ setInterval(() => {
 let activeTunnelProc = null;
 
 function initTunnel() {
+  if (process.env.WEB_APP_URL && process.env.WEB_APP_URL.includes('github.io')) {
+    console.log(`🚀 Постоянная облачная ссылка активна: ${process.env.WEB_APP_URL}`);
+    try {
+      const { updateBotMenuButton } = require('./bot');
+      updateBotMenuButton(process.env.WEB_APP_URL);
+    } catch (e) {}
+    return;
+  }
+
   if (process.env.AUTO_TUNNEL === 'false') return;
 
   const { spawn } = require('child_process');

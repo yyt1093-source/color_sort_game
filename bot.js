@@ -16,7 +16,7 @@ if (fs.existsSync(envPath)) {
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 function getWebAppUrl() {
-  return process.env.WEB_APP_URL || 'http://localhost:3000';
+  return process.env.WEB_APP_URL || 'https://yyt1093-source.github.io/color_sort_game/';
 }
 
 if (!BOT_TOKEN) {
