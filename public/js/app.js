@@ -140,7 +140,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       restartBtn: 'Сначала',
       undoBtn: 'Отмена',
       hintBtn: 'Подсказка',
-      revealBtn: 'Убрать все цвета',
+      revealBtn: 'Открыть цвета',
+      shuffleColorsBtn: 'Сменить цвета',
       adBonusBtn: 'Реклама',
       leaderboardTitle: '🏆 Таблица лидеров',
       leaderboardLive: '24/7 LIVE',
@@ -198,6 +199,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Відміна',
       hintBtn: 'Підказка',
       revealBtn: 'Відкрити кольори',
+      shuffleColorsBtn: 'Змінити кольори',
       adBonusBtn: 'Реклама',
       leaderboardTitle: '🏆 Таблиця лідерів',
       leaderboardLive: '24/7 LIVE',
@@ -255,6 +257,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Undo',
       hintBtn: 'Hint',
       revealBtn: 'Reveal Colors',
+      shuffleColorsBtn: 'Shuffle Colors',
       adBonusBtn: 'Rewards',
       leaderboardTitle: '🏆 Leaderboard',
       leaderboardLive: '24/7 LIVE',
@@ -311,7 +314,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       restartBtn: 'Neustart',
       undoBtn: 'Zurück',
       hintBtn: 'Hinweis',
-      revealBtn: 'Aufdecken',
+      revealBtn: 'Farben aufdecken',
+      shuffleColorsBtn: 'Farben tauschen',
       adBonusBtn: 'Boni',
       leaderboardTitle: '🏆 Bestenliste',
       leaderboardLive: '24/7 LIVE',
@@ -368,7 +372,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       restartBtn: 'Iš naujo',
       undoBtn: 'Atšaukti',
       hintBtn: 'Užuomina',
-      revealBtn: 'Atskleisti',
+      revealBtn: 'Atskleisti spalvas',
+      shuffleColorsBtn: 'Keisti spalvas',
       adBonusBtn: 'Premijos',
       leaderboardTitle: '🏆 Lyderių lentelė',
       leaderboardLive: '24/7 LIVE',
@@ -455,6 +460,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const undoBtnLabel = document.getElementById('undoBtnLabel');
   const hintBtnLabel = document.getElementById('hintBtnLabel');
   const revealBtnLabel = document.getElementById('revealBtnLabel');
+  const shuffleColorsBtnLabel = document.getElementById('shuffleColorsBtnLabel');
   const adBonusBtnLabel = document.getElementById('adBonusBtnLabel');
 
   // Start Screen Elements
@@ -467,6 +473,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const undoBtn = document.getElementById('undoBtn');
   const hintBtn = document.getElementById('hintBtn');
   const revealBottleBtn = document.getElementById('revealBottleBtn');
+  const shuffleColorsBtn = document.getElementById('shuffleColorsBtn');
   const adBonusBtn = document.getElementById('adBonusBtn');
   const leaderboardBtn = document.getElementById('leaderboardBtn');
   const soundToggleBtn = document.getElementById('soundToggleBtn');
@@ -555,6 +562,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (undoBtnLabel) undoBtnLabel.textContent = t('undoBtn');
     if (hintBtnLabel) hintBtnLabel.textContent = t('hintBtn');
     if (revealBtnLabel) revealBtnLabel.textContent = t('revealBtn');
+    if (shuffleColorsBtnLabel) shuffleColorsBtnLabel.textContent = t('shuffleColorsBtn');
     if (adBonusBtnLabel) adBonusBtnLabel.textContent = t('adBonusBtn');
 
     if (leaderboardModalTitle) leaderboardModalTitle.textContent = t('leaderboardTitle');
@@ -1075,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           hintsUsed: 1
         });
       } else {
-        showInfoModal('🤷', 'Нет ходов', 'Подсказка не найдена на текущем этапе.');
+        showInfoModal('🤷', 'Нет ходов', 'Текущее расположение заблокировано. Используйте отмену хода ↩️ или начните уровень сначала 🔄.');
       }
     });
   }
@@ -1094,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (currentUser.reveals <= 0) {
         showInfoModal(
           '🧪',
-          'Убрать все цвета',
+          'Открыть цвета',
           'У вас 0 открытий. Посмотрите короткую рекламу, чтобы открыть все цвета в одной случайной баночке!',
           '▶ Смотреть рекламу (+1)',
           async () => {
@@ -1141,6 +1149,40 @@ document.addEventListener('DOMContentLoaded', async () => {
           revealsUsed: 1
         });
       }
+    });
+  }
+
+  if (shuffleColorsBtn) {
+    shuffleColorsBtn.addEventListener('click', async (e) => {
+      if (justStartedGame) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        return;
+      }
+      showInfoModal(
+        '🎨',
+        'Сменить открытые цвета',
+        'Посмотрите короткую рекламу, чтобы перемешать и изменить открытые цвета в баночках из наличия!',
+        '▶ Смотреть рекламу',
+        async () => {
+          const adWatched = await showRewardedAd();
+          if (adWatched) {
+            await apiCall('/api/ad-reward', 'POST', {
+              telegramId: currentUser.telegramId,
+              rewardType: 'shuffle_colors'
+            });
+            const changed = engine.changeOpenColors();
+            if (changed) {
+              if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+              if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+              updateHeaderUI();
+              saveLocalUser();
+              showInfoModal('✨', 'Цвета изменены!', 'Открытые цвета в баночках успешно изменены!');
+            } else {
+              showInfoModal('ℹ️', 'Смена цветов', 'Недостаточно баночек с жидкостью для изменения открытых цветов.');
+            }
+          }
+        }
+      );
     });
   }
 
@@ -1760,6 +1802,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (rewardType === 'extra_bottle') {
           engine.addExtraBottle();
+        } else if (rewardType === 'shuffle_colors') {
+          engine.changeOpenColors();
         }
 
         btn.textContent = t('adClaimed') || '✅ Получено! (+1)';

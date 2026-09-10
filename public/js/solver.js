@@ -2,7 +2,7 @@
  * Color Sort Solver Engine (A* with priority queue and state canonicalization)
  */
 (function (exports) {
-  const CAPACITY = 4;
+  const CAPACITY = 5;
 
   class MinHeap {
     constructor(compare) {
@@ -128,7 +128,8 @@
           if (bTo[bTo.length - 1] !== topColor) continue;
           const actualAmount = Math.min(count, capacity - bTo.length);
           if (actualAmount > 0) {
-            moves.push({ from, to, amount: actualAmount, color: topColor });
+            const completes = (bTo.length + actualAmount === capacity) && bTo.every(c => c === topColor);
+            moves.push({ from, to, amount: actualAmount, color: topColor, completes });
           }
         } else {
           // Canonical empty jar pruning: only pour into the first empty jar (all empty jars are symmetric)
@@ -136,11 +137,16 @@
           if (isHomogenous) continue;
           const actualAmount = Math.min(count, capacity);
           if (actualAmount > 0 && actualAmount < bFrom.length) {
-            moves.push({ from, to, amount: actualAmount, color: topColor });
+            moves.push({ from, to, amount: actualAmount, color: topColor, completes: false });
           }
         }
       }
     }
+
+    if (moves.length > 1) {
+      moves.sort((a, b) => (b.completes ? 1 : 0) - (a.completes ? 1 : 0));
+    }
+
     return moves;
   }
 
@@ -164,7 +170,7 @@
     return nextBottles;
   }
 
-  function solve(initialBottles, capacity = CAPACITY) {
+  function solve(initialBottles, capacity = CAPACITY, maxSteps = null) {
     if (isSolved(initialBottles, capacity)) return [];
     
     let startBottles = initialBottles.map(b => {
@@ -177,7 +183,7 @@
     let uniqueColors = new Set();
     startBottles.forEach(b => b.forEach(c => uniqueColors.add(c)));
     const colorCount = uniqueColors.size;
-    const limit = Math.min(25000, 5000 * colorCount);
+    const limit = maxSteps || Math.min(45000, 6000 * colorCount);
 
     const compare = (a, b) => (a.cost + 2.5 * a.heuristic) - (b.cost + 2.5 * b.heuristic);
     const pq = new MinHeap(compare);

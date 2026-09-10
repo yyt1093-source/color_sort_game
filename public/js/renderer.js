@@ -7,7 +7,7 @@
   let particleCtx = null;
   let activeParticles = [];
   let animFrameId = null;
-  const UNIT_HEIGHT = 19;
+  const UNIT_HEIGHT = 18;
 
   function initRenderer(containerEl, canvasEl) {
     boardContainer = containerEl;
@@ -145,7 +145,8 @@
     if (bottles.length <= 6) boardContainer.classList.add('board-small');
     else if (bottles.length <= 10) boardContainer.classList.add('board-medium');
     else if (bottles.length <= 14) boardContainer.classList.add('board-large');
-    else boardContainer.classList.add('board-xlarge');
+    else if (bottles.length <= 18) boardContainer.classList.add('board-xlarge');
+    else boardContainer.classList.add('board-xxlarge');
 
     bottles.forEach((layers, idx) => {
       const bottleEl = document.createElement('div');
@@ -270,13 +271,13 @@
       // ---------------------------------------------------------
       const initialTargetLayers = (engine && engine.bottles && engine.bottles[toIdx]) ? engine.bottles[toIdx].length : 0;
       const innerBottomY = toRect.bottom - 7;
-      const toNeckY = toRect.top + 10;
+      const toNeckY = toRect.top + 5;
       const toMouthX = toRect.left + toRect.width / 2;
 
       // Function to calculate stream landing surface Y inside recipient jar:
       // Empty jar (0 layers) -> stream plunges all the way to the bottom!
       // L layers -> surface is innerBottomY - L * UNIT_HEIGHT
-      const getLandingY = (layersCount) => Math.max(toNeckY + 5, innerBottomY - (layersCount * UNIT_HEIGHT));
+      const getLandingY = (layersCount) => Math.max(toNeckY + 2, innerBottomY - (layersCount * UNIT_HEIGHT));
 
       const totalPouredUnits = Math.max(1, amount || 1);
       const totalPouredHeight = totalPouredUnits * UNIT_HEIGHT;
