@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47090">
+  <link rel="stylesheet" href="style.css?v=47091">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -36,9 +36,9 @@
 
     <div class="start-screen-content">
       <div class="start-header">
-        <div class="start-badge">🧪 ГОЛОВОЛОМКА В TELEGRAM</div>
+        <div class="start-badge" id="startBadge">🧪 ГОЛОВОЛОМКА В TELEGRAM</div>
         <h1 class="start-title">COLOR SORT</h1>
-        <p class="start-desc">Сортируй жидкости по баночкам и проходи увлекательные уровни!</p>
+        <p class="start-desc" id="startDesc">Сортируй жидкости по баночкам и проходи увлекательные уровни!</p>
       </div>
 
       <div class="start-footer">
@@ -46,7 +46,7 @@
           <span class="start-btn-icon">▶</span>
           <span class="start-btn-label">START</span>
         </button>
-        <p class="start-hint">Нажмите, чтобы начать игру</p>
+        <p class="start-hint" id="startHint">Нажмите, чтобы начать игру</p>
       </div>
     </div>
   </div>
@@ -57,17 +57,18 @@
   <div id="appContainer">
     <!-- Header -->
     <header class="game-header">
-      <div class="user-profile">
+      <div class="user-profile clickable-profile" id="userProfileBtn" title="Профиль и смена языка">
         <div class="avatar-ring">
           <img id="userAvatar" src="" alt="">
         </div>
         <div class="user-info">
           <span id="userName" class="user-name">Игрок</span>
+          <span id="profileSettingsHint" class="profile-hint">⚙️ Язык</span>
         </div>
       </div>
       <div class="header-center">
         <div class="level-badge">
-          <span>Уровень</span>
+          <span id="levelBadgeLabel">Уровень</span>
           <strong id="levelDisplay">1</strong>
         </div>
       </div>
@@ -87,29 +88,83 @@
     <!-- Toolbar -->
     <footer class="toolbar">
       <button id="restartBtn" class="tool-btn highlight">
-        <span class="tool-label">Сначала</span>
+        <span class="tool-label" id="restartBtnLabel">Сначала</span>
         <span class="tool-icon">🔄</span>
       </button>
       <button id="undoBtn" class="tool-btn highlight">
         <span class="tool-badge" id="undoBadge">0</span>
-        <span class="tool-label">Отмена</span>
+        <span class="tool-label" id="undoBtnLabel">Отмена</span>
         <span class="tool-icon">↩️</span>
       </button>
       <button id="hintBtn" class="tool-btn highlight">
         <span class="tool-badge" id="hintBadge">0</span>
-        <span class="tool-label">Подсказка</span>
+        <span class="tool-label" id="hintBtnLabel">Подсказка</span>
         <span class="tool-icon">💡</span>
       </button>
       <button id="revealBottleBtn" class="tool-btn highlight">
         <span class="tool-badge" id="revealBadge">0</span>
-        <span class="tool-label">Убрать все цвета</span>
+        <span class="tool-label" id="revealBtnLabel">Убрать все цвета</span>
         <span class="tool-icon">🧪</span>
       </button>
       <button id="adBonusBtn" class="tool-btn highlight">
-        <span class="tool-label">Реклама</span>
+        <span class="tool-label" id="adBonusBtnLabel">Реклама</span>
         <span class="tool-icon">🎁</span>
       </button>
     </footer>
+  </div>
+
+  <!-- Profile & Settings (Language) Modal -->
+  <div id="profileModal" class="modal-overlay hidden">
+    <div class="glass-modal profile-modal-content">
+      <div class="modal-header">
+        <h2 id="profileModalTitle">⚙️ Профиль и Язык</h2>
+        <button id="closeProfileModalBtn" class="close-btn" title="Закрыть">&times;</button>
+      </div>
+      
+      <div class="profile-card">
+        <div class="profile-avatar-large">
+          <img id="profileCardAvatar" src="" alt="">
+        </div>
+        <div class="profile-info-text">
+          <strong id="profileCardName">Игрок</strong>
+          <span id="profileCardLevel">Уровень 1</span>
+        </div>
+      </div>
+
+      <div class="language-selection-box">
+        <div class="language-box-header">
+          <span>🌐</span>
+          <strong id="langSectionTitle">Сменить язык</strong>
+        </div>
+        <div class="lang-grid" id="langGrid">
+          <button class="lang-btn" data-lang="ru">
+            <span class="lang-flag">🇷🇺</span>
+            <span class="lang-name">Русский</span>
+            <span class="lang-check">✓</span>
+          </button>
+          <button class="lang-btn" data-lang="uk">
+            <span class="lang-flag">🇺🇦</span>
+            <span class="lang-name">Українська</span>
+            <span class="lang-check">✓</span>
+          </button>
+          <button class="lang-btn" data-lang="en">
+            <span class="lang-flag">🇬🇧</span>
+            <span class="lang-name">English</span>
+            <span class="lang-check">✓</span>
+          </button>
+          <button class="lang-btn" data-lang="de">
+            <span class="lang-flag">🇩🇪</span>
+            <span class="lang-name">Deutsch</span>
+            <span class="lang-check">✓</span>
+          </button>
+          <button class="lang-btn" data-lang="lt">
+            <span class="lang-flag">🇱🇹</span>
+            <span class="lang-name">Lietuvių</span>
+            <span class="lang-check">✓</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Leaderboard Modal -->
@@ -117,8 +172,8 @@
     <div class="glass-modal">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <h2>🏆 Таблица лидеров</h2>
-          <span style="font-size: 0.72rem; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 6px; border-radius: 6px; font-weight: 700;">24/7 LIVE</span>
+          <h2 id="leaderboardModalTitle">🏆 Таблица лидеров</h2>
+          <span id="leaderboardLiveBadge" style="font-size: 0.72rem; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 6px; border-radius: 6px; font-weight: 700;">24/7 LIVE</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
           <button id="refreshLeaderboardBtn" class="glass-icon-btn" title="Обновить рейтинг" style="width: 32px; height: 32px; font-size: 14px;">🔄</button>
@@ -151,8 +206,8 @@
   <!-- Restart Confirmation Modal -->
   <div id="restartModal" class="modal-overlay hidden">
     <div class="glass-modal" style="text-align:center">
-      <h2>🔄 Начать заново?</h2>
-      <p class="modal-desc">Весь прогресс на этом уровне будет сброшен.</p>
+      <h2 id="restartModalTitle">🔄 Начать заново?</h2>
+      <p id="restartModalDesc" class="modal-desc">Весь прогресс на этом уровне будет сброшен.</p>
       <div class="modal-actions">
         <button id="cancelRestartBtn" class="btn-cancel">Отмена</button>
         <button id="confirmRestartBtn" class="btn-confirm">Рестарт</button>
@@ -165,8 +220,8 @@
     <div class="glass-modal">
       <div class="modal-header ad-modal-header">
         <div class="ad-modal-title-group">
-          <h2>🎁 Реклама</h2>
-          <p class="modal-desc ad-modal-desc">Посмотрите короткие видео и получите бесплатные бонусы</p>
+          <h2 id="adModalTitle">🎁 Реклама</h2>
+          <p id="adModalDesc" class="modal-desc ad-modal-desc">Посмотрите короткие видео и получите бесплатные бонусы</p>
         </div>
         <button id="closeAdModalBtn" class="close-btn-circle" title="Закрыть">&times;</button>
       </div>
@@ -246,12 +301,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47090"></script>
-  <script src="js/audio.js?v=47090"></script>
-  <script src="js/solver.js?v=47090"></script>
-  <script src="js/levelGenerator.js?v=47090"></script>
-  <script src="js/gameEngine.js?v=47090"></script>
-  <script src="js/renderer.js?v=47090"></script>
-  <script src="js/app.js?v=47090"></script>
+  <script src="js/telegram.js?v=47091"></script>
+  <script src="js/audio.js?v=47091"></script>
+  <script src="js/solver.js?v=47091"></script>
+  <script src="js/levelGenerator.js?v=47091"></script>
+  <script src="js/gameEngine.js?v=47091"></script>
+  <script src="js/renderer.js?v=47091"></script>
+  <script src="js/app.js?v=47091"></script>
 </body>
 </html>

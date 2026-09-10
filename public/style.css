@@ -1607,4 +1607,165 @@ body {
   animation: spinInfinite 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ============================================================
+   👤 Clickable Profile & Language Modal Styles
+   ============================================================ */
+.clickable-profile {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.clickable-profile:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.clickable-profile:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.profile-hint {
+  font-size: 0.68rem;
+  color: #60a5fa;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 1px;
+}
+
+.profile-modal-content {
+  gap: 16px;
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 18px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.profile-avatar-large {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 50%;
+  border: 2px solid #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+  overflow: hidden;
+}
+
+.profile-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.profile-info-text strong {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-info-text span {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.language-selection-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.language-box-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+}
+
+.language-box-header span {
+  font-size: 1.15rem;
+}
+
+.lang-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lang-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  color: #f1f5f9;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lang-btn:hover {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-1px);
+}
+
+.lang-btn:active {
+  transform: scale(0.98);
+}
+
+.lang-btn.active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(15, 23, 42, 0.9));
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
+  color: #fff;
+}
+
+.lang-btn .lang-flag {
+  font-size: 1.35rem;
+  margin-right: 12px;
+}
+
+.lang-btn .lang-name {
+  flex: 1;
+  text-align: left;
+}
+
+.lang-btn .lang-check {
+  display: none;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.lang-btn.active .lang-check {
+  display: inline-block;
+}
+
+
 
