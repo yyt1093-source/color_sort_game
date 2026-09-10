@@ -1,5 +1,5 @@
 const token = process.env.BOT_TOKEN || '8837816458:AAHcVqwLGUdz3TXq2Z1SN7Q4a2DVBkaagfE';
-const url = 'https://pink-games-decide.loca.lt';
+const url = process.env.WEB_APP_URL || 'https://yyt1093-source.github.io/color_sort_game/';
 
 async function updateMenu() {
   const res = await fetch(`https://api.telegram.org/bot${token}/setChatMenuButton`, {
