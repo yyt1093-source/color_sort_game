@@ -128,6 +128,220 @@ document.addEventListener('DOMContentLoaded', async () => {
     return await playRewardedAdModal();
   }
 
+  // --- Translations (i18n) for 5 Languages: RU, UK, EN, DE, LT ---
+  const TRANSLATIONS = {
+    ru: {
+      langName: 'Русский',
+      levelLabel: 'Уровень',
+      levelDisplayVal: (lvl) => `Уровень ${lvl}`,
+      profileHint: '⚙️ Язык',
+      profileTitle: '⚙️ Профиль и Язык',
+      langSectionTitle: 'Сменить язык',
+      restartBtn: 'Сначала',
+      undoBtn: 'Отмена',
+      hintBtn: 'Подсказка',
+      revealBtn: 'Убрать все цвета',
+      adBonusBtn: 'Реклама',
+      leaderboardTitle: '🏆 Таблица лидеров',
+      leaderboardLive: '24/7 LIVE',
+      leaderboardLoading: '⏳ Загрузка живых игроков...',
+      leaderboardEmptyTitle: 'Рейтинг пока формируется',
+      leaderboardEmptyDesc: 'Пройдите уровень через Telegram бота @sortcolors_bot, чтобы стать первым в глобальной таблице!',
+      youTag: '(Вы)',
+      maxLevelLabel: (lvl) => `Макс. уровень: ${lvl}`,
+      levelPrefix: 'Уровень',
+      startBadge: '🧪 ГОЛОВОЛОМКА В TELEGRAM',
+      startDesc: 'Сортируй жидкости по баночкам и проходи увлекательные уровни!',
+      startHint: 'Нажмите, чтобы начать игру',
+      winTitle: (lvl) => `Уровень ${lvl} пройден! 🎉`,
+      winSubtext: (lvl) => `Все цвета успешно собраны! Переходим к уровню ${lvl}...`,
+      nextLevelBtn: 'Следующий уровень 🚀',
+      restartTitle: '🔄 Начать заново?',
+      restartDesc: 'Весь прогресс на этом уровне будет сброшен.',
+      cancelBtn: 'Отмена',
+      confirmRestartBtn: 'Рестарт',
+      adModalTitle: '🎁 Реклама',
+      adModalDesc: 'Посмотрите короткие видео и получите бесплатные бонусы',
+      noMovesTitle: 'Нет ходов',
+      noMovesDesc: 'Вы ещё не сделали ни одного хода на этом уровне для отмены.',
+      noHintDesc: 'Подсказка не найдена на текущем этапе.',
+      allColorsVisibleTitle: 'Все цвета видны',
+      allColorsVisibleDesc: 'В баночках на этом этапе уже открыты все цвета!',
+      extraBottleTitle: '🎉 Успех',
+      extraBottleDesc: 'Дополнительная пустая банка добавлена на поле!'
+    },
+    uk: {
+      langName: 'Українська',
+      levelLabel: 'Рівень',
+      levelDisplayVal: (lvl) => `Рівень ${lvl}`,
+      profileHint: '⚙️ Мова',
+      profileTitle: '⚙️ Профіль та Мова',
+      langSectionTitle: 'Змінити мову',
+      restartBtn: 'Спочатку',
+      undoBtn: 'Відміна',
+      hintBtn: 'Підказка',
+      revealBtn: 'Відкрити кольори',
+      adBonusBtn: 'Реклама',
+      leaderboardTitle: '🏆 Таблиця лідерів',
+      leaderboardLive: '24/7 LIVE',
+      leaderboardLoading: '⏳ Завантаження гравців...',
+      leaderboardEmptyTitle: 'Рейтинг формується',
+      leaderboardEmptyDesc: 'Пройдіть рівень через Telegram бота @sortcolors_bot, щоб стати першим у глобальній таблиці!',
+      youTag: '(Ви)',
+      maxLevelLabel: (lvl) => `Макс. рівень: ${lvl}`,
+      levelPrefix: 'Рівень',
+      startBadge: '🧪 ГОЛОВОЛОМКА В TELEGRAM',
+      startDesc: 'Сортуй рідини по колбочках та проходь захоплюючі рівні!',
+      startHint: 'Натисніть, щоб почати гру',
+      winTitle: (lvl) => `Рівень ${lvl} пройдено! 🎉`,
+      winSubtext: (lvl) => `Всі кольори успішно зібрані! Переходимо до рівня ${lvl}...`,
+      nextLevelBtn: 'Наступний рівень 🚀',
+      restartTitle: '🔄 Почати заново?',
+      restartDesc: 'Весь прогрес на цьому рівні буде скинуто.',
+      cancelBtn: 'Скасувати',
+      confirmRestartBtn: 'Рестарт',
+      adModalTitle: '🎁 Реклама',
+      adModalDesc: 'Подивіться коротке відео та отримайте безкоштовні бонуси',
+      noMovesTitle: 'Немає ходів',
+      noMovesDesc: 'Ви ще не зробили жодного ходу на цьому рівні для скасування.',
+      noHintDesc: 'Підказку не знайдено на поточному етапі.',
+      allColorsVisibleTitle: 'Всі кольори видно',
+      allColorsVisibleDesc: 'У баночках на цьому етапі вже відкриті всі кольори!',
+      extraBottleTitle: '🎉 Успіх',
+      extraBottleDesc: 'Додаткова порожня колба додана на поле!'
+    },
+    en: {
+      langName: 'English',
+      levelLabel: 'Level',
+      levelDisplayVal: (lvl) => `Level ${lvl}`,
+      profileHint: '⚙️ Lang',
+      profileTitle: '⚙️ Profile & Language',
+      langSectionTitle: 'Change Language',
+      restartBtn: 'Restart',
+      undoBtn: 'Undo',
+      hintBtn: 'Hint',
+      revealBtn: 'Reveal Colors',
+      adBonusBtn: 'Rewards',
+      leaderboardTitle: '🏆 Leaderboard',
+      leaderboardLive: '24/7 LIVE',
+      leaderboardLoading: '⏳ Loading live players...',
+      leaderboardEmptyTitle: 'Leaderboard is forming',
+      leaderboardEmptyDesc: 'Complete a level via Telegram bot @sortcolors_bot to become #1 on the leaderboard!',
+      youTag: '(You)',
+      maxLevelLabel: (lvl) => `Max Level: ${lvl}`,
+      levelPrefix: 'Level',
+      startBadge: '🧪 TELEGRAM PUZZLE',
+      startDesc: 'Sort colored liquids into jars and solve fun puzzle levels!',
+      startHint: 'Tap to start the game',
+      winTitle: (lvl) => `Level ${lvl} Completed! 🎉`,
+      winSubtext: (lvl) => `All colors sorted! Advancing to Level ${lvl}...`,
+      nextLevelBtn: 'Next Level 🚀',
+      restartTitle: '🔄 Restart Level?',
+      restartDesc: 'All progress on this level will be reset.',
+      cancelBtn: 'Cancel',
+      confirmRestartBtn: 'Restart',
+      adModalTitle: '🎁 Rewards',
+      adModalDesc: 'Watch short video ads to claim free boosters',
+      noMovesTitle: 'No moves',
+      noMovesDesc: 'You have not made any moves on this level to undo yet.',
+      noHintDesc: 'No moves found at this stage.',
+      allColorsVisibleTitle: 'All colors revealed',
+      allColorsVisibleDesc: 'All bottle colors are already revealed on this stage!',
+      extraBottleTitle: '🎉 Success',
+      extraBottleDesc: 'Extra empty bottle added to the board!'
+    },
+    de: {
+      langName: 'Deutsch',
+      levelLabel: 'Stufe',
+      levelDisplayVal: (lvl) => `Stufe ${lvl}`,
+      profileHint: '⚙️ Sprache',
+      profileTitle: '⚙️ Profil & Sprache',
+      langSectionTitle: 'Sprache ändern',
+      restartBtn: 'Neustart',
+      undoBtn: 'Zurück',
+      hintBtn: 'Hinweis',
+      revealBtn: 'Aufdecken',
+      adBonusBtn: 'Boni',
+      leaderboardTitle: '🏆 Bestenliste',
+      leaderboardLive: '24/7 LIVE',
+      leaderboardLoading: '⏳ Lade echte Spieler...',
+      leaderboardEmptyTitle: 'Bestenliste formiert sich',
+      leaderboardEmptyDesc: 'Beende ein Level über den Telegram Bot @sortcolors_bot, um die Nr. 1 zu werden!',
+      youTag: '(Du)',
+      maxLevelLabel: (lvl) => `Max. Stufe: ${lvl}`,
+      levelPrefix: 'Stufe',
+      startBadge: '🧪 TELEGRAM RÄTSEL',
+      startDesc: 'Sortiere Flüssigkeiten in Gläser und löse spannende Puzzle-Level!',
+      startHint: 'Tippe, um das Spiel zu starten',
+      winTitle: (lvl) => `Stufe ${lvl} geschafft! 🎉`,
+      winSubtext: (lvl) => `Alle Farben sortiert! Weiter zu Stufe ${lvl}...`,
+      nextLevelBtn: 'Nächste Stufe 🚀',
+      restartTitle: '🔄 Von vorn beginnen?',
+      restartDesc: 'Der Fortschritt in diesem Level wird zurückgesetzt.',
+      cancelBtn: 'Abbrechen',
+      confirmRestartBtn: 'Neustart',
+      adModalTitle: '🎁 Belohnungen',
+      adModalDesc: 'Schau kurze Videos an, um kostenlose Boni zu erhalten',
+      noMovesTitle: 'Keine Züge',
+      noMovesDesc: 'Du hast in diesem Level noch keine Züge gemacht.',
+      noHintDesc: 'Keine Züge im aktuellen Zustand gefunden.',
+      allColorsVisibleTitle: 'Alle Farben sichtbar',
+      allColorsVisibleDesc: 'Alle Farben in den Flaschen sind bereits aufgedeckt!',
+      extraBottleTitle: '🎉 Erfolg',
+      extraBottleDesc: 'Zusätzliche leere Flasche hinzugefügt!'
+    },
+    lt: {
+      langName: 'Lietuvių',
+      levelLabel: 'Lygis',
+      levelDisplayVal: (lvl) => `Lygis ${lvl}`,
+      profileHint: '⚙️ Kalba',
+      profileTitle: '⚙️ Profilis ir Kalba',
+      langSectionTitle: 'Pakeisti kalbą',
+      restartBtn: 'Iš naujo',
+      undoBtn: 'Atšaukti',
+      hintBtn: 'Užuomina',
+      revealBtn: 'Atskleisti',
+      adBonusBtn: 'Premijos',
+      leaderboardTitle: '🏆 Lyderių lentelė',
+      leaderboardLive: '24/7 LIVE',
+      leaderboardLoading: '⏳ Įkeliami žaidėjai...',
+      leaderboardEmptyTitle: 'Lentelė formuojama',
+      leaderboardEmptyDesc: 'Įveikite lygį per Telegram botą @sortcolors_bot ir tapkite lyderiu!',
+      youTag: '(Jūs)',
+      maxLevelLabel: (lvl) => `Maks. lygis: ${lvl}`,
+      levelPrefix: 'Lygis',
+      startBadge: '🧪 TELEGRAM DĖLIONĖ',
+      startDesc: 'Rūšiuokite skysčius į buteliukus ir įveikite smagius lygius!',
+      startHint: 'Bakstelėkite, kad pradėtumėte',
+      winTitle: (lvl) => `Lygis ${lvl} įveiktas! 🎉`,
+      winSubtext: (lvl) => `Visos spalvos surūšiuotos! Pereinama į lygį ${lvl}...`,
+      nextLevelBtn: 'Kitas lygis 🚀',
+      restartTitle: '🔄 Pradėti iš naujo?',
+      restartDesc: 'Šio lygio progresas bus nustatytas iš naujo.',
+      cancelBtn: 'Atšaukti',
+      confirmRestartBtn: 'Iš naujo',
+      adModalTitle: '🎁 Premijos',
+      adModalDesc: 'Žiūrėkite trumpus vaizdo įrašus ir gaukite nemokamas premijas',
+      noMovesTitle: 'Nėra ėjimų',
+      noMovesDesc: 'Šiame lygyje dar neatlikote nė vieno ėjimo.',
+      noHintDesc: 'Šiame etape ėjimų nerasta.',
+      allColorsVisibleTitle: 'Visos spalvos matomos',
+      allColorsVisibleDesc: 'Visi buteliukų sluoksniai jau atidengti!',
+      extraBottleTitle: '🎉 Pavyko',
+      extraBottleDesc: 'Papildomas tuščias buteliukas pridėtas!'
+    }
+  };
+
+  let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
+  if (!TRANSLATIONS[currentLang]) currentLang = 'ru';
+
+  function t(key, ...args) {
+    const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.ru;
+    const val = dict[key] !== undefined ? dict[key] : (TRANSLATIONS.ru[key] || '');
+    if (typeof val === 'function') return val(...args);
+    return val;
+  }
+
   // 3. Get DOM references
   const gameBoard = document.getElementById('gameBoard');
   const particleCanvas = document.getElementById('particleCanvas');
@@ -138,6 +352,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   const userName = document.getElementById('userName');
   const userRank = document.getElementById('userRank');
   const userAvatar = document.getElementById('userAvatar');
+
+  // Header and Profile Elements
+  const userProfileBtn = document.getElementById('userProfileBtn');
+  const profileModal = document.getElementById('profileModal');
+  const closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
+  const profileCardAvatar = document.getElementById('profileCardAvatar');
+  const profileCardName = document.getElementById('profileCardName');
+  const profileCardLevel = document.getElementById('profileCardLevel');
+  const profileModalTitle = document.getElementById('profileModalTitle');
+  const profileSettingsHint = document.getElementById('profileSettingsHint');
+  const langSectionTitle = document.getElementById('langSectionTitle');
+  const levelBadgeLabel = document.getElementById('levelBadgeLabel');
+
+  // Toolbar Labels
+  const restartBtnLabel = document.getElementById('restartBtnLabel');
+  const undoBtnLabel = document.getElementById('undoBtnLabel');
+  const hintBtnLabel = document.getElementById('hintBtnLabel');
+  const revealBtnLabel = document.getElementById('revealBtnLabel');
+  const adBonusBtnLabel = document.getElementById('adBonusBtnLabel');
+
+  // Start Screen Elements
+  const startBadge = document.getElementById('startBadge');
+  const startDesc = document.getElementById('startDesc');
+  const startHint = document.getElementById('startHint');
 
   // Buttons
   const restartBtn = document.getElementById('restartBtn');
@@ -151,6 +389,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Modals
   const leaderboardModal = document.getElementById('leaderboardModal');
+  const leaderboardModalTitle = document.getElementById('leaderboardModalTitle');
+  const leaderboardLiveBadge = document.getElementById('leaderboardLiveBadge');
   const closeLeaderboardBtn = document.getElementById('closeLeaderboardBtn');
   const leaderboardList = document.getElementById('leaderboardList');
   const modalUserPos = document.getElementById('modalUserPos');
@@ -160,11 +400,56 @@ document.addEventListener('DOMContentLoaded', async () => {
   const winModal = document.getElementById('winModal');
   const adModal = document.getElementById('adModal');
   const closeAdModalBtn = document.getElementById('closeAdModalBtn');
+  const adModalTitle = document.getElementById('adModalTitle');
+  const adModalDesc = document.getElementById('adModalDesc');
 
   // App specific dynamic modals (may or may not exist in DOM natively)
   const loadingScreen = document.getElementById('loadingScreen');
   const restartModal = document.getElementById('restartModal');
+  const restartModalTitle = document.getElementById('restartModalTitle');
+  const restartModalDesc = document.getElementById('restartModalDesc');
+  const cancelRestartBtn = document.getElementById('cancelRestartBtn');
+  const confirmRestartBtn = document.getElementById('confirmRestartBtn');
   const infoModal = document.getElementById('infoModal');
+
+  function applyLanguage(lang) {
+    if (!TRANSLATIONS[lang]) lang = 'ru';
+    currentLang = lang;
+    localStorage.setItem('color_sort_lang', lang);
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+
+    if (levelBadgeLabel) levelBadgeLabel.textContent = t('levelLabel');
+    if (profileSettingsHint) profileSettingsHint.textContent = t('profileHint');
+    if (profileModalTitle) profileModalTitle.textContent = t('profileTitle');
+    if (langSectionTitle) langSectionTitle.textContent = t('langSectionTitle');
+    if (restartBtnLabel) restartBtnLabel.textContent = t('restartBtn');
+    if (undoBtnLabel) undoBtnLabel.textContent = t('undoBtn');
+    if (hintBtnLabel) hintBtnLabel.textContent = t('hintBtn');
+    if (revealBtnLabel) revealBtnLabel.textContent = t('revealBtn');
+    if (adBonusBtnLabel) adBonusBtnLabel.textContent = t('adBonusBtn');
+
+    if (leaderboardModalTitle) leaderboardModalTitle.textContent = t('leaderboardTitle');
+    if (leaderboardLiveBadge) leaderboardLiveBadge.textContent = t('leaderboardLive');
+
+    if (startBadge) startBadge.textContent = t('startBadge');
+    if (startDesc) startDesc.textContent = t('startDesc');
+    if (startHint) startHint.textContent = t('startHint');
+
+    if (restartModalTitle) restartModalTitle.textContent = t('restartTitle');
+    if (restartModalDesc) restartModalDesc.textContent = t('restartDesc');
+    if (cancelRestartBtn) cancelRestartBtn.textContent = t('cancelBtn');
+    if (confirmRestartBtn) confirmRestartBtn.textContent = t('confirmRestartBtn');
+    if (adModalTitle) adModalTitle.textContent = t('adModalTitle');
+    if (adModalDesc) adModalDesc.textContent = t('adModalDesc');
+    if (nextLevelBtn) nextLevelBtn.textContent = t('nextLevelBtn');
+
+    if (profileCardLevel && typeof currentUser !== 'undefined') {
+      profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
+    }
+  }
 
   // 4. App state
   let currentUser = {
@@ -355,6 +640,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 6. Fetch user from server
   loadLocalUser(); // Load from local first as baseline
+  applyLanguage(currentLang);
   if (userName) userName.textContent = currentUser.firstName;
   if (userAvatar) {
     userAvatar.src = userData.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userData.telegramId)}`;
@@ -407,8 +693,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update win modal message
     const winTitle = document.getElementById('winModalTitle');
     const winSubtext = document.getElementById('winModalSubtext');
-    if (winTitle) winTitle.textContent = `Уровень ${levelNumber} пройден! 🎉`;
-    if (winSubtext) winSubtext.textContent = `Все цвета успешно собраны! Переходим к уровню ${currentUser.currentLevel}...`;
+    if (winTitle) winTitle.textContent = t('winTitle', levelNumber);
+    if (winSubtext) winSubtext.textContent = t('winSubtext', currentUser.currentLevel);
 
     // Мгновенная отправка сигнала на глобальный единственный сервер (24/7 Cloud DB + API)
     syncPlayerToCloud(currentUser);
@@ -446,7 +732,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCurrentLevel();
 
   function updateHeaderUI() {
+    if (levelBadgeLabel) levelBadgeLabel.textContent = t('levelLabel');
     if (levelDisplay) levelDisplay.textContent = currentUser.currentLevel || 1;
+    if (profileCardLevel) profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
     if (coinsDisplay) coinsDisplay.textContent = currentUser.coins || 0;
     if (hintsCountDisplay) hintsCountDisplay.textContent = currentUser.hints || 0;
     if (undosCountDisplay) undosCountDisplay.textContent = currentUser.undos || 0;
@@ -515,8 +803,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  const confirmRestartBtn = document.getElementById('confirmRestartBtn');
-  const cancelRestartBtn = document.getElementById('cancelRestartBtn');
   if (confirmRestartBtn && restartModal) {
     confirmRestartBtn.addEventListener('click', () => {
       closeModal(restartModal);
@@ -740,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!leaderboardList) return;
     leaderboardList.innerHTML = `
       <li class="leaderboard-item" style="justify-content: center; opacity: 0.7; padding: 24px 0;">
-        <span class="pulse">⏳ Загрузка живых игроков...</span>
+        <span class="pulse">${t('leaderboardLoading')}</span>
       </li>
     `;
 
@@ -838,8 +1124,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       leaderboardList.innerHTML = `
         <li class="leaderboard-item" style="justify-content: center; flex-direction: column; text-align: center; gap: 8px; padding: 24px 12px;">
           <span style="font-size: 28px;">🏆</span>
-          <strong>Рейтинг пока формируется</strong>
-          <span style="font-size: 0.85rem; color: #94a3b8;">Пройдите уровень через Telegram бота @sortcolors_bot, чтобы стать первым в глобальной таблице!</span>
+          <strong>${t('leaderboardEmptyTitle')}</strong>
+          <span style="font-size: 0.85rem; color: #94a3b8;">${t('leaderboardEmptyDesc')}</span>
         </li>
       `;
     } else {
@@ -851,7 +1137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const crown = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
         const nameDisplay = isSelf 
-          ? `${escapeHtml(player.firstName || 'Игрок')} <span class="self-tag">(Вы)</span>` 
+          ? `${escapeHtml(player.firstName || 'Игрок')} <span class="self-tag">${t('youTag')}</span>` 
           : escapeHtml(player.firstName || 'Игрок');
         const levelDisplayVal = player.maxLevel || player.level || 1;
 
@@ -863,7 +1149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               ${player.username ? `<small class="player-handle">@${escapeHtml(player.username)}</small>` : ''}
             </div>
           </div>
-          <span class="user-rank">Уровень ${levelDisplayVal}</span>
+          <span class="user-rank">${t('levelPrefix')} ${levelDisplayVal}</span>
         `;
         leaderboardList.appendChild(li);
       });
@@ -875,17 +1161,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const myRankNum = myRankIdx + 1;
       const myCrown = myRankNum === 1 ? '🥇' : myRankNum === 2 ? '🥈' : myRankNum === 3 ? '🥉' : `#${myRankNum}`;
       if (modalUserPos) modalUserPos.textContent = myCrown;
-      if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} (Вы)`;
-      if (modalUserLevel) modalUserLevel.textContent = `Макс. уровень: ${sortedPlayers[myRankIdx].maxLevel || currentUser.maxLevel}`;
-      if (userRank) userRank.textContent = `Ранг: #${myRankNum}`;
+      if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
+      if (modalUserLevel) modalUserLevel.textContent = t('maxLevelLabel', sortedPlayers[myRankIdx].maxLevel || currentUser.maxLevel);
+      if (userRank) userRank.textContent = `#${myRankNum}`;
     } else if (isRealUser) {
       if (modalUserPos) modalUserPos.textContent = '#—';
-      if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} (Вы)`;
-      if (modalUserLevel) modalUserLevel.textContent = `Уровень: ${currentUser.maxLevel || 1}`;
+      if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
+      if (modalUserLevel) modalUserLevel.textContent = `${t('levelPrefix')}: ${currentUser.maxLevel || 1}`;
     } else {
-      if (modalUserPos) modalUserPos.textContent = 'Гость';
-      if (modalUserName) modalUserName.textContent = 'Гостевой режим';
-      if (modalUserLevel) modalUserLevel.textContent = 'Войдите через Telegram @sortcolors_bot';
+      if (modalUserPos) modalUserPos.textContent = '—';
+      if (modalUserName) modalUserName.textContent = 'Guest';
+      if (modalUserLevel) modalUserLevel.textContent = '@sortcolors_bot';
     }
   }
 
@@ -913,6 +1199,55 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (leaderboardModal) closeModal(leaderboardModal);
     });
   }
+
+  // Profile & Language Modal Event Listeners
+  if (userProfileBtn) {
+    userProfileBtn.addEventListener('click', () => {
+      if (profileCardAvatar && userAvatar) {
+        profileCardAvatar.src = userAvatar.src;
+      }
+      if (profileCardName) {
+        profileCardName.textContent = currentUser.firstName || 'Игрок';
+      }
+      if (profileCardLevel) {
+        profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
+      }
+      if (profileModal) openModal(profileModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  if (closeProfileModalBtn && profileModal) {
+    closeProfileModalBtn.addEventListener('click', () => {
+      closeModal(profileModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  if (profileModal) {
+    profileModal.addEventListener('click', (e) => {
+      if (e.target === profileModal) {
+        closeModal(profileModal);
+      }
+    });
+  }
+
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedLang = btn.dataset.lang;
+      if (selectedLang) {
+        applyLanguage(selectedLang);
+        updateHeaderUI();
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('medium');
+        }
+      }
+    });
+  });
 
   if (adBonusBtn) {
     adBonusBtn.addEventListener('click', (e) => {
