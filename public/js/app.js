@@ -871,58 +871,66 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCurrentLevel();
 
   function updateHeaderUI() {
-    if (levelBadgeLabel) levelBadgeLabel.textContent = t('levelLabel');
-    if (levelDisplay) levelDisplay.textContent = currentUser.currentLevel || 1;
-    if (profileCardLevel) profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
-    if (coinsDisplay) coinsDisplay.textContent = currentUser.coins || 0;
-    if (hintsCountDisplay) hintsCountDisplay.textContent = currentUser.hints || 0;
-    if (undosCountDisplay) undosCountDisplay.textContent = currentUser.undos || 0;
+    function setIfDiff(el, val) {
+      if (!el) return;
+      const strVal = String(val);
+      if (el.textContent !== strVal) {
+        el.textContent = strVal;
+      }
+    }
+
+    if (levelBadgeLabel) setIfDiff(levelBadgeLabel, t('levelLabel'));
+    setIfDiff(levelDisplay, currentUser.currentLevel || 1);
+    setIfDiff(profileCardLevel, t('levelDisplayVal', currentUser.currentLevel || 1));
+    setIfDiff(coinsDisplay, currentUser.coins || 0);
+    setIfDiff(hintsCountDisplay, currentUser.hints || 0);
+    setIfDiff(undosCountDisplay, currentUser.undos || 0);
     const movesDisplay = document.getElementById('movesDisplay');
-    if (movesDisplay) movesDisplay.textContent = engine.movesCount || 0;
+    setIfDiff(movesDisplay, engine.movesCount || 0);
 
     // Badges on buttons in toolbar
     const undoBadge = document.getElementById('undoBadge');
     if (undoBadge) {
       const uCount = currentUser.undos || 0;
-      undoBadge.textContent = uCount;
-      undoBadge.classList.toggle('badge-zero', uCount === 0);
-      undoBadge.classList.remove('pulse');
-      void undoBadge.offsetWidth;
-      undoBadge.classList.add('pulse');
+      setIfDiff(undoBadge, uCount);
+      const isZero = uCount === 0;
+      if (undoBadge.classList.contains('badge-zero') !== isZero) {
+        undoBadge.classList.toggle('badge-zero', isZero);
+      }
     }
 
     const hintBadge = document.getElementById('hintBadge');
     if (hintBadge) {
       const hCount = currentUser.hints || 0;
-      hintBadge.textContent = hCount;
-      hintBadge.classList.toggle('badge-zero', hCount === 0);
-      hintBadge.classList.remove('pulse');
-      void hintBadge.offsetWidth;
-      hintBadge.classList.add('pulse');
+      setIfDiff(hintBadge, hCount);
+      const isZero = hCount === 0;
+      if (hintBadge.classList.contains('badge-zero') !== isZero) {
+        hintBadge.classList.toggle('badge-zero', isZero);
+      }
     }
 
     const revealBadge = document.getElementById('revealBadge');
     if (revealBadge) {
       const rCount = currentUser.reveals || 0;
-      revealBadge.textContent = rCount;
-      revealBadge.classList.toggle('badge-zero', rCount === 0);
-      revealBadge.classList.remove('pulse');
-      void revealBadge.offsetWidth;
-      revealBadge.classList.add('pulse');
+      setIfDiff(revealBadge, rCount);
+      const isZero = rCount === 0;
+      if (revealBadge.classList.contains('badge-zero') !== isZero) {
+        revealBadge.classList.toggle('badge-zero', isZero);
+      }
     }
 
     // Modal user counters
     const adModalHintsCount = document.getElementById('adModalHintsCount');
     if (adModalHintsCount) {
-      adModalHintsCount.textContent = `(у вас: ${currentUser.hints || 0})`;
+      setIfDiff(adModalHintsCount, `(у вас: ${currentUser.hints || 0})`);
     }
     const adModalUndosCount = document.getElementById('adModalUndosCount');
     if (adModalUndosCount) {
-      adModalUndosCount.textContent = `(у вас: ${currentUser.undos || 0})`;
+      setIfDiff(adModalUndosCount, `(у вас: ${currentUser.undos || 0})`);
     }
     const adModalRevealsCount = document.getElementById('adModalRevealsCount');
     if (adModalRevealsCount) {
-      adModalRevealsCount.textContent = `(у вас: ${currentUser.reveals || 0})`;
+      setIfDiff(adModalRevealsCount, `(у вас: ${currentUser.reveals || 0})`);
     }
   }
 

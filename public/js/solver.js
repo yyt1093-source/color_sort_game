@@ -75,15 +75,15 @@
     return bottle.every(c => c === first);
   }
 
-  function isSolved(bottles) {
-    if (bottles.length === 0) return true;
-    return bottles.every(b => b.length === 0);
+  function isSolved(bottles, capacity = CAPACITY) {
+    if (!bottles || bottles.length === 0) return true;
+    return bottles.every(b => b.length === 0 || isBottleCompleted(b, capacity) || b.vanished);
   }
 
   function calculateHeuristic(bottles) {
     let breaks = 0;
     for (const b of bottles) {
-      if (b.length === 0) continue;
+      if (!b || b.length === 0 || b.vanished) continue;
       for (let i = 1; i < b.length; i++) {
         if (b[i] !== b[i - 1]) breaks++;
       }
@@ -97,7 +97,7 @@
 
     for (let from = 0; from < n; from++) {
       const bFrom = bottles[from];
-      if (bFrom.length === 0) continue;
+      if (!bFrom || bFrom.length === 0 || bFrom.vanished) continue;
 
       const topColor = bFrom[bFrom.length - 1];
       let count = 0;
@@ -107,10 +107,11 @@
       }
 
       const isHomogenous = bFrom.every(c => c === topColor);
+      if (isHomogenous && bFrom.length === capacity) continue;
 
       let firstEmptyIdx = -1;
       for (let i = 0; i < n; i++) {
-        if (bottles[i].length === 0) {
+        if (bottles[i] && !bottles[i].vanished && bottles[i].length === 0) {
           firstEmptyIdx = i;
           break;
         }
@@ -119,7 +120,7 @@
       for (let to = 0; to < n; to++) {
         if (from === to) continue;
         const bTo = bottles[to];
-        if (bTo.length >= capacity) continue;
+        if (!bTo || bTo.vanished || bTo.length >= capacity) continue;
 
         if (prevMove && prevMove.from === to && prevMove.to === from) continue;
 
@@ -144,7 +145,11 @@
   }
 
   function applyMove(bottles, move, capacity = CAPACITY) {
-    let nextBottles = bottles.map(b => [...b]);
+    let nextBottles = bottles.map(b => {
+      const copy = [...b];
+      if (b.vanished) copy.vanished = true;
+      return copy;
+    });
     const { from, to, amount } = move;
     
     for (let i = 0; i < amount; i++) {
@@ -153,29 +158,28 @@
     }
     
     if (isBottleCompleted(nextBottles[to], capacity)) {
-      nextBottles.splice(to, 1);
+      nextBottles[to].vanished = true;
     }
 
     return nextBottles;
   }
 
   function solve(initialBottles, capacity = CAPACITY) {
-    if (isSolved(initialBottles)) return [];
+    if (isSolved(initialBottles, capacity)) return [];
     
-    let startBottles = initialBottles.map(b => [...b]);
-    for (let i = startBottles.length - 1; i >= 0; i--) {
-      if (isBottleCompleted(startBottles[i], capacity)) {
-        startBottles.splice(i, 1);
-      }
-    }
-    if (isSolved(startBottles)) return [];
+    let startBottles = initialBottles.map(b => {
+      const copy = [...b];
+      if (b.vanished || isBottleCompleted(b, capacity)) copy.vanished = true;
+      return copy;
+    });
+    if (isSolved(startBottles, capacity)) return [];
 
     let uniqueColors = new Set();
     startBottles.forEach(b => b.forEach(c => uniqueColors.add(c)));
     const colorCount = uniqueColors.size;
-    const limit = Math.min(20000, 5000 * colorCount);
+    const limit = Math.min(25000, 5000 * colorCount);
 
-    const compare = (a, b) => (a.cost + a.heuristic) - (b.cost + b.heuristic);
+    const compare = (a, b) => (a.cost + 2.5 * a.heuristic) - (b.cost + 2.5 * b.heuristic);
     const pq = new MinHeap(compare);
     
     const startState = { bottles: startBottles, path: [], cost: 0, heuristic: calculateHeuristic(startBottles), prevMove: null };

@@ -204,23 +204,23 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   align-content: center;
-  gap: 13px 10px;
+  gap: 10px 7px;
   margin: 0 auto;
 }
 
-.board-small { max-width: 220px; }
-.board-medium { max-width: 300px; }
+.board-small { max-width: 250px; }
+.board-medium { max-width: 310px; }
 .board-large { max-width: 360px; }
-.board-xlarge { max-width: 410px; }
+.board-xlarge { max-width: 420px; }
 
 /* Glass Bottle (compact size) */
 .glass-bottle {
-  width: 40px;
-  height: 122px;
+  width: 32px;
+  height: 94px;
   background: linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 100%);
   border: 1.5px solid rgba(255,255,255,0.3);
-  border-radius: 7px 7px 18px 18px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 6px rgba(0,0,0,0.15);
+  border-radius: 5px 5px 14px 14px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 5px rgba(0,0,0,0.15);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
@@ -234,9 +234,9 @@ body {
 }
 
 .glass-bottle.selected {
-  transform: translateY(-16px) scale(1.05);
+  transform: translateY(-12px) scale(1.04);
   border-color: var(--accent);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 6px rgba(0,0,0,0.15), 0 0 14px var(--accent-glow);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -2px 5px rgba(0,0,0,0.15), 0 0 12px var(--accent-glow);
   animation: floatSelected 2s ease-in-out infinite;
 }
 
@@ -257,14 +257,20 @@ body {
   transition: transform 0.1s;
 }
 
+.glass-bottle.bottle-vanished {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Bottle Internal */
 .bottle-rim {
   position: absolute;
-  top: -4px;
+  top: -3px;
   left: -2px;
   right: -2px;
-  height: 6px;
-  border-radius: 4px;
+  height: 5px;
+  border-radius: 3px;
   border: 1.5px solid rgba(255,255,255,0.3);
   background: rgba(255,255,255,0.25);
   z-index: 10;
@@ -275,21 +281,21 @@ body {
   top: 0;
   left: 2px;
   right: 2px;
-  height: 12px;
+  height: 10px;
   background: rgba(255,255,255,0.1);
   z-index: 9;
 }
 
 .liquid-container {
   width: 100%;
-  height: 100px;
+  height: 76px;
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 12px 12px;
   position: relative;
   /* Smooth, clean depth without harsh vertical stripes */
-  box-shadow: inset 3px 0 5px rgba(255, 255, 255, 0.12), inset -3px 0 6px rgba(0, 0, 0, 0.22);
+  box-shadow: inset 2.5px 0 4px rgba(255, 255, 255, 0.12), inset -2.5px 0 5px rgba(0, 0, 0, 0.22);
 }
 
 .liquid-layer {
@@ -321,7 +327,7 @@ body {
 }
 
 .mystery-mark {
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 800;
   color: rgba(255, 255, 255, 0.32);
   text-shadow: 0 0 4px rgba(255, 255, 255, 0.2);
@@ -456,7 +462,11 @@ body {
   pointer-events: none;
   z-index: 10;
   box-sizing: border-box;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+  font-variant-numeric: tabular-nums;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  user-select: none;
 }
 
 .tool-badge.badge-zero {
@@ -464,10 +474,6 @@ body {
   color: #94a3b8;
   border-color: #0f172a;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
-}
-
-.tool-badge.pulse {
-  animation: badgePop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tool-icon {
@@ -951,12 +957,6 @@ body {
 @keyframes pourRipple {
   0% { transform: scale(0.4); opacity: 0.85; }
   100% { transform: scale(1.4); opacity: 0; }
-}
-
-@keyframes badgePop {
-  0% { transform: scale(0.6); }
-  50% { transform: scale(1.35); }
-  100% { transform: scale(1); }
 }
 
 .ad-user-count {
