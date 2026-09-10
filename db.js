@@ -240,6 +240,17 @@ function getAllTelegramIds() {
   }
 }
 
+function resetSeason() {
+  try {
+    db.exec('DELETE FROM users;');
+    db.exec('DELETE FROM ad_rewards_log;');
+    return { success: true };
+  } catch (err) {
+    console.error('[DB Reset Season Error]', err);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   getUser,
   updateUserProgress,
@@ -247,5 +258,6 @@ module.exports = {
   logAdReward,
   getAdRewardsCount,
   getLeaderboard,
-  getAllTelegramIds
+  getAllTelegramIds,
+  resetSeason
 };

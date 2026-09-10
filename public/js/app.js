@@ -168,7 +168,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleTitle: 'Все цвета видны',
       allColorsVisibleDesc: 'В баночках на этом этапе уже открыты все цвета!',
       extraBottleTitle: '🎉 Успех',
-      extraBottleDesc: 'Дополнительная пустая банка добавлена на поле!'
+      extraBottleDesc: 'Дополнительная пустая банка добавлена на поле!',
+      adminBadge: '👑 Админ',
+      adminResetSuccessTitle: '💥 Сезон сброшен!',
+      adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!'
     },
     uk: {
       langName: 'Українська',
@@ -208,7 +211,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleTitle: 'Всі кольори видно',
       allColorsVisibleDesc: 'У баночках на цьому етапі вже відкриті всі кольори!',
       extraBottleTitle: '🎉 Успіх',
-      extraBottleDesc: 'Додаткова порожня колба додана на поле!'
+      extraBottleDesc: 'Додаткова порожня колба додана на поле!',
+      adminBadge: '👑 Адмін',
+      adminResetSuccessTitle: '💥 Сезон скинуто!',
+      adminResetSuccessDesc: 'Всі дані гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!'
     },
     en: {
       langName: 'English',
@@ -248,7 +254,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleTitle: 'All colors revealed',
       allColorsVisibleDesc: 'All bottle colors are already revealed on this stage!',
       extraBottleTitle: '🎉 Success',
-      extraBottleDesc: 'Extra empty bottle added to the board!'
+      extraBottleDesc: 'Extra empty bottle added to the board!',
+      adminBadge: '👑 Admin',
+      adminResetSuccessTitle: '💥 Season Reset!',
+      adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!'
     },
     de: {
       langName: 'Deutsch',
@@ -288,7 +297,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleTitle: 'Alle Farben sichtbar',
       allColorsVisibleDesc: 'Alle Farben in den Flaschen sind bereits aufgedeckt!',
       extraBottleTitle: '🎉 Erfolg',
-      extraBottleDesc: 'Zusätzliche leere Flasche hinzugefügt!'
+      extraBottleDesc: 'Zusätzliche leere Flasche hinzugefügt!',
+      adminBadge: '👑 Admin',
+      adminResetSuccessTitle: '💥 Saison zurückgesetzt!',
+      adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!'
     },
     lt: {
       langName: 'Lietuvių',
@@ -328,7 +340,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleTitle: 'Visos spalvos matomos',
       allColorsVisibleDesc: 'Visi buteliukų sluoksniai jau atidengti!',
       extraBottleTitle: '🎉 Pavyko',
-      extraBottleDesc: 'Papildomas tuščias buteliukas pridėtas!'
+      extraBottleDesc: 'Papildomas tuščias buteliukas pridėtas!',
+      adminBadge: '👑 Admin',
+      adminResetSuccessTitle: '💥 Sezonas atstatytas!',
+      adminResetSuccessDesc: 'Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!'
     }
   };
 
@@ -411,6 +426,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cancelRestartBtn = document.getElementById('cancelRestartBtn');
   const confirmRestartBtn = document.getElementById('confirmRestartBtn');
   const infoModal = document.getElementById('infoModal');
+
+  // Admin & Season Reset Elements
+  const profileAdminBadge = document.getElementById('profileAdminBadge');
+  const adminPanelSection = document.getElementById('adminPanelSection');
+  const adminPanelTitle = document.getElementById('adminPanelTitle');
+  const adminResetSeasonBtn = document.getElementById('adminResetSeasonBtn');
+  const resetSeasonModal = document.getElementById('resetSeasonModal');
+  const cancelResetSeasonBtn = document.getElementById('cancelResetSeasonBtn');
+  const confirmResetSeasonBtn = document.getElementById('confirmResetSeasonBtn');
+  const resetModalTitle = document.getElementById('resetModalTitle');
+
+  const ALLIGATOR_TELEGRAM_ID = '5761685341';
+
+  function isAlligatorAdmin(user) {
+    if (!user) return false;
+    const tid = String(user.telegramId || '').trim();
+    const fname = String(user.firstName || '').toLowerCase().trim();
+    const uname = String(user.username || '').toLowerCase().trim();
+    const localOverride = localStorage.getItem('cs_alligator_admin') === 'true';
+
+    return tid === ALLIGATOR_TELEGRAM_ID ||
+           fname === 'alligator' || fname === 'аллигатор' ||
+           uname === 'alligator' || uname === 'аллигатор' ||
+           fname.includes('alligator') || fname.includes('аллигатор') ||
+           uname.includes('alligator') || uname.includes('аллигатор') ||
+           localOverride;
+  }
 
   function applyLanguage(lang) {
     if (!TRANSLATIONS[lang]) lang = 'ru';
@@ -1202,6 +1244,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Profile & Language Modal Event Listeners
   function openProfileMenu() {
+    const isAdmin = isAlligatorAdmin(currentUser);
+    if (profileAdminBadge) {
+      profileAdminBadge.classList.toggle('hidden', !isAdmin);
+    }
+    if (adminPanelSection) {
+      adminPanelSection.classList.toggle('hidden', !isAdmin);
+    }
     if (profileCardAvatar && userAvatar) {
       profileCardAvatar.src = userAvatar.src;
     }
@@ -1275,6 +1324,148 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   });
+
+  // Admin Season Reset Handlers
+  if (adminResetSeasonBtn) {
+    adminResetSeasonBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+      if (resetSeasonModal) openModal(resetSeasonModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('medium');
+      }
+    });
+  }
+
+  if (cancelResetSeasonBtn && resetSeasonModal) {
+    cancelResetSeasonBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeModal(resetSeasonModal);
+    });
+  }
+
+  if (resetSeasonModal) {
+    resetSeasonModal.addEventListener('click', (e) => {
+      if (e.target === resetSeasonModal) {
+        closeModal(resetSeasonModal);
+      }
+    });
+  }
+
+  if (confirmResetSeasonBtn) {
+    confirmResetSeasonBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+
+      confirmResetSeasonBtn.disabled = true;
+      const originalHtml = confirmResetSeasonBtn.innerHTML;
+      confirmResetSeasonBtn.innerHTML = '⏳ Сброс...';
+
+      try {
+        // 1. Wipe all player records from Global 24/7 Cloud Database (KVDB)
+        try {
+          const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&format=json`);
+          if (listRes.ok) {
+            const keys = await listRes.json();
+            if (Array.isArray(keys)) {
+              await Promise.allSettled(
+                keys.map(k => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
+              );
+            }
+          }
+          const pairsRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json`);
+          if (pairsRes.ok) {
+            const pairs = await pairsRes.json();
+            if (Array.isArray(pairs)) {
+              await Promise.allSettled(
+                pairs.map(([k]) => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
+              );
+            }
+          }
+        } catch (kvErr) {
+          console.warn('[Season Reset] KVDB wipe notice:', kvErr);
+        }
+
+        // 2. Call server reset endpoint if connected
+        try {
+          await apiCall('/api/admin/reset-season', 'POST', {
+            telegramId: currentUser.telegramId,
+            firstName: currentUser.firstName,
+            username: currentUser.username
+          });
+        } catch (apiErr) {
+          console.warn('[Season Reset] API reset notice:', apiErr);
+        }
+
+        // 3. Reset player progress to Level 1, 0 boosters, 0 stars, 0 coins
+        currentUser.currentLevel = 1;
+        currentUser.maxLevel = 1;
+        currentUser.stars = 0;
+        currentUser.coins = 0;
+        currentUser.hints = 0;
+        currentUser.undos = 0;
+        currentUser.reveals = 0;
+        saveLocalUser();
+        updateHeaderUI();
+
+        // 4. Restart Level 1 on the game board
+        await loadCurrentLevel();
+
+        // 5. Close modals
+        closeModal(resetSeasonModal);
+        closeModal(profileModal);
+
+        // 6. Reload leaderboard to show empty/initial state
+        await loadLeaderboardData();
+
+        // 7. Success haptic and notification
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('success');
+        }
+        showInfoModal(
+          '💥',
+          t('adminResetSuccessTitle') || 'Сезон сброшен!',
+          t('adminResetSuccessDesc') || 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!'
+        );
+      } catch (err) {
+        console.error('[Season Reset Error]', err);
+        alert('Ошибка при сбросе сезона: ' + err.message);
+      } finally {
+        confirmResetSeasonBtn.disabled = false;
+        confirmResetSeasonBtn.innerHTML = originalHtml;
+      }
+    });
+  }
+
+  // Developer / Local testing helper: 5 rapid clicks on large avatar in profile card to toggle Alligator Admin Mode
+  let devAvatarTapCount = 0;
+  let devAvatarTapTimer = null;
+  if (profileCardAvatar) {
+    profileCardAvatar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      devAvatarTapCount++;
+      clearTimeout(devAvatarTapTimer);
+      devAvatarTapTimer = setTimeout(() => { devAvatarTapCount = 0; }, 1800);
+      if (devAvatarTapCount >= 5) {
+        devAvatarTapCount = 0;
+        const current = localStorage.getItem('cs_alligator_admin') === 'true';
+        if (!current) {
+          localStorage.setItem('cs_alligator_admin', 'true');
+          currentUser.firstName = 'ALLIGATOR';
+          saveLocalUser();
+          openProfileMenu();
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+          alert('👑 Права администратора (Аллигатор) активированы!');
+        } else {
+          localStorage.removeItem('cs_alligator_admin');
+          currentUser.firstName = userData.firstName || 'Игрок';
+          saveLocalUser();
+          openProfileMenu();
+          alert('Права администратора отключены.');
+        }
+      }
+    });
+  }
 
   if (adBonusBtn) {
     adBonusBtn.addEventListener('click', (e) => {

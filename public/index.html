@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47092">
+  <link rel="stylesheet" href="style.css?v=47093">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -120,7 +120,10 @@
           <img id="profileCardAvatar" src="" alt="">
         </div>
         <div class="profile-info-text">
-          <strong id="profileCardName">Игрок</strong>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <strong id="profileCardName">Игрок</strong>
+            <span id="profileAdminBadge" class="admin-crown-badge hidden" title="Администратор">👑 Admin</span>
+          </div>
           <span id="profileCardLevel">Уровень 1</span>
         </div>
       </div>
@@ -157,6 +160,43 @@
             <span class="lang-check">✓</span>
           </button>
         </div>
+      </div>
+
+      <!-- Admin Panel Section (Only for Alligator) -->
+      <div id="adminPanelSection" class="admin-panel-section hidden">
+        <div class="admin-panel-header">
+          <span class="admin-shield-icon">🛡️</span>
+          <div>
+            <strong id="adminPanelTitle">Панель Администратора</strong>
+            <span class="admin-panel-sub">Доступно только Аллигатору</span>
+          </div>
+        </div>
+        <p class="admin-desc">Сброс сезона полностью удаляет всю информацию, обнуляет глобальный лидерборд, уровни, монеты и награды всех игроков.</p>
+        <button id="adminResetSeasonBtn" class="admin-reset-season-btn">
+          <span class="reset-btn-icon">🔥</span>
+          <span class="reset-btn-label">Сбросить сезон (Всё в ноль)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Season Reset Confirmation Modal -->
+  <div id="resetSeasonModal" class="modal-overlay hidden">
+    <div class="glass-modal reset-modal-content">
+      <div class="warning-icon-glow">⚠️</div>
+      <h2 id="resetModalTitle" class="reset-modal-title">Сброс сезона</h2>
+      <div class="reset-warning-card">
+        <p class="reset-warning-lead">Внимание! Это действие необратимо:</p>
+        <ul class="reset-warning-list">
+          <li>💥 Глобальный лидерборд будет полностью очищен</li>
+          <li>📉 Все игроки вернутся на Уровень 1</li>
+          <li>💰 Все звёзды, монеты и награды обнулятся</li>
+          <li>🔄 Игра начнется заново с чистого листа</li>
+        </ul>
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
+        <button id="cancelResetSeasonBtn" class="btn-cancel" style="flex: 1;">Отмена</button>
+        <button id="confirmResetSeasonBtn" class="btn-confirm-danger" style="flex: 1;">🔥 Сбросить всё</button>
       </div>
     </div>
   </div>
@@ -295,12 +335,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47092"></script>
-  <script src="js/audio.js?v=47092"></script>
-  <script src="js/solver.js?v=47092"></script>
-  <script src="js/levelGenerator.js?v=47092"></script>
-  <script src="js/gameEngine.js?v=47092"></script>
-  <script src="js/renderer.js?v=47092"></script>
-  <script src="js/app.js?v=47092"></script>
+  <script src="js/telegram.js?v=47093"></script>
+  <script src="js/audio.js?v=47093"></script>
+  <script src="js/solver.js?v=47093"></script>
+  <script src="js/levelGenerator.js?v=47093"></script>
+  <script src="js/gameEngine.js?v=47093"></script>
+  <script src="js/renderer.js?v=47093"></script>
+  <script src="js/app.js?v=47093"></script>
 </body>
 </html>
