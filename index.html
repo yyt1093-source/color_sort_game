@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Color Sort — Telegram Mini App</title>
+  
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  
+  <!-- Adsgram SDK -->
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css?v=47090">
+</head>
+<body>
+  <!-- Fullscreen Start Splash Screen -->
+  <div id="startScreen" class="start-screen">
+    <div class="start-screen-bg">
+      <img src="splash_cover.jpg" alt="Color Sort" class="splash-img" id="splashImg">
+      <div class="start-screen-overlay"></div>
+    </div>
+    
+    <div class="splash-particles">
+      <span class="splash-bubble bubble-1"></span>
+      <span class="splash-bubble bubble-2"></span>
+      <span class="splash-bubble bubble-3"></span>
+      <span class="splash-bubble bubble-4"></span>
+      <span class="splash-bubble bubble-5"></span>
+    </div>
+
+    <div class="start-screen-content">
+      <div class="start-header">
+        <div class="start-badge">🧪 ГОЛОВОЛОМКА В TELEGRAM</div>
+        <h1 class="start-title">COLOR SORT</h1>
+        <p class="start-desc">Сортируй жидкости по баночкам и проходи увлекательные уровни!</p>
+      </div>
+
+      <div class="start-footer">
+        <button id="startGameBtn" class="start-btn pulse-glow">
+          <span class="start-btn-icon">▶</span>
+          <span class="start-btn-label">СТАРТ</span>
+        </button>
+        <p class="start-hint">Нажмите, чтобы начать игру</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Particle FX Canvas -->
+  <canvas id="particleCanvas"></canvas>
+
+  <div id="appContainer">
+    <!-- Header -->
+    <header class="game-header">
+      <div class="user-profile">
+        <div class="avatar-ring">
+          <img id="userAvatar" src="" alt="">
+        </div>
+        <div class="user-info">
+          <span id="userName" class="user-name">Игрок</span>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="level-badge">
+          <span>УРОВЕНЬ</span>
+          <strong id="levelDisplay">1</strong>
+          <span id="levelTypeBadge" class="level-type-tag">⚡ 1 Пустая</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="leaderboardBtn" class="glass-icon-btn" title="Лидерборд">🏆</button>
+        <button id="soundToggleBtn" class="glass-icon-btn" title="Звук">🔊</button>
+      </div>
+    </header>
+
+
+
+    <!-- Game Board -->
+    <main class="game-board-wrapper">
+      <div id="gameBoard" class="game-board board-medium"></div>
+    </main>
+
+    <!-- Toolbar -->
+    <footer class="toolbar">
+      <button id="restartBtn" class="tool-btn highlight">
+        <span class="tool-label">Сначала</span>
+        <span class="tool-icon">🔄</span>
+      </button>
+      <button id="undoBtn" class="tool-btn highlight">
+        <span class="tool-badge" id="undoBadge">0</span>
+        <span class="tool-label">Отмена</span>
+        <span class="tool-icon">↩️</span>
+      </button>
+      <button id="hintBtn" class="tool-btn highlight">
+        <span class="tool-badge" id="hintBadge">0</span>
+        <span class="tool-label">Подсказка</span>
+        <span class="tool-icon">💡</span>
+      </button>
+      <button id="revealBottleBtn" class="tool-btn highlight">
+        <span class="tool-badge" id="revealBadge">0</span>
+        <span class="tool-label">Убрать все цвета</span>
+        <span class="tool-icon">🧪</span>
+      </button>
+      <button id="adBonusBtn" class="tool-btn highlight">
+        <span class="tool-label">Реклама</span>
+        <span class="tool-icon">🎁</span>
+      </button>
+    </footer>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div id="leaderboardModal" class="modal-overlay hidden" style="display: none;">
+    <div class="glass-modal">
+      <div class="modal-header">
+        <h2>🏆 Глобальный Лидерборд</h2>
+        <button id="closeLeaderboardBtn" class="close-btn">&times;</button>
+      </div>
+      <div id="userRankBanner" class="user-rank-banner">
+        <div class="rank-pos" id="modalUserPos">#—</div>
+        <div class="rank-details">
+          <strong id="modalUserName">Вы</strong>
+          <span id="modalUserLevel">Макс. уровень: —</span>
+        </div>
+      </div>
+      <div class="leaderboard-list-wrapper">
+        <ul id="leaderboardList" class="leaderboard-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Win Modal -->
+  <div id="winModal" class="modal-overlay hidden" style="display: none;">
+    <div class="glass-modal win-modal-content">
+      <div class="win-sparkle">🎉</div>
+      <h2>Победа!</h2>
+      <p class="win-subtext">Все цвета успешно собраны!</p>
+      <button id="nextLevelBtn" class="primary-btn">Следующий уровень 🚀</button>
+    </div>
+  </div>
+
+  <!-- Restart Confirmation Modal -->
+  <div id="restartModal" class="modal-overlay hidden" style="display: none;">
+    <div class="glass-modal" style="text-align:center">
+      <h2>🔄 Начать заново?</h2>
+      <p class="modal-desc">Весь прогресс на этом уровне будет сброшен.</p>
+      <div class="modal-actions">
+        <button id="cancelRestartBtn" class="btn-cancel">Отмена</button>
+        <button id="confirmRestartBtn" class="btn-confirm">Рестарт</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ad Bonus Modal -->
+  <div id="adModal" class="modal-overlay hidden" style="display: none;">
+    <div class="glass-modal">
+      <div class="modal-header ad-modal-header">
+        <div class="ad-modal-title-group">
+          <h2>🎁 Реклама</h2>
+          <p class="modal-desc ad-modal-desc">Посмотрите короткие видео и получите бесплатные бонусы</p>
+        </div>
+        <button id="closeAdModalBtn" class="close-btn-circle" title="Закрыть">&times;</button>
+      </div>
+      <div class="ad-options-grid">
+        <div class="ad-card" data-reward="extra_bottle">
+          <div class="ad-card-icon">🧪</div>
+          <h3>Доп. пустая банка</h3>
+          <p>+1 пустая банка на текущий уровень</p>
+          <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+        </div>
+        <div class="ad-card" data-reward="hints">
+          <div class="ad-card-icon">💡</div>
+          <h3>+1 подсказка</h3>
+          <p>1 точная подсказка хода <span class="ad-user-count" id="adModalHintsCount"></span></p>
+          <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+        </div>
+        <div class="ad-card" data-reward="undos">
+          <div class="ad-card-icon">↩️</div>
+          <h3>+1 отмена хода</h3>
+          <p>1 бесплатная отмена хода <span class="ad-user-count" id="adModalUndosCount"></span></p>
+          <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+        </div>
+        <div class="ad-card" data-reward="reveal_bottle">
+          <div class="ad-card-icon">🧪</div>
+          <h3>Убрать все цвета</h3>
+          <p>Открыть 1 баночку со всеми цветами <span class="ad-user-count" id="adModalRevealsCount"></span></p>
+          <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info/Alert Modal (replaces native alert) -->
+  <div id="infoModal" class="modal-overlay hidden" style="display: none;">
+    <div class="glass-modal" style="text-align:center">
+      <div id="infoModalIcon" class="win-sparkle" style="font-size:2.5rem">ℹ️</div>
+      <h2 id="infoModalTitle">Информация</h2>
+      <p id="infoModalText" class="modal-desc"></p>
+      <div class="modal-actions" style="margin-top:8px;">
+        <button id="infoModalActionBtn" class="primary-btn hidden">▶ Смотреть рекламу</button>
+        <button id="infoModalOkBtn" class="btn-cancel" style="width:100%">OK</button>
+      </div>
+    </div>
+  </div>
+  <!-- Fullscreen Rewarded Video Ad Modal (Adsgram UnitID: 47079) -->
+  <div id="rewardedVideoModal" class="ad-video-overlay modal-overlay hidden" style="display: none;">
+    <div class="ad-video-container">
+      <div class="ad-video-topbar">
+        <div class="ad-video-badge">
+          <span class="ad-video-icon">📢</span>
+          <span>Adsgram • ID: 47079</span>
+        </div>
+        <div class="ad-video-timer-pill" id="adVideoTimer">⏳ 5 сек</div>
+        <button id="adVideoCloseBtn" class="ad-video-close" title="Закрыть">&times;</button>
+      </div>
+
+      <div class="ad-video-body">
+        <div class="ad-media-card">
+          <div class="ad-preview-screen">
+            <div class="ad-glow-orb"></div>
+            <div class="ad-sponsor-label">РЕКЛАМНЫЙ СПОНСОР</div>
+            <div class="ad-sponsor-icon">🎮</div>
+            <h3 class="ad-sponsor-title">Новые игры в Telegram</h3>
+            <p class="ad-sponsor-desc">Играйте в топовые Mini Apps без установки!</p>
+            <button class="ad-cta-btn" onclick="window.open('https://t.me/sortcolors_bot', '_blank')">Смотреть каталог</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ad-video-footer">
+        <div class="ad-progress-track">
+          <div id="adVideoProgress" class="ad-progress-fill"></div>
+        </div>
+        <p id="adVideoStatus" class="ad-status-msg">Пожалуйста, просмотрите рекламу до конца для получения бонуса</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Scripts (load order matters!) -->
+  <script src="js/telegram.js?v=47090"></script>
+  <script src="js/audio.js?v=47090"></script>
+  <script src="js/solver.js?v=47090"></script>
+  <script src="js/levelGenerator.js?v=47090"></script>
+  <script src="js/gameEngine.js?v=47090"></script>
+  <script src="js/renderer.js?v=47090"></script>
+  <script src="js/app.js?v=47090"></script>
+</body>
+</html>

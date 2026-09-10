@@ -1,0 +1,308 @@
+/**
+ * Core Game Engine for Color Sort Mini App
+ */
+(function (exports) {
+  class GameEngine {
+    constructor() {
+      this.currentLevel = 1;
+      this.bottles = [];
+      this.capacity = 4;
+      this.colors = [];
+      this.selectedBottleIndex = null;
+      this.history = [];
+      this.movesCount = 0;
+      this.minMoves = 0;
+      this.isAnimating = false;
+      this.onStateChange = null;
+      this.onBottleVanished = null;
+      this.onWin = null;
+      this.hintHighlight = null;
+      this.revealed = [];
+    }
+
+    startLevel(levelData) {
+      this.currentLevel = levelData.levelNumber;
+      this.bottles = levelData.bottles.map(b => [...b]);
+      this.capacity = levelData.capacity || 4;
+      this.colors = levelData.colors;
+      this.minMoves = levelData.minMoves || 0;
+      this.selectedBottleIndex = null;
+      this.history = [];
+      this.movesCount = 0;
+      this.isAnimating = false;
+      this.hintHighlight = null;
+      
+      // Initialize revealed matrix: top layer is known, lower layers are mystery
+      this.revealed = this.bottles.map(b => {
+        if (b.length === 0) return [];
+        return b.map((_, idx) => idx === b.length - 1);
+      });
+
+      exports.colors = this.colors;
+      if (this.onStateChange) this.onStateChange();
+    }
+
+    getStarRating() {
+      if (this.minMoves <= 0) return 3;
+      const ratio = this.movesCount / this.minMoves;
+      if (ratio <= 1.3) return 3;
+      if (ratio <= 2.0) return 2;
+      return 1;
+    }
+
+    selectBottle(index) {
+      if (this.isAnimating) return false;
+      if (index < 0 || index >= this.bottles.length) return false;
+
+      this.hintHighlight = null;
+
+      if (this.selectedBottleIndex === null) {
+        if (this.bottles[index].length === 0) {
+          if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playError();
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
+          return false;
+        }
+        this.selectedBottleIndex = index;
+        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+        if (this.onStateChange) this.onStateChange();
+        return true;
+      }
+
+      if (this.selectedBottleIndex === index) {
+        this.selectedBottleIndex = null;
+        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+        if (this.onStateChange) this.onStateChange();
+        return true;
+      }
+
+      const fromIdx = this.selectedBottleIndex;
+      const toIdx = index;
+
+      if (!this.canPour(fromIdx, toIdx)) {
+        if (this.bottles[toIdx].length > 0) {
+          this.selectedBottleIndex = toIdx;
+          if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+        } else {
+          this.selectedBottleIndex = null;
+          if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playError();
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
+        }
+        if (this.onStateChange) this.onStateChange();
+        return false;
+      }
+
+      this.executePour(fromIdx, toIdx);
+      return true;
+    }
+
+    canPour(fromIdx, toIdx) {
+      if (fromIdx === toIdx) return false;
+      const bFrom = this.bottles[fromIdx];
+      const bTo = this.bottles[toIdx];
+
+      if (!bFrom || bFrom.length === 0) return false;
+      if (!bTo || bTo.length >= this.capacity) return false;
+
+      const topColor = bFrom[bFrom.length - 1];
+      if (bTo.length === 0) return true;
+      return bTo[bTo.length - 1] === topColor;
+    }
+
+    getTransferAmount(fromIdx, toIdx) {
+      const bFrom = this.bottles[fromIdx];
+      const bTo = this.bottles[toIdx];
+      const topColor = bFrom[bFrom.length - 1];
+
+      let count = 0;
+      for (let i = bFrom.length - 1; i >= 0; i--) {
+        const isKnown = !this.revealed || !this.revealed[fromIdx] || this.revealed[fromIdx][i] !== false;
+        if (bFrom[i] === topColor && isKnown) count++;
+        else break;
+      }
+      return Math.min(count, this.capacity - bTo.length);
+    }
+
+    executePour(fromIdx, toIdx) {
+      const amount = this.getTransferAmount(fromIdx, toIdx);
+      if (amount <= 0) return;
+
+      this.history.push({
+        bottles: this.bottles.map(b => [...b]),
+        revealed: this.revealed ? this.revealed.map(r => [...r]) : [],
+        movesCount: this.movesCount,
+        vanishedBottles: []
+      });
+
+      this.isAnimating = true;
+      const color = this.bottles[fromIdx][this.bottles[fromIdx].length - 1];
+      this.selectedBottleIndex = null;
+      this.movesCount++;
+
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
+
+      const applyPourState = () => {
+        for (let i = 0; i < amount; i++) {
+          this.bottles[fromIdx].pop();
+          if (this.revealed && this.revealed[fromIdx]) {
+            this.revealed[fromIdx].pop();
+          }
+
+          this.bottles[toIdx].push(color);
+          // Poured liquid is known to the player!
+          if (this.revealed && this.revealed[toIdx]) {
+            this.revealed[toIdx].push(true);
+          }
+        }
+
+        // Uncover the newly exposed layer in the source bottle
+        if (this.bottles[fromIdx].length > 0 && this.revealed && this.revealed[fromIdx]) {
+          this.revealed[fromIdx][this.bottles[fromIdx].length - 1] = true;
+        }
+
+        this.checkBottleCompletion(toIdx);
+      };
+
+      if (window.GameRenderer && window.GameRenderer.animatePour) {
+        window.GameRenderer.animatePour(fromIdx, toIdx, amount, color, applyPourState);
+      } else {
+        applyPourState();
+      }
+    }
+
+    checkBottleCompletion(bottleIdx) {
+      const bottle = this.bottles[bottleIdx];
+      const isComplete = bottle.length === this.capacity && bottle.every(c => c === bottle[0]);
+
+      if (isComplete) {
+        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+
+        if (window.GameRenderer && window.GameRenderer.animateJarVanish) {
+          window.GameRenderer.animateJarVanish(bottleIdx, () => {
+            if (this.history.length > 0) {
+              const lastState = this.history[this.history.length - 1];
+              lastState.vanishedBottles.push({ 
+                index: bottleIdx, 
+                bottle: [...this.bottles[bottleIdx]],
+                revealed: this.revealed ? [...this.revealed[bottleIdx]] : []
+              });
+            }
+            this.bottles.splice(bottleIdx, 1);
+            if (this.revealed) this.revealed.splice(bottleIdx, 1);
+            if (this.onBottleVanished) this.onBottleVanished(bottleIdx);
+            this.postMoveCheck();
+          });
+        } else {
+          if (this.history.length > 0) {
+            const lastState = this.history[this.history.length - 1];
+            lastState.vanishedBottles.push({ 
+              index: bottleIdx, 
+              bottle: [...this.bottles[bottleIdx]],
+              revealed: this.revealed ? [...this.revealed[bottleIdx]] : []
+            });
+          }
+          this.bottles.splice(bottleIdx, 1);
+          if (this.revealed) this.revealed.splice(bottleIdx, 1);
+          this.postMoveCheck();
+        }
+      } else {
+        if (!window.GameRenderer || !window.GameRenderer.animatePour) {
+          if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playPour();
+        }
+        this.postMoveCheck();
+      }
+    }
+
+    postMoveCheck() {
+      this.isAnimating = false;
+      const isWin = this.bottles.length === 0 || this.bottles.every(b => b.length === 0);
+
+      if (isWin) {
+        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playVictory();
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+        if (this.onWin) {
+          this.onWin({ 
+            levelNumber: this.currentLevel, 
+            moves: this.movesCount, 
+            stars: this.getStarRating() 
+          });
+        }
+      }
+
+      if (this.onStateChange) this.onStateChange();
+    }
+
+    undo() {
+      if (this.isAnimating || this.history.length === 0) return false;
+      
+      const previousState = this.history.pop();
+      this.bottles = previousState.bottles.map(b => [...b]);
+      this.revealed = previousState.revealed 
+        ? previousState.revealed.map(r => [...r]) 
+        : this.bottles.map(b => b.map((_, idx) => idx === b.length - 1));
+      this.movesCount = previousState.movesCount;
+      this.selectedBottleIndex = null;
+      this.hintHighlight = null;
+
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playUndo();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+
+      if (this.onStateChange) this.onStateChange();
+      return true;
+    }
+
+    addExtraBottle() {
+      if (this.isAnimating) return false;
+      this.bottles.push([]);
+      if (this.revealed) this.revealed.push([]);
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      if (this.onStateChange) this.onStateChange();
+      return true;
+    }
+
+    getHint() {
+      if (this.isAnimating) return null;
+      if (window.GameSolver && window.GameSolver.Solver) {
+        const hint = window.GameSolver.Solver.getHint(this.bottles, this.capacity);
+        if (hint) {
+          this.hintHighlight = { from: hint.from, to: hint.to };
+          if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+          if (this.onStateChange) this.onStateChange();
+          return hint;
+        }
+      }
+      return null;
+    }
+
+    hasHiddenColors() {
+      if (!this.revealed) return false;
+      return this.revealed.some(r => r && r.some(isKnown => isKnown === false));
+    }
+
+    revealRandomBottle() {
+      if (!this.revealed || this.isAnimating) return null;
+      const candidates = [];
+      for (let i = 0; i < this.bottles.length; i++) {
+        if (this.bottles[i].length > 0 && this.revealed[i] && this.revealed[i].some(isKnown => isKnown === false)) {
+          candidates.push(i);
+        }
+      }
+      if (candidates.length === 0) return null;
+
+      const targetIdx = candidates[Math.floor(Math.random() * candidates.length)];
+      this.revealed[targetIdx] = this.revealed[targetIdx].map(() => true);
+
+      if (this.onStateChange) this.onStateChange();
+      return { bottleIndex: targetIdx };
+    }
+  }
+
+  const engineInstance = new GameEngine();
+  exports.Engine = engineInstance;
+  exports.colors = engineInstance.colors;
+})(typeof exports !== 'undefined' ? exports : (window.GameEngine = {}));
