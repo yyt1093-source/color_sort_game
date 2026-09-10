@@ -11,15 +11,15 @@
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
-  <!-- TON Connect UI SDK -->
-  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <!-- TON Connect UI SDK (Non-blocking & high availability) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@latest/dist/tonconnect-ui.min.js" defer></script>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47103">
+  <link rel="stylesheet" href="style.css?v=47104">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -45,7 +45,7 @@
       </div>
 
       <div class="start-footer">
-        <button id="startGameBtn" class="start-btn pulse-glow">
+        <button type="button" id="startGameBtn" class="start-btn pulse-glow" onclick="window.dismissStartScreen && window.dismissStartScreen(event)">
           <span class="start-btn-icon">▶</span>
           <span class="start-btn-label">START</span>
         </button>
@@ -53,6 +53,31 @@
       </div>
     </div>
   </div>
+
+  <script>
+    // Immediate fail-safe start trigger: enters the game 100% of the time without waiting for any async scripts
+    window.dismissStartScreen = function(e) {
+      if (e) {
+        try { e.preventDefault(); e.stopPropagation(); } catch(err){}
+      }
+      var s = document.getElementById('startScreen');
+      if (s) {
+        s.classList.add('start-screen-hidden');
+        s.style.display = 'none';
+        try { if (s.parentNode) s.parentNode.removeChild(s); } catch(err){}
+      }
+      window.__gameStarted = true;
+      if (typeof window.__triggerGameStart === 'function') {
+        try { window.__triggerGameStart(); } catch(err){}
+      }
+    };
+    var startBtnEl = document.getElementById('startGameBtn');
+    if (startBtnEl) {
+      startBtnEl.addEventListener('click', window.dismissStartScreen);
+      startBtnEl.addEventListener('touchend', window.dismissStartScreen, { passive: false });
+      startBtnEl.addEventListener('pointerdown', window.dismissStartScreen);
+    }
+  </script>
 
   <!-- Particle FX Canvas -->
   <canvas id="particleCanvas"></canvas>
@@ -481,12 +506,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47103"></script>
-  <script src="js/audio.js?v=47103"></script>
-  <script src="js/solver.js?v=47103"></script>
-  <script src="js/levelGenerator.js?v=47103"></script>
-  <script src="js/gameEngine.js?v=47103"></script>
-  <script src="js/renderer.js?v=47103"></script>
-  <script src="js/app.js?v=47103"></script>
+  <script src="js/telegram.js?v=47104"></script>
+  <script src="js/audio.js?v=47104"></script>
+  <script src="js/solver.js?v=47104"></script>
+  <script src="js/levelGenerator.js?v=47104"></script>
+  <script src="js/gameEngine.js?v=47104"></script>
+  <script src="js/renderer.js?v=47104"></script>
+  <script src="js/app.js?v=47104"></script>
 </body>
 </html>

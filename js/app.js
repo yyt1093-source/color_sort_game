@@ -900,23 +900,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderer.initRenderer(gameBoard, particleCanvas);
   }
 
-  // 6. Fetch user from server
+  // 6. Baseline local user & UI
   loadLocalUser(); // Load from local first as baseline
   applyLanguage(currentLang);
   if (userName) userName.textContent = currentUser.firstName;
   if (userAvatar) {
     userAvatar.src = userData.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userData.telegramId)}`;
   }
-
-  const serverUser = await apiCall('/api/user/init', 'POST', userData);
-  if (serverUser && serverUser.success && serverUser.user) {
-    currentUser = { ...currentUser, ...serverUser.user };
-  }
-  saveLocalUser();
-  syncPlayerToCloud(currentUser);
-  updateHeaderUI();
-  await initAdsgram();
-  initTonConnect();
 
   // 7. Bind engine callbacks FIRST so initial level render is triggered immediately
   engine.onStateChange = () => {
@@ -975,7 +965,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 3200);
   };
 
-  // 8. Load level
+  // 8. Load level immediately (synchronous & local, 0ms latency)
   const LG = (window.LevelGenerator && window.LevelGenerator.LevelGenerator) ? window.LevelGenerator.LevelGenerator : window.LevelGenerator;
 
   async function loadCurrentLevel() {
@@ -993,6 +983,99 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
   await loadCurrentLevel();
+
+  // 9. Start Screen Controller (registered immediately so START works 100% of the time)
+  let isStarting = false;
+  const handleStart = (e) => {
+    if (e) {
+      try {
+        e.preventDefault();
+        e.stopPropagation();
+      } catch (err) {}
+    }
+    if (isStarting) return;
+    isStarting = true;
+
+    justStartedGame = true;
+    setTimeout(() => {
+      justStartedGame = false;
+    }, 1500);
+
+    // Force-hide all modals so nothing pops up over the game
+    document.querySelectorAll('.modal-overlay, .ad-video-overlay').forEach(modal => {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    });
+
+    if (window.SoundEngine && window.SoundEngine.SoundEngine) {
+      try {
+        window.SoundEngine.SoundEngine.initAudio();
+        window.SoundEngine.SoundEngine.playClick();
+      } catch (err) {}
+    }
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      try {
+        window.TelegramApp.TelegramApp.haptic('medium');
+      } catch (err) {}
+    }
+
+    const s = document.getElementById('startScreen');
+    if (s) {
+      s.classList.add('start-screen-hidden');
+      s.style.display = 'none';
+      if (s.parentNode) {
+        try { s.parentNode.removeChild(s); } catch (err) {}
+      }
+    }
+
+    // Guarantee game board is populated and fully rendered
+    if (!engine.bottles || engine.bottles.length === 0) {
+      loadCurrentLevel();
+    }
+    if (renderer && renderer.renderBoard) {
+      renderer.renderBoard(engine);
+    }
+    updateHeaderUI();
+  };
+
+  window.__triggerGameStart = handleStart;
+  window.dismissStartScreen = handleStart;
+
+  const startGameBtn = document.getElementById('startGameBtn');
+  if (startGameBtn) {
+    startGameBtn.addEventListener('click', handleStart);
+    startGameBtn.addEventListener('touchend', handleStart, { passive: false });
+    startGameBtn.addEventListener('pointerdown', handleStart);
+  }
+
+  // If start button was already pressed before app.js loaded
+  if (window.__gameStarted) {
+    handleStart();
+  }
+
+  // 10. Background Network Inits (Non-blocking: server user, adsgram, ton connect)
+  (async () => {
+    try {
+      const serverUser = await apiCall('/api/user/init', 'POST', userData);
+      if (serverUser && serverUser.success && serverUser.user) {
+        currentUser = { ...currentUser, ...serverUser.user };
+        saveLocalUser();
+        updateHeaderUI();
+      }
+    } catch (e) {}
+
+    try {
+      syncPlayerToCloud(currentUser);
+    } catch (e) {}
+
+    try {
+      await initAdsgram();
+    } catch (e) {}
+
+    try {
+      initTonConnect();
+    } catch (e) {}
+  })();
 
   function updateHeaderUI() {
     function setIfDiff(el, val) {
@@ -1643,7 +1726,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   function initTonConnect() {
     try {
       if (typeof window.TON_CONNECT_UI !== 'undefined' && window.TON_CONNECT_UI.TonConnectUI) {
-        const manifestUrl = window.location.origin + '/tonconnect-manifest.json';
+        let manifestUrl;
+        try {
+          manifestUrl = new URL('tonconnect-manifest.json', window.location.href).href;
+        } catch (e) {
+          manifestUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/') + 'tonconnect-manifest.json';
+        }
         tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
           manifestUrl: manifestUrl,
           buttonRootId: 'tonConnectBtnContainer',
@@ -1661,8 +1749,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         console.log('[TON Connect] Initialized successfully with manifest:', manifestUrl);
       } else {
-        console.warn('[TON Connect] TON_CONNECT_UI not found on window. Running in fallback mode.');
+        console.warn('[TON Connect] TON_CONNECT_UI not found on window yet. Retrying in background...');
         updateDonateUI();
+        if (!window.__tonConnectRetryCount) window.__tonConnectRetryCount = 0;
+        if (window.__tonConnectRetryCount < 10) {
+          window.__tonConnectRetryCount++;
+          setTimeout(initTonConnect, 1000);
+        }
       }
     } catch (e) {
       console.warn('[TON Connect] Initialization error:', e);
@@ -2248,60 +2341,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return String(str || '').replace(/[&<>"']/g, m => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
     })[m]);
-  }
-
-  // 10. Start Screen Handler (Полноэкранная заставка при входе)
-  const startScreen = document.getElementById('startScreen');
-  const startGameBtn = document.getElementById('startGameBtn');
-
-  if (startGameBtn) {
-    let isStarting = false;
-    const handleStart = (e) => {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (isStarting) return;
-      isStarting = true;
-
-      justStartedGame = true;
-      setTimeout(() => {
-        justStartedGame = false;
-      }, 1500);
-
-      // Force-hide all modals so nothing pops up over the game
-      document.querySelectorAll('.modal-overlay, .ad-video-overlay').forEach(modal => {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-      });
-
-      if (window.SoundEngine && window.SoundEngine.SoundEngine) {
-        window.SoundEngine.SoundEngine.initAudio();
-        window.SoundEngine.SoundEngine.playClick();
-      }
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
-        window.TelegramApp.TelegramApp.haptic('medium');
-      }
-
-      if (startScreen) {
-        startScreen.classList.add('start-screen-hidden');
-        setTimeout(() => {
-          startScreen.style.display = 'none';
-          if (startScreen.parentNode) {
-            startScreen.parentNode.removeChild(startScreen);
-          }
-        }, 450);
-      }
-
-      // Guarantee game board is populated and fully rendered
-      if (renderer && renderer.renderBoard) {
-        renderer.renderBoard(engine);
-      }
-      updateHeaderUI();
-    };
-
-    startGameBtn.addEventListener('click', handleStart);
-    startGameBtn.addEventListener('touchend', handleStart, { passive: false });
   }
 
 });
