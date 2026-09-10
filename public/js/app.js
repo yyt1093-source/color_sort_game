@@ -179,16 +179,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       adClaimed: '✅ Получено! (+1)',
       adminBadge: '👑 Админ',
       adminBoostersTitle: '⚡ Бесплатные функции (Без рекламы):',
-      adminAddBottle: '+1 Колба на поле',
+      adminAddBottle: '+5 Пустых колб',
+      adminAddBoardBottle: '+1 Колба на поле',
       adminAddHints: '+5 Подсказок',
       adminAddUndos: '+5 Отмен хода',
       adminAddReveals: '+5 Открытий',
+      adminAddCoins: '+500 Монет',
       adminAddAll: 'Пополнить ВСЁ сразу (+10 ко всем бонусам)',
-      adminBottleAddedMsg: '🧪 Пустая колба добавлена на поле!',
+      adminBottleAddedMsg: (count) => `🧪 +5 Пустых колб добавлено (Всего: ${count})`,
+      adminBoardBottleAddedMsg: '🧪 Пустая колба добавлена на поле!',
       adminHintsAddedMsg: (count) => `💡 +5 Подсказок добавлено (Всего: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Отмен хода добавлено (Всего: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
-      adminAllAddedMsg: '⚡ Все функции пополнены (+10) и банка добавлена!',
+      adminCoinsAddedMsg: (count) => `🪙 +500 Монет добавлено (Всего: ${count})`,
+      adminAllAddedMsg: '⚡ Все бонусы пополнены (+10 к каждому)!',
       adminResetSuccessTitle: '💥 Сезон сброшен!',
       adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!'
     },
@@ -241,16 +245,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       adClaimed: '✅ Отримано! (+1)',
       adminBadge: '👑 Адмін',
       adminBoostersTitle: '⚡ Безкоштовні функції (Без реклами):',
-      adminAddBottle: '+1 Колба на полі',
+      adminAddBottle: '+5 Порожніх колб',
+      adminAddBoardBottle: '+1 Колба на полі',
       adminAddHints: '+5 Підказок',
       adminAddUndos: '+5 Відмін ходу',
       adminAddReveals: '+5 Відкриттів',
+      adminAddCoins: '+500 Монет',
       adminAddAll: 'Поповнити ВСЕ одразу (+10 до всіх бонусів)',
-      adminBottleAddedMsg: '🧪 Порожня колба додана на поле!',
+      adminBottleAddedMsg: (count) => `🧪 +5 Порожніх колб додано (Всього: ${count})`,
+      adminBoardBottleAddedMsg: '🧪 Порожня колба додана на поле!',
       adminHintsAddedMsg: (count) => `💡 +5 Підказок додано (Всього: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Відмін ходу додано (Всього: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Відкриттів додано (Всього: ${count})`,
-      adminAllAddedMsg: '⚡ Всі функції поповнено (+10) та колба на полі!',
+      adminCoinsAddedMsg: (count) => `🪙 +500 Монет додано (Всього: ${count})`,
+      adminAllAddedMsg: '⚡ Всі бонуси поповнено (+10 до кожного)!',
       adminResetSuccessTitle: '💥 Сезон скинуто!',
       adminResetSuccessDesc: 'Всі данные гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!'
     },
@@ -303,16 +311,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       adClaimed: '✅ Received! (+1)',
       adminBadge: '👑 Admin',
       adminBoostersTitle: '⚡ Free Admin Perks (No Ads):',
-      adminAddBottle: '+1 Bottle on Board',
+      adminAddBottle: '+5 Empty Bottles',
+      adminAddBoardBottle: '+1 Bottle on Board',
       adminAddHints: '+5 Hints',
       adminAddUndos: '+5 Undos',
       adminAddReveals: '+5 Color Reveals',
+      adminAddCoins: '+500 Coins',
       adminAddAll: 'Replenish ALL (+10 to all boosters)',
-      adminBottleAddedMsg: '🧪 Empty bottle added to the board!',
+      adminBottleAddedMsg: (count) => `🧪 +5 Empty Bottles added (Total: ${count})`,
+      adminBoardBottleAddedMsg: '🧪 Empty bottle added to the board!',
       adminHintsAddedMsg: (count) => `💡 +5 Hints added (Total: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Undos added (Total: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Reveals added (Total: ${count})`,
-      adminAllAddedMsg: '⚡ All boosters replenished (+10) and bottle added!',
+      adminCoinsAddedMsg: (count) => `🪙 +500 Coins added (Total: ${count})`,
+      adminAllAddedMsg: '⚡ All boosters replenished (+10 to each)!',
       adminResetSuccessTitle: '💥 Season Reset!',
       adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!'
     },
@@ -365,16 +377,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       adClaimed: '✅ Erhalten! (+1)',
       adminBadge: '👑 Admin',
       adminBoostersTitle: '⚡ Kostenlose Admin-Vorteile (Keine Werbung):',
-      adminAddBottle: '+1 Flasche aufs Feld',
+      adminAddBottle: '+5 Leere Flaschen',
+      adminAddBoardBottle: '+1 Flasche aufs Feld',
       adminAddHints: '+5 Hinweise',
       adminAddUndos: '+5 Züge zurück',
       adminAddReveals: '+5 Aufdeckungen',
+      adminAddCoins: '+500 Münzen',
       adminAddAll: 'ALLES auffüllen (+10 auf alle Boni)',
-      adminBottleAddedMsg: '🧪 Leere Flasche aufs Feld hinzugefügt!',
+      adminBottleAddedMsg: (count) => `🧪 +5 Leere Flaschen hinzugefügt (Gesamt: ${count})`,
+      adminBoardBottleAddedMsg: '🧪 Leere Flasche aufs Feld hinzugefügt!',
       adminHintsAddedMsg: (count) => `💡 +5 Hinweise hinzugefügt (Gesamt: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Züge zurück hinzugefügt (Gesamt: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Aufdeckungen hinzugefügt (Gesamt: ${count})`,
-      adminAllAddedMsg: '⚡ Alle Boni aufgefüllt (+10) und Flasche hinzugefügt!',
+      adminCoinsAddedMsg: (count) => `🪙 +500 Münzen hinzugefügt (Gesamt: ${count})`,
+      adminAllAddedMsg: '⚡ Alle Boni aufgefüllt (+10 auf alle)!',
       adminResetSuccessTitle: '💥 Saison zurückgesetzt!',
       adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!'
     },
@@ -427,16 +443,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       adClaimed: '✅ Gauta! (+1)',
       adminBadge: '👑 Admin',
       adminBoostersTitle: '⚡ Nemokamos administratoriaus funkcijos (Be reklamos):',
-      adminAddBottle: '+1 Buteliukas lentoje',
+      adminAddBottle: '+5 Tušti buteliukai',
+      adminAddBoardBottle: '+1 Buteliukas lentoje',
       adminAddHints: '+5 Užuominos',
       adminAddUndos: '+5 Atšaukimai',
       adminAddReveals: '+5 Atskleidimai',
+      adminAddCoins: '+500 Monetų',
       adminAddAll: 'Papildyti VISKĄ (+10 visiems)',
-      adminBottleAddedMsg: '🧪 Tuščias buteliukas pridėtas į lentą!',
+      adminBottleAddedMsg: (count) => `🧪 +5 Tušti buteliukai pridėti (Iš viso: ${count})`,
+      adminBoardBottleAddedMsg: '🧪 Tuščias buteliukas pridėtas į lentą!',
       adminHintsAddedMsg: (count) => `💡 +5 Užuominos pridėtos (Iš viso: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Atšaukimai pridėti (Iš viso: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Atskleidimai pridėti (Iš viso: ${count})`,
-      adminAllAddedMsg: '⚡ Viskas papildyta (+10) ir buteliukas pridėtas!',
+      adminCoinsAddedMsg: (count) => `🪙 +500 Monetų pridėta (Iš viso: ${count})`,
+      adminAllAddedMsg: '⚡ Visi bonusai papildyti (+10 kiekvienam)!',
       adminResetSuccessTitle: '💥 Sezonas atstatytas!',
       adminResetSuccessDesc: 'Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!'
     }
@@ -538,12 +558,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const adminBoostersTitle = document.getElementById('adminBoostersTitle');
   const adminAddBottleBtn = document.getElementById('adminAddBottleBtn');
   const adminAddBottleLabel = document.getElementById('adminAddBottleLabel');
+  const adminAddBoardBottleBtn = document.getElementById('adminAddBoardBottleBtn');
+  const adminAddBoardBottleLabel = document.getElementById('adminAddBoardBottleLabel');
   const adminAddHintsBtn = document.getElementById('adminAddHintsBtn');
   const adminAddHintsLabel = document.getElementById('adminAddHintsLabel');
   const adminAddUndosBtn = document.getElementById('adminAddUndosBtn');
   const adminAddUndosLabel = document.getElementById('adminAddUndosLabel');
   const adminAddRevealsBtn = document.getElementById('adminAddRevealsBtn');
   const adminAddRevealsLabel = document.getElementById('adminAddRevealsLabel');
+  const adminAddCoinsBtn = document.getElementById('adminAddCoinsBtn');
+  const adminAddCoinsLabel = document.getElementById('adminAddCoinsLabel');
   const adminAddAllBtn = document.getElementById('adminAddAllBtn');
   const adminAddAllLabel = document.getElementById('adminAddAllLabel');
   const adminFeedbackMsg = document.getElementById('adminFeedbackMsg');
@@ -620,9 +644,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (adminBoostersTitle) adminBoostersTitle.textContent = t('adminBoostersTitle');
     if (adminAddBottleLabel) adminAddBottleLabel.textContent = t('adminAddBottle');
+    if (adminAddBoardBottleLabel) adminAddBoardBottleLabel.textContent = t('adminAddBoardBottle');
     if (adminAddHintsLabel) adminAddHintsLabel.textContent = t('adminAddHints');
     if (adminAddUndosLabel) adminAddUndosLabel.textContent = t('adminAddUndos');
     if (adminAddRevealsLabel) adminAddRevealsLabel.textContent = t('adminAddReveals');
+    if (adminAddCoinsLabel) adminAddCoinsLabel.textContent = t('adminAddCoins');
     if (adminAddAllLabel) adminAddAllLabel.textContent = t('adminAddAll');
   }
 
@@ -1588,12 +1614,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
-      engine.addExtraBottle();
       saveLocalUser();
       updateHeaderUI();
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+      showAdminFeedback(t('adminBottleAddedMsg', currentUser.extraBottles));
+    });
+  }
+
+  if (adminAddBoardBottleBtn) {
+    adminAddBoardBottleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+      engine.addExtraBottle();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-      showAdminFeedback(t('adminBottleAddedMsg'));
+      showAdminFeedback(t('adminBoardBottleAddedMsg'));
     });
   }
 
@@ -1633,6 +1669,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
       showAdminFeedback(t('adminRevealsAddedMsg', currentUser.reveals));
+    });
+  }
+
+  if (adminAddCoinsBtn) {
+    adminAddCoinsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+      currentUser.coins = (currentUser.coins || 0) + 500;
+      saveLocalUser();
+      updateHeaderUI();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+      showAdminFeedback(t('adminCoinsAddedMsg', currentUser.coins));
     });
   }
 
