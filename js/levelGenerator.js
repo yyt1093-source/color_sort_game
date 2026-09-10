@@ -18,7 +18,11 @@
     { name: 'Amber',   hex: '#f59e0b', glow: 'rgba(245,158,11,0.5)' },
     { name: 'Violet',  hex: '#8b5cf6', glow: 'rgba(139,92,246,0.5)' },
     { name: 'Emerald', hex: '#10b981', glow: 'rgba(16,185,129,0.5)' },
-    { name: 'Sky',     hex: '#0ea5e9', glow: 'rgba(14,165,233,0.5)' }
+    { name: 'Sky',     hex: '#0ea5e9', glow: 'rgba(14,165,233,0.5)' },
+    { name: 'Coral',   hex: '#ff6b6b', glow: 'rgba(255,107,107,0.5)' },
+    { name: 'Mint',    hex: '#2dd4bf', glow: 'rgba(45,212,191,0.5)' },
+    { name: 'Brown',   hex: '#b45309', glow: 'rgba(180,83,9,0.5)' },
+    { name: 'Fuchsia', hex: '#d946ef', glow: 'rgba(217,70,239,0.5)' }
   ];
 
   function mulberry32(seed) {
@@ -32,53 +36,51 @@
 
   function getLevelConfig(level) {
     let colorCount;
-    let emptyJars = 1;
-    let openSlotsCount = 4;
+    let emptyJars = 2;
+    let openSlotsCount = 0;
     let isChallenge = false;
     let isIntro = false;
 
-    // 1. Color progression (from 3 to 16 colors)
-    if (level <= 3) colorCount = 3;
-    else if (level <= 6) colorCount = 4;
-    else if (level <= 10) colorCount = 5;
-    else if (level <= 16) colorCount = 6;
-    else if (level <= 24) colorCount = 7;
-    else if (level <= 35) colorCount = 8;
-    else if (level <= 48) colorCount = 9;
-    else if (level <= 65) colorCount = 10;
-    else if (level <= 85) colorCount = 11;
-    else if (level <= 110) colorCount = 12;
-    else if (level <= 140) colorCount = 13;
-    else if (level <= 175) colorCount = 14;
-    else if (level <= 215) colorCount = 15;
-    else colorCount = 16;
-
-    // 2. Empty jars & open slots progression
+    // Progression: start with more bottles immediately and scale difficulty
     if (level === 1) {
-      // Level 1: Gentle tutorial with 2 empty jars
-      emptyJars = 2;
-      openSlotsCount = 0;
+      colorCount = 4;
+      openSlotsCount = 2; // 2 jars have 3 units to ease player into mechanics
       isIntro = true;
-    } else if (level % 5 === 0) {
-      // Every 5th level (5, 10, 15, 20...) is a Boss / Challenge level!
-      // Up to 4 colors: 1 empty jar. 5+ colors: 2 empty jars (standard water sort format to avoid mathematical deadlocks)
-      emptyJars = (colorCount <= 4) ? 1 : 2;
-      openSlotsCount = 0;
-      isChallenge = true;
-    } else if (level === 4 || level === 7 || level === 12 || level === 19 || level === 28) {
-      // Milestone level (introducing a new color): 2 empty jars to ease player in
-      emptyJars = 2;
-      openSlotsCount = 0;
+    } else if (level === 2) {
+      colorCount = 5;
+      openSlotsCount = 2;
       isIntro = true;
+    } else if (level <= 4) {
+      colorCount = 6;
+      openSlotsCount = 0; // After level 2, all colored jars are full 4/4
+    } else if (level <= 7) {
+      colorCount = 7;
+    } else if (level <= 10) {
+      colorCount = 8;
+    } else if (level <= 14) {
+      colorCount = 9;
+    } else if (level <= 18) {
+      colorCount = 10;
+    } else if (level <= 24) {
+      colorCount = 11;
+    } else if (level <= 30) {
+      colorCount = 12;
+    } else if (level <= 38) {
+      colorCount = 13;
+    } else if (level <= 48) {
+      colorCount = 14;
+    } else if (level <= 60) {
+      colorCount = 15;
+    } else if (level <= 75) {
+      colorCount = 16;
+    } else if (level <= 90) {
+      colorCount = 17;
     } else {
-      // Standard levels: 1 empty jar for <= 7 colors; 2 empty jars for 8+ colors
-      emptyJars = (colorCount >= 8) ? 2 : 1;
-      openSlotsCount = (colorCount >= 8 && level > 40) ? 8 : 4;
+      colorCount = 18;
     }
 
-    // High level safeguard
-    if (colorCount >= 8 && emptyJars < 2) {
-      emptyJars = 2;
+    if (level % 5 === 0) {
+      isChallenge = true;
     }
 
     return {
@@ -118,11 +120,11 @@
       let unitsLeft = colorCount * capacity;
 
       if (openSlotsCount > 0 && colorCount >= 3) {
-        const validCount3 = Math.floor(Math.min(openSlotsCount, (colorCount - 1) * 4) / 4) * 4;
-        for (let i = 0; i < validCount3; i++) {
+        const validCount = Math.min(openSlotsCount, colorCount);
+        for (let i = 0; i < validCount; i++) {
           bottleSizes.push(capacity - 1); // 3 units
+          unitsLeft -= (capacity - 1);
         }
-        unitsLeft -= validCount3 * (capacity - 1);
       }
 
       while (unitsLeft > 0) {
@@ -202,7 +204,7 @@
       } catch (e) {}
     }
 
-    // Standard format with 2 empty jars (statistically 90%+ solvable on every attempt)
+    // Standard format with safeEmpty jars
     for (let attempt = 0; attempt < 30; attempt++) {
       const pool = [];
       for (let c = 0; c < colorCount; c++) {
@@ -236,21 +238,45 @@
       }
     }
 
-    // Deterministic solvable layout (only top units swapped)
+    // Solvable reverse-scramble from solved state
     const bottles = [];
-    for (let c = 0; c < colorCount; c++) {
-      bottles.push([c, c, c, (c + 1) % colorCount]);
+    for (let c = 0; c < colorCount; c++) bottles.push([c, c, c, c]);
+    for (let e = 0; e < safeEmpty; e++) bottles.push([]);
+
+    const steps = 16 + colorCount * 3;
+    let lastMove = null;
+    for (let s = 0; s < steps; s++) {
+      const validMoves = [];
+      for (let from = 0; from < bottles.length; from++) {
+        const bFrom = bottles[from];
+        if (bFrom.length === 0) continue;
+        const topColor = bFrom[bFrom.length - 1];
+        const canTake = (bFrom.length === 1) ||
+                        (bFrom.every(c => c === topColor)) ||
+                        (bFrom[bFrom.length - 2] === topColor);
+        if (!canTake) continue;
+
+        for (let to = 0; to < bottles.length; to++) {
+          if (from === to) continue;
+          if (bottles[to].length >= capacity) continue;
+          if (lastMove && lastMove.from === to && lastMove.to === from) continue;
+          validMoves.push({ from, to, color: topColor });
+        }
+      }
+      if (validMoves.length === 0) break;
+      const move = validMoves[Math.floor(rng() * validMoves.length)];
+      bottles[move.from].pop();
+      bottles[move.to].push(move.color);
+      lastMove = move;
     }
-    for (let e = 0; e < safeEmpty; e++) {
-      bottles.push([]);
-    }
+
     return {
       levelNumber: config.levelNumber,
       bottles,
       capacity,
       colorCount,
       colors: COLOR_PALETTE.slice(0, colorCount),
-      minMoves: colorCount * 2,
+      minMoves: colorCount * 3,
       config
     };
   }

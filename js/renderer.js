@@ -7,7 +7,7 @@
   let particleCtx = null;
   let activeParticles = [];
   let animFrameId = null;
-  const UNIT_HEIGHT = 25;
+  const UNIT_HEIGHT = 19;
 
   function initRenderer(containerEl, canvasEl) {
     boardContainer = containerEl;
@@ -27,20 +27,124 @@
     }
   }
 
+  function updateBottleLiquid(bottleEl, layers, idx, engine) {
+    const liquidContainer = bottleEl.querySelector('.liquid-container');
+    if (!liquidContainer) return;
+    liquidContainer.innerHTML = '';
+    const colors = engine.colors;
+
+    const segments = [];
+    for (let i = 0; i < layers.length; i++) {
+      const colorIdx = layers[i];
+      const isKnown = (engine.revealed && engine.revealed[idx] && engine.revealed[idx][i] !== undefined)
+        ? engine.revealed[idx][i]
+        : (i === layers.length - 1);
+
+      const prevSegment = segments[segments.length - 1];
+      if (prevSegment && prevSegment.isKnown === isKnown && (!isKnown || prevSegment.colorIdx === colorIdx)) {
+        prevSegment.unitsCount += 1;
+      } else {
+        segments.push({
+          isKnown,
+          colorIdx,
+          unitsCount: 1
+        });
+      }
+    }
+
+    segments.forEach((seg, segIdx) => {
+      const isTopSegment = (segIdx === segments.length - 1);
+      const segEl = document.createElement('div');
+      const segHeight = seg.unitsCount * UNIT_HEIGHT;
+
+      if (seg.isKnown) {
+        let colorData = (typeof seg.colorIdx === 'number' || typeof seg.colorIdx === 'string') 
+                        ? colors[seg.colorIdx] 
+                        : seg.colorIdx;
+        if (!colorData) colorData = { hex: '#999', glow: 'rgba(150,150,150,0.5)' };
+
+        segEl.className = 'liquid-layer liquid-revealed-layer';
+        segEl.style.height = `${segHeight}px`;
+        segEl.style.backgroundColor = colorData.hex;
+        segEl.dataset.colorIndex = seg.colorIdx;
+        segEl.dataset.units = seg.unitsCount;
+
+        if (!isTopSegment) {
+          segEl.style.borderTop = '1px solid rgba(0, 0, 0, 0.16)';
+        }
+
+        if (isTopSegment) {
+          const wave = document.createElement('div');
+          wave.className = 'liquid-wave';
+          segEl.appendChild(wave);
+        }
+      } else {
+        segEl.className = 'liquid-layer liquid-hidden-layer';
+        segEl.style.height = `${segHeight}px`;
+        segEl.dataset.units = seg.unitsCount;
+
+        for (let u = 0; u < seg.unitsCount; u++) {
+          const mark = document.createElement('span');
+          mark.className = 'mystery-mark';
+          mark.textContent = '?';
+          segEl.appendChild(mark);
+        }
+      }
+
+      liquidContainer.appendChild(segEl);
+    });
+  }
+
   function renderBoard(engine) {
     if (!boardContainer) return;
 
-    boardContainer.innerHTML = '';
     const bottles = engine.bottles;
     const selectedIdx = engine.selectedBottleIndex;
     const hint = engine.hintHighlight;
     const colors = engine.colors;
 
-    // Set board size class based on bottle count
-    boardContainer.className = 'game-board'; // Reset base class
-    if (bottles.length <= 5) boardContainer.classList.add('board-small');
-    else if (bottles.length <= 8) boardContainer.classList.add('board-medium');
-    else if (bottles.length <= 12) boardContainer.classList.add('board-large');
+    const existingBottles = boardContainer.querySelectorAll('.glass-bottle');
+
+    // In-place update if bottle elements already exist: zero reflow, zero movement of other bottles!
+    if (existingBottles.length === bottles.length) {
+      existingBottles.forEach((bottleEl, idx) => {
+        const layers = bottles[idx];
+        const isVanished = !!(layers && layers.vanished);
+
+        bottleEl.classList.toggle('selected', selectedIdx === idx);
+
+        bottleEl.classList.remove('hint-from', 'hint-to');
+        if (hint && (hint.from === idx || hint.to === idx)) {
+          bottleEl.classList.add(hint.from === idx ? 'hint-from' : 'hint-to');
+        }
+
+        if (isVanished) {
+          bottleEl.classList.add('bottle-vanished');
+          bottleEl.style.visibility = 'hidden';
+          bottleEl.style.pointerEvents = 'none';
+          bottleEl.style.opacity = '0';
+        } else {
+          bottleEl.classList.remove('bottle-vanished');
+          bottleEl.style.visibility = 'visible';
+          bottleEl.style.pointerEvents = 'auto';
+          bottleEl.style.opacity = '1';
+        }
+
+        const currentLayerSig = layers.join(',') + '_' + (engine.revealed && engine.revealed[idx] ? engine.revealed[idx].join(',') : '');
+        if (bottleEl.dataset.layerSig !== currentLayerSig) {
+          bottleEl.dataset.layerSig = currentLayerSig;
+          updateBottleLiquid(bottleEl, layers, idx, engine);
+        }
+      });
+      return;
+    }
+
+    // Full build (only upon new level loading or count change)
+    boardContainer.innerHTML = '';
+    boardContainer.className = 'game-board';
+    if (bottles.length <= 6) boardContainer.classList.add('board-small');
+    else if (bottles.length <= 10) boardContainer.classList.add('board-medium');
+    else if (bottles.length <= 14) boardContainer.classList.add('board-large');
     else boardContainer.classList.add('board-xlarge');
 
     bottles.forEach((layers, idx) => {
@@ -53,84 +157,25 @@
         bottleEl.classList.add(hint.from === idx ? 'hint-from' : 'hint-to');
       }
 
-      // Bottle Cap / Mouth Rim
+      if (layers && layers.vanished) {
+        bottleEl.classList.add('bottle-vanished');
+        bottleEl.style.visibility = 'hidden';
+        bottleEl.style.pointerEvents = 'none';
+        bottleEl.style.opacity = '0';
+      }
+
       const rimEl = document.createElement('div');
       rimEl.className = 'bottle-rim';
       bottleEl.appendChild(rimEl);
 
-      // Liquid Container Body
       const liquidContainer = document.createElement('div');
       liquidContainer.className = 'liquid-container';
-
-      // Group contiguous layers into single uninterrupted fluid segments
-      // (e.g. 2, 3, or 4 of the same color form a single monolithic div without any lines or divisions)
-      const segments = [];
-      for (let i = 0; i < layers.length; i++) {
-        const colorIdx = layers[i];
-        const isKnown = (engine.revealed && engine.revealed[idx] && engine.revealed[idx][i] !== undefined)
-          ? engine.revealed[idx][i]
-          : (i === layers.length - 1);
-
-        const prevSegment = segments[segments.length - 1];
-        if (prevSegment && prevSegment.isKnown === isKnown && (!isKnown || prevSegment.colorIdx === colorIdx)) {
-          prevSegment.unitsCount += 1;
-        } else {
-          segments.push({
-            isKnown,
-            colorIdx,
-            unitsCount: 1
-          });
-        }
-      }
-
-      segments.forEach((seg, segIdx) => {
-        const isTopSegment = (segIdx === segments.length - 1);
-        const segEl = document.createElement('div');
-        const segHeight = seg.unitsCount * UNIT_HEIGHT;
-
-        if (seg.isKnown) {
-          let colorData = (typeof seg.colorIdx === 'number' || typeof seg.colorIdx === 'string') 
-                          ? colors[seg.colorIdx] 
-                          : seg.colorIdx;
-          if (!colorData) colorData = { hex: '#999', glow: 'rgba(150,150,150,0.5)' };
-
-          segEl.className = 'liquid-layer liquid-revealed-layer';
-          segEl.style.height = `${segHeight}px`;
-          segEl.style.backgroundColor = colorData.hex;
-          segEl.dataset.colorIndex = seg.colorIdx;
-          segEl.dataset.units = seg.unitsCount;
-
-          if (!isTopSegment) {
-            // Soft boundary between two distinct fluid colors
-            segEl.style.borderTop = '1px solid rgba(0, 0, 0, 0.16)';
-          }
-
-          // Liquid wave surface meniscus only for the topmost surface of the liquid
-          if (isTopSegment) {
-            const wave = document.createElement('div');
-            wave.className = 'liquid-wave';
-            segEl.appendChild(wave);
-          }
-        } else {
-          // Mystery segment (unexplored starting layers)
-          segEl.className = 'liquid-layer liquid-hidden-layer';
-          segEl.style.height = `${segHeight}px`;
-          segEl.dataset.units = seg.unitsCount;
-
-          for (let u = 0; u < seg.unitsCount; u++) {
-            const mark = document.createElement('span');
-            mark.className = 'mystery-mark';
-            mark.textContent = '?';
-            segEl.appendChild(mark);
-          }
-        }
-
-        liquidContainer.appendChild(segEl);
-      });
-
       bottleEl.appendChild(liquidContainer);
 
-      // Click event
+      const currentLayerSig = layers.join(',') + '_' + (engine.revealed && engine.revealed[idx] ? engine.revealed[idx].join(',') : '');
+      bottleEl.dataset.layerSig = currentLayerSig;
+      updateBottleLiquid(bottleEl, layers, idx, engine);
+
       bottleEl.addEventListener('click', () => {
         engine.selectBottle(idx);
       });
@@ -189,11 +234,11 @@
 
     // Target bottle mouth center in viewport
     const toMouthX = toRect.left + toRect.width / 2;
-    const toMouthY = toRect.top + 6;
+    const toMouthY = toRect.top + 4;
 
     // Set transform origin on fromEl near its neck/mouth rim
-    const originX = isToRight ? 15 : 25;
-    const originY = 10;
+    const originX = isToRight ? Math.round(fromRect.width * 0.38) : Math.round(fromRect.width * 0.62);
+    const originY = 8;
     fromEl.style.transformOrigin = `${originX}px ${originY}px`;
 
     // fromEl pivot in initial viewport coordinates
@@ -201,8 +246,8 @@
     const origPivotY = fromRect.top + originY;
 
     // Target hovering pivot: slightly above target bottle mouth
-    const destPivotX = isToRight ? (toMouthX - 14) : (toMouthX + 14);
-    const destPivotY = toMouthY - 26;
+    const destPivotX = isToRight ? (toMouthX - 11) : (toMouthX + 11);
+    const destPivotY = toMouthY - 20;
 
     const deltaX = destPivotX - origPivotX;
     const deltaY = destPivotY - origPivotY;
@@ -212,26 +257,26 @@
     fromEl.style.zIndex = '1000';
 
     // ---------------------------------------------------------
-    // Phase 1: Smooth Flight to Target + Scale down to 0.86
+    // Phase 1: Smooth Flight to Target + Scale down to 0.88
     // (баночка подлетает и становится немножко меньше)
     // ---------------------------------------------------------
     fromEl.style.transition = 'transform 0.46s cubic-bezier(0.22, 1, 0.36, 1.15), box-shadow 0.35s ease';
-    fromEl.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${tiltAngle}deg) scale(0.86)`;
-    fromEl.style.boxShadow = `0 20px 40px rgba(0, 0, 0, 0.5), 0 0 25px ${colorGlow}`;
+    fromEl.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${tiltAngle}deg) scale(0.88)`;
+    fromEl.style.boxShadow = `0 18px 36px rgba(0, 0, 0, 0.48), 0 0 22px ${colorGlow}`;
 
     setTimeout(() => {
       // ---------------------------------------------------------
       // Phase 2: Smooth Continuous Pouring Liquid Stream & Fluid Rise
       // ---------------------------------------------------------
       const initialTargetLayers = (engine && engine.bottles && engine.bottles[toIdx]) ? engine.bottles[toIdx].length : 0;
-      const innerBottomY = toRect.bottom - 10;
-      const toNeckY = toRect.top + 14;
+      const innerBottomY = toRect.bottom - 7;
+      const toNeckY = toRect.top + 10;
       const toMouthX = toRect.left + toRect.width / 2;
 
       // Function to calculate stream landing surface Y inside recipient jar:
       // Empty jar (0 layers) -> stream plunges all the way to the bottom!
       // L layers -> surface is innerBottomY - L * UNIT_HEIGHT
-      const getLandingY = (layersCount) => Math.max(toNeckY + 10, innerBottomY - (layersCount * UNIT_HEIGHT));
+      const getLandingY = (layersCount) => Math.max(toNeckY + 5, innerBottomY - (layersCount * UNIT_HEIGHT));
 
       const totalPouredUnits = Math.max(1, amount || 1);
       const totalPouredHeight = totalPouredUnits * UNIT_HEIGHT;
@@ -240,8 +285,8 @@
       const finalLandingY = getLandingY(initialTargetLayers + totalPouredUnits);
 
       // Pour spout location on tilted pouring jar
-      const spoutX = isToRight ? (destPivotX + 10) : (destPivotX - 10);
-      const spoutY = destPivotY + 12;
+      const spoutX = isToRight ? (destPivotX + 7) : (destPivotX - 7);
+      const spoutY = destPivotY + 9;
 
       // Continuous pour duration (smooth, elegant, uninterrupted)
       const totalPourDuration = 680 + (totalPouredUnits - 1) * 160;
@@ -359,8 +404,8 @@
       rippleEl.className = 'pour-landing-ripple';
       rippleEl.style.left = `${toMouthX}px`;
       rippleEl.style.top = `${currentLandingY}px`;
-      rippleEl.style.width = '24px';
-      rippleEl.style.height = '8px';
+      rippleEl.style.width = '18px';
+      rippleEl.style.height = '6px';
       rippleEl.style.border = `2px solid ${colorHex}`;
       rippleEl.style.boxShadow = `0 0 10px ${colorHex}`;
       document.body.appendChild(rippleEl);
@@ -494,6 +539,11 @@
     }, 150);
 
     setTimeout(() => {
+      bottleEl.classList.remove('vanish-animation');
+      bottleEl.classList.add('bottle-vanished');
+      bottleEl.style.visibility = 'hidden';
+      bottleEl.style.pointerEvents = 'none';
+      bottleEl.style.opacity = '0';
       onComplete();
     }, 700);
   }

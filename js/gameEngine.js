@@ -65,6 +65,7 @@
     selectBottle(index) {
       if (this.isAnimating) return false;
       if (index < 0 || index >= this.bottles.length) return false;
+      if (this.bottles[index].vanished || this.isBottleCompleted(this.bottles[index])) return false;
 
       this.hintHighlight = null;
 
@@ -93,7 +94,7 @@
       const toIdx = index;
 
       if (!this.canPour(fromIdx, toIdx)) {
-        if (this.bottles[toIdx].length > 0) {
+        if (this.bottles[toIdx].length > 0 && !this.bottles[toIdx].vanished && !this.isBottleCompleted(this.bottles[toIdx])) {
           this.selectedBottleIndex = toIdx;
           if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
           if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
@@ -115,8 +116,8 @@
       const bFrom = this.bottles[fromIdx];
       const bTo = this.bottles[toIdx];
 
-      if (!bFrom || bFrom.length === 0) return false;
-      if (!bTo || bTo.length >= this.capacity) return false;
+      if (!bFrom || bFrom.length === 0 || bFrom.vanished) return false;
+      if (!bTo || bTo.vanished || bTo.length >= this.capacity || this.isBottleCompleted(bTo)) return false;
 
       const topColor = bFrom[bFrom.length - 1];
       if (bTo.length === 0) return true;
@@ -142,10 +143,13 @@
       if (amount <= 0) return;
 
       this.history.push({
-        bottles: this.bottles.map(b => [...b]),
+        bottles: this.bottles.map(b => {
+          const copy = [...b];
+          if (b.vanished) copy.vanished = true;
+          return copy;
+        }),
         revealed: this.revealed ? this.revealed.map(r => [...r]) : [],
-        movesCount: this.movesCount,
-        vanishedBottles: []
+        movesCount: this.movesCount
       });
 
       this.isAnimating = true;
@@ -197,7 +201,7 @@
 
     isLevelWon() {
       if (this.bottles.length === 0) return true;
-      return this.bottles.every(b => b.length === 0 || this.isBottleCompleted(b));
+      return this.bottles.every(b => b.length === 0 || this.isBottleCompleted(b) || b.vanished);
     }
 
     checkBottleCompletion(bottleIdx) {
@@ -205,35 +209,17 @@
       const isComplete = this.isBottleCompleted(bottle);
 
       if (isComplete) {
+        bottle.vanished = true;
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
 
         if (window.GameRenderer && window.GameRenderer.animateJarVanish) {
           window.GameRenderer.animateJarVanish(bottleIdx, () => {
-            if (this.history.length > 0) {
-              const lastState = this.history[this.history.length - 1];
-              lastState.vanishedBottles.push({ 
-                index: bottleIdx, 
-                bottle: [...this.bottles[bottleIdx]],
-                revealed: this.revealed ? [...this.revealed[bottleIdx]] : []
-              });
-            }
-            this.bottles.splice(bottleIdx, 1);
-            if (this.revealed) this.revealed.splice(bottleIdx, 1);
             if (this.onBottleVanished) this.onBottleVanished(bottleIdx);
             this.postMoveCheck();
           });
         } else {
-          if (this.history.length > 0) {
-            const lastState = this.history[this.history.length - 1];
-            lastState.vanishedBottles.push({ 
-              index: bottleIdx, 
-              bottle: [...this.bottles[bottleIdx]],
-              revealed: this.revealed ? [...this.revealed[bottleIdx]] : []
-            });
-          }
-          this.bottles.splice(bottleIdx, 1);
-          if (this.revealed) this.revealed.splice(bottleIdx, 1);
+          if (this.onBottleVanished) this.onBottleVanished(bottleIdx);
           this.postMoveCheck();
         }
       } else {
@@ -268,7 +254,11 @@
       if (this.isAnimating || this.history.length === 0) return false;
       
       const previousState = this.history.pop();
-      this.bottles = previousState.bottles.map(b => [...b]);
+      this.bottles = previousState.bottles.map(b => {
+        const copy = [...b];
+        if (b.vanished) copy.vanished = true;
+        return copy;
+      });
       this.revealed = previousState.revealed 
         ? previousState.revealed.map(r => [...r]) 
         : this.bottles.map(b => b.map((_, idx) => idx === b.length - 1));
