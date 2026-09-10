@@ -777,22 +777,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderer.initRenderer(gameBoard, particleCanvas);
   }
 
-  // 6. Fetch user from server
-  loadLocalUser(); // Load from local first as baseline
+  // 6. Fetch user from local storage first (instant baseline)
+  loadLocalUser();
   applyLanguage(currentLang);
   if (userName) userName.textContent = currentUser.firstName;
   if (userAvatar) {
     userAvatar.src = userData.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(userData.telegramId)}`;
   }
-
-  const serverUser = await apiCall('/api/user/init', 'POST', userData);
-  if (serverUser && serverUser.success && serverUser.user) {
-    currentUser = { ...currentUser, ...serverUser.user };
-  }
-  saveLocalUser();
-  syncPlayerToCloud(currentUser);
-  updateHeaderUI();
-  await initAdsgram();
 
   // 7. Bind engine callbacks FIRST so initial level render is triggered immediately
   engine.onStateChange = () => {
@@ -851,7 +842,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 3200);
   };
 
-  // 8. Load level
+  // 8. Load level immediately
   const LG = (window.LevelGenerator && window.LevelGenerator.LevelGenerator) ? window.LevelGenerator.LevelGenerator : window.LevelGenerator;
 
   async function loadCurrentLevel() {
@@ -868,7 +859,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateHeaderUI();
     }
   }
-  await loadCurrentLevel();
+  loadCurrentLevel();
+  updateHeaderUI();
+
+  // Background Cloud Sync & Init (non-blocking for instant startup)
+  apiCall('/api/user/init', 'POST', userData).then(serverUser => {
+    if (serverUser && serverUser.success && serverUser.user) {
+      const oldLevel = currentUser.currentLevel;
+      currentUser = { ...currentUser, ...serverUser.user };
+      saveLocalUser();
+      updateHeaderUI();
+      if (currentUser.currentLevel !== oldLevel) {
+        loadCurrentLevel();
+      }
+    }
+    syncPlayerToCloud(currentUser);
+  }).catch(() => {});
+
+  initAdsgram().catch(() => {});
 
   function updateHeaderUI() {
     function setIfDiff(el, val) {
@@ -917,6 +925,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (revealBadge.classList.contains('badge-zero') !== isZero) {
         revealBadge.classList.toggle('badge-zero', isZero);
       }
+    }
+
     // Modal user counters
     const adModalHintsCount = document.getElementById('adModalHintsCount');
     if (adModalHintsCount) {
@@ -1789,9 +1799,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (startGameBtn) {
     let isStarting = false;
     const handleStart = (e) => {
-      if (e) {
+      if (e && e.cancelable) {
         e.preventDefault();
-        e.stopPropagation();
       }
       if (isStarting) return;
       isStarting = true;
@@ -1799,7 +1808,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       justStartedGame = true;
       setTimeout(() => {
         justStartedGame = false;
-      }, 1500);
+      }, 300);
+
+      // Immediately disable pointer events on start screen to prevent click delays
+      if (startScreen) {
+        startScreen.style.pointerEvents = 'none';
+        startScreen.classList.add('start-screen-hidden');
+        setTimeout(() => {
+          startScreen.style.display = 'none';
+          if (startScreen.parentNode) {
+            startScreen.parentNode.removeChild(startScreen);
+          }
+        }, 350);
+      }
 
       // Force-hide all modals so nothing pops up over the game
       document.querySelectorAll('.modal-overlay, .ad-video-overlay').forEach(modal => {
@@ -1815,16 +1836,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.TelegramApp.TelegramApp.haptic('medium');
       }
 
-      if (startScreen) {
-        startScreen.classList.add('start-screen-hidden');
-        setTimeout(() => {
-          startScreen.style.display = 'none';
-          if (startScreen.parentNode) {
-            startScreen.parentNode.removeChild(startScreen);
-          }
-        }, 450);
-      }
-
       // Guarantee game board is populated and fully rendered
       if (renderer && renderer.renderBoard) {
         renderer.renderBoard(engine);
@@ -1832,8 +1843,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateHeaderUI();
     };
 
+    startGameBtn.addEventListener('pointerdown', handleStart);
     startGameBtn.addEventListener('click', handleStart);
-    startGameBtn.addEventListener('touchend', handleStart, { passive: false });
+    startGameBtn.addEventListener('touchend', handleStart, { passive: true });
+    if (startScreen) {
+      startScreen.addEventListener('click', (e) => {
+        if (!isStarting && e.target === startScreen) handleStart(e);
+      });
+    }
   }
 
 });
