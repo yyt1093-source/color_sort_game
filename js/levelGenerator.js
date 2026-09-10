@@ -129,10 +129,34 @@
         for (let unit = 0; unit < capacity; unit++) pool.push(c);
       }
       
-      // Shuffle pool
+      // Shuffle pool with anti-clustering to avoid adjacent identical colors
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(rng() * (i + 1));
         [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+
+      // Smooth out adjacent duplicates so no two identical colors are placed next to each other
+      for (let pass = 0; pass < 50; pass++) {
+        let fixed = false;
+        for (let i = 0; i < pool.length - 1; i++) {
+          if (pool[i] === pool[i + 1]) {
+            for (let k = 0; k < pool.length; k++) {
+              if (k === i || k === i + 1) continue;
+              const prevK = k > 0 ? pool[k - 1] : -1;
+              const nextK = k < pool.length - 1 ? pool[k + 1] : -1;
+              const prevI = i > 0 ? pool[i - 1] : -1;
+              const nextI = i + 2 < pool.length ? pool[i + 2] : -1;
+              if (pool[k] !== pool[i] && pool[k] !== prevI && pool[k] !== nextI && pool[i] !== prevK && pool[i] !== nextK) {
+                const tmp = pool[i + 1];
+                pool[i + 1] = pool[k];
+                pool[k] = tmp;
+                fixed = true;
+                break;
+              }
+            }
+          }
+        }
+        if (!fixed) break;
       }
 
       // Calculate bottle sizes
