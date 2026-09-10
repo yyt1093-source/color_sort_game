@@ -1,0 +1,18 @@
+﻿services:
+  - type: web
+    name: color-sort-game
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BOT_TOKEN
+        sync: false
+      - key: AUTO_TUNNEL
+        value: "false"
+      - key: WEB_APP_URL
+        value: https://yyt1093-source.github.io/color_sort_game/
+      - key: ADSGRAM_BLOCK_ID
+        value: "47079"

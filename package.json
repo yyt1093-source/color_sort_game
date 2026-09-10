@@ -1,0 +1,16 @@
+{
+  "name": "color-sort-telegram-game",
+  "version": "1.0.0",
+  "description": "Telegram Mini App Game - Color Sort Puzzle with dynamic animations, infinite levels, and global leaderboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "bot": "node bot.js",
+    "test": "node test/test_generator.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "localtunnel": "^2.0.2"
+  }
+}
