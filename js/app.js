@@ -141,7 +141,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Отмена',
       hintBtn: 'Подсказка',
       revealBtn: 'Открыть цвета',
-      shuffleColorsBtn: 'Сменить цвета',
       adBonusBtn: 'Реклама',
       leaderboardTitle: '🏆 Таблица лидеров',
       leaderboardLive: '24/7 LIVE',
@@ -199,7 +198,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Відміна',
       hintBtn: 'Підказка',
       revealBtn: 'Відкрити кольори',
-      shuffleColorsBtn: 'Змінити кольори',
       adBonusBtn: 'Реклама',
       leaderboardTitle: '🏆 Таблиця лідерів',
       leaderboardLive: '24/7 LIVE',
@@ -257,7 +255,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Undo',
       hintBtn: 'Hint',
       revealBtn: 'Reveal Colors',
-      shuffleColorsBtn: 'Shuffle Colors',
       adBonusBtn: 'Rewards',
       leaderboardTitle: '🏆 Leaderboard',
       leaderboardLive: '24/7 LIVE',
@@ -315,7 +312,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Zurück',
       hintBtn: 'Hinweis',
       revealBtn: 'Farben aufdecken',
-      shuffleColorsBtn: 'Farben tauschen',
       adBonusBtn: 'Boni',
       leaderboardTitle: '🏆 Bestenliste',
       leaderboardLive: '24/7 LIVE',
@@ -373,7 +369,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Atšaukti',
       hintBtn: 'Užuomina',
       revealBtn: 'Atskleisti spalvas',
-      shuffleColorsBtn: 'Keisti spalvas',
       adBonusBtn: 'Premijos',
       leaderboardTitle: '🏆 Lyderių lentelė',
       leaderboardLive: '24/7 LIVE',
@@ -460,7 +455,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const undoBtnLabel = document.getElementById('undoBtnLabel');
   const hintBtnLabel = document.getElementById('hintBtnLabel');
   const revealBtnLabel = document.getElementById('revealBtnLabel');
-  const shuffleColorsBtnLabel = document.getElementById('shuffleColorsBtnLabel');
   const adBonusBtnLabel = document.getElementById('adBonusBtnLabel');
 
   // Start Screen Elements
@@ -473,7 +467,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const undoBtn = document.getElementById('undoBtn');
   const hintBtn = document.getElementById('hintBtn');
   const revealBottleBtn = document.getElementById('revealBottleBtn');
-  const shuffleColorsBtn = document.getElementById('shuffleColorsBtn');
   const adBonusBtn = document.getElementById('adBonusBtn');
   const leaderboardBtn = document.getElementById('leaderboardBtn');
   const soundToggleBtn = document.getElementById('soundToggleBtn');
@@ -562,7 +555,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (undoBtnLabel) undoBtnLabel.textContent = t('undoBtn');
     if (hintBtnLabel) hintBtnLabel.textContent = t('hintBtn');
     if (revealBtnLabel) revealBtnLabel.textContent = t('revealBtn');
-    if (shuffleColorsBtnLabel) shuffleColorsBtnLabel.textContent = t('shuffleColorsBtn');
     if (adBonusBtnLabel) adBonusBtnLabel.textContent = t('adBonusBtn');
 
     if (leaderboardModalTitle) leaderboardModalTitle.textContent = t('leaderboardTitle');
@@ -608,8 +600,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     coins: 100,
     hints: 0,
     undos: 0,
-    reveals: 0,
-    shuffles: 0
+    reveals: 0
   };
   let currentLevelData = null;
   let justStartedGame = false;
@@ -771,15 +762,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser = { ...currentUser, ...parsed };
       } catch (e) {}
     }
-    if (currentUser.shuffles === undefined || currentUser.shuffles === null) {
-      currentUser.shuffles = 0;
-    }
     const migrated = localStorage.getItem('cs_zero_boosters_v6');
     if (!migrated) {
       currentUser.hints = 0;
       currentUser.undos = 0;
       currentUser.reveals = 0;
-      currentUser.shuffles = 0;
       localStorage.setItem('cs_zero_boosters_v6', 'true');
       saveLocalUser();
     }
@@ -930,18 +917,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (revealBadge.classList.contains('badge-zero') !== isZero) {
         revealBadge.classList.toggle('badge-zero', isZero);
       }
-    }
-
-    const shuffleBadge = document.getElementById('shuffleBadge');
-    if (shuffleBadge) {
-      const sCount = currentUser.shuffles || 0;
-      setIfDiff(shuffleBadge, sCount);
-      const isZero = sCount === 0;
-      if (shuffleBadge.classList.contains('badge-zero') !== isZero) {
-        shuffleBadge.classList.toggle('badge-zero', isZero);
-      }
-    }
-
     // Modal user counters
     const adModalHintsCount = document.getElementById('adModalHintsCount');
     if (adModalHintsCount) {
@@ -954,10 +929,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const adModalRevealsCount = document.getElementById('adModalRevealsCount');
     if (adModalRevealsCount) {
       setIfDiff(adModalRevealsCount, `(у вас: ${currentUser.reveals || 0})`);
-    }
-    const adModalShufflesCount = document.getElementById('adModalShufflesCount');
-    if (adModalShufflesCount) {
-      setIfDiff(adModalShufflesCount, `(у вас: ${currentUser.shuffles || 0})`);
     }
   }
 
@@ -1171,62 +1142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  if (shuffleColorsBtn) {
-    shuffleColorsBtn.addEventListener('click', async (e) => {
-      if (justStartedGame) {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        return;
-      }
-      if ((currentUser.shuffles || 0) <= 0) {
-        showInfoModal(
-          '🎨',
-          'Сменить открытые цвета',
-          'У вас 0 смен цветов. Посмотрите короткую рекламу, чтобы получить смену открытых цветов в ячейку внизу!',
-          '▶ Смотреть рекламу (+1)',
-          async () => {
-            const adWatched = await showRewardedAd();
-            if (adWatched) {
-              const data = await apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'shuffle_colors'
-              });
-              if (data && data.success && data.user) {
-                currentUser = { ...currentUser, ...data.user };
-              } else {
-                currentUser.shuffles = (currentUser.shuffles || 0) + 1;
-              }
-              saveLocalUser();
-              updateHeaderUI();
-              if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-              if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
-              showInfoModal(
-                '🎨',
-                'Смена цветов добавлена!',
-                `+1 смена цветов добавлена в ячейку внизу (Всего: ${currentUser.shuffles || 1}).\n\nНажмите кнопку «Сменить цвета» на нижней панели, когда захотите её использовать!`
-              );
-            }
-          }
-        );
-        return;
-      }
 
-      const changed = engine.changeOpenColors();
-      if (changed) {
-        currentUser.shuffles = Math.max(0, (currentUser.shuffles || 0) - 1);
-        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-        updateHeaderUI();
-        saveLocalUser();
-        await apiCall('/api/user/sync', 'POST', {
-          telegramId: currentUser.telegramId,
-          shufflesUsed: 1
-        });
-        showInfoModal('✨', 'Цвета изменены!', 'Открытые цвета в баночках успешно изменены!');
-      } else {
-        showInfoModal('ℹ️', 'Смена цветов', 'Недостаточно баночек с жидкостью для изменения открытых цветов.');
-      }
-    });
-  }
 
   if (nextLevelBtn) {
     nextLevelBtn.addEventListener('click', (e) => {
@@ -1680,7 +1596,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser.hints = 0;
         currentUser.undos = 0;
         currentUser.reveals = 0;
-        currentUser.shuffles = 0;
         saveLocalUser();
         updateHeaderUI();
 
@@ -1832,14 +1747,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
             else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
             else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
-            else if (rewardType === 'shuffle_colors' || rewardType === 'shuffles') currentUser.shuffles = (currentUser.shuffles || 0) + 1;
           }
         } catch (apiErr) {
           console.warn('[Ad API Error, fallback to local]', apiErr);
           if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
           else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
           else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
-          else if (rewardType === 'shuffle_colors' || rewardType === 'shuffles') currentUser.shuffles = (currentUser.shuffles || 0) + 1;
         }
 
         saveLocalUser();
