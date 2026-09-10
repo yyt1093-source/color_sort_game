@@ -208,15 +208,24 @@ body {
   margin: 0 auto;
 }
 
-.board-small { max-width: 250px; }
-.board-medium { max-width: 310px; }
-.board-large { max-width: 360px; }
-.board-xlarge { max-width: 420px; }
+.board-small { max-width: 260px; }
+.board-medium { max-width: 320px; }
+.board-large { max-width: 370px; }
+.board-xlarge { max-width: 420px; gap: 9px 6px; }
+.board-xxlarge { max-width: 460px; gap: 8px 5px; }
 
-/* Glass Bottle (compact size) */
+.board-xlarge .glass-bottle {
+  width: 31px;
+}
+
+.board-xxlarge .glass-bottle {
+  width: 29px;
+}
+
+/* Glass Bottle (compact size, 5 units capacity full to rim) */
 .glass-bottle {
   width: 32px;
-  height: 94px;
+  height: 96px;
   background: linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 100%);
   border: 1.5px solid rgba(255,255,255,0.3);
   border-radius: 5px 5px 14px 14px;
@@ -281,14 +290,14 @@ body {
   top: 0;
   left: 2px;
   right: 2px;
-  height: 10px;
+  height: 6px;
   background: rgba(255,255,255,0.1);
   z-index: 9;
 }
 
 .liquid-container {
   width: 100%;
-  height: 76px;
+  height: 90px;
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
@@ -389,14 +398,14 @@ body {
 /* Toolbar */
 .toolbar {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  padding: 8px 5px;
+  padding: 6px 3px;
   overflow: visible;
 }
 
@@ -485,14 +494,14 @@ body {
 }
 
 .tool-label {
-  font-size: 0.58rem;
+  font-size: 0.54rem;
   font-weight: 800;
   text-align: center;
-  line-height: 1.15;
+  line-height: 1.12;
   letter-spacing: -0.01em;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  min-height: 22px;
+  min-height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;

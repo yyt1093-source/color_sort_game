@@ -6,7 +6,7 @@
     constructor() {
       this.currentLevel = 1;
       this.bottles = [];
-      this.capacity = 4;
+      this.capacity = 5;
       this.colors = [];
       this.selectedBottleIndex = null;
       this.history = [];
@@ -23,7 +23,7 @@
     startLevel(levelData) {
       this.currentLevel = levelData.levelNumber;
       this.bottles = levelData.bottles.map(b => [...b]);
-      this.capacity = levelData.capacity || 4;
+      this.capacity = levelData.capacity || 5;
       this.colors = levelData.colors;
       this.minMoves = levelData.minMoves || 0;
       this.selectedBottleIndex = null;
@@ -318,6 +318,79 @@
 
       if (this.onStateChange) this.onStateChange();
       return { bottleIndex: targetIdx };
+    }
+
+    changeOpenColors() {
+      if (this.isAnimating) return false;
+
+      const eligibleIndices = [];
+      const openColors = [];
+
+      for (let i = 0; i < this.bottles.length; i++) {
+        const b = this.bottles[i];
+        if (!b || b.length === 0 || b.vanished || this.isBottleCompleted(b)) continue;
+        eligibleIndices.push(i);
+        openColors.push(b[b.length - 1]);
+      }
+
+      if (eligibleIndices.length < 2) return false;
+
+      // Save undo history
+      this.history.push({
+        bottles: this.bottles.map(b => {
+          const copy = [...b];
+          if (b.vanished) copy.vanished = true;
+          return copy;
+        }),
+        revealed: this.revealed ? this.revealed.map(r => [...r]) : [],
+        movesCount: this.movesCount
+      });
+
+      // Permute open colors among eligible bottles
+      let shuffled = [...openColors];
+      let changed = false;
+      for (let attempt = 0; attempt < 30; attempt++) {
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        if (shuffled.some((c, idx) => c !== openColors[idx])) {
+          changed = true;
+          break;
+        }
+      }
+
+      if (!changed) {
+        shuffled = [...openColors.slice(1), openColors[0]];
+      }
+
+      // Apply the shuffled top colors
+      eligibleIndices.forEach((bottleIdx, i) => {
+        const newColor = shuffled[i];
+        const b = this.bottles[bottleIdx];
+        b[b.length - 1] = newColor;
+        if (this.revealed && this.revealed[bottleIdx]) {
+          this.revealed[bottleIdx][b.length - 1] = true;
+        }
+      });
+
+      this.hintHighlight = null;
+      this.selectedBottleIndex = null;
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+
+      if (window.GameRenderer && window.GameRenderer.spawnSparkles) {
+        eligibleIndices.forEach(idx => {
+          const el = document.querySelector(`.glass-bottle[data-index="${idx}"]`);
+          if (el) {
+            const rect = el.getBoundingClientRect();
+            window.GameRenderer.spawnSparkles(rect.left + rect.width / 2, rect.top + 20, 10);
+          }
+        });
+      }
+
+      if (this.onStateChange) this.onStateChange();
+      return true;
     }
   }
 
