@@ -141,6 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Отмена',
       hintBtn: 'Подсказка',
       revealBtn: 'Открыть цвета',
+      extraBottleBtn: 'Пустая колба',
       adBonusBtn: 'Реклама',
       leaderboardTitle: '🏆 Таблица лидеров',
       leaderboardLive: '24/7 LIVE',
@@ -162,24 +163,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       confirmRestartBtn: 'Рестарт',
       adModalTitle: '🎁 Реклама',
       adModalDesc: 'Посмотрите короткие видео и получите бесплатные бонусы',
+      adModalBottleTitle: 'Пустая колба',
+      adModalBottleDesc: '+1 пустая колба в запас',
       noMovesTitle: 'Нет ходов',
       noMovesDesc: 'Вы ещё не сделали ни одного хода на этом уровне для отмены.',
       noHintDesc: 'Подсказка не найдена на текущем этапе.',
       allColorsVisibleTitle: 'Все цвета видны',
       allColorsVisibleDesc: 'В баночках на этом этапе уже открыты все цвета!',
       extraBottleTitle: '🎉 Успех',
-      extraBottleDesc: 'Дополнительная пустая банка добавлена на поле!',
+      extraBottleDesc: 'Пустая колба добавлена на поле!',
+      extraBottleModalTitle: 'Пустая колба',
+      extraBottleModalPrompt: 'У вас 0 пустых колб. Посмотрите короткую рекламу, чтобы получить пустую колбу на поле!',
       claimAdBtn: '▶ Смотреть рекламу',
       adStarting: '⏳ Запуск...',
       adClaimed: '✅ Получено! (+1)',
       adminBadge: '👑 Админ',
       adminBoostersTitle: '⚡ Бесплатные функции (Без рекламы):',
-      adminAddBottle: '+1 Банка на поле',
+      adminAddBottle: '+1 Колба на поле',
       adminAddHints: '+5 Подсказок',
       adminAddUndos: '+5 Отмен хода',
       adminAddReveals: '+5 Открытий',
       adminAddAll: 'Пополнить ВСЁ сразу (+10 ко всем бонусам)',
-      adminBottleAddedMsg: '🧪 Пустая банка добавлена на поле!',
+      adminBottleAddedMsg: '🧪 Пустая колба добавлена на поле!',
       adminHintsAddedMsg: (count) => `💡 +5 Подсказок добавлено (Всего: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Отмен хода добавлено (Всего: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
@@ -198,6 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Відміна',
       hintBtn: 'Підказка',
       revealBtn: 'Відкрити кольори',
+      extraBottleBtn: '+1 Колба',
       adBonusBtn: 'Реклама',
       leaderboardTitle: '🏆 Таблиця лідерів',
       leaderboardLive: '24/7 LIVE',
@@ -219,6 +225,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       confirmRestartBtn: 'Рестарт',
       adModalTitle: '🎁 Реклама',
       adModalDesc: 'Подивіться коротке відео та отримайте безкоштовні бонуси',
+      adModalBottleTitle: 'Доп. порожня колба',
+      adModalBottleDesc: '+1 порожня колба в запас',
       noMovesTitle: 'Немає ходів',
       noMovesDesc: 'Ви ще не зробили жодного ходу на цьому рівні для скасування.',
       noHintDesc: 'Підказку не знайдено на поточному етапі.',
@@ -226,6 +234,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleDesc: 'У баночках на цьому етапі вже відкриті всі кольори!',
       extraBottleTitle: '🎉 Успіх',
       extraBottleDesc: 'Додаткова порожня колба додана на поле!',
+      extraBottleModalTitle: 'Додаткова колба',
+      extraBottleModalPrompt: 'У вас 0 додаткових колб. Подивіться коротку рекламу, щоб отримати порожню колбу на полі!',
       claimAdBtn: '▶ Дивитися рекламу',
       adStarting: '⏳ Запуск...',
       adClaimed: '✅ Отримано! (+1)',
@@ -255,6 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Undo',
       hintBtn: 'Hint',
       revealBtn: 'Reveal Colors',
+      extraBottleBtn: '+1 Bottle',
       adBonusBtn: 'Rewards',
       leaderboardTitle: '🏆 Leaderboard',
       leaderboardLive: '24/7 LIVE',
@@ -276,6 +287,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       confirmRestartBtn: 'Restart',
       adModalTitle: '🎁 Rewards',
       adModalDesc: 'Watch short video ads to claim free boosters',
+      adModalBottleTitle: 'Extra Empty Bottle',
+      adModalBottleDesc: '+1 empty bottle to stock',
       noMovesTitle: 'No moves',
       noMovesDesc: 'You have not made any moves on this level to undo yet.',
       noHintDesc: 'No moves found at this stage.',
@@ -283,6 +296,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleDesc: 'All bottle colors are already revealed on this stage!',
       extraBottleTitle: '🎉 Success',
       extraBottleDesc: 'Extra empty bottle added to the board!',
+      extraBottleModalTitle: 'Extra Bottle',
+      extraBottleModalPrompt: 'You have 0 extra bottles. Watch a short video ad to get an empty bottle on the board!',
       claimAdBtn: '▶ Watch Ad',
       adStarting: '⏳ Starting...',
       adClaimed: '✅ Received! (+1)',
@@ -312,6 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Zurück',
       hintBtn: 'Hinweis',
       revealBtn: 'Farben aufdecken',
+      extraBottleBtn: '+1 Flasche',
       adBonusBtn: 'Boni',
       leaderboardTitle: '🏆 Bestenliste',
       leaderboardLive: '24/7 LIVE',
@@ -333,6 +349,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       confirmRestartBtn: 'Neustart',
       adModalTitle: '🎁 Belohnungen',
       adModalDesc: 'Schau kurze Videos an, um kostenlose Boni zu erhalten',
+      adModalBottleTitle: 'Zusatz-Flasche',
+      adModalBottleDesc: '+1 leere Flasche auf Vorrat',
       noMovesTitle: 'Keine Züge',
       noMovesDesc: 'Du hast in diesem Level noch keine Züge gemacht.',
       noHintDesc: 'Keine Züge im aktuellen Zustand gefunden.',
@@ -340,6 +358,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleDesc: 'Alle Farben in den Flaschen sind bereits aufgedeckt!',
       extraBottleTitle: '🎉 Erfolg',
       extraBottleDesc: 'Zusätzliche leere Flasche hinzugefügt!',
+      extraBottleModalTitle: 'Zusätzliche Flasche',
+      extraBottleModalPrompt: 'Du hast 0 zusätzliche Flaschen. Schau ein kurzes Video an, um eine leere Flasche aufs Feld zu bekommen!',
       claimAdBtn: '▶ Werbung ansehen',
       adStarting: '⏳ Startet...',
       adClaimed: '✅ Erhalten! (+1)',
@@ -369,6 +389,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Atšaukti',
       hintBtn: 'Užuomina',
       revealBtn: 'Atskleisti spalvas',
+      extraBottleBtn: '+1 Buteliukas',
       adBonusBtn: 'Premijos',
       leaderboardTitle: '🏆 Lyderių lentelė',
       leaderboardLive: '24/7 LIVE',
@@ -390,6 +411,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       confirmRestartBtn: 'Iš naujo',
       adModalTitle: '🎁 Premijos',
       adModalDesc: 'Žiūrėkite trumpus vaizdo įrašus ir gaukite nemokamas premijas',
+      adModalBottleTitle: 'Papildomas buteliukas',
+      adModalBottleDesc: '+1 tuščias buteliukas į atsargas',
       noMovesTitle: 'Nėra ėjimų',
       noMovesDesc: 'Šiame lygyje dar neatlikote nė vieno ėjimo.',
       noHintDesc: 'Šiame etape ėjimų nerasta.',
@@ -397,6 +420,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       allColorsVisibleDesc: 'Visi buteliukų sluoksniai jau atidengti!',
       extraBottleTitle: '🎉 Pavyko',
       extraBottleDesc: 'Papildomas tuščias buteliukas pridėtas!',
+      extraBottleModalTitle: 'Papildomas buteliukas',
+      extraBottleModalPrompt: 'Turite 0 papildomų buteliukų. Pažiūrėkite trumpą reklamą, kad gautumėte tuščią buteliuką!',
       claimAdBtn: '▶ Žiūrėti reklamą',
       adStarting: '⏳ Paleidžiama...',
       adClaimed: '✅ Gauta! (+1)',
@@ -455,6 +480,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const undoBtnLabel = document.getElementById('undoBtnLabel');
   const hintBtnLabel = document.getElementById('hintBtnLabel');
   const revealBtnLabel = document.getElementById('revealBtnLabel');
+  const extraBottleBtnLabel = document.getElementById('extraBottleBtnLabel');
   const adBonusBtnLabel = document.getElementById('adBonusBtnLabel');
 
   // Start Screen Elements
@@ -467,6 +493,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const undoBtn = document.getElementById('undoBtn');
   const hintBtn = document.getElementById('hintBtn');
   const revealBottleBtn = document.getElementById('revealBottleBtn');
+  const extraBottleBtn = document.getElementById('extraBottleBtn');
   const adBonusBtn = document.getElementById('adBonusBtn');
   const leaderboardBtn = document.getElementById('leaderboardBtn');
   const soundToggleBtn = document.getElementById('soundToggleBtn');
@@ -555,6 +582,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (undoBtnLabel) undoBtnLabel.textContent = t('undoBtn');
     if (hintBtnLabel) hintBtnLabel.textContent = t('hintBtn');
     if (revealBtnLabel) revealBtnLabel.textContent = t('revealBtn');
+    if (extraBottleBtnLabel) extraBottleBtnLabel.textContent = t('extraBottleBtn');
     if (adBonusBtnLabel) adBonusBtnLabel.textContent = t('adBonusBtn');
 
     if (leaderboardModalTitle) leaderboardModalTitle.textContent = t('leaderboardTitle');
@@ -570,6 +598,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (confirmRestartBtn) confirmRestartBtn.textContent = t('confirmRestartBtn');
     if (adModalTitle) adModalTitle.textContent = t('adModalTitle');
     if (adModalDesc) adModalDesc.textContent = t('adModalDesc');
+    const adModalBottleTitle = document.getElementById('adModalBottleTitle');
+    if (adModalBottleTitle) adModalBottleTitle.textContent = t('adModalBottleTitle') || 'Пустая колба';
+    const adModalBottleDesc = document.getElementById('adModalBottleDesc');
+    if (adModalBottleDesc) {
+      const countSpan = document.getElementById('adModalExtraBottlesCount');
+      const countHtml = countSpan ? countSpan.outerHTML : '<span class="ad-user-count" id="adModalExtraBottlesCount"></span>';
+      adModalBottleDesc.innerHTML = `${t('adModalBottleDesc') || '+1 пустая колба в запас'} ${countHtml}`;
+    }
     if (nextLevelBtn) nextLevelBtn.textContent = t('nextLevelBtn');
 
     if (profileCardLevel && typeof currentUser !== 'undefined') {
@@ -600,7 +636,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     coins: 100,
     hints: 0,
     undos: 0,
-    reveals: 0
+    reveals: 0,
+    extraBottles: 0
   };
   let currentLevelData = null;
   let justStartedGame = false;
@@ -767,8 +804,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentUser.hints = 0;
       currentUser.undos = 0;
       currentUser.reveals = 0;
+      currentUser.extraBottles = 0;
       localStorage.setItem('cs_zero_boosters_v6', 'true');
       saveLocalUser();
+    }
+    if (currentUser.extraBottles === undefined) {
+      currentUser.extraBottles = 0;
     }
   }
 
@@ -867,6 +908,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (serverUser && serverUser.success && serverUser.user) {
       const oldLevel = currentUser.currentLevel;
       currentUser = { ...currentUser, ...serverUser.user };
+      if (serverUser.user.extra_bottles !== undefined) {
+        currentUser.extraBottles = serverUser.user.extra_bottles;
+      }
       saveLocalUser();
       updateHeaderUI();
       if (currentUser.currentLevel !== oldLevel) {
@@ -927,6 +971,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
+    const extraBottleBadge = document.getElementById('extraBottleBadge');
+    if (extraBottleBadge) {
+      const bCount = currentUser.extraBottles || 0;
+      setIfDiff(extraBottleBadge, bCount);
+      const isZero = bCount === 0;
+      if (extraBottleBadge.classList.contains('badge-zero') !== isZero) {
+        extraBottleBadge.classList.toggle('badge-zero', isZero);
+      }
+    }
+
     // Modal user counters
     const adModalHintsCount = document.getElementById('adModalHintsCount');
     if (adModalHintsCount) {
@@ -939,6 +993,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const adModalRevealsCount = document.getElementById('adModalRevealsCount');
     if (adModalRevealsCount) {
       setIfDiff(adModalRevealsCount, `(у вас: ${currentUser.reveals || 0})`);
+    }
+    const adModalExtraBottlesCount = document.getElementById('adModalExtraBottlesCount');
+    if (adModalExtraBottlesCount) {
+      setIfDiff(adModalExtraBottlesCount, `(у вас: ${currentUser.extraBottles || 0})`);
     }
   }
 
@@ -1147,6 +1205,72 @@ document.addEventListener('DOMContentLoaded', async () => {
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
           revealsUsed: 1
+        });
+      }
+    });
+  }
+
+  if (extraBottleBtn) {
+    extraBottleBtn.addEventListener('click', async (e) => {
+      if (justStartedGame) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        return;
+      }
+      if (engine.isWon || engine.isAnimating) return;
+
+      if ((currentUser.extraBottles || 0) <= 0) {
+        showInfoModal(
+          '🧪',
+          t('extraBottleModalTitle') || 'Пустая колба',
+          t('extraBottleModalPrompt') || 'У вас 0 пустых колб. Посмотрите короткую рекламу, чтобы получить пустую колбу на поле!',
+          t('claimAdBtn') || '▶ Смотреть рекламу (+1)',
+          async () => {
+            const adWatched = await showRewardedAd();
+            if (adWatched) {
+              try {
+                const data = await apiCall('/api/ad-reward', 'POST', {
+                  telegramId: currentUser.telegramId,
+                  rewardType: 'extra_bottle'
+                });
+                if (data && data.success && data.user) {
+                  currentUser = { ...currentUser, ...data.user };
+                  if (data.user.extra_bottles !== undefined) currentUser.extraBottles = data.user.extra_bottles;
+                } else {
+                  currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+                }
+              } catch (apiErr) {
+                console.warn('[Ad API Error, fallback to local]', apiErr);
+                currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+              }
+
+              const added = engine.addExtraBottle();
+              if (added) {
+                currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
+                if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+                if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+                await apiCall('/api/user/sync', 'POST', {
+                  telegramId: currentUser.telegramId,
+                  extraBottlesUsed: 1
+                });
+              }
+              saveLocalUser();
+              updateHeaderUI();
+            }
+          }
+        );
+        return;
+      }
+
+      const added = engine.addExtraBottle();
+      if (added) {
+        currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+        updateHeaderUI();
+        saveLocalUser();
+        await apiCall('/api/user/sync', 'POST', {
+          telegramId: currentUser.telegramId,
+          extraBottlesUsed: 1
         });
       }
     });
@@ -1463,7 +1587,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     adminAddBottleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+      currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
       engine.addExtraBottle();
+      saveLocalUser();
+      updateHeaderUI();
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
       showAdminFeedback(t('adminBottleAddedMsg'));
@@ -1517,6 +1644,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentUser.hints = (currentUser.hints || 0) + 10;
       currentUser.undos = (currentUser.undos || 0) + 10;
       currentUser.reveals = (currentUser.reveals || 0) + 10;
+      currentUser.extraBottles = (currentUser.extraBottles || 0) + 10;
       currentUser.coins = (currentUser.coins || 0) + 500;
       saveLocalUser();
       updateHeaderUI();
@@ -1606,6 +1734,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser.hints = 0;
         currentUser.undos = 0;
         currentUser.reveals = 0;
+        currentUser.extraBottles = 0;
         saveLocalUser();
         updateHeaderUI();
 
@@ -1752,27 +1881,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           if (data && data.success && data.user) {
             currentUser = { ...currentUser, ...data.user };
+            if (data.user.extra_bottles !== undefined) currentUser.extraBottles = data.user.extra_bottles;
           } else {
             // Offline fallback
             if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
             else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
             else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
+            else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
           }
         } catch (apiErr) {
           console.warn('[Ad API Error, fallback to local]', apiErr);
           if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
           else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
           else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
+          else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
         }
 
         saveLocalUser();
         updateHeaderUI();
 
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-
-        if (rewardType === 'extra_bottle') {
-          engine.addExtraBottle();
-        }
 
         btn.textContent = t('adClaimed') || '✅ Получено! (+1)';
         setTimeout(() => {
