@@ -428,28 +428,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 8. Load level
   const LG = (window.LevelGenerator && window.LevelGenerator.LevelGenerator) ? window.LevelGenerator.LevelGenerator : window.LevelGenerator;
-  const levelTypeBadge = document.getElementById('levelTypeBadge');
 
   async function loadCurrentLevel() {
     if (levelDisplay) levelDisplay.textContent = currentUser.currentLevel;
     if (LG && LG.generateLevel) {
       currentLevelData = LG.generateLevel(currentUser.currentLevel);
       engine.startLevel(currentLevelData);
-
-      // Update level archetype badge
-      if (levelTypeBadge && currentLevelData.config) {
-        const cfg = currentLevelData.config;
-        levelTypeBadge.className = 'level-type-tag';
-        if (cfg.isChallenge) {
-          levelTypeBadge.textContent = '🔥 БОСС';
-          levelTypeBadge.classList.add('boss');
-        } else if (cfg.isIntro) {
-          levelTypeBadge.textContent = '✨ ВВОД';
-          levelTypeBadge.classList.add('intro');
-        } else {
-          levelTypeBadge.textContent = `⚡ ${cfg.emptyJars === 1 ? '1 Пустая' : cfg.emptyJars + ' Пустые'}`;
-        }
-      }
 
       // Explicitly render board to guarantee DOM is populated immediately
       if (renderer && renderer.renderBoard) {

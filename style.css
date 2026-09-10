@@ -119,24 +119,28 @@ body {
 
 .level-badge {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  justify-content: center;
+  gap: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--radius-md);
-  padding: 4px 12px;
+  padding: 6px 14px;
 }
 
 .level-badge span {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: none;
+  color: #94a3b8;
+  letter-spacing: 0.2px;
 }
 
 .level-badge strong {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  color: var(--text-primary);
+  color: #38bdf8;
 }
 
 .header-right {
