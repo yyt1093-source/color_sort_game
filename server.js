@@ -153,7 +153,7 @@ app.post('/api/user/init', (req, res) => {
  */
 app.post('/api/user/sync', (req, res) => {
   try {
-    const { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, totalMoves } = req.body;
+    const { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, shufflesUsed, totalMoves } = req.body;
 
     const id = telegramId || 'guest_dev_123';
     const updatedUser = db.updateUserProgress(id, {
@@ -167,6 +167,7 @@ app.post('/api/user/sync', (req, res) => {
       hintsUsed,
       undosUsed,
       revealsUsed,
+      shufflesUsed,
       totalMoves
     });
 

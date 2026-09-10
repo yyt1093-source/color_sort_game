@@ -22,6 +22,7 @@ function initDatabase() {
       hints INTEGER DEFAULT 0,
       undos INTEGER DEFAULT 0,
       reveals INTEGER DEFAULT 0,
+      shuffles INTEGER DEFAULT 0,
       total_moves INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
@@ -37,7 +38,7 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_leaderboard ON users(max_level DESC, stars DESC);
   `);
   
-  // Try to add total_moves and reveals if they don't exist (for existing databases)
+  // Try to add total_moves, reveals and shuffles if they don't exist (for existing databases)
   try {
     db.exec(`ALTER TABLE users ADD COLUMN total_moves INTEGER DEFAULT 0;`);
   } catch (e) {}
@@ -45,7 +46,10 @@ function initDatabase() {
     db.exec(`ALTER TABLE users ADD COLUMN reveals INTEGER DEFAULT 0;`);
   } catch (e) {}
   try {
-    db.exec(`UPDATE users SET hints = 0, undos = 0, reveals = 0;`);
+    db.exec(`ALTER TABLE users ADD COLUMN shuffles INTEGER DEFAULT 0;`);
+  } catch (e) {}
+  try {
+    db.exec(`UPDATE users SET hints = 0, undos = 0, reveals = 0, shuffles = 0;`);
   } catch (e) {}
 }
 
@@ -80,8 +84,8 @@ function getUser(telegramId, defaultUserData = {}) {
   }
 
   const insertStmt = db.prepare(`
-    INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, total_moves)
-    VALUES (?, ?, ?, ?, 1, 1, 0, 100, 0, 0, 0, 0)
+    INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, shuffles, total_moves)
+    VALUES (?, ?, ?, ?, 1, 1, 0, 100, 0, 0, 0, 0, 0)
   `);
   
   insertStmt.run(
@@ -97,7 +101,7 @@ function getUser(telegramId, defaultUserData = {}) {
 /**
  * Update user game progress
  */
-function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed = 0, undosUsed = 0, revealsUsed = 0, totalMoves = 0, firstName, username, photoUrl }) {
+function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed = 0, undosUsed = 0, revealsUsed = 0, shufflesUsed = 0, totalMoves = 0, firstName, username, photoUrl }) {
   const user = getUser(telegramId, { first_name: firstName, username, photo_url: photoUrl });
   if (!user) return null;
 
@@ -108,6 +112,7 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
   const newHints = Math.max(0, user.hints - hintsUsed);
   const newUndos = Math.max(0, user.undos - undosUsed);
   const newReveals = Math.max(0, (user.reveals || 0) - revealsUsed);
+  const newShuffles = Math.max(0, (user.shuffles || 0) - shufflesUsed);
   const newTotalMoves = user.total_moves + (totalMoves || 0);
 
   const stmt = db.prepare(`
@@ -119,6 +124,7 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
         hints = ?,
         undos = ?,
         reveals = ?,
+        shuffles = ?,
         total_moves = ?,
         first_name = COALESCE(?, first_name),
         username = COALESCE(?, username),
@@ -127,14 +133,14 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
     WHERE telegram_id = ?
   `);
 
-  stmt.run(newCurrentLevel, newMaxLevel, newStars, newCoins, newHints, newUndos, newReveals, newTotalMoves, firstName || null, username || null, photoUrl || null, String(telegramId));
+  stmt.run(newCurrentLevel, newMaxLevel, newStars, newCoins, newHints, newUndos, newReveals, newShuffles, newTotalMoves, firstName || null, username || null, photoUrl || null, String(telegramId));
   return getUser(telegramId);
 }
 
 /**
  * Add items / bonus rewards to user
  */
-function addBonus(telegramId, { coins = 0, hints = 0, undos = 0, reveals = 0 }) {
+function addBonus(telegramId, { coins = 0, hints = 0, undos = 0, reveals = 0, shuffles = 0 }) {
   const user = getUser(telegramId);
   if (!user) return null;
 
@@ -144,11 +150,12 @@ function addBonus(telegramId, { coins = 0, hints = 0, undos = 0, reveals = 0 }) 
         hints = hints + ?,
         undos = undos + ?,
         reveals = COALESCE(reveals, 0) + ?,
+        shuffles = COALESCE(shuffles, 0) + ?,
         updated_at = datetime('now')
     WHERE telegram_id = ?
   `);
 
-  stmt.run(coins, hints, undos, reveals, String(telegramId));
+  stmt.run(coins, hints, undos, reveals, shuffles, String(telegramId));
   return getUser(telegramId);
 }
 
@@ -162,10 +169,11 @@ function logAdReward(telegramId, rewardType) {
   `);
   insertStmt.run(String(telegramId), rewardType);
 
-  let bonus = { coins: 0, hints: 0, undos: 0, reveals: 0 };
+  let bonus = { coins: 0, hints: 0, undos: 0, reveals: 0, shuffles: 0 };
   if (rewardType === 'hints') bonus.hints = 1;
   else if (rewardType === 'undos') bonus.undos = 1;
   else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') bonus.reveals = 1;
+  else if (rewardType === 'shuffle_colors' || rewardType === 'shuffles') bonus.shuffles = 1;
   else if (rewardType === 'coins') bonus.coins = 150;
   else if (rewardType === 'extra_bottle') bonus.coins = 50;
   else bonus.coins = 100;
