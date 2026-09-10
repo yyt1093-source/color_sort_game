@@ -116,6 +116,11 @@
       <button id="revealBottleBtn" class="tool-btn highlight">
         <span class="tool-badge" id="revealBadge">0</span>
         <span class="tool-label" id="revealBtnLabel">Открыть цвета</span>
+        <span class="tool-icon">🔮</span>
+      </button>
+      <button id="extraBottleBtn" class="tool-btn highlight">
+        <span class="tool-badge" id="extraBottleBadge">0</span>
+        <span class="tool-label" id="extraBottleBtnLabel">+1 Банка</span>
         <span class="tool-icon">🧪</span>
       </button>
       <button id="adBonusBtn" class="tool-btn highlight">
@@ -313,8 +318,8 @@
       <div class="ad-options-grid">
         <div class="ad-card" data-reward="extra_bottle">
           <div class="ad-card-icon">🧪</div>
-          <h3>Доп. пустая банка</h3>
-          <p>+1 пустая банка на текущий уровень</p>
+          <h3 id="adModalBottleTitle">Доп. пустая банка</h3>
+          <p id="adModalBottleDesc">+1 пустая банка в запас <span class="ad-user-count" id="adModalExtraBottlesCount"></span></p>
           <button class="claim-ad-btn">▶ Смотреть рекламу</button>
         </div>
         <div class="ad-card" data-reward="hints">

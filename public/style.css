@@ -398,14 +398,14 @@ body {
 /* Toolbar */
 .toolbar {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  padding: 6px 3px;
+  padding: 5px 2px;
   overflow: visible;
 }
 
@@ -416,16 +416,16 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  gap: 3px;
+  gap: 2px;
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.28), rgba(14, 165, 233, 0.45));
   border: 1px solid var(--accent);
   border-radius: var(--radius-md);
-  padding: 6px 2px 7px 2px;
+  padding: 5px 1px 6px 1px;
   color: var(--text-primary);
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: transform 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
-  min-height: 56px;
+  min-height: 52px;
 }
 
 .tool-btn:active {
@@ -451,15 +451,15 @@ body {
 /* Счетчик (badge) в правом верхнем углу кнопки */
 .tool-badge {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 10px;
-  font-size: 0.72rem;
+  top: -4px;
+  right: -2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  border-radius: 9px;
+  font-size: 0.68rem;
   font-weight: 800;
-  line-height: 20px;
+  line-height: 17px;
   text-align: center;
   display: inline-flex;
   align-items: center;
@@ -486,7 +486,7 @@ body {
 }
 
 .tool-icon {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -494,17 +494,18 @@ body {
 }
 
 .tool-label {
-  font-size: 0.54rem;
+  font-size: clamp(0.48rem, 1.8vw, 0.53rem);
   font-weight: 800;
   text-align: center;
-  line-height: 1.12;
-  letter-spacing: -0.01em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  min-height: 20px;
+  min-height: 19px;
   display: flex;
   align-items: center;
   justify-content: center;
+  word-break: break-word;
 }
 
 @keyframes revealGlow {

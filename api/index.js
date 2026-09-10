@@ -45,7 +45,7 @@ app.post('/api/user/init', (req, res) => {
  */
 app.post('/api/user/sync', (req, res) => {
   try {
-    const { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, shufflesUsed, totalMoves } = req.body;
+    const { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves } = req.body;
 
     const id = telegramId || 'guest_dev_123';
     const updatedUser = db.updateUserProgress(id, {
@@ -59,6 +59,7 @@ app.post('/api/user/sync', (req, res) => {
       hintsUsed,
       undosUsed,
       revealsUsed,
+      extraBottlesUsed,
       shufflesUsed,
       totalMoves
     });
@@ -93,13 +94,13 @@ app.post('/api/ad-reward', (req, res) => {
     const { telegramId, rewardType } = req.body;
     const id = telegramId || 'guest_dev_123';
 
-    let bonus = { coins: 0, hints: 0, undos: 0, reveals: 0, shuffles: 0 };
+    let bonus = { coins: 0, hints: 0, undos: 0, reveals: 0, extra_bottles: 0, shuffles: 0 };
     if (rewardType === 'hints') bonus.hints = 1;
     else if (rewardType === 'undos') bonus.undos = 1;
     else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') bonus.reveals = 1;
+    else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') bonus.extra_bottles = 1;
     else if (rewardType === 'shuffle_colors' || rewardType === 'shuffles') bonus.shuffles = 1;
     else if (rewardType === 'coins') bonus.coins = 150;
-    else if (rewardType === 'extra_bottle') bonus.coins = 50;
     else bonus.coins = 100;
 
     const updatedUser = db.addBonus(id, bonus);

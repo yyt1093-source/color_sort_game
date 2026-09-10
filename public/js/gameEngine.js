@@ -261,9 +261,15 @@
     }
 
     addExtraBottle() {
-      if (this.isAnimating) return false;
+      if (this.isAnimating || this.isWon) return false;
       this.bottles.push([]);
       if (this.revealed) this.revealed.push([]);
+      if (this.history && this.history.length > 0) {
+        this.history.forEach(state => {
+          if (state.bottles) state.bottles.push([]);
+          if (state.revealed) state.revealed.push([]);
+        });
+      }
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (this.onStateChange) this.onStateChange();
