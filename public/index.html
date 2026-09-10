@@ -10,13 +10,16 @@
   
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+
+  <!-- TON Connect UI SDK -->
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47101">
+  <link rel="stylesheet" href="style.css?v=47102">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -67,6 +70,10 @@
         </div>
       </button>
       <div class="header-right">
+        <button id="donateBtn" class="donate-header-btn" title="Поддержать игру" aria-label="Донат">
+          <span class="donate-btn-icon">💎</span>
+          <span class="donate-btn-label" id="donateBtnLabel">Донат</span>
+        </button>
         <button id="leaderboardBtn" class="glass-icon-btn" title="Лидерборд">🏆</button>
         <button id="soundToggleBtn" class="glass-icon-btn" title="Звук">🔊</button>
       </div>
@@ -233,6 +240,90 @@
     </div>
   </div>
 
+  <!-- Donate & Wallet Modal -->
+  <div id="donateModal" class="modal-overlay hidden">
+    <div class="glass-modal donate-modal-content">
+      <div class="modal-ribbon-handle"></div>
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2 id="donateModalTitle">💎 Поддержка игры</h2>
+          <span class="donate-network-badge">TON</span>
+        </div>
+        <button id="closeDonateModalBtn" class="close-btn" title="Закрыть">&times;</button>
+      </div>
+
+      <p id="donateModalDesc" class="donate-modal-desc">Подключите TON кошелек и поддержите разработку игры!</p>
+
+      <!-- Wallet Connection Card -->
+      <div class="donate-wallet-card" id="donateWalletCard">
+        <div class="wallet-card-left">
+          <div class="wallet-icon-wrap" id="walletStatusIcon">👛</div>
+          <div class="wallet-info-meta">
+            <span class="wallet-status-label" id="walletStatusLabel">Кошелек не подключен</span>
+            <span class="wallet-address-preview hidden" id="walletAddressPreview">—</span>
+          </div>
+        </div>
+        <div class="wallet-card-action">
+          <button type="button" id="connectWalletBtn" class="wallet-action-btn">
+            <span id="connectWalletBtnText">Подключить</span>
+          </button>
+          <button type="button" id="disconnectWalletBtn" class="wallet-disconnect-btn hidden" title="Отключить">✕</button>
+        </div>
+      </div>
+
+      <!-- Hidden container for TON Connect button instance -->
+      <div id="tonConnectBtnContainer" style="display: none;"></div>
+
+      <!-- Donation Amount Selection -->
+      <div class="donate-amount-section">
+        <div class="donate-section-title">
+          <span id="donateChooseAmountLabel">Выберите сумму доната</span>
+          <span class="ton-rate-hint">💎 TON</span>
+        </div>
+        <div class="donate-chips-grid" id="donateChipsGrid">
+          <button type="button" class="donate-chip" data-amount="0.2">0.2 TON</button>
+          <button type="button" class="donate-chip active" data-amount="0.5">0.5 TON</button>
+          <button type="button" class="donate-chip" data-amount="1.0">1.0 TON</button>
+          <button type="button" class="donate-chip" data-amount="2.0">2.0 TON</button>
+          <button type="button" class="donate-chip" data-amount="5.0">5.0 TON</button>
+        </div>
+
+        <!-- Custom amount input -->
+        <div class="donate-custom-wrap">
+          <label for="donateCustomInput" id="donateCustomLabel">Своя сумма (TON):</label>
+          <div class="donate-custom-control">
+            <button type="button" id="donateAmountMinusBtn" class="donate-qty-btn">−</button>
+            <input type="number" id="donateCustomInput" min="0.1" max="1000" step="0.1" value="0.5" inputmode="decimal">
+            <button type="button" id="donateAmountPlusBtn" class="donate-qty-btn">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Action Send Button -->
+      <button type="button" id="sendDonateBtn" class="donate-main-action-btn pulse-glow">
+        <span class="donate-action-icon">💎</span>
+        <span id="sendDonateBtnText">Поддержать на 0.5 TON</span>
+      </button>
+
+      <!-- Feedback Message Container -->
+      <div id="donateFeedbackMsg" class="donate-feedback-msg hidden"></div>
+
+      <!-- Manual Direct Transfer Card -->
+      <div class="donate-manual-card">
+        <div class="manual-card-header">
+          <span class="manual-card-title" id="donateManualTitle">Прямой перевод по адресу кошелька:</span>
+        </div>
+        <div class="manual-address-row">
+          <span class="manual-address-text" id="donateAddressText">UQBi-3_EXAMPLE_DONATE_WALLET_ADDRESS_TON_DEPLOYED</span>
+          <button type="button" id="copyDonateAddressBtn" class="copy-addr-btn" title="Скопировать адрес">
+            <span id="copyAddrBtnIcon">📋</span>
+            <span id="copyAddrBtnLabel">Копировать</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Leaderboard Modal -->
   <div id="leaderboardModal" class="modal-overlay hidden">
     <div class="glass-modal">
@@ -367,12 +458,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47101"></script>
-  <script src="js/audio.js?v=47101"></script>
-  <script src="js/solver.js?v=47101"></script>
-  <script src="js/levelGenerator.js?v=47101"></script>
-  <script src="js/gameEngine.js?v=47101"></script>
-  <script src="js/renderer.js?v=47101"></script>
-  <script src="js/app.js?v=47101"></script>
+  <script src="js/telegram.js?v=47102"></script>
+  <script src="js/audio.js?v=47102"></script>
+  <script src="js/solver.js?v=47102"></script>
+  <script src="js/levelGenerator.js?v=47102"></script>
+  <script src="js/gameEngine.js?v=47102"></script>
+  <script src="js/renderer.js?v=47102"></script>
+  <script src="js/app.js?v=47102"></script>
 </body>
 </html>
