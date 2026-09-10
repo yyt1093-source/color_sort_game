@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47094">
+  <link rel="stylesheet" href="style.css?v=47095">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -171,6 +171,37 @@
             <span class="admin-panel-sub">Доступно только Аллигатору</span>
           </div>
         </div>
+
+        <!-- Admin Free Boosters (No Ads) -->
+        <div class="admin-boosters-container">
+          <div class="admin-boosters-header" id="adminBoostersTitle">⚡ Бесплатные функции (Без рекламы):</div>
+          <div class="admin-boosters-grid">
+            <button type="button" id="adminAddBottleBtn" class="admin-boost-btn">
+              <span class="admin-boost-icon">🧪</span>
+              <span class="admin-boost-label" id="adminAddBottleLabel">+1 Банка на поле</span>
+            </button>
+            <button type="button" id="adminAddHintsBtn" class="admin-boost-btn">
+              <span class="admin-boost-icon">💡</span>
+              <span class="admin-boost-label" id="adminAddHintsLabel">+5 Подсказок</span>
+            </button>
+            <button type="button" id="adminAddUndosBtn" class="admin-boost-btn">
+              <span class="admin-boost-icon">↩️</span>
+              <span class="admin-boost-label" id="adminAddUndosLabel">+5 Отмен хода</span>
+            </button>
+            <button type="button" id="adminAddRevealsBtn" class="admin-boost-btn">
+              <span class="admin-boost-icon">🔮</span>
+              <span class="admin-boost-label" id="adminAddRevealsLabel">+5 Открытий</span>
+            </button>
+          </div>
+          <button type="button" id="adminAddAllBtn" class="admin-add-all-btn">
+            <span class="admin-boost-icon">⚡</span>
+            <span id="adminAddAllLabel">Пополнить ВСЁ сразу (+10 ко всем бонусам)</span>
+          </button>
+          <div id="adminFeedbackMsg" class="admin-feedback-msg hidden"></div>
+        </div>
+
+        <div class="admin-divider"></div>
+
         <p class="admin-desc">Сброс сезона полностью удаляет всю информацию, обнуляет глобальный лидерборд, уровни, монеты и награды всех игроков.</p>
         <button id="adminResetSeasonBtn" class="admin-reset-season-btn">
           <span class="reset-btn-icon">🔥</span>
@@ -335,12 +366,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47094"></script>
-  <script src="js/audio.js?v=47094"></script>
-  <script src="js/solver.js?v=47094"></script>
-  <script src="js/levelGenerator.js?v=47094"></script>
-  <script src="js/gameEngine.js?v=47094"></script>
-  <script src="js/renderer.js?v=47094"></script>
-  <script src="js/app.js?v=47094"></script>
+  <script src="js/telegram.js?v=47095"></script>
+  <script src="js/audio.js?v=47095"></script>
+  <script src="js/solver.js?v=47095"></script>
+  <script src="js/levelGenerator.js?v=47095"></script>
+  <script src="js/gameEngine.js?v=47095"></script>
+  <script src="js/renderer.js?v=47095"></script>
+  <script src="js/app.js?v=47095"></script>
 </body>
 </html>
