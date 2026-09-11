@@ -85,6 +85,9 @@ function initDatabase() {
     db.exec(`ALTER TABLE users ADD COLUMN all_colors_until INTEGER DEFAULT 0;`);
   } catch (e) {}
   try {
+    db.exec(`ALTER TABLE users ADD COLUMN all_colors_purchased_at INTEGER DEFAULT 0;`);
+  } catch (e) {}
+  try {
     db.exec(`UPDATE users SET hints = 0, undos = 0, reveals = 0, shuffles = 0;`);
   } catch (e) {}
 }
@@ -412,10 +415,11 @@ function buyShopItem(telegramId, itemId) {
       UPDATE users
       SET ton_balance = ?,
           all_colors_until = ?,
+          all_colors_purchased_at = ?,
           updated_at = datetime('now')
       WHERE telegram_id = ?
     `);
-    updateStmt.run(newBalance, newExpiry, String(telegramId));
+    updateStmt.run(newBalance, newExpiry, now, String(telegramId));
   } else if (item.extraBottles) {
     const updateStmt = db.prepare(`
       UPDATE users
@@ -462,6 +466,21 @@ function buyShopItem(telegramId, itemId) {
   };
 }
 
+/**
+ * Admin: Reset all active GRAM purchases in the chest for all players.
+ * Annuls active advantages (all_colors_until) without touching wallet currency balances (ton_balance).
+ */
+function resetGramPurchases() {
+  try {
+    db.exec(`UPDATE users SET all_colors_until = 0, all_colors_purchased_at = 0;`);
+    db.exec(`DELETE FROM shop_purchases;`);
+    return { success: true };
+  } catch (err) {
+    console.error('[DB Reset Gram Purchases Error]', err);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   getUser,
   updateUserProgress,
@@ -471,6 +490,7 @@ module.exports = {
   getLeaderboard,
   getAllTelegramIds,
   resetSeason,
+  resetGramPurchases,
   updateTonWallet,
   recordTonDeposit,
   buyShopItem

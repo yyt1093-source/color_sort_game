@@ -378,6 +378,58 @@ app.post('/api/shop/buy', (req, res) => {
   }
 });
 
+/**
+ * Admin Season Reset (Alligator Only)
+ */
+app.post('/api/admin/reset-season', (req, res) => {
+  try {
+    const { telegramId, firstName, username } = req.body || {};
+    const tid = String(telegramId || '').trim();
+    const fname = String(firstName || '').toLowerCase().trim();
+    const uname = String(username || '').toLowerCase().trim();
+
+    const isAlligator = tid === '5761685341' ||
+      fname === 'alligator' || fname === 'аллигатор' ||
+      uname === 'alligator' || uname === 'аллигатор';
+
+    if (!isAlligator) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: права администратора только у Аллигатора' });
+    }
+
+    const result = db.resetSeason();
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/reset-season:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin Reset All GRAM Purchases (Alligator Only)
+ */
+app.post('/api/admin/reset-purchases', (req, res) => {
+  try {
+    const { telegramId, firstName, username } = req.body || {};
+    const tid = String(telegramId || '').trim();
+    const fname = String(firstName || '').toLowerCase().trim();
+    const uname = String(username || '').toLowerCase().trim();
+
+    const isAlligator = tid === '5761685341' ||
+      fname === 'alligator' || fname === 'аллигатор' ||
+      uname === 'alligator' || uname === 'аллигатор';
+
+    if (!isAlligator) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: права администратора только у Аллигатора' });
+    }
+
+    const result = db.resetGramPurchases();
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/reset-purchases:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Global error handling middleware (e.g. malformed JSON)
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
