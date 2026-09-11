@@ -36,9 +36,12 @@
     const segments = [];
     for (let i = 0; i < layers.length; i++) {
       const colorIdx = layers[i];
-      const isKnown = (engine.revealed && engine.revealed[idx] && engine.revealed[idx][i] !== undefined)
-        ? engine.revealed[idx][i]
-        : (i === layers.length - 1);
+      const allActive = (typeof window !== 'undefined' && window.isAllColorsActive && window.isAllColorsActive());
+      const isKnown = allActive
+        ? true
+        : ((engine.revealed && engine.revealed[idx] && engine.revealed[idx][i] !== undefined)
+            ? engine.revealed[idx][i]
+            : (i === layers.length - 1));
 
       const prevSegment = segments[segments.length - 1];
       if (prevSegment && prevSegment.isKnown === isKnown && (!isKnown || prevSegment.colorIdx === colorIdx)) {
@@ -130,7 +133,8 @@
           bottleEl.style.opacity = '1';
         }
 
-        const currentLayerSig = layers.join(',') + '_' + (engine.revealed && engine.revealed[idx] ? engine.revealed[idx].join(',') : '');
+        const allActive = (typeof window !== 'undefined' && window.isAllColorsActive && window.isAllColorsActive());
+        const currentLayerSig = layers.join(',') + '_' + (allActive ? 'all' : (engine.revealed && engine.revealed[idx] ? engine.revealed[idx].join(',') : ''));
         if (bottleEl.dataset.layerSig !== currentLayerSig) {
           bottleEl.dataset.layerSig = currentLayerSig;
           updateBottleLiquid(bottleEl, layers, idx, engine);
@@ -173,7 +177,8 @@
       liquidContainer.className = 'liquid-container';
       bottleEl.appendChild(liquidContainer);
 
-      const currentLayerSig = layers.join(',') + '_' + (engine.revealed && engine.revealed[idx] ? engine.revealed[idx].join(',') : '');
+      const allActive = (typeof window !== 'undefined' && window.isAllColorsActive && window.isAllColorsActive());
+      const currentLayerSig = layers.join(',') + '_' + (allActive ? 'all' : (engine.revealed && engine.revealed[idx] ? engine.revealed[idx].join(',') : ''));
       bottleEl.dataset.layerSig = currentLayerSig;
       updateBottleLiquid(bottleEl, layers, idx, engine);
 

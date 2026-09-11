@@ -33,9 +33,13 @@
       this.hintHighlight = null;
       this.isWon = false;
       
-      // Initialize revealed matrix: ONLY the single top cell is revealed, lower layers are mystery
+      // Initialize revealed matrix: If 'all colors' perk is active, reveal everything immediately! Otherwise only single top cell is revealed
+      const allActive = (typeof window !== 'undefined' && window.isAllColorsActive && window.isAllColorsActive());
       this.revealed = this.bottles.map(b => {
         if (b.length === 0) return [];
+        if (allActive) {
+          return new Array(b.length).fill(true);
+        }
         const rev = new Array(b.length).fill(false);
         rev[b.length - 1] = true;
         return rev;
@@ -119,10 +123,11 @@
       const bFrom = this.bottles[fromIdx];
       const bTo = this.bottles[toIdx];
       const topColor = bFrom[bFrom.length - 1];
+      const allActive = (typeof window !== 'undefined' && window.isAllColorsActive && window.isAllColorsActive());
 
       let count = 0;
       for (let i = bFrom.length - 1; i >= 0; i--) {
-        const isKnown = !this.revealed || !this.revealed[fromIdx] || this.revealed[fromIdx][i] !== false;
+        const isKnown = allActive || !this.revealed || !this.revealed[fromIdx] || this.revealed[fromIdx][i] !== false;
         if (bFrom[i] === topColor && isKnown) count++;
         else break;
       }
@@ -292,8 +297,15 @@
     }
 
     hasHiddenColors() {
+      if (typeof window !== 'undefined' && window.isAllColorsActive && window.isAllColorsActive()) return false;
       if (!this.revealed) return false;
       return this.revealed.some(r => r && r.some(isKnown => isKnown === false));
+    }
+
+    revealAllColors() {
+      if (!this.bottles) return;
+      this.revealed = this.bottles.map(b => new Array(b.length).fill(true));
+      if (this.onStateChange) this.onStateChange();
     }
 
     revealRandomBottle() {

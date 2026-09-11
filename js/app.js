@@ -519,6 +519,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const extraBottleBtn = document.getElementById('extraBottleBtn');
   const adBonusBtn = document.getElementById('adBonusBtn');
   const walletBtn = document.getElementById('walletBtn');
+  const shopBtn = document.getElementById('shopBtn');
   const leaderboardBtn = document.getElementById('leaderboardBtn');
   const soundToggleBtn = document.getElementById('soundToggleBtn');
   const nextLevelBtn = document.getElementById('nextLevelBtn');
@@ -547,6 +548,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tonCopyMemoIcon = document.getElementById('tonCopyMemoIcon');
   const tonVerifyPaymentBtn = document.getElementById('tonVerifyPaymentBtn');
   const tonVerifyBtnLabel = document.getElementById('tonVerifyBtnLabel');
+
+  // Chest / Upgrades Shop Modal Elements
+  const shopModal = document.getElementById('shopModal');
+  const closeShopModalBtn = document.getElementById('closeShopModalBtn');
+  const shopUserBalance = document.getElementById('shopUserBalance');
+  const shopTopUpBtn = document.getElementById('shopTopUpBtn');
+  const shopActivePerkBanner = document.getElementById('shopActivePerkBanner');
+  const shopActivePerkTitle = document.getElementById('shopActivePerkTitle');
+  const shopActiveTimerText = document.getElementById('shopActiveTimerText');
+  const buyAllColorsBtn = document.getElementById('buyAllColorsBtn');
 
   // Modals
   const leaderboardModal = document.getElementById('leaderboardModal');
@@ -695,8 +706,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     extraBottles: 0,
     ton_balance: 0.0,
     ton_wallet: '',
-    memo_code: ''
+    memo_code: '',
+    all_colors_until: 0
   };
+
+  window.isAllColorsActive = function () {
+    if (!currentUser || !currentUser.all_colors_until) return false;
+    return Number(currentUser.all_colors_until) > Date.now();
+  };
+
   let currentLevelData = null;
   let justStartedGame = false;
   const engine = window.GameEngine.Engine || window.GameEngine;
@@ -978,7 +996,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (serverUser.user.memo_code !== undefined) {
         currentUser.memo_code = serverUser.user.memo_code;
       }
+      if (serverUser.user.all_colors_until !== undefined) {
+        currentUser.all_colors_until = serverUser.user.all_colors_until;
+      }
       updateTonWalletUI();
+      updateShopUI();
       saveLocalUser();
       updateHeaderUI();
       if (currentUser.currentLevel !== oldLevel) {
@@ -1876,6 +1898,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentUser.ton_balance = res.user.ton_balance;
             saveLocalUser();
             updateTonWalletUI();
+            updateShopUI();
             updateHeaderUI();
 
             if (window.TelegramApp && window.TelegramApp.TelegramApp) {
@@ -1895,6 +1918,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentUser.ton_balance = (parseFloat(currentUser.ton_balance || 0) + selectedTonAmount);
             saveLocalUser();
             updateTonWalletUI();
+            updateShopUI();
             updateHeaderUI();
 
             if (window.TelegramApp && window.TelegramApp.TelegramApp) {
@@ -1914,6 +1938,180 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // ==========================================
+  // Chest / Upgrades Shop Modal Logic
+  // ==========================================
+  function updateShopUI() {
+    const bal = parseFloat(currentUser.ton_balance || 0);
+    if (shopUserBalance) {
+      shopUserBalance.textContent = `${bal.toFixed(2)} GRAM`;
+    }
+
+    const isAllColors = window.isAllColorsActive();
+    if (shopActivePerkBanner) {
+      shopActivePerkBanner.classList.toggle('hidden', !isAllColors);
+    }
+
+    if (isAllColors && shopActiveTimerText) {
+      const msLeft = Number(currentUser.all_colors_until) - Date.now();
+      if (msLeft > 0) {
+        const days = Math.floor(msLeft / (24 * 3600 * 1000));
+        const hours = Math.floor((msLeft % (24 * 3600 * 1000)) / (3600 * 1000));
+        const mins = Math.floor((msLeft % (3600 * 1000)) / (60 * 1000));
+        shopActiveTimerText.textContent = `Осталось: ${days} дн. ${hours} ч. ${mins} мин.`;
+      } else {
+        shopActiveTimerText.textContent = 'Истекает...';
+      }
+    }
+
+    if (buyAllColorsBtn) {
+      const btnTextEl = buyAllColorsBtn.querySelector('.btn-text');
+      if (btnTextEl) {
+        btnTextEl.textContent = isAllColors ? 'Продлить (+15 дн.) — 5 GRAM' : 'Активировать (5 GRAM)';
+      }
+    }
+  }
+
+  function openShopModal() {
+    updateShopUI();
+    const modalContent = document.querySelector('.shop-modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
+    if (shopModal) openModal(shopModal);
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('light');
+    }
+  }
+
+  if (shopBtn) {
+    shopBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openShopModal();
+    });
+  }
+
+  if (closeShopModalBtn) {
+    closeShopModalBtn.addEventListener('click', () => {
+      if (shopModal) closeModal(shopModal);
+    });
+  }
+
+  if (shopTopUpBtn) {
+    shopTopUpBtn.addEventListener('click', () => {
+      if (shopModal) closeModal(shopModal);
+      openTonModal();
+    });
+  }
+
+  async function handleShopPurchase(itemId, btnEl) {
+    const currentBal = parseFloat(currentUser.ton_balance || 0);
+    const itemPrices = {
+      all_colors_15d: 5.0,
+      bottles_pack_15: 1.0,
+      hints_pack_20: 1.0,
+      undos_pack_20: 1.0
+    };
+    const price = itemPrices[itemId] || 1.0;
+
+    if (currentBal < price) {
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
+      showInfoModal(
+        '💎',
+        'Недостаточно GRAM!',
+        `Для покупки требуется ${price.toFixed(2)} GRAM. У вас на балансе: ${currentBal.toFixed(2)} GRAM.\n\nПополните баланс в TON кошельке, чтобы активировать преимущество!`,
+        'Пополнить баланс',
+        () => {
+          if (shopModal) closeModal(shopModal);
+          openTonModal();
+        }
+      );
+      return;
+    }
+
+    if (btnEl) btnEl.disabled = true;
+
+    try {
+      const res = await apiCall('/api/shop/buy', 'POST', {
+        telegramId: currentUser.telegramId,
+        itemId: itemId
+      });
+
+      if (res && res.success && res.user) {
+        currentUser.ton_balance = res.user.ton_balance;
+        if (res.user.all_colors_until !== undefined) currentUser.all_colors_until = res.user.all_colors_until;
+        if (res.user.extra_bottles !== undefined) currentUser.extraBottles = res.user.extra_bottles;
+        if (res.user.hints !== undefined) currentUser.hints = res.user.hints;
+        if (res.user.undos !== undefined) currentUser.undos = res.user.undos;
+      } else {
+        // Fallback for static GitHub Pages / client-side test
+        currentUser.ton_balance = Number((currentBal - price).toFixed(4));
+        if (itemId === 'all_colors_15d') {
+          const now = Date.now();
+          const curr = Number(currentUser.all_colors_until || 0);
+          const base = (curr > now) ? curr : now;
+          currentUser.all_colors_until = base + (15 * 24 * 60 * 60 * 1000);
+        } else if (itemId === 'bottles_pack_15') {
+          currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
+        } else if (itemId === 'hints_pack_20') {
+          currentUser.hints = (currentUser.hints || 0) + 20;
+        } else if (itemId === 'undos_pack_20') {
+          currentUser.undos = (currentUser.undos || 0) + 20;
+        }
+      }
+
+      saveLocalUser();
+      updateShopUI();
+      updateHeaderUI();
+      updateTonWalletUI();
+
+      if (itemId === 'all_colors_15d') {
+        if (engine && typeof engine.revealAllColors === 'function') {
+          engine.revealAllColors();
+        }
+        if (renderer && renderer.renderBoard) {
+          renderer.renderBoard(engine);
+        }
+      }
+
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playWin();
+
+      showInfoModal(
+        '✨',
+        'Успешно активировано!',
+        itemId === 'all_colors_15d'
+          ? 'Функция «Все краски открыты» активирована на 15 дней!\n\nВсе скрытые слои жидкостей во всех колбах теперь видны сразу с 1-й секунды каждого уровня!'
+          : 'Преимущество успешно зачислено на ваш аккаунт!'
+      );
+    } catch (err) {
+      console.error('[Shop Purchase Error]', err);
+    } finally {
+      if (btnEl) btnEl.disabled = false;
+    }
+  }
+
+  // Bind shop buy buttons
+  const shopItemsList = document.querySelector('.shop-items-list');
+  if (shopItemsList) {
+    shopItemsList.addEventListener('click', (e) => {
+      const buyBtn = e.target.closest('.shop-buy-btn');
+      if (!buyBtn) return;
+      const itemId = buyBtn.dataset.item;
+      if (itemId) {
+        handleShopPurchase(itemId, buyBtn);
+      }
+    });
+  }
+
+  // Update shop timer periodically if active
+  setInterval(() => {
+    if (window.isAllColorsActive && window.isAllColorsActive()) {
+      if (shopActiveTimerText && shopModal && !shopModal.classList.contains('hidden')) {
+        updateShopUI();
+      }
+    }
+  }, 10000);
 
   // Profile & Language Modal Event Listeners
   function openProfileMenu() {
