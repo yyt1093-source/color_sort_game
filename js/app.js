@@ -655,6 +655,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Referral Program Elements
   const referralCountVal = document.getElementById('referralCountVal');
+  const referralLinkTextDisplay = document.getElementById('referralLinkTextDisplay');
+  const referralDirectStartBtn = document.getElementById('referralDirectStartBtn');
   const shareReferralTelegramBtn = document.getElementById('shareReferralTelegramBtn');
   const copyReferralLinkBtn = document.getElementById('copyReferralLinkBtn');
   const copyReferralBtnText = document.getElementById('copyReferralBtnText');
@@ -2411,6 +2413,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (referralCountVal) {
       referralCountVal.textContent = totalCount;
     }
+    if (referralLinkTextDisplay) {
+      referralLinkTextDisplay.textContent = getReferralLink(myId);
+    }
 
     if (referralClaimBanner) {
       if (unclaimedCount > 0) {
@@ -2524,7 +2529,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const id = currentUser.telegramId;
       const webUrl = `https://yyt1093-source.github.io/color_sort_game/?startapp=ref_${id}`;
       const botUrl = `https://t.me/sortcolors_bot?startapp=ref_${id}`;
-      const text = `🧪 Присоединяйся ко мне в игре Color Sort! Переливай жидкости по колбочкам и забирай крутые бонусы! 🎁\n\n🎮 Играть прямо в Telegram: ${botUrl}`;
+      const text = `${botUrl}\n\nSTART: ${botUrl}`;
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(text)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(shareUrl);
@@ -2533,6 +2538,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  if (referralDirectStartBtn) {
+    referralDirectStartBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const pModal = document.getElementById('profileModal');
+      if (pModal) pModal.classList.add('hidden');
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('medium');
       }
     });
   }
