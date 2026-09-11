@@ -2535,7 +2535,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const id = currentUser.telegramId;
       const webUrl = `https://yyt1093-source.github.io/color_sort_game/?startapp=ref_${id}`;
       const botUrl = `https://t.me/sortcolors_bot?startapp=ref_${id}`;
-      const text = `START ▶ ${botUrl}`;
+      const text = `START: ${botUrl}`;
       const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(text)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(shareUrl);
@@ -2544,6 +2544,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  const referralBannerClickable = document.getElementById('referralBannerClickable');
+  if (referralBannerClickable) {
+    referralBannerClickable.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const pModal = document.getElementById('profileModal');
+      if (pModal) pModal.classList.add('hidden');
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('medium');
       }
     });
   }

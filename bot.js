@@ -171,9 +171,7 @@ async function handleUpdate(update) {
     const gameLink = referrerId
       ? `https://t.me/sortcolors_bot?startapp=ref_${referrerId}`
       : `https://t.me/sortcolors_bot`;
-    const welcomeCaption = referrerId
-      ? `${gameLink}`
-      : `Привет, ${firstName}! 👋\n\nДобро пожаловать в 🧪 **Color Sort**!\n\n${gameLink}`;
+    const welcomeCaption = `START: ${gameLink}`;
 
     const inlineKeyboard = {
       inline_keyboard: [
@@ -220,9 +218,10 @@ async function handleUpdate(update) {
 async function sendReferralInvite(chatId, userId, firstName) {
   const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
   const botRefUrl = `https://t.me/sortcolors_bot?startapp=ref_${userId}`;
-  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(botRefUrl)}`;
+  const webUrl = `${getWebAppUrl()}?startapp=ref_${userId}`;
+  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(`START: ${botRefUrl}`)}`;
 
-  const caption = `🧪 **Реферальная карточка Color Sort:**\n\n${botRefUrl}\n\nНажмите кнопку START ниже, чтобы запустить игру, или перешлите это сообщение другу!`;
+  const caption = `START: ${botRefUrl}`;
 
   const inlineKeyboard = {
     inline_keyboard: [
