@@ -1935,6 +1935,54 @@ body {
   text-align: center;
 }
 
+.referral-link-bar {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px dashed rgba(56, 189, 248, 0.4);
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.referral-link-text {
+  font-size: 0.76rem;
+  color: #38bdf8;
+  font-family: monospace;
+  letter-spacing: 0.2px;
+  user-select: all;
+}
+
+.referral-start-big-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.referral-start-big-btn:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.6);
+}
+
+.referral-start-big-btn:active {
+  transform: scale(0.97);
+}
+
 .referral-actions-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

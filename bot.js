@@ -162,26 +162,19 @@ async function handleUpdate(update) {
     });
 
     const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
+    const gameLink = referrerId
+      ? `https://t.me/sortcolors_bot?startapp=ref_${referrerId}`
+      : `https://t.me/sortcolors_bot`;
     const welcomeCaption = referrerId
-      ? `🧪 Привет, ${firstName}! 👋\n\nВаш друг пригласил вас сыграть в **Color Sort**!\n\n✨ **Особенности игры:**\n• Увлекательные уровни с переливанием жидкостей ♾️\n• Глобальный рейтинг игроков 24/7 🏆\n• Бесплатные бонусы и награды 🎁\n\nНажмите «🎮 Играть сейчас» ниже, чтобы открыть игру прямо в Telegram! 👇`
-      : `Привет, ${firstName}! 👋\n\nДобро пожаловать в 🧪 **Color Sort** — увлекательную головоломку с переливанием жидкостей!\n\n✨ **Особенности игры:**\n• Бесконечные уровни ♾️\n• Глобальный рейтинг игроков 🏆\n• Бесплатные бонусы 🎁\n• Сохранение прогресса 💾\n\nНажмите кнопку ниже, чтобы начать играть! 👇`;
+      ? `${gameLink}`
+      : `Привет, ${firstName}! 👋\n\nДобро пожаловать в 🧪 **Color Sort**!\n\n${gameLink}`;
 
     const inlineKeyboard = {
       inline_keyboard: [
         [
           {
-            text: '🎮 Играть сейчас',
+            text: 'START',
             web_app: { url: appLaunchUrl }
-          }
-        ],
-        [
-          {
-            text: '🏆 Лидерборд',
-            callback_data: 'cmd_leaderboard'
-          },
-          {
-            text: '📊 Моя стата',
-            callback_data: 'cmd_mystats'
           }
         ]
       ]
@@ -192,7 +185,6 @@ async function handleUpdate(update) {
       chat_id: chatId,
       photo: photoUrl,
       caption: welcomeCaption,
-      parse_mode: 'Markdown',
       reply_markup: inlineKeyboard
     });
 
@@ -201,7 +193,6 @@ async function handleUpdate(update) {
       await tgApi('sendMessage', {
         chat_id: chatId,
         text: welcomeCaption,
-        parse_mode: 'Markdown',
         reply_markup: inlineKeyboard
       });
     }
@@ -224,22 +215,22 @@ async function sendReferralInvite(chatId, userId, firstName) {
   const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
   const webAppUrl = `${getWebAppUrl()}?startapp=ref_${userId}`;
   const botRefUrl = `https://t.me/sortcolors_bot?startapp=ref_${userId}`;
-  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(webAppUrl)}&text=${encodeURIComponent(`🧪 Присоединяйся ко мне в игре Color Sort! Переливай жидкости по колбочкам и забирай крутые бонусы! 🎁\n\n🎮 Играть прямо в Telegram: ${botRefUrl}`)}`;
+  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(webAppUrl)}&text=${encodeURIComponent(`${botRefUrl}\n\nSTART: ${botRefUrl}`)}`;
 
-  const caption = `🧪 **Ваша реферальная ссылка в Color Sort:**\n\n\`${botRefUrl}\`\n\n🎁 **Награды за каждого приглашённого друга:**\n• +5 пустых колб 🧪\n• +5 подсказок 💡\n• +5 отмен хода ↩️\n• +5 открытий цветов 🔮\n\nОтправьте ссылку друзьям или нажмите «📢 Поделиться с друзьями» прямо сейчас! 👇`;
+  const caption = `${botRefUrl}`;
 
   const inlineKeyboard = {
     inline_keyboard: [
       [
         {
-          text: '📢 Поделиться с друзьями',
-          url: shareTgUrl
+          text: 'START',
+          web_app: { url: webAppUrl }
         }
       ],
       [
         {
-          text: '🎮 Открыть игру',
-          web_app: { url: webAppUrl }
+          text: '📢 Поделиться с друзьями',
+          url: shareTgUrl
         }
       ]
     ]
@@ -249,7 +240,6 @@ async function sendReferralInvite(chatId, userId, firstName) {
     chat_id: chatId,
     photo: photoUrl,
     caption: caption,
-    parse_mode: 'Markdown',
     reply_markup: inlineKeyboard
   });
 
@@ -257,7 +247,6 @@ async function sendReferralInvite(chatId, userId, firstName) {
     await tgApi('sendMessage', {
       chat_id: chatId,
       text: caption,
-      parse_mode: 'Markdown',
       reply_markup: inlineKeyboard
     });
   }
