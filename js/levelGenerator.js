@@ -3,32 +3,58 @@
  */
 (function (exports) {
   const COLOR_PALETTE = [
-    { name: 'Red',       hex: '#ef4444', glow: 'rgba(239,68,68,0.5)' },
-    { name: 'Blue',      hex: '#3b82f6', glow: 'rgba(59,130,246,0.5)' },
-    { name: 'Green',     hex: '#22c55e', glow: 'rgba(34,197,94,0.5)' },
-    { name: 'Yellow',    hex: '#eab308', glow: 'rgba(234,179,8,0.5)' },
-    { name: 'Purple',    hex: '#a855f7', glow: 'rgba(168,85,247,0.5)' },
-    { name: 'Pink',      hex: '#ec4899', glow: 'rgba(236,72,153,0.5)' },
-    { name: 'Cyan',      hex: '#06b6d4', glow: 'rgba(6,182,212,0.5)' },
-    { name: 'Orange',    hex: '#f97316', glow: 'rgba(249,115,22,0.5)' },
-    { name: 'Lime',      hex: '#84cc16', glow: 'rgba(132,204,22,0.5)' },
-    { name: 'Indigo',    hex: '#6366f1', glow: 'rgba(99,102,241,0.5)' },
-    { name: 'Teal',      hex: '#14b8a6', glow: 'rgba(20,184,166,0.5)' },
-    { name: 'Rose',      hex: '#f43f5e', glow: 'rgba(244,63,94,0.5)' },
-    { name: 'Amber',     hex: '#f59e0b', glow: 'rgba(245,158,11,0.5)' },
-    { name: 'Violet',    hex: '#8b5cf6', glow: 'rgba(139,92,246,0.5)' },
-    { name: 'Emerald',   hex: '#10b981', glow: 'rgba(16,185,129,0.5)' },
-    { name: 'Sky',       hex: '#0ea5e9', glow: 'rgba(14,165,233,0.5)' },
-    { name: 'Coral',     hex: '#ff6b6b', glow: 'rgba(255,107,107,0.5)' },
-    { name: 'Mint',      hex: '#2dd4bf', glow: 'rgba(45,212,191,0.5)' },
-    { name: 'Brown',     hex: '#b45309', glow: 'rgba(180,83,9,0.5)' },
-    { name: 'Fuchsia',   hex: '#d946ef', glow: 'rgba(217,70,239,0.5)' },
-    { name: 'Crimson',   hex: '#be123c', glow: 'rgba(190,18,60,0.5)' },
-    { name: 'Gold',      hex: '#fbbf24', glow: 'rgba(251,191,36,0.5)' },
-    { name: 'Navy',      hex: '#1e3a8a', glow: 'rgba(30,58,138,0.5)' },
-    { name: 'Lavender',  hex: '#c084fc', glow: 'rgba(192,132,252,0.5)' },
-    { name: 'Olive',     hex: '#65a30d', glow: 'rgba(101,163,13,0.5)' },
-    { name: 'Jade',      hex: '#059669', glow: 'rgba(5,150,105,0.5)' }
+    // 0. Bright Scarlet Red (звёздочки)
+    { name: 'Red',       hex: '#e60026', glow: 'rgba(230,0,38,0.5)',     marker: 'star' },
+    // 1. Vivid Royal Blue (звёздочки)
+    { name: 'Blue',      hex: '#2563eb', glow: 'rgba(37,99,235,0.5)',    marker: 'star' },
+    // 2. Fresh Grass Green (звёздочки)
+    { name: 'Green',     hex: '#16a34a', glow: 'rgba(22,163,74,0.5)',    marker: 'star' },
+    // 3. Bright Sunny Lemon Yellow (звёздочки)
+    { name: 'Yellow',    hex: '#ffea00', glow: 'rgba(255,234,0,0.5)',    marker: 'star' },
+    // 4. Dark Royal Plum Purple (полумесяц)
+    { name: 'Purple',    hex: '#4c1d95', glow: 'rgba(76,29,149,0.5)',    marker: 'moon' },
+    // 5. Vivid Hot Pink (цветочек)
+    { name: 'Pink',      hex: '#ec4899', glow: 'rgba(236,72,153,0.5)',   marker: 'flower' },
+    // 6. Turquoise Aqua / Cyan (искорка)
+    { name: 'Cyan',      hex: '#06b6d4', glow: 'rgba(6,182,212,0.5)',    marker: 'sparkle' },
+    // 7. Vivid Tangerine Orange (шарики)
+    { name: 'Orange',    hex: '#ea580c', glow: 'rgba(234,88,12,0.5)',    marker: 'bubble' },
+    // 8. Bright Neon Citrus Lime (шарики)
+    { name: 'Lime',      hex: '#84cc16', glow: 'rgba(132,204,22,0.5)',   marker: 'bubble' },
+    // 9. Electric Indigo (полумесяц)
+    { name: 'Indigo',    hex: '#4f46e5', glow: 'rgba(79,70,229,0.5)',    marker: 'moon' },
+    // 10. Deep Dark Teal (алмазики)
+    { name: 'Teal',      hex: '#0f766e', glow: 'rgba(15,118,110,0.5)',   marker: 'diamond' },
+    // 11. Dark Raspberry Rose (цветочек)
+    { name: 'Rose',      hex: '#be185d', glow: 'rgba(190,24,93,0.5)',    marker: 'flower' },
+    // 12. Deep Golden Amber (алмазики)
+    { name: 'Amber',     hex: '#b45309', glow: 'rgba(180,83,9,0.5)',     marker: 'diamond' },
+    // 13. Electric Violet (звёздочки)
+    { name: 'Violet',    hex: '#9333ea', glow: 'rgba(147,51,234,0.5)',   marker: 'star' },
+    // 14. Deep Forest Pine Green (алмазики)
+    { name: 'Emerald',   hex: '#064e3b', glow: 'rgba(6,78,59,0.5)',      marker: 'diamond' },
+    // 15. Light Ice / Baby Sky Blue (шарики)
+    { name: 'Sky',       hex: '#7dd3fc', glow: 'rgba(125,211,252,0.5)',  marker: 'bubble' },
+    // 16. Soft Peach / Pastel Coral (шарики)
+    { name: 'Coral',     hex: '#ff9aa2', glow: 'rgba(255,154,162,0.5)',  marker: 'bubble' },
+    // 17. Light Seafoam Mint (искорка)
+    { name: 'Mint',      hex: '#5eead4', glow: 'rgba(94,234,212,0.5)',   marker: 'sparkle' },
+    // 18. Deep Chocolate Brown (алмазики)
+    { name: 'Brown',     hex: '#451a03', glow: 'rgba(69,26,3,0.5)',      marker: 'diamond' },
+    // 19. Electric Fuchsia (искорка)
+    { name: 'Fuchsia',   hex: '#c026d3', glow: 'rgba(192,38,211,0.5)',   marker: 'sparkle' },
+    // 20. Deep Wine Ruby Crimson (алмазики)
+    { name: 'Crimson',   hex: '#780016', glow: 'rgba(120,0,22,0.5)',     marker: 'diamond' },
+    // 21. Metallic Rich Gold (искорка)
+    { name: 'Gold',      hex: '#d97706', glow: 'rgba(217,119,6,0.5)',    marker: 'sparkle' },
+    // 22. Deep Midnight Navy Blue (алмазики)
+    { name: 'Navy',      hex: '#0f2b66', glow: 'rgba(15,43,102,0.5)',    marker: 'diamond' },
+    // 23. Pale Soft Lilac Lavender (шарики)
+    { name: 'Lavender',  hex: '#e9d5ff', glow: 'rgba(233,213,255,0.5)',  marker: 'bubble' },
+    // 24. Dark Earthy Olive Green (полумесяц)
+    { name: 'Olive',     hex: '#3f6212', glow: 'rgba(63,98,18,0.5)',     marker: 'moon' },
+    // 25. Jade Green (звёздочки)
+    { name: 'Jade',      hex: '#059669', glow: 'rgba(5,150,105,0.5)',    marker: 'star' }
   ];
 
   function mulberry32(seed) {

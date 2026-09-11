@@ -9,6 +9,15 @@
   let animFrameId = null;
   const UNIT_HEIGHT = 18;
 
+  const MARKER_SVGS = {
+    star: `<svg class="liquid-marker-svg" width="9" height="9" viewBox="0 0 24 24" fill="#ffffff" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+    diamond: `<svg class="liquid-marker-svg" width="9" height="9" viewBox="0 0 24 24" fill="#ffffff" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"><polygon points="6 3 18 3 22 9 12 22 2 9 6 3"/><line x1="2" y1="9" x2="22" y2="9" stroke="rgba(0,0,0,0.4)" stroke-width="1.2"/><polyline points="6 3 12 9 18 3" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="1.2"/><polyline points="2 9 12 22 22 9" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="1.2"/></svg>`,
+    bubble: `<svg class="liquid-marker-svg" width="9" height="9" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/><circle cx="9" cy="9" r="2.5" fill="#ffffff"/></svg>`,
+    sparkle: `<svg class="liquid-marker-svg" width="9" height="9" viewBox="0 0 24 24" fill="#ffffff" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"><path d="M12 2 L14.5 9.5 L22 12 L14.5 14.5 L12 22 L9.5 14.5 L2 12 L9.5 9.5 Z"/></svg>`,
+    moon: `<svg class="liquid-marker-svg" width="9" height="9" viewBox="0 0 24 24" fill="#ffffff" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+    flower: `<svg class="liquid-marker-svg" width="9" height="9" viewBox="0 0 24 24" fill="#ffffff" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="12" r="3"/></svg>`
+  };
+
   function initRenderer(containerEl, canvasEl) {
     boardContainer = containerEl;
     particleCanvas = canvasEl;
@@ -74,6 +83,24 @@
 
         if (!isTopSegment) {
           segEl.style.borderTop = '1px solid rgba(0, 0, 0, 0.16)';
+        }
+
+        if (colorData && (colorData.marker || colorData.markerSvg || colorData.markerSymbol)) {
+          const marksWrap = document.createElement('div');
+          marksWrap.className = 'liquid-marks-container';
+          const svgContent = (colorData.marker && MARKER_SVGS[colorData.marker]) 
+                            || colorData.markerSvg;
+          for (let u = 0; u < seg.unitsCount; u++) {
+            const mark = document.createElement('div');
+            mark.className = 'liquid-unit-mark';
+            if (svgContent) {
+              mark.innerHTML = svgContent;
+            } else if (colorData.markerSymbol) {
+              mark.textContent = colorData.markerSymbol;
+            }
+            marksWrap.appendChild(mark);
+          }
+          segEl.appendChild(marksWrap);
         }
 
         if (isTopSegment) {
