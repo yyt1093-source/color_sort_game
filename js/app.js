@@ -154,9 +154,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(Вы)',
       maxLevelLabel: (lvl) => `Макс. уровень: ${lvl}`,
       levelPrefix: 'Уровень',
-      startBadge: '🧪 ГОЛОВОЛОМКА В TELEGRAM',
-      startDesc: 'Сортируй жидкости по баночкам и проходи увлекательные уровни!',
-      startHint: 'Нажмите, чтобы начать игру',
+      startBadge: '',
+      startDesc: '',
+      startHint: '',
       winTitle: (lvl) => `Уровень ${lvl} пройден! 🎉`,
       winSubtext: (lvl) => `Все цвета успешно собраны! Переходим к уровню ${lvl}...`,
       nextLevelBtn: 'Следующий уровень 🚀',
@@ -229,9 +229,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(Ви)',
       maxLevelLabel: (lvl) => `Макс. рівень: ${lvl}`,
       levelPrefix: 'Рівень',
-      startBadge: '🧪 ГОЛОВОЛОМКА В TELEGRAM',
-      startDesc: 'Сортуй рідини по колбочках та проходь захоплюючі рівні!',
-      startHint: 'Натисніть, щоб почати гру',
+      startBadge: '',
+      startDesc: '',
+      startHint: '',
       winTitle: (lvl) => `Рівень ${lvl} пройдено! 🎉`,
       winSubtext: (lvl) => `Всі кольори успішно зібрані! Переходимо до рівня ${lvl}...`,
       nextLevelBtn: 'Наступний рівень 🚀',
@@ -304,9 +304,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(You)',
       maxLevelLabel: (lvl) => `Max Level: ${lvl}`,
       levelPrefix: 'Level',
-      startBadge: '🧪 TELEGRAM PUZZLE',
-      startDesc: 'Sort colored liquids into jars and solve fun puzzle levels!',
-      startHint: 'Tap to start the game',
+      startBadge: '',
+      startDesc: '',
+      startHint: '',
       winTitle: (lvl) => `Level ${lvl} Completed! 🎉`,
       winSubtext: (lvl) => `All colors sorted! Advancing to Level ${lvl}...`,
       nextLevelBtn: 'Next Level 🚀',
@@ -379,9 +379,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(Du)',
       maxLevelLabel: (lvl) => `Max. Stufe: ${lvl}`,
       levelPrefix: 'Stufe',
-      startBadge: '🧪 TELEGRAM RÄTSEL',
-      startDesc: 'Sortiere Flüssigkeiten in Gläser und löse spannende Puzzle-Level!',
-      startHint: 'Tippe, um das Spiel zu starten',
+      startBadge: '',
+      startDesc: '',
+      startHint: '',
       winTitle: (lvl) => `Stufe ${lvl} geschafft! 🎉`,
       winSubtext: (lvl) => `Alle Farben sortiert! Weiter zu Stufe ${lvl}...`,
       nextLevelBtn: 'Nächste Stufe 🚀',
@@ -454,9 +454,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(Jūs)',
       maxLevelLabel: (lvl) => `Maks. lygis: ${lvl}`,
       levelPrefix: 'Lygis',
-      startBadge: '🧪 TELEGRAM DĖLIONĖ',
-      startDesc: 'Rūšiuokite skysčius į buteliukus ir įveikite smagius lygius!',
-      startHint: 'Bakstelėkite, kad pradėtumėte',
+      startBadge: '',
+      startDesc: '',
+      startHint: '',
       winTitle: (lvl) => `Lygis ${lvl} įveiktas! 🎉`,
       winSubtext: (lvl) => `Visos spalvos surūšiuotos! Pereinama į lygį ${lvl}...`,
       nextLevelBtn: 'Kitas lygis 🚀',
@@ -2534,9 +2534,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.stopPropagation();
       const id = currentUser.telegramId;
       const webUrl = `https://yyt1093-source.github.io/color_sort_game/?startapp=ref_${id}`;
-      const botUrl = `https://t.me/sortcolors_bot?startapp=ref_${id}`;
-      const text = `START: ${botUrl}`;
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(text)}`;
+      // Share only the web URL without text so Telegram displays only the clean preview card with START button
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(shareUrl);
       } else {

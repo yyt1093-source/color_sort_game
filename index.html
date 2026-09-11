@@ -8,13 +8,13 @@
   <!-- Open Graph / Telegram Webpage Preview -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://yyt1093-source.github.io/color_sort_game/">
-  <meta property="og:image" content="https://yyt1093-source.github.io/color_sort_game/referral_share.jpg?v=3">
-  <meta property="og:image:secure_url" content="https://yyt1093-source.github.io/color_sort_game/referral_share.jpg?v=3">
+  <meta property="og:image" content="https://yyt1093-source.github.io/color_sort_game/referral_share.jpg?v=4">
+  <meta property="og:image:secure_url" content="https://yyt1093-source.github.io/color_sort_game/referral_share.jpg?v=4">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1024">
-  <meta property="og:image:height" content="1024">
+  <meta property="og:image:height" content="1184">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://yyt1093-source.github.io/color_sort_game/referral_share.jpg?v=3">
+  <meta name="twitter:image" content="https://yyt1093-source.github.io/color_sort_game/referral_share.jpg?v=4">
   
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -30,13 +30,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47215">
+  <link rel="stylesheet" href="style.css?v=47216">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
-  <div id="startScreen" class="start-screen">
+  <div id="startScreen" class="start-screen" style="cursor:pointer;" title="START">
     <div class="start-screen-bg">
-      <img src="splash_cover.jpg" alt="Color Sort" class="splash-img" id="splashImg">
+      <img src="referral_share.jpg?v=4" alt="Color Sort" class="splash-img" id="splashImg">
       <div class="start-screen-overlay"></div>
     </div>
     
@@ -50,9 +50,6 @@
 
     <div class="start-screen-content">
       <div class="start-header">
-        <div class="start-badge" id="startBadge">🧪 ГОЛОВОЛОМКА В TELEGRAM</div>
-        <h1 class="start-title">COLOR SORT</h1>
-        <p class="start-desc" id="startDesc">Сортируй жидкости по баночкам и проходи увлекательные уровни!</p>
       </div>
 
       <div class="start-footer">
@@ -60,7 +57,6 @@
           <span class="start-btn-icon">▶</span>
           <span class="start-btn-label">START</span>
         </button>
-        <p class="start-hint" id="startHint">Нажмите, чтобы начать игру</p>
       </div>
     </div>
   </div>
@@ -72,11 +68,15 @@
       var img = document.getElementById('splashImg');
       var urlParams = new URLSearchParams(window.location.search);
       var ref = urlParams.get('startapp') || urlParams.get('tgWebAppStartParam') || urlParams.get('ref');
-      if (ref && img) {
-        img.src = 'referral_share.jpg';
+      if (img) {
+        img.src = 'referral_share.jpg?v=4';
       }
-      if (btn && scr) {
-        var dismiss = function() {
+      if (scr) {
+        var dismiss = function(e) {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
           var tg = window.Telegram && window.Telegram.WebApp;
           if (ref && (!tg || !tg.initData)) {
             window.location.href = 'https://t.me/sortcolors_bot?startapp=' + ref;
@@ -88,8 +88,12 @@
             scr.style.display = 'none';
           }, 350);
         };
-        btn.addEventListener('pointerdown', dismiss, { passive: true });
-        btn.addEventListener('click', dismiss);
+        scr.addEventListener('pointerdown', dismiss, { passive: false });
+        scr.addEventListener('click', dismiss);
+        if (btn) {
+          btn.addEventListener('pointerdown', dismiss, { passive: false });
+          btn.addEventListener('click', dismiss);
+        }
       }
     })();
   </script>
