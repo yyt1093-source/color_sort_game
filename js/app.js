@@ -200,7 +200,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminResetPurchasesSuccessTitle: '💎 Покупки аннулированы!',
       adminResetPurchasesSuccessDesc: 'Все действующие преимущества за GRAM из сундучка у всех игроков успешно аннулированы. Балансы кошельков не изменились.',
       adminResetSuccessTitle: '💥 Сезон сброшен!',
-      adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!'
+      adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!',
+      referralSectionTitle: 'Приглашай друзей',
+      referralSectionSub: 'За каждого: +5 колб, +5 подсказок, +5 отмен, +5 открытий!',
+      shareReferralTelegramBtn: '📢 Пригласить в Telegram',
+      copyReferralLinkBtn: '📋 Скопировать ссылку',
+      referralClaimTitle: 'Доступны награды!',
+      claimAllReferralsBtn: 'Забрать всё'
     },
     uk: {
       langName: 'Українська',
@@ -269,7 +275,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminResetPurchasesSuccessTitle: '💎 Покупки анульовано!',
       adminResetPurchasesSuccessDesc: 'Всі діючі переваги за GRAM із скриньки у всіх гравців успішно анульовані. Баланси гаманців не змінилися.',
       adminResetSuccessTitle: '💥 Сезон скинуто!',
-      adminResetSuccessDesc: 'Всі данные гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!'
+      adminResetSuccessDesc: 'Всі данные гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!',
+      referralSectionTitle: 'Запрошуй друзів',
+      referralSectionSub: 'За кожного: +5 колб, +5 підказок, +5 відмін, +5 відкриттів!',
+      shareReferralTelegramBtn: '📢 Запросити в Telegram',
+      copyReferralLinkBtn: '📋 Скопіювати посилання',
+      referralClaimTitle: 'Доступні нагороди!',
+      claimAllReferralsBtn: 'Забрати все'
     },
     en: {
       langName: 'English',
@@ -338,7 +350,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminResetPurchasesSuccessTitle: '💎 Purchases Annulled!',
       adminResetPurchasesSuccessDesc: 'All active GRAM perks from the chest have been annulled for all players. Wallet balances remain untouched.',
       adminResetSuccessTitle: '💥 Season Reset!',
-      adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!'
+      adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!',
+      referralSectionTitle: 'Invite Friends',
+      referralSectionSub: 'Per friend: +5 bottles, +5 hints, +5 undos, +5 reveals!',
+      shareReferralTelegramBtn: '📢 Invite in Telegram',
+      copyReferralLinkBtn: '📋 Copy Referral Link',
+      referralClaimTitle: 'Rewards Available!',
+      claimAllReferralsBtn: 'Claim All'
     },
     de: {
       langName: 'Deutsch',
@@ -407,7 +425,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminResetPurchasesSuccessTitle: '💎 Käufe annulliert!',
       adminResetPurchasesSuccessDesc: 'Alle aktiven GRAM-Vorteile aus der Truhe wurden für alle Spieler annulliert. Wallet-Guthaben bleiben unberührt.',
       adminResetSuccessTitle: '💥 Saison zurückgesetzt!',
-      adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!'
+      adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!',
+      referralSectionTitle: 'Freunde einladen',
+      referralSectionSub: 'Pro Freund: +5 Flaschen, +5 Hinweise, +5 Züge zurück, +5 Aufdeckungen!',
+      shareReferralTelegramBtn: '📢 In Telegram einladen',
+      copyReferralLinkBtn: '📋 Link kopieren',
+      referralClaimTitle: 'Belohnungen verfügbar!',
+      claimAllReferralsBtn: 'Alles abholen'
     },
     lt: {
       langName: 'Lietuvių',
@@ -629,6 +653,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const adminAddAllLabel = document.getElementById('adminAddAllLabel');
   const adminFeedbackMsg = document.getElementById('adminFeedbackMsg');
 
+  // Referral Program Elements
+  const referralCountVal = document.getElementById('referralCountVal');
+  const shareReferralTelegramBtn = document.getElementById('shareReferralTelegramBtn');
+  const copyReferralLinkBtn = document.getElementById('copyReferralLinkBtn');
+  const copyReferralBtnText = document.getElementById('copyReferralBtnText');
+  const referralClaimBanner = document.getElementById('referralClaimBanner');
+  const referralClaimTitle = document.getElementById('referralClaimTitle');
+  const referralClaimSubtitle = document.getElementById('referralClaimSubtitle');
+  const claimAllReferralsBtn = document.getElementById('claimAllReferralsBtn');
+  const referralsListContainer = document.getElementById('referralsListContainer');
+
   const ALLIGATOR_TELEGRAM_ID = '5761685341';
 
   function isAlligatorAdmin(user) {
@@ -708,6 +743,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (adminAddCoinsLabel) adminAddCoinsLabel.textContent = t('adminAddCoins');
     if (adminAddAllLabel) adminAddAllLabel.textContent = t('adminAddAll');
     if (adminResetPurchasesBtnLabel) adminResetPurchasesBtnLabel.textContent = t('adminResetPurchasesBtnLabel') || 'Сбросить все покупки за GRAM';
+
+    const referralSectionTitleEl = document.getElementById('referralSectionTitle');
+    if (referralSectionTitleEl) referralSectionTitleEl.textContent = t('referralSectionTitle');
+    const referralSectionSubEl = document.getElementById('referralSectionSub');
+    if (referralSectionSubEl) referralSectionSubEl.textContent = t('referralSectionSub');
+    if (shareReferralTelegramBtn) {
+      const span = shareReferralTelegramBtn.querySelector('span');
+      if (span) span.textContent = t('shareReferralTelegramBtn');
+    }
+    if (copyReferralBtnText) copyReferralBtnText.textContent = t('copyReferralLinkBtn');
+    if (referralClaimTitle) referralClaimTitle.textContent = t('referralClaimTitle');
+    if (claimAllReferralsBtn) claimAllReferralsBtn.textContent = t('claimAllReferralsBtn');
   }
 
   // 4. App state
@@ -908,6 +955,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function processIncomingReferral() {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    let refParam = null;
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
+      const m = String(tg.initDataUnsafe.start_param).match(/(?:ref_)?(\d+)/i);
+      if (m) refParam = m[1];
+    }
+    if (!refParam && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const val = urlParams.get('startapp') || urlParams.get('tgWebAppStartParam') || urlParams.get('ref');
+      if (val) {
+        const m = String(val).match(/(?:ref_)?(\d+)/i);
+        if (m) refParam = m[1];
+      }
+    }
+
+    if (refParam && String(refParam) !== String(currentUser.telegramId)) {
+      const alreadySent = localStorage.getItem(`cs_ref_sent_${refParam}`);
+      if (!alreadySent) {
+        localStorage.setItem(`cs_ref_sent_${refParam}`, 'true');
+        apiCall('/api/referral/register', 'POST', {
+          referrerId: refParam,
+          telegramId: currentUser.telegramId,
+          firstName: currentUser.firstName || 'Друг',
+          username: currentUser.username || ''
+        }).catch(() => {});
+
+        try {
+          fetch(`${GLOBAL_CLOUD_BASE}/ref_${refParam}_${currentUser.telegramId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              referrerId: refParam,
+              referredId: currentUser.telegramId,
+              referredName: currentUser.firstName || 'Друг',
+              referredUsername: currentUser.username || '',
+              rewardClaimed: 0,
+              createdAt: Date.now()
+            })
+          }).catch(() => {});
+        } catch (e) {}
+      }
+    }
+  }
+
   // 5. Init renderer
   if (renderer && typeof renderer.initRenderer === 'function') {
     renderer.initRenderer(gameBoard, particleCanvas);
@@ -915,6 +1007,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 6. Fetch user from local storage first (instant baseline)
   loadLocalUser();
+  processIncomingReferral();
   applyLanguage(currentLang);
   if (userName) userName.textContent = currentUser.firstName;
   if (userAvatar) {
@@ -2194,6 +2287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       profileModalContent.scrollTop = 0;
     }
     if (profileModal) openModal(profileModal);
+    loadReferralsData();
     if (window.TelegramApp && window.TelegramApp.TelegramApp) {
       window.TelegramApp.TelegramApp.haptic('light');
     }
@@ -2257,6 +2351,243 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   });
+
+  // ==========================================
+  // Referral Program Logic & Handlers
+  // ==========================================
+  function getReferralLink(telegramId) {
+    const id = String(telegramId || '').trim();
+    return `https://t.me/sortcolors_bot?startapp=ref_${id}`;
+  }
+
+  async function loadReferralsData() {
+    if (!currentUser || !currentUser.telegramId) return;
+    const myId = String(currentUser.telegramId);
+
+    let totalCount = 0;
+    let unclaimedCount = 0;
+    let referrals = [];
+
+    // 1. Fetch from server API
+    try {
+      const serverRes = await apiCall(`/api/referral/list?telegramId=${encodeURIComponent(myId)}`, 'GET');
+      if (serverRes && serverRes.success) {
+        totalCount = serverRes.totalCount || 0;
+        unclaimedCount = serverRes.unclaimedCount || 0;
+        referrals = serverRes.referrals || [];
+      }
+    } catch (e) {}
+
+    // 2. Fetch/merge from global KVDB cloud
+    try {
+      const cloudRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=ref_${encodeURIComponent(myId)}_&values=true&format=json`, {
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+      });
+      if (cloudRes.ok) {
+        const pairs = await cloudRes.json();
+        if (Array.isArray(pairs)) {
+          pairs.forEach(([key, val]) => {
+            if (val && val.referredId) {
+              const exists = referrals.some(r => String(r.referred_id) === String(val.referredId));
+              if (!exists) {
+                referrals.push({
+                  id: key,
+                  referred_id: val.referredId,
+                  referred_name: val.referredName || 'Друг',
+                  referred_username: val.referredUsername || '',
+                  reward_claimed: val.rewardClaimed ? 1 : 0,
+                  created_at: val.createdAt ? new Date(val.createdAt).toLocaleDateString() : ''
+                });
+                totalCount++;
+                if (!val.rewardClaimed) unclaimedCount++;
+              }
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    // 3. Update UI
+    if (referralCountVal) {
+      referralCountVal.textContent = totalCount;
+    }
+
+    if (referralClaimBanner) {
+      if (unclaimedCount > 0) {
+        referralClaimBanner.classList.remove('hidden');
+        if (referralClaimSubtitle) {
+          const totalBoosterCount = unclaimedCount * 5;
+          referralClaimSubtitle.textContent = `+${totalBoosterCount} колб, +${totalBoosterCount} подсказок, +${totalBoosterCount} отмен, +${totalBoosterCount} открытий!`;
+        }
+      } else {
+        referralClaimBanner.classList.add('hidden');
+      }
+    }
+
+    if (referralsListContainer) {
+      if (referrals.length === 0) {
+        referralsListContainer.innerHTML = `
+          <div class="referrals-empty-state">
+            <span>Пока никто не зашёл по вашей ссылке.<br>Отправьте ссылку друзьям в Telegram!</span>
+          </div>
+        `;
+      } else {
+        referralsListContainer.innerHTML = referrals.map(r => {
+          const name = r.referred_name || 'Друг';
+          const username = r.referred_username ? `@${r.referred_username}` : '';
+          const isClaimed = r.reward_claimed === 1;
+          const statusHtml = isClaimed
+            ? `<span class="referral-status-tag referral-status-claimed">✅ Награда получена</span>`
+            : `<button type="button" class="referral-status-tag referral-status-unclaimed claim-single-ref-btn" data-ref-id="${escapeHtml(String(r.id))}">🎁 Забрать +5</button>`;
+
+          return `
+            <div class="referral-item-row">
+              <div class="referral-item-left">
+                <div class="referral-item-avatar">👤</div>
+                <div>
+                  <strong class="referral-item-name">${escapeHtml(name)}</strong>
+                  ${username ? `<span class="referral-item-username">${escapeHtml(username)}</span>` : ''}
+                </div>
+              </div>
+              <div class="referral-item-right">
+                ${statusHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  }
+
+  async function claimReferralRewardAction(referralId = null, btnEl = null) {
+    if (btnEl) btnEl.disabled = true;
+    if (claimAllReferralsBtn) claimAllReferralsBtn.disabled = true;
+
+    try {
+      let claimedCount = 0;
+
+      const res = await apiCall('/api/referral/claim', 'POST', {
+        telegramId: currentUser.telegramId,
+        referralId: referralId
+      });
+
+      if (res && res.success && res.user) {
+        currentUser.extraBottles = res.user.extra_bottles;
+        currentUser.hints = res.user.hints;
+        currentUser.undos = res.user.undos;
+        currentUser.reveals = res.user.reveals;
+        claimedCount = res.claimedCount || 1;
+      } else {
+        claimedCount = 1;
+        currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
+        currentUser.hints = (currentUser.hints || 0) + 5;
+        currentUser.undos = (currentUser.undos || 0) + 5;
+        currentUser.reveals = (currentUser.reveals || 0) + 5;
+
+        // In KVDB, mark record claimed if present
+        if (referralId && String(referralId).startsWith('ref_')) {
+          try {
+            fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(referralId)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ rewardClaimed: 1, claimedAt: Date.now() })
+            }).catch(() => {});
+          } catch (e) {}
+        }
+      }
+
+      saveLocalUser();
+      updateHeaderUI();
+      await loadReferralsData();
+
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playWin();
+
+      const bCount = claimedCount * 5;
+      showInfoModal(
+        '🎁',
+        'Награды получены!',
+        `Вы успешно забрали награды за приглашённых друзей:\n\n🧪 +${bCount} пустых колб\n💡 +${bCount} подсказок\n↩️ +${bCount} отмен хода\n🔮 +${bCount} открытий цветов\n\nБонусы добавлены на ваш баланс!`
+      );
+    } catch (err) {
+      console.error('[Claim Referral Error]', err);
+    } finally {
+      if (btnEl) btnEl.disabled = false;
+      if (claimAllReferralsBtn) claimAllReferralsBtn.disabled = false;
+    }
+  }
+
+  if (shareReferralTelegramBtn) {
+    shareReferralTelegramBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const link = getReferralLink(currentUser.telegramId);
+      const text = '🧪 Присоединяйся ко мне в игре Color Sort! Переливай жидкости по колбочкам и забирай крутые бонусы! 🎁';
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(shareUrl);
+      } else {
+        window.open(shareUrl, '_blank');
+      }
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  if (copyReferralLinkBtn) {
+    copyReferralLinkBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const link = getReferralLink(currentUser.telegramId);
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(link);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = link;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        }
+        if (copyReferralBtnText) {
+          const original = copyReferralBtnText.textContent;
+          copyReferralBtnText.textContent = '✅ Скопировано!';
+          setTimeout(() => {
+            copyReferralBtnText.textContent = original;
+          }, 2000);
+        }
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('success');
+        }
+      } catch (err) {
+        console.warn('Copy failed:', err);
+      }
+    });
+  }
+
+  if (claimAllReferralsBtn) {
+    claimAllReferralsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      claimReferralRewardAction(null, claimAllReferralsBtn);
+    });
+  }
+
+  if (referralsListContainer) {
+    referralsListContainer.addEventListener('click', (e) => {
+      const claimBtn = e.target.closest('.claim-single-ref-btn');
+      if (claimBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const refId = claimBtn.dataset.refId;
+        claimReferralRewardAction(refId, claimBtn);
+      }
+    });
+  }
 
   // Admin Free Boosters (No Ads) Handlers
   let adminFeedbackTimer = null;
