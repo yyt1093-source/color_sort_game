@@ -2533,9 +2533,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.preventDefault();
       e.stopPropagation();
       const id = currentUser.telegramId;
+      const webUrl = `https://yyt1093-source.github.io/color_sort_game/?startapp=ref_${id}`;
       const botUrl = `https://t.me/sortcolors_bot?startapp=ref_${id}`;
-      // In Telegram, sharing the bot's startapp URL renders the native Mini App card with the blue START button
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(botUrl)}`;
+      const text = `START ▶ ${botUrl}`;
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(text)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(shareUrl);
       } else {
