@@ -2521,9 +2521,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     shareReferralTelegramBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const link = getReferralLink(currentUser.telegramId);
-      const text = '🧪 Присоединяйся ко мне в игре Color Sort! Переливай жидкости по колбочкам и забирай крутые бонусы! 🎁';
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+      const id = currentUser.telegramId;
+      const webUrl = `https://yyt1093-source.github.io/color_sort_game/?startapp=ref_${id}`;
+      const botUrl = `https://t.me/sortcolors_bot?startapp=ref_${id}`;
+      const text = `🧪 Присоединяйся ко мне в игре Color Sort! Переливай жидкости по колбочкам и забирай крутые бонусы! 🎁\n\n🎮 Играть прямо в Telegram: ${botUrl}`;
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(text)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(shareUrl);
       } else {
