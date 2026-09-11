@@ -127,11 +127,28 @@ async function handleUpdate(update) {
 
   // Parse commands
   if (text.startsWith('/start')) {
+    // Parse possible referral code: /start ref_12345 or /start 12345
+    const parts = text.split(/\s+/);
+    let referrerId = null;
+    if (parts.length > 1) {
+      const param = parts[1];
+      const m = param.match(/(?:ref_)?(\d+)/i);
+      if (m && m[1] && m[1] !== userId) {
+        referrerId = m[1];
+      }
+    }
+
     // Create/update user in DB
     db.getUser(userId, {
       first_name: firstName,
       username: update.message.from.username || ''
     });
+
+    if (referrerId) {
+      db.registerReferral(referrerId, userId, firstName, update.message.from.username || '');
+    }
+
+    const appLaunchUrl = referrerId ? `${getWebAppUrl()}?startapp=ref_${referrerId}` : getWebAppUrl();
 
     // Ensure user's chat menu button is updated directly
     await tgApi('setChatMenuButton', {
@@ -139,35 +156,54 @@ async function handleUpdate(update) {
       menu_button: {
         type: 'web_app',
         text: '🎮 Играть в Color Sort',
-        web_app: { url: getWebAppUrl() }
+        web_app: { url: appLaunchUrl }
       }
     });
 
-    await tgApi('sendMessage', {
-      chat_id: chatId,
-      text: `Привет, ${firstName}! 👋\n\nДобро пожаловать в 🧪 **Color Sort** — увлекательную головоломку с переливанием жидкостей!\n\n✨ **Особенности игры:**\n• Бесконечные уровни ♾️\n• Глобальный рейтинг игроков 🏆\n• Бесплатные бонусы 🎁\n• Сохранение прогресса 💾\n\nНажмите кнопку ниже, чтобы начать играть! 👇`,
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '🎮 Играть сейчас',
-              web_app: { url: getWebAppUrl() }
-            }
-          ],
-          [
-            {
-              text: '🏆 Лидерборд',
-              callback_data: 'cmd_leaderboard'
-            },
-            {
-              text: '📊 Моя стата',
-              callback_data: 'cmd_mystats'
-            }
-          ]
+    const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/assets/referral_share.jpg';
+    const welcomeCaption = referrerId
+      ? `🧪 Привет, ${firstName}! 👋\n\nВаш друг пригласил вас сыграть в **Color Sort**!\n\n✨ **Особенности игры:**\n• Увлекательные уровни с переливанием жидкостей ♾️\n• Глобальный рейтинг игроков 24/7 🏆\n• Бесплатные бонусы и награды 🎁\n\nНажмите «🎮 Играть сейчас» ниже, чтобы открыть игру прямо в Telegram! 👇`
+      : `Привет, ${firstName}! 👋\n\nДобро пожаловать в 🧪 **Color Sort** — увлекательную головоломку с переливанием жидкостей!\n\n✨ **Особенности игры:**\n• Бесконечные уровни ♾️\n• Глобальный рейтинг игроков 🏆\n• Бесплатные бонусы 🎁\n• Сохранение прогресса 💾\n\nНажмите кнопку ниже, чтобы начать играть! 👇`;
+
+    const inlineKeyboard = {
+      inline_keyboard: [
+        [
+          {
+            text: '🎮 Играть сейчас',
+            web_app: { url: appLaunchUrl }
+          }
+        ],
+        [
+          {
+            text: '🏆 Лидерборд',
+            callback_data: 'cmd_leaderboard'
+          },
+          {
+            text: '📊 Моя стата',
+            callback_data: 'cmd_mystats'
+          }
         ]
-      }
+      ]
+    };
+
+    // Try sending photo first
+    const photoRes = await tgApi('sendPhoto', {
+      chat_id: chatId,
+      photo: photoUrl,
+      caption: welcomeCaption,
+      parse_mode: 'Markdown',
+      reply_markup: inlineKeyboard
     });
+
+    // Fallback to text message if photo delivery failed
+    if (!photoRes || !photoRes.ok) {
+      await tgApi('sendMessage', {
+        chat_id: chatId,
+        text: welcomeCaption,
+        parse_mode: 'Markdown',
+        reply_markup: inlineKeyboard
+      });
+    }
   } else if (text.startsWith('/leaderboard')) {
     await sendLeaderboard(chatId);
   } else if (text.startsWith('/mystats')) {

@@ -56,7 +56,19 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS referrals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      referrer_id TEXT NOT NULL,
+      referred_id TEXT NOT NULL UNIQUE,
+      referred_name TEXT,
+      referred_username TEXT,
+      reward_claimed INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      claimed_at TEXT
+    );
+
     CREATE INDEX IF NOT EXISTS idx_leaderboard ON users(max_level DESC, stars DESC);
+    CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
   `);
   
   // Try to add total_moves, reveals, extra_bottles and shuffles if they don't exist (for existing databases)
@@ -310,8 +322,23 @@ function getAllTelegramIds() {
 
 function resetSeason() {
   try {
-    db.exec('DELETE FROM users;');
+    // Reset player scores and levels to 1, but PRESERVE user accounts, wallets, and referral records!
+    db.exec(`
+      UPDATE users 
+      SET current_level = 1,
+          max_level = 1,
+          stars = 0,
+          coins = 100,
+          hints = 0,
+          undos = 0,
+          reveals = 0,
+          extra_bottles = 0,
+          shuffles = 0,
+          total_moves = 0,
+          updated_at = datetime('now');
+    `);
     db.exec('DELETE FROM ad_rewards_log;');
+    // Referrals table is strictly preserved!
     return { success: true };
   } catch (err) {
     console.error('[DB Reset Season Error]', err);
@@ -481,6 +508,137 @@ function resetGramPurchases() {
   }
 }
 
+/**
+ * Referral System Methods
+ */
+
+function registerReferral(referrerId, referredId, referredName = '', referredUsername = '') {
+  const refId = String(referrerId || '').trim();
+  const newId = String(referredId || '').trim();
+  if (!refId || !newId || refId === newId) return null;
+
+  try {
+    const existing = db.prepare('SELECT id FROM referrals WHERE referred_id = ?').get(newId);
+    if (existing) {
+      return { success: false, error: 'already_referred' };
+    }
+
+    const stmt = db.prepare(`
+      INSERT INTO referrals (referrer_id, referred_id, referred_name, referred_username, reward_claimed)
+      VALUES (?, ?, ?, ?, 0)
+    `);
+    const result = stmt.run(refId, newId, referredName || 'Друг', referredUsername || '');
+    return {
+      success: true,
+      referral: {
+        id: result.lastInsertRowid,
+        referrer_id: refId,
+        referred_id: newId,
+        referred_name: referredName || 'Друг',
+        referred_username: referredUsername || '',
+        reward_claimed: 0
+      }
+    };
+  } catch (err) {
+    console.error('[DB Register Referral Error]', err);
+    return null;
+  }
+}
+
+function getReferrals(referrerId) {
+  const refId = String(referrerId || '').trim();
+  if (!refId) return { totalCount: 0, unclaimedCount: 0, referrals: [] };
+
+  try {
+    const rows = db.prepare(`
+      SELECT id, referred_id, referred_name, referred_username, reward_claimed, created_at, claimed_at
+      FROM referrals
+      WHERE referrer_id = ?
+      ORDER BY id DESC
+    `).all(refId);
+
+    const totalCount = rows.length;
+    const unclaimedCount = rows.filter(r => r.reward_claimed === 0).length;
+
+    return {
+      totalCount,
+      unclaimedCount,
+      referrals: rows
+    };
+  } catch (err) {
+    console.error('[DB Get Referrals Error]', err);
+    return { totalCount: 0, unclaimedCount: 0, referrals: [] };
+  }
+}
+
+function claimReferralReward(referrerId, referralId = null) {
+  const refId = String(referrerId || '').trim();
+  const user = getUser(refId);
+  if (!user) return null;
+
+  try {
+    let unclaimedRows = [];
+    if (referralId) {
+      const row = db.prepare('SELECT * FROM referrals WHERE id = ? AND referrer_id = ? AND reward_claimed = 0').get(Number(referralId), refId);
+      if (row) unclaimedRows.push(row);
+    } else {
+      unclaimedRows = db.prepare('SELECT * FROM referrals WHERE referrer_id = ? AND reward_claimed = 0').all(refId);
+    }
+
+    if (unclaimedRows.length === 0) {
+      return {
+        success: false,
+        error: 'no_unclaimed_rewards',
+        user
+      };
+    }
+
+    const count = unclaimedRows.length;
+    // Each referral rewards: +5 empty bottles, +5 hints, +5 undos, +5 reveals
+    const extraBottlesToAdd = count * 5;
+    const hintsToAdd = count * 5;
+    const undosToAdd = count * 5;
+    const revealsToAdd = count * 5;
+
+    const ids = unclaimedRows.map(r => r.id);
+    const placeholders = ids.map(() => '?').join(',');
+    db.prepare(`
+      UPDATE referrals
+      SET reward_claimed = 1,
+          claimed_at = datetime('now')
+      WHERE id IN (${placeholders})
+    `).run(...ids);
+
+    db.prepare(`
+      UPDATE users
+      SET extra_bottles = COALESCE(extra_bottles, 0) + ?,
+          hints = COALESCE(hints, 0) + ?,
+          undos = COALESCE(undos, 0) + ?,
+          reveals = COALESCE(reveals, 0) + ?,
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `).run(extraBottlesToAdd, hintsToAdd, undosToAdd, revealsToAdd, refId);
+
+    const updatedUser = getUser(refId);
+
+    return {
+      success: true,
+      claimedCount: count,
+      bonusesAdded: {
+        extraBottles: extraBottlesToAdd,
+        hints: hintsToAdd,
+        undos: undosToAdd,
+        reveals: revealsToAdd
+      },
+      user: updatedUser,
+      referrals: getReferrals(refId).referrals
+    };
+  } catch (err) {
+    console.error('[DB Claim Referral Error]', err);
+    return null;
+  }
+}
+
 module.exports = {
   getUser,
   updateUserProgress,
@@ -493,5 +651,8 @@ module.exports = {
   resetGramPurchases,
   updateTonWallet,
   recordTonDeposit,
-  buyShopItem
+  buyShopItem,
+  registerReferral,
+  getReferrals,
+  claimReferralReward
 };

@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47208">
+  <link rel="stylesheet" href="style.css?v=47209">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -471,6 +471,57 @@
         </div>
       </div>
 
+      <!-- Referral Program Card -->
+      <div class="referral-section-box">
+        <div class="referral-box-header">
+          <div class="referral-header-left">
+            <span class="referral-box-icon">👥</span>
+            <div>
+              <strong id="referralSectionTitle">Приглашай друзей</strong>
+              <span id="referralSectionSub" class="referral-sub">За каждого: +5 колб, +5 подсказок, +5 отмен, +5 открытий!</span>
+            </div>
+          </div>
+          <div class="referral-badge-count">
+            <span id="referralCountVal">0</span>
+            <span class="ref-unit-label">друзей</span>
+          </div>
+        </div>
+
+        <!-- Share & Copy Link Actions -->
+        <div class="referral-actions-grid">
+          <button type="button" id="shareReferralTelegramBtn" class="ref-action-btn ref-share-btn">
+            <span>📢 Пригласить в Telegram</span>
+          </button>
+          <button type="button" id="copyReferralLinkBtn" class="ref-action-btn ref-copy-btn" title="Скопировать реферальную ссылку">
+            <span id="copyReferralBtnText">📋 Скопировать ссылку</span>
+          </button>
+        </div>
+
+        <!-- Unclaimed Rewards Banner (if any) -->
+        <div id="referralClaimBanner" class="referral-claim-banner hidden">
+          <div class="ref-claim-info">
+            <span class="ref-gift-emoji">🎁</span>
+            <div>
+              <strong id="referralClaimTitle">Доступны награды!</strong>
+              <span id="referralClaimSubtitle" class="ref-claim-sub">+5 ко всем бонусам</span>
+            </div>
+          </div>
+          <button type="button" id="claimAllReferralsBtn" class="ref-claim-btn">Забрать всё</button>
+        </div>
+
+        <!-- Friends List -->
+        <div class="referrals-list-wrapper">
+          <div class="referrals-list-header">
+            <span>Приглашённые друзья:</span>
+          </div>
+          <div id="referralsListContainer" class="referrals-list">
+            <div class="referrals-empty-state">
+              <span>Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="language-selection-box">
         <div class="language-box-header">
           <span>🌐</span>
@@ -746,12 +797,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47208"></script>
-  <script src="js/audio.js?v=47208"></script>
-  <script src="js/solver.js?v=47208"></script>
-  <script src="js/levelGenerator.js?v=47208"></script>
-  <script src="js/gameEngine.js?v=47208"></script>
-  <script src="js/renderer.js?v=47208"></script>
-  <script src="js/app.js?v=47208"></script>
+  <script src="js/telegram.js?v=47209"></script>
+  <script src="js/audio.js?v=47209"></script>
+  <script src="js/solver.js?v=47209"></script>
+  <script src="js/levelGenerator.js?v=47209"></script>
+  <script src="js/gameEngine.js?v=47209"></script>
+  <script src="js/renderer.js?v=47209"></script>
+  <script src="js/app.js?v=47209"></script>
 </body>
 </html>

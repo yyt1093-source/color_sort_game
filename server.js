@@ -430,6 +430,62 @@ app.post('/api/admin/reset-purchases', (req, res) => {
   }
 });
 
+/**
+ * Register a new referral
+ */
+app.post('/api/referral/register', (req, res) => {
+  try {
+    const { referrerId, telegramId, firstName, username } = req.body || {};
+    if (!referrerId || !telegramId) {
+      return res.status(400).json({ success: false, error: 'Не указан referrerId или telegramId' });
+    }
+
+    const result = db.registerReferral(referrerId, telegramId, firstName, username);
+    if (!result) {
+      return res.status(400).json({ success: false, error: 'Не удалось зарегистрировать реферала' });
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('[API ERROR] /api/referral/register:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Get referrals list and status for a user
+ */
+app.get('/api/referral/list', (req, res) => {
+  try {
+    const telegramId = req.query.telegramId || 'guest_dev_123';
+    const result = db.getReferrals(telegramId);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[API ERROR] /api/referral/list:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Claim referral rewards (+5 to all boosters per friend)
+ */
+app.post('/api/referral/claim', (req, res) => {
+  try {
+    const { telegramId, referralId } = req.body || {};
+    const id = telegramId || 'guest_dev_123';
+
+    const result = db.claimReferralReward(id, referralId);
+    if (!result) {
+      return res.status(400).json({ success: false, error: 'Ошибка получения награды' });
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('[API ERROR] /api/referral/claim:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Global error handling middleware (e.g. malformed JSON)
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
