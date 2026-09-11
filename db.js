@@ -319,30 +319,25 @@ function recordTonDeposit(telegramId, amount, memo, walletAddress) {
   const depositAmount = parseFloat(amount) || 0;
   if (depositAmount <= 0) return null;
 
-  // Bonus game coins: 4000 coins per 1 TON (e.g. 0.5 TON = +2000 coins)
-  const coinsBonus = Math.floor(depositAmount * 4000);
-
   const insertStmt = db.prepare(`
     INSERT INTO ton_deposits (telegram_id, amount, memo, wallet_address, coins_bonus, status)
-    VALUES (?, ?, ?, ?, ?, 'completed')
+    VALUES (?, ?, ?, ?, 0, 'completed')
   `);
-  insertStmt.run(String(telegramId), depositAmount, memo || '', walletAddress || '', coinsBonus);
+  insertStmt.run(String(telegramId), depositAmount, memo || '', walletAddress || '');
 
   const updateStmt = db.prepare(`
     UPDATE users
     SET ton_balance = COALESCE(ton_balance, 0) + ?,
-        coins = coins + ?,
         ton_wallet = CASE WHEN ? != '' THEN ? ELSE ton_wallet END,
         updated_at = datetime('now')
     WHERE telegram_id = ?
   `);
-  updateStmt.run(depositAmount, coinsBonus, walletAddress || '', walletAddress || '', String(telegramId));
+  updateStmt.run(depositAmount, walletAddress || '', walletAddress || '', String(telegramId));
 
   return {
     user: getUser(telegramId),
     deposit: {
       amount: depositAmount,
-      coinsBonus,
       memo
     }
   };

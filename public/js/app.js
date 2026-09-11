@@ -537,7 +537,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tonStepperDisplay = document.getElementById('tonStepperDisplay');
   const tonStepPlusBtn = document.getElementById('tonStepPlusBtn');
   const tonRewardGram = document.getElementById('tonRewardGram');
-  const tonRewardCoins = document.getElementById('tonRewardCoins');
   const tonPayTonkeeperBtn = document.getElementById('tonPayTonkeeperBtn');
   const tonPayWalletBtn = document.getElementById('tonPayWalletBtn');
   const tonAddressDisplay = document.getElementById('tonAddressDisplay');
@@ -1607,10 +1606,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (tonRewardGram) {
       tonRewardGram.textContent = `+${selectedTonAmount.toFixed(2)} GRAM`;
     }
-    const bonusCoins = Math.floor(selectedTonAmount * 4000);
-    if (tonRewardCoins) {
-      tonRewardCoins.textContent = `+${bonusCoins.toLocaleString()} $FARM`;
-    }
 
     if (tonChipsRow) {
       const chipBtns = tonChipsRow.querySelectorAll('.ton-chip-btn');
@@ -1879,7 +1874,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           if (res && res.success && res.user) {
             currentUser.ton_balance = res.user.ton_balance;
-            currentUser.coins = res.user.coins;
             saveLocalUser();
             updateTonWalletUI();
             updateHeaderUI();
@@ -1894,13 +1888,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             showInfoModal(
               '💎',
               'Оплата подтверждена!',
-              `На ваш баланс успешно начислено +${selectedTonAmount.toFixed(2)} TON и бонус +${res.deposit.coinsBonus.toLocaleString()} $FARM монет для игровых улучшений!`
+              `На ваш баланс успешно зачислено +${selectedTonAmount.toFixed(2)} GRAM!`
             );
           } else {
             // Simulated instant fallback in local/offline environment
             currentUser.ton_balance = (parseFloat(currentUser.ton_balance || 0) + selectedTonAmount);
-            const bonusCoins = Math.floor(selectedTonAmount * 4000);
-            currentUser.coins = (currentUser.coins || 0) + bonusCoins;
             saveLocalUser();
             updateTonWalletUI();
             updateHeaderUI();
@@ -1911,7 +1903,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             showInfoModal(
               '💎',
               'Оплата подтверждена!',
-              `На ваш баланс успешно зачислено +${selectedTonAmount.toFixed(2)} TON и бонус +${bonusCoins.toLocaleString()} $FARM монет!`
+              `На ваш баланс успешно зачислено +${selectedTonAmount.toFixed(2)} GRAM!`
             );
           }
         }, 1200);

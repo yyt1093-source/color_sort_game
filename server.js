@@ -339,7 +339,7 @@ app.post('/api/wallet/verify-deposit', (req, res) => {
 
     res.json({
       success: true,
-      message: `Успешно начислено ${depositAmount.toFixed(2)} TON и +${result.deposit.coinsBonus.toLocaleString()} монет!`,
+      message: `Успешно начислено ${depositAmount.toFixed(2)} GRAM!`,
       user: result.user,
       deposit: result.deposit
     });
