@@ -213,8 +213,8 @@ async function handleUpdate(update) {
 async function sendReferralInvite(chatId, userId, firstName) {
   const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
   const botRefUrl = `https://t.me/sortcolors_bot?startapp=ref_${userId}`;
-  const webUrl = `${getWebAppUrl()}?v=5&startapp=ref_${userId}`;
-  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(`START: ${botRefUrl}`)}`;
+  const webUrl = `${getWebAppUrl()}?v=6&startapp=ref_${userId}`;
+  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}`;
 
   const inlineKeyboard = {
     inline_keyboard: [

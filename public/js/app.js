@@ -201,8 +201,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminResetPurchasesSuccessDesc: 'Все действующие преимущества за GRAM из сундучка у всех игроков успешно аннулированы. Балансы кошельков не изменились.',
       adminResetSuccessTitle: '💥 Сезон сброшен!',
       adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!',
-      referralSectionTitle: 'Приглашай друзей',
-      referralSectionSub: 'За каждого: +5 колб, +5 подсказок, +5 отмен, +5 открытий!',
+      referralSectionTitle: 'Color Sort',
+      referralSectionSub: '',
       shareReferralTelegramBtn: '📢 Пригласить в Telegram',
       copyReferralLinkBtn: '📋 Скопировать ссылку',
       referralClaimTitle: 'Доступны награды!',
@@ -276,8 +276,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminResetPurchasesSuccessDesc: 'Всі діючі переваги за GRAM із скриньки у всіх гравців успішно анульовані. Баланси гаманців не змінилися.',
       adminResetSuccessTitle: '💥 Сезон скинуто!',
       adminResetSuccessDesc: 'Всі данные гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!',
-      referralSectionTitle: 'Запрошуй друзів',
-      referralSectionSub: 'За кожного: +5 колб, +5 підказок, +5 відмін, +5 відкриттів!',
+      referralSectionTitle: 'Color Sort',
+      referralSectionSub: '',
       shareReferralTelegramBtn: '📢 Запросити в Telegram',
       copyReferralLinkBtn: '📋 Скопіювати посилання',
       referralClaimTitle: 'Доступні нагороди!',
@@ -351,8 +351,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminResetPurchasesSuccessDesc: 'All active GRAM perks from the chest have been annulled for all players. Wallet balances remain untouched.',
       adminResetSuccessTitle: '💥 Season Reset!',
       adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!',
-      referralSectionTitle: 'Invite Friends',
-      referralSectionSub: 'Per friend: +5 bottles, +5 hints, +5 undos, +5 reveals!',
+      referralSectionTitle: 'Color Sort',
+      referralSectionSub: '',
       shareReferralTelegramBtn: '📢 Invite in Telegram',
       copyReferralLinkBtn: '📋 Copy Referral Link',
       referralClaimTitle: 'Rewards Available!',
@@ -426,8 +426,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminResetPurchasesSuccessDesc: 'Alle aktiven GRAM-Vorteile aus der Truhe wurden für alle Spieler annulliert. Wallet-Guthaben bleiben unberührt.',
       adminResetSuccessTitle: '💥 Saison zurückgesetzt!',
       adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!',
-      referralSectionTitle: 'Freunde einladen',
-      referralSectionSub: 'Pro Freund: +5 Flaschen, +5 Hinweise, +5 Züge zurück, +5 Aufdeckungen!',
+      referralSectionTitle: 'Color Sort',
+      referralSectionSub: '',
       shareReferralTelegramBtn: '📢 In Telegram einladen',
       copyReferralLinkBtn: '📋 Link kopieren',
       referralClaimTitle: 'Belohnungen verfügbar!',
@@ -2533,10 +2533,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.preventDefault();
       e.stopPropagation();
       const id = currentUser.telegramId;
-      const webUrl = `https://yyt1093-source.github.io/color_sort_game/?v=5&startapp=ref_${id}`;
-      const botUrl = `https://t.me/sortcolors_bot?startapp=ref_${id}`;
-      const text = `START: ${botUrl}`;
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(text)}`;
+      const webUrl = `https://yyt1093-source.github.io/color_sort_game/?v=6&startapp=ref_${id}`;
+      // Share only the web URL without extra text so Telegram displays only the card with Color Sort and START button
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(shareUrl);
       } else {
