@@ -974,6 +974,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (refParam && String(refParam) !== String(currentUser.telegramId)) {
+      // If opened outside Telegram WebApp (e.g. external browser), redirect immediately to Telegram bot so the referral is 100% credited
+      if (!tg || !tg.initData || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+        window.location.replace(`https://t.me/sortcolors_bot?startapp=ref_${refParam}`);
+        return;
+      }
+
       const alreadySent = localStorage.getItem(`cs_ref_sent_${refParam}`);
       if (!alreadySent) {
         localStorage.setItem(`cs_ref_sent_${refParam}`, 'true');
@@ -2527,10 +2533,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.preventDefault();
       e.stopPropagation();
       const id = currentUser.telegramId;
-      const webUrl = `https://yyt1093-source.github.io/color_sort_game/?startapp=ref_${id}`;
       const botUrl = `https://t.me/sortcolors_bot?startapp=ref_${id}`;
-      const text = `${botUrl}\n\nSTART: ${botUrl}`;
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(text)}`;
+      // In Telegram, sharing the bot's startapp URL renders the native Mini App card with the blue START button
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(botUrl)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(shareUrl);
       } else {
