@@ -75,6 +75,7 @@ async function startBot() {
   await tgApi('setMyCommands', {
     commands: [
       { command: 'start', description: 'Запустить игру' },
+      { command: 'ref', description: 'Реферальная ссылка и бонусы' },
       { command: 'leaderboard', description: 'Топ 10 игроков' },
       { command: 'mystats', description: 'Моя статистика' },
       { command: 'help', description: 'Помощь' }
@@ -160,7 +161,7 @@ async function handleUpdate(update) {
       }
     });
 
-    const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/assets/referral_share.jpg';
+    const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
     const welcomeCaption = referrerId
       ? `🧪 Привет, ${firstName}! 👋\n\nВаш друг пригласил вас сыграть в **Color Sort**!\n\n✨ **Особенности игры:**\n• Увлекательные уровни с переливанием жидкостей ♾️\n• Глобальный рейтинг игроков 24/7 🏆\n• Бесплатные бонусы и награды 🎁\n\nНажмите «🎮 Играть сейчас» ниже, чтобы открыть игру прямо в Telegram! 👇`
       : `Привет, ${firstName}! 👋\n\nДобро пожаловать в 🧪 **Color Sort** — увлекательную головоломку с переливанием жидкостей!\n\n✨ **Особенности игры:**\n• Бесконечные уровни ♾️\n• Глобальный рейтинг игроков 🏆\n• Бесплатные бонусы 🎁\n• Сохранение прогресса 💾\n\nНажмите кнопку ниже, чтобы начать играть! 👇`;
@@ -204,6 +205,8 @@ async function handleUpdate(update) {
         reply_markup: inlineKeyboard
       });
     }
+  } else if (text.startsWith('/ref') || text.startsWith('/referral') || text.startsWith('/share')) {
+    await sendReferralInvite(chatId, userId, firstName);
   } else if (text.startsWith('/leaderboard')) {
     await sendLeaderboard(chatId);
   } else if (text.startsWith('/mystats')) {
@@ -211,8 +214,51 @@ async function handleUpdate(update) {
   } else if (text.startsWith('/help')) {
     await tgApi('sendMessage', {
       chat_id: chatId,
-      text: `ℹ️ **Помощь по игре Color Sort**\n\nПравила просты: переливайте цвета из одной баночки в другую так, чтобы в каждой баночке остался только один цвет.\n\nКоманды:\n/start - Запустить игру\n/leaderboard - Топ 10 игроков\n/mystats - Ваша статистика\n/help - Это сообщение`,
+      text: `ℹ️ **Помощь по игре Color Sort**\n\nПравила просты: переливайте цвета из одной баночки в другую так, чтобы в каждой баночке остался только один цвет.\n\nКоманды:\n/start - Запустить игру\n/ref - Реферальная ссылка и бонусы\n/leaderboard - Топ 10 игроков\n/mystats - Ваша статистика\n/help - Это сообщение`,
       parse_mode: 'Markdown'
+    });
+  }
+}
+
+async function sendReferralInvite(chatId, userId, firstName) {
+  const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
+  const webAppUrl = `${getWebAppUrl()}?startapp=ref_${userId}`;
+  const botRefUrl = `https://t.me/sortcolors_bot?startapp=ref_${userId}`;
+  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(webAppUrl)}&text=${encodeURIComponent(`🧪 Присоединяйся ко мне в игре Color Sort! Переливай жидкости по колбочкам и забирай крутые бонусы! 🎁\n\n🎮 Играть прямо в Telegram: ${botRefUrl}`)}`;
+
+  const caption = `🧪 **Ваша реферальная ссылка в Color Sort:**\n\n\`${botRefUrl}\`\n\n🎁 **Награды за каждого приглашённого друга:**\n• +5 пустых колб 🧪\n• +5 подсказок 💡\n• +5 отмен хода ↩️\n• +5 открытий цветов 🔮\n\nОтправьте ссылку друзьям или нажмите «📢 Поделиться с друзьями» прямо сейчас! 👇`;
+
+  const inlineKeyboard = {
+    inline_keyboard: [
+      [
+        {
+          text: '📢 Поделиться с друзьями',
+          url: shareTgUrl
+        }
+      ],
+      [
+        {
+          text: '🎮 Открыть игру',
+          web_app: { url: webAppUrl }
+        }
+      ]
+    ]
+  };
+
+  const photoRes = await tgApi('sendPhoto', {
+    chat_id: chatId,
+    photo: photoUrl,
+    caption: caption,
+    parse_mode: 'Markdown',
+    reply_markup: inlineKeyboard
+  });
+
+  if (!photoRes || !photoRes.ok) {
+    await tgApi('sendMessage', {
+      chat_id: chatId,
+      text: caption,
+      parse_mode: 'Markdown',
+      reply_markup: inlineKeyboard
     });
   }
 }
