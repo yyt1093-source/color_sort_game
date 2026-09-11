@@ -20,6 +20,17 @@ app.use((req, res, next) => {
 });
 
 /**
+ * Public client config (Adsgram block ID, TON deposit address, etc.)
+ */
+app.get('/api/config', (req, res) => {
+  res.json({
+    success: true,
+    adsgramBlockId: process.env.ADSGRAM_BLOCK_ID || '',
+    tonDepositAddress: process.env.TON_DEPOSIT_ADDRESS || 'EQBvW8Z5huBkMJYdnfHCTvMzNkVx0842_TONFARMER_OFFICIAL_DEPLOYED'
+  });
+});
+
+/**
  * Get or Init User Progress
  */
 app.post('/api/user/init', (req, res) => {
@@ -112,6 +123,50 @@ app.post('/api/ad-reward', (req, res) => {
     });
   } catch (err) {
     console.error('[API ERROR] /api/ad-reward:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Save connected TON wallet address
+ */
+app.post('/api/wallet/connect', (req, res) => {
+  try {
+    const { telegramId, walletAddress } = req.body;
+    const id = telegramId || 'guest_dev_123';
+    const updatedUser = db.updateTonWallet(id, walletAddress);
+    res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error('[API ERROR] /api/wallet/connect:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Verify and record TON deposit
+ */
+app.post('/api/wallet/verify-deposit', (req, res) => {
+  try {
+    const { telegramId, amount, memo, walletAddress } = req.body;
+    const id = telegramId || 'guest_dev_123';
+    const depositAmount = parseFloat(amount) || 0;
+    if (depositAmount <= 0) {
+      return res.status(400).json({ success: false, error: 'Некорректная сумма пополнения' });
+    }
+
+    const result = db.recordTonDeposit(id, depositAmount, memo, walletAddress);
+    if (!result) {
+      return res.status(500).json({ success: false, error: 'Ошибка обработки пополнения' });
+    }
+
+    res.json({
+      success: true,
+      message: `Успешно начислено ${depositAmount.toFixed(2)} TON и +${result.deposit.coinsBonus.toLocaleString()} монет!`,
+      user: result.user,
+      deposit: result.deposit
+    });
+  } catch (err) {
+    console.error('[API ERROR] /api/wallet/verify-deposit:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

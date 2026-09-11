@@ -36,6 +36,17 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS ton_deposits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      telegram_id TEXT,
+      amount REAL NOT NULL,
+      memo TEXT NOT NULL,
+      wallet_address TEXT,
+      coins_bonus INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'completed',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_leaderboard ON users(max_level DESC, stars DESC);
   `);
   
@@ -53,26 +64,49 @@ function initDatabase() {
     db.exec(`ALTER TABLE users ADD COLUMN shuffles INTEGER DEFAULT 0;`);
   } catch (e) {}
   try {
+    db.exec(`ALTER TABLE users ADD COLUMN ton_balance REAL DEFAULT 0.0;`);
+  } catch (e) {}
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN ton_wallet TEXT DEFAULT '';`);
+  } catch (e) {}
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN memo_code TEXT DEFAULT '';`);
+  } catch (e) {}
+  try {
     db.exec(`UPDATE users SET hints = 0, undos = 0, reveals = 0, shuffles = 0;`);
   } catch (e) {}
 }
 
 initDatabase();
 
+function generateMemoCode(telegramId) {
+  const digits = String(telegramId).replace(/\D/g, '');
+  const suffix = digits.length >= 6 ? digits.slice(-8) : Math.floor(10000000 + Math.random() * 90000000);
+  return `SORT-${suffix}`;
+}
+
 /**
  * Get or create user by Telegram ID
  */
 function getUser(telegramId, defaultUserData = {}) {
   const stmt = db.prepare('SELECT * FROM users WHERE telegram_id = ?');
-  const user = stmt.get(String(telegramId));
+  let user = stmt.get(String(telegramId));
   
   if (user) {
-    if (defaultUserData.first_name || defaultUserData.username || defaultUserData.photo_url) {
+    let needsUpdate = false;
+    let memoCode = user.memo_code;
+    if (!memoCode) {
+      memoCode = generateMemoCode(telegramId);
+      needsUpdate = true;
+    }
+
+    if (defaultUserData.first_name || defaultUserData.username || defaultUserData.photo_url || needsUpdate) {
       const updateStmt = db.prepare(`
         UPDATE users 
         SET first_name = COALESCE(?, first_name),
             username = COALESCE(?, username),
             photo_url = COALESCE(?, photo_url),
+            memo_code = COALESCE(?, memo_code),
             updated_at = datetime('now')
         WHERE telegram_id = ?
       `);
@@ -80,23 +114,26 @@ function getUser(telegramId, defaultUserData = {}) {
         defaultUserData.first_name || null,
         defaultUserData.username || null,
         defaultUserData.photo_url || null,
+        memoCode,
         String(telegramId)
       );
-      return stmt.get(String(telegramId));
+      user = stmt.get(String(telegramId));
     }
     return user;
   }
 
+  const memo = generateMemoCode(telegramId);
   const insertStmt = db.prepare(`
-    INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, extra_bottles, shuffles, total_moves)
-    VALUES (?, ?, ?, ?, 1, 1, 0, 100, 0, 0, 0, 0, 0, 0)
+    INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, extra_bottles, shuffles, total_moves, ton_balance, ton_wallet, memo_code)
+    VALUES (?, ?, ?, ?, 1, 1, 0, 100, 0, 0, 0, 0, 0, 0, 0.0, '', ?)
   `);
   
   insertStmt.run(
     String(telegramId),
     defaultUserData.first_name || 'Player',
     defaultUserData.username || '',
-    defaultUserData.photo_url || ''
+    defaultUserData.photo_url || '',
+    memo
   );
 
   return stmt.get(String(telegramId));
@@ -267,6 +304,50 @@ function resetSeason() {
   }
 }
 
+function updateTonWallet(telegramId, walletAddress) {
+  const stmt = db.prepare(`
+    UPDATE users
+    SET ton_wallet = ?,
+        updated_at = datetime('now')
+    WHERE telegram_id = ?
+  `);
+  stmt.run(walletAddress || '', String(telegramId));
+  return getUser(telegramId);
+}
+
+function recordTonDeposit(telegramId, amount, memo, walletAddress) {
+  const depositAmount = parseFloat(amount) || 0;
+  if (depositAmount <= 0) return null;
+
+  // Bonus game coins: 4000 coins per 1 TON (e.g. 0.5 TON = +2000 coins)
+  const coinsBonus = Math.floor(depositAmount * 4000);
+
+  const insertStmt = db.prepare(`
+    INSERT INTO ton_deposits (telegram_id, amount, memo, wallet_address, coins_bonus, status)
+    VALUES (?, ?, ?, ?, ?, 'completed')
+  `);
+  insertStmt.run(String(telegramId), depositAmount, memo || '', walletAddress || '', coinsBonus);
+
+  const updateStmt = db.prepare(`
+    UPDATE users
+    SET ton_balance = COALESCE(ton_balance, 0) + ?,
+        coins = coins + ?,
+        ton_wallet = CASE WHEN ? != '' THEN ? ELSE ton_wallet END,
+        updated_at = datetime('now')
+    WHERE telegram_id = ?
+  `);
+  updateStmt.run(depositAmount, coinsBonus, walletAddress || '', walletAddress || '', String(telegramId));
+
+  return {
+    user: getUser(telegramId),
+    deposit: {
+      amount: depositAmount,
+      coinsBonus,
+      memo
+    }
+  };
+}
+
 module.exports = {
   getUser,
   updateUserProgress,
@@ -275,5 +356,7 @@ module.exports = {
   getAdRewardsCount,
   getLeaderboard,
   getAllTelegramIds,
-  resetSeason
+  resetSeason,
+  updateTonWallet,
+  recordTonDeposit
 };
