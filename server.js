@@ -117,6 +117,7 @@ const authMiddleware = (req, res, next) => {
 app.use('/api/user', authMiddleware);
 app.use('/api/ad-reward', authMiddleware);
 app.use('/api/wallet', authMiddleware);
+app.use('/api/shop', authMiddleware);
 
 /**
  * Public client config (Adsgram block ID, TON deposit address, etc.)
@@ -345,6 +346,34 @@ app.post('/api/wallet/verify-deposit', (req, res) => {
     });
   } catch (err) {
     console.error('[API ERROR] /api/wallet/verify-deposit:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Buy Shop Item with GRAM
+ */
+app.post('/api/shop/buy', (req, res) => {
+  try {
+    const { telegramId, itemId } = req.body;
+    const id = telegramId || 'guest_dev_123';
+
+    if (!itemId) {
+      return res.status(400).json({ success: false, error: 'Не указан ID товара' });
+    }
+
+    const result = db.buyShopItem(id, itemId);
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'Товар не найден или ошибка пользователя' });
+    }
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('[API ERROR] /api/shop/buy:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

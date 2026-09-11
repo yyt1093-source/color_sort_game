@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47204">
+  <link rel="stylesheet" href="style.css?v=47205">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -92,6 +92,14 @@
           <svg class="wallet-header-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
             <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+          </svg>
+        </button>
+        <button id="shopBtn" class="glass-icon-btn shop-header-btn" title="Сундучок преимуществ" aria-label="Сундучок преимуществ">
+          <svg class="shop-header-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2H3V9z"/>
+            <path d="M3 11v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8"/>
+            <path d="M10 11v3h4v-3"/>
+            <circle cx="12" cy="14" r="1" fill="currentColor"/>
           </svg>
         </button>
         <button id="leaderboardBtn" class="glass-icon-btn" title="Лидерборд">🏆</button>
@@ -297,6 +305,147 @@
         </svg>
         <span id="tonVerifyBtnLabel">Проверить оплату</span>
       </button>
+    </div>
+  </div>
+
+  <!-- Chest / Upgrades Shop Modal -->
+  <div id="shopModal" class="modal-overlay hidden">
+    <div class="glass-modal shop-modal-content">
+      <!-- Header -->
+      <div class="shop-modal-header">
+        <div class="shop-modal-header-left">
+          <div class="shop-chest-badge">
+            <span class="shop-chest-icon">🧰</span>
+          </div>
+          <div class="shop-modal-title-box">
+            <h2 id="shopModalTitle" class="shop-modal-title">Сундучок преимуществ</h2>
+            <p id="shopModalSubtitle" class="shop-modal-subtitle">Покупайте улучшения в игре за GRAM</p>
+          </div>
+        </div>
+        <button id="closeShopModalBtn" class="shop-close-btn" title="Закрыть">&times;</button>
+      </div>
+
+      <!-- Current Balance Card -->
+      <div class="shop-balance-card">
+        <div class="shop-balance-info">
+          <span class="shop-balance-sub">Баланс в кошельке:</span>
+          <div class="shop-balance-row">
+            <span class="shop-gram-gem">💎</span>
+            <strong id="shopUserBalance" class="shop-balance-val">0.00 GRAM</strong>
+          </div>
+        </div>
+        <button type="button" id="shopTopUpBtn" class="shop-topup-btn">
+          <span>+ Пополнить</span>
+        </button>
+      </div>
+
+      <!-- Active Perks Status Banner -->
+      <div id="shopActivePerkBanner" class="shop-active-banner hidden">
+        <div class="shop-active-indicator">✨</div>
+        <div class="shop-active-info">
+          <strong class="shop-active-name" id="shopActivePerkTitle">Все краски открыты: АКТИВНО</strong>
+          <span class="shop-active-timer" id="shopActiveTimerText">Осталось: 15 дн. 00 ч.</span>
+        </div>
+      </div>
+
+      <!-- Shop Items List -->
+      <div class="shop-items-list">
+        <!-- Featured Item: All Colors 15 Days -->
+        <div class="shop-item-card shop-item-featured">
+          <div class="shop-featured-ribbon">ХИТ 🔥</div>
+          <div class="shop-item-top">
+            <div class="shop-item-icon-box item-icon-allcolors">
+              <span class="shop-item-emoji">🎨</span>
+            </div>
+            <div class="shop-item-details">
+              <div class="shop-item-name-row">
+                <strong class="shop-item-title">Все краски открыты</strong>
+                <span class="shop-duration-tag">⏳ 15 дней</span>
+              </div>
+              <p class="shop-item-desc">
+                Все цвета во всех бутылочках открыты сразу с самого начала каждого уровня! Скрытые слои с вопросом «?» полностью убраны.
+              </p>
+            </div>
+          </div>
+          <div class="shop-item-bottom">
+            <div class="shop-item-price-box">
+              <span class="shop-price-label">Цена:</span>
+              <strong class="shop-price-value">💎 5.00 GRAM</strong>
+            </div>
+            <button type="button" class="shop-buy-btn shop-buy-featured-btn" id="buyAllColorsBtn" data-item="all_colors_15d">
+              <span class="btn-text">Активировать (5 GRAM)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section Divider -->
+        <div class="shop-section-divider">
+          <span>Бустеры за криптовалюту GRAM</span>
+        </div>
+
+        <!-- Extra Bottles Pack -->
+        <div class="shop-item-card">
+          <div class="shop-item-top">
+            <div class="shop-item-icon-box item-icon-bottle">
+              <span class="shop-item-emoji">🧪</span>
+            </div>
+            <div class="shop-item-details">
+              <strong class="shop-item-title">+15 Пустых колб</strong>
+              <p class="shop-item-desc">Запас дополнительных пустых колб для прохождения сложных уровней.</p>
+            </div>
+          </div>
+          <div class="shop-item-bottom">
+            <div class="shop-item-price-box">
+              <strong class="shop-price-value">💎 1.00 GRAM</strong>
+            </div>
+            <button type="button" class="shop-buy-btn" data-item="bottles_pack_15">
+              <span>Купить за 1 GRAM</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hints Pack -->
+        <div class="shop-item-card">
+          <div class="shop-item-top">
+            <div class="shop-item-icon-box item-icon-hint">
+              <span class="shop-item-emoji">💡</span>
+            </div>
+            <div class="shop-item-details">
+              <strong class="shop-item-title">+20 Подсказок</strong>
+              <p class="shop-item-desc">Показывает лучший следующий ход при затруднении.</p>
+            </div>
+          </div>
+          <div class="shop-item-bottom">
+            <div class="shop-item-price-box">
+              <strong class="shop-price-value">💎 1.00 GRAM</strong>
+            </div>
+            <button type="button" class="shop-buy-btn" data-item="hints_pack_20">
+              <span>Купить за 1 GRAM</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Undos Pack -->
+        <div class="shop-item-card">
+          <div class="shop-item-top">
+            <div class="shop-item-icon-box item-icon-undo">
+              <span class="shop-item-emoji">↩️</span>
+            </div>
+            <div class="shop-item-details">
+              <strong class="shop-item-title">+20 Отмен хода</strong>
+              <p class="shop-item-desc">Возвращает ход назад в любой критической ситуации.</p>
+            </div>
+          </div>
+          <div class="shop-item-bottom">
+            <div class="shop-item-price-box">
+              <strong class="shop-price-value">💎 1.00 GRAM</strong>
+            </div>
+            <button type="button" class="shop-buy-btn" data-item="undos_pack_20">
+              <span>Купить за 1 GRAM</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -569,12 +718,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47204"></script>
-  <script src="js/audio.js?v=47204"></script>
-  <script src="js/solver.js?v=47204"></script>
-  <script src="js/levelGenerator.js?v=47204"></script>
-  <script src="js/gameEngine.js?v=47204"></script>
-  <script src="js/renderer.js?v=47204"></script>
-  <script src="js/app.js?v=47204"></script>
+  <script src="js/telegram.js?v=47205"></script>
+  <script src="js/audio.js?v=47205"></script>
+  <script src="js/solver.js?v=47205"></script>
+  <script src="js/levelGenerator.js?v=47205"></script>
+  <script src="js/gameEngine.js?v=47205"></script>
+  <script src="js/renderer.js?v=47205"></script>
+  <script src="js/app.js?v=47205"></script>
 </body>
 </html>

@@ -172,6 +172,34 @@ app.post('/api/wallet/verify-deposit', (req, res) => {
 });
 
 /**
+ * Buy Shop Item with GRAM
+ */
+app.post('/api/shop/buy', (req, res) => {
+  try {
+    const { telegramId, itemId } = req.body;
+    const id = telegramId || 'guest_dev_123';
+
+    if (!itemId) {
+      return res.status(400).json({ success: false, error: 'Не указан ID товара' });
+    }
+
+    const result = db.buyShopItem(id, itemId);
+    if (!result) {
+      return res.status(404).json({ success: false, error: 'Товар не найден или ошибка пользователя' });
+    }
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('[API ERROR] /api/shop/buy:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * Admin Season Reset (Alligator Only)
  */
 app.post('/api/admin/reset-season', (req, res) => {

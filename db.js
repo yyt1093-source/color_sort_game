@@ -47,6 +47,15 @@ function initDatabase() {
       created_at TEXT DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS shop_purchases (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      telegram_id TEXT,
+      item_id TEXT NOT NULL,
+      item_name TEXT NOT NULL,
+      price_gram REAL NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_leaderboard ON users(max_level DESC, stars DESC);
   `);
   
@@ -71,6 +80,9 @@ function initDatabase() {
   } catch (e) {}
   try {
     db.exec(`ALTER TABLE users ADD COLUMN memo_code TEXT DEFAULT '';`);
+  } catch (e) {}
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN all_colors_until INTEGER DEFAULT 0;`);
   } catch (e) {}
   try {
     db.exec(`UPDATE users SET hints = 0, undos = 0, reveals = 0, shuffles = 0;`);
@@ -124,8 +136,8 @@ function getUser(telegramId, defaultUserData = {}) {
 
   const memo = generateMemoCode(telegramId);
   const insertStmt = db.prepare(`
-    INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, extra_bottles, shuffles, total_moves, ton_balance, ton_wallet, memo_code)
-    VALUES (?, ?, ?, ?, 1, 1, 0, 100, 0, 0, 0, 0, 0, 0, 0.0, '', ?)
+    INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, extra_bottles, shuffles, total_moves, ton_balance, ton_wallet, memo_code, all_colors_until)
+    VALUES (?, ?, ?, ?, 1, 1, 0, 100, 0, 0, 0, 0, 0, 0, 0.0, '', ?, 0)
   `);
   
   insertStmt.run(
@@ -343,6 +355,113 @@ function recordTonDeposit(telegramId, amount, memo, walletAddress) {
   };
 }
 
+/**
+ * Buy an upgrade or booster pack from the Shop for GRAM coins
+ */
+function buyShopItem(telegramId, itemId) {
+  const user = getUser(telegramId);
+  if (!user) return null;
+
+  const SHOP_ITEMS = {
+    all_colors_15d: {
+      name: 'Все краски открыты (15 дней)',
+      price: 5.0,
+      durationDays: 15
+    },
+    bottles_pack_15: {
+      name: '+15 Пустых колб',
+      price: 1.0,
+      extraBottles: 15
+    },
+    hints_pack_20: {
+      name: '+20 Подсказок',
+      price: 1.0,
+      hints: 20
+    },
+    undos_pack_20: {
+      name: '+20 Отмен хода',
+      price: 1.0,
+      undos: 20
+    }
+  };
+
+  const item = SHOP_ITEMS[itemId];
+  if (!item) return null;
+
+  const currentBalance = parseFloat(user.ton_balance || 0);
+  if (currentBalance < item.price) {
+    return {
+      success: false,
+      error: 'insufficient_balance',
+      message: `Недостаточно GRAM! Требуется ${item.price.toFixed(2)} GRAM, у вас ${currentBalance.toFixed(2)} GRAM. Пополните кошелёк!`,
+      needed: item.price,
+      balance: currentBalance
+    };
+  }
+
+  // Deduct price from ton_balance
+  const newBalance = Number((currentBalance - item.price).toFixed(4));
+
+  if (itemId === 'all_colors_15d') {
+    const now = Date.now();
+    const currentExpiry = Number(user.all_colors_until || 0);
+    const baseTime = (currentExpiry > now) ? currentExpiry : now;
+    const newExpiry = baseTime + (15 * 24 * 60 * 60 * 1000);
+
+    const updateStmt = db.prepare(`
+      UPDATE users
+      SET ton_balance = ?,
+          all_colors_until = ?,
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+    updateStmt.run(newBalance, newExpiry, String(telegramId));
+  } else if (item.extraBottles) {
+    const updateStmt = db.prepare(`
+      UPDATE users
+      SET ton_balance = ?,
+          extra_bottles = COALESCE(extra_bottles, 0) + ?,
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+    updateStmt.run(newBalance, item.extraBottles, String(telegramId));
+  } else if (item.hints) {
+    const updateStmt = db.prepare(`
+      UPDATE users
+      SET ton_balance = ?,
+          hints = COALESCE(hints, 0) + ?,
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+    updateStmt.run(newBalance, item.hints, String(telegramId));
+  } else if (item.undos) {
+    const updateStmt = db.prepare(`
+      UPDATE users
+      SET ton_balance = ?,
+          undos = COALESCE(undos, 0) + ?,
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+    updateStmt.run(newBalance, item.undos, String(telegramId));
+  }
+
+  // Log purchase
+  try {
+    const logStmt = db.prepare(`
+      INSERT INTO shop_purchases (telegram_id, item_id, item_name, price_gram)
+      VALUES (?, ?, ?, ?)
+    `);
+    logStmt.run(String(telegramId), itemId, item.name, item.price);
+  } catch (e) {}
+
+  return {
+    success: true,
+    message: `Преимущество «${item.name}» успешно активировано!`,
+    item,
+    user: getUser(telegramId)
+  };
+}
+
 module.exports = {
   getUser,
   updateUserProgress,
@@ -353,5 +472,6 @@ module.exports = {
   getAllTelegramIds,
   resetSeason,
   updateTonWallet,
-  recordTonDeposit
+  recordTonDeposit,
+  buyShopItem
 };
