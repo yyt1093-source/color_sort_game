@@ -2533,9 +2533,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.preventDefault();
       e.stopPropagation();
       const id = currentUser.telegramId;
-      const webUrl = `https://yyt1093-source.github.io/color_sort_game/?startapp=ref_${id}`;
-      // Share only the web URL without text so Telegram displays only the clean preview card with START button
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}`;
+      const webUrl = `https://yyt1093-source.github.io/color_sort_game/?v=5&startapp=ref_${id}`;
+      const botUrl = `https://t.me/sortcolors_bot?startapp=ref_${id}`;
+      const text = `START: ${botUrl}`;
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(text)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(shareUrl);
       } else {
