@@ -168,11 +168,6 @@ async function handleUpdate(update) {
     });
 
     const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
-    const gameLink = referrerId
-      ? `https://t.me/sortcolors_bot?startapp=ref_${referrerId}`
-      : `https://t.me/sortcolors_bot`;
-    const welcomeCaption = `START: ${gameLink}`;
-
     const inlineKeyboard = {
       inline_keyboard: [
         [
@@ -184,11 +179,11 @@ async function handleUpdate(update) {
       ]
     };
 
-    // Try sending photo first
+    // Try sending photo first without any captions or extra texts
     const photoRes = await tgApi('sendPhoto', {
       chat_id: chatId,
       photo: photoUrl,
-      caption: welcomeCaption,
+      caption: '',
       reply_markup: inlineKeyboard
     });
 
@@ -196,7 +191,7 @@ async function handleUpdate(update) {
     if (!photoRes || !photoRes.ok) {
       await tgApi('sendMessage', {
         chat_id: chatId,
-        text: welcomeCaption,
+        text: 'START',
         reply_markup: inlineKeyboard
       });
     }
@@ -219,16 +214,14 @@ async function sendReferralInvite(chatId, userId, firstName) {
   const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
   const botRefUrl = `https://t.me/sortcolors_bot?startapp=ref_${userId}`;
   const webUrl = `${getWebAppUrl()}?startapp=ref_${userId}`;
-  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}&text=${encodeURIComponent(`START: ${botRefUrl}`)}`;
-
-  const caption = `START: ${botRefUrl}`;
+  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}`;
 
   const inlineKeyboard = {
     inline_keyboard: [
       [
         {
           text: 'START',
-          url: botRefUrl
+          web_app: { url: `${getWebAppUrl()}?startapp=ref_${userId}` }
         }
       ],
       [
@@ -243,16 +236,14 @@ async function sendReferralInvite(chatId, userId, firstName) {
   const photoRes = await tgApi('sendPhoto', {
     chat_id: chatId,
     photo: photoUrl,
-    caption: caption,
-    parse_mode: 'Markdown',
+    caption: '',
     reply_markup: inlineKeyboard
   });
 
   if (!photoRes || !photoRes.ok) {
     await tgApi('sendMessage', {
       chat_id: chatId,
-      text: caption,
-      parse_mode: 'Markdown',
+      text: 'START',
       reply_markup: inlineKeyboard
     });
   }
@@ -278,9 +269,8 @@ async function handleInlineQuery(inlineQuery) {
         id: 'ref_' + refId,
         photo_url: photoUrl,
         thumb_url: photoUrl,
-        title: 'Color Sort — START',
-        description: 'Отправить реферальную карточку с кнопкой START',
-        caption: `🧪 Color Sort`,
+        title: 'START',
+        caption: '',
         reply_markup: {
           inline_keyboard: [
             [
