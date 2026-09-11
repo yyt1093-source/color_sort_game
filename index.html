@@ -11,12 +11,15 @@
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
   
+  <!-- TonConnect UI SDK -->
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47202">
+  <link rel="stylesheet" href="style.css?v=47203">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -85,6 +88,12 @@
         </div>
       </button>
       <div class="header-right">
+        <button id="walletBtn" class="glass-icon-btn wallet-header-btn" title="Кошелёк TON" aria-label="Кошелёк TON">
+          <svg class="wallet-header-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/>
+            <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>
+          </svg>
+        </button>
         <button id="leaderboardBtn" class="glass-icon-btn" title="Лидерборд">🏆</button>
         <button id="soundToggleBtn" class="glass-icon-btn" title="Звук">🔊</button>
       </div>
@@ -128,6 +137,171 @@
         <span class="tool-icon">🎁</span>
       </button>
     </footer>
+  </div>
+
+  <!-- TON Wallet & Deposit Modal -->
+  <div id="tonWalletModal" class="modal-overlay hidden">
+    <div class="glass-modal ton-modal-content">
+      <!-- Header -->
+      <div class="ton-modal-header">
+        <div class="ton-modal-header-left">
+          <div class="ton-shield-icon-badge">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <div class="ton-modal-title-box">
+            <h2 id="tonModalTitle" class="ton-modal-title">Пополнение баланса TON</h2>
+            <p id="tonModalSubtitle" class="ton-modal-subtitle">Выберите сумму и любой удобный криптокошелек</p>
+          </div>
+        </div>
+        <div class="ton-modal-header-right">
+          <span class="ton-net-badge">TON Mainnet</span>
+          <button id="closeTonModalBtn" class="ton-close-btn" title="Закрыть">&times;</button>
+        </div>
+      </div>
+
+      <!-- User Current Balance & Status Card -->
+      <div class="ton-status-card">
+        <div class="ton-status-left">
+          <div class="ton-gem-avatar">
+            <span class="ton-gem-icon">💎</span>
+          </div>
+          <div class="ton-status-texts">
+            <span class="ton-sub-label">Ваш текущий баланс TON:</span>
+            <span id="tonModalUserBalance" class="ton-balance-value">0.00 TON</span>
+          </div>
+        </div>
+        <div class="ton-status-right">
+          <span class="ton-sub-label">Статус кошелька:</span>
+          <span id="tonModalWalletStatus" class="ton-wallet-status-disconnected">
+            <span class="status-check">✓</span> <span id="tonWalletStatusLabel">Не подключен</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Connect Wallet Card -->
+      <div class="ton-card ton-connect-card">
+        <div class="ton-card-title-row">
+          <span class="wallet-icon-pink">👛</span>
+          <strong class="ton-card-heading">Подключение кошелька</strong>
+        </div>
+        <button type="button" id="tonConnectBtn" class="ton-btn-connect">
+          <span class="btn-gem-icon">💎</span>
+          <span id="tonConnectBtnLabel">Подключить TON Кошелёк</span>
+        </button>
+      </div>
+
+      <!-- Choose Deposit Amount Card -->
+      <div class="ton-card ton-amount-card">
+        <div class="ton-amount-header">
+          <strong class="ton-amount-title">Выберите сумму пополнения:</strong>
+          <span class="ton-amount-badge">
+            <span class="gem-amber-icon">💎</span>
+            <span id="tonSelectedAmountBadge">0.50 TON</span>
+          </span>
+        </div>
+
+        <!-- Quick Amount Chips -->
+        <div class="ton-chips-row" id="tonChipsRow">
+          <button type="button" class="ton-chip-btn active" data-amount="0.5">0.5 TON</button>
+          <button type="button" class="ton-chip-btn" data-amount="1">1 TON</button>
+          <button type="button" class="ton-chip-btn" data-amount="2">2 TON</button>
+          <button type="button" class="ton-chip-btn" data-amount="5">5 TON</button>
+          <button type="button" class="ton-chip-btn" data-amount="10">10 TON</button>
+        </div>
+
+        <!-- Stepper: [-] 0,5 TON [+] -->
+        <div class="ton-stepper-box">
+          <button type="button" id="tonStepMinusBtn" class="ton-stepper-btn" aria-label="Уменьшить">−</button>
+          <span id="tonStepperDisplay" class="ton-stepper-value">0,5 TON</span>
+          <button type="button" id="tonStepPlusBtn" class="ton-stepper-btn" aria-label="Увеличить">+</button>
+        </div>
+
+        <!-- Bonus Calculation Box -->
+        <div class="ton-reward-info-box">
+          <div class="ton-reward-row">
+            <span class="ton-reward-label">Зачисление на игровой баланс:</span>
+            <span id="tonRewardGram" class="ton-reward-val-blue">+0.50 GRAM</span>
+          </div>
+          <div class="ton-reward-row">
+            <span class="ton-reward-label">Бонус $FARM монет:</span>
+            <span id="tonRewardCoins" class="ton-reward-val-gold">+2 000 $FARM</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Choose Wallet For Payment -->
+      <div class="ton-card-plain">
+        <div class="ton-wallet-choice-header">
+          <span class="card-emoji">💳</span>
+          <strong>Выберите кошелёк для оплаты:</strong>
+        </div>
+        <div class="ton-wallet-options-grid">
+          <!-- Tonkeeper Button -->
+          <button type="button" id="tonPayTonkeeperBtn" class="ton-wallet-tile tile-tonkeeper">
+            <span class="tile-link-icon">↗</span>
+            <div class="tile-gem-icon">💎</div>
+            <strong class="tile-title">Tonkeeper</strong>
+            <span class="tile-sub">Приложение TON</span>
+          </button>
+
+          <!-- @wallet Button -->
+          <button type="button" id="tonPayWalletBtn" class="ton-wallet-tile tile-tgwallet">
+            <span class="tile-link-icon">↗</span>
+            <div class="tile-plane-icon">✈️</div>
+            <strong class="tile-title">@wallet</strong>
+            <span class="tile-sub">Telegram Кошелёк</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- How to Pay via @wallet Instructions Box -->
+      <div class="ton-instructions-card">
+        <div class="ton-inst-title">
+          <span class="plane-blue-icon">✈️</span>
+          <strong>Как оплатить через Telegram Wallet (@wallet):</strong>
+        </div>
+        <p class="ton-inst-step">1. Нажмите на <strong>@wallet</strong> выше (комментарий автоматически скопируется).</p>
+        <p class="ton-inst-step">2. В боте выберите <strong>Отправить ➔ На сторонний кошелёк (TON)</strong>.</p>
+      </div>
+
+      <!-- Direct TON Address & Memo Row -->
+      <div class="ton-address-memo-row">
+        <!-- Address Box -->
+        <div class="ton-copy-card ton-addr-card">
+          <div class="ton-copy-card-info">
+            <span class="ton-copy-sub">Адрес TON:</span>
+            <span id="tonAddressDisplay" class="ton-copy-text" title="EQBvW8Z5huBkMJYdnfHCTvMzNkVx0842_TONFARMER_OFFICIAL_DEPLOYED">EQBv...OYED</span>
+          </div>
+          <button type="button" id="tonCopyAddrBtn" class="ton-copy-btn">
+            <span class="copy-icon">📋</span>
+            <span id="tonCopyAddrLabel">Копия</span>
+          </button>
+        </div>
+
+        <!-- Memo Box -->
+        <div class="ton-copy-card ton-memo-card">
+          <div class="ton-copy-card-info">
+            <span class="ton-copy-sub memo-sub">Memo:</span>
+            <span id="tonMemoDisplay" class="ton-copy-text ton-memo-text">SORT-88294012</span>
+          </div>
+          <button type="button" id="tonCopyMemoBtn" class="ton-copy-btn memo-btn" title="Скопировать Memo">
+            <span id="tonCopyMemoIcon">📋</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Verification / Check Payment Button -->
+      <button type="button" id="tonVerifyPaymentBtn" class="ton-btn-verify">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+        <span id="tonVerifyBtnLabel">Проверить оплату</span>
+      </button>
+    </div>
   </div>
 
   <!-- Profile & Settings (Language) Modal -->
@@ -399,12 +573,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47202"></script>
-  <script src="js/audio.js?v=47202"></script>
-  <script src="js/solver.js?v=47202"></script>
-  <script src="js/levelGenerator.js?v=47202"></script>
-  <script src="js/gameEngine.js?v=47202"></script>
-  <script src="js/renderer.js?v=47202"></script>
-  <script src="js/app.js?v=47202"></script>
+  <script src="js/telegram.js?v=47203"></script>
+  <script src="js/audio.js?v=47203"></script>
+  <script src="js/solver.js?v=47203"></script>
+  <script src="js/levelGenerator.js?v=47203"></script>
+  <script src="js/gameEngine.js?v=47203"></script>
+  <script src="js/renderer.js?v=47203"></script>
+  <script src="js/app.js?v=47203"></script>
 </body>
 </html>
