@@ -1958,14 +1958,14 @@ body {
   width: 100%;
   padding: 12px;
   border-radius: 14px;
-  border: none;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  background: linear-gradient(135deg, #0284c7 0%, #0077b6 50%, #0369a1 100%);
   color: #ffffff;
   font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: 2px;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.45);
+  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1974,9 +1974,9 @@ body {
 }
 
 .referral-start-big-btn:hover {
-  filter: brightness(1.12);
+  filter: brightness(1.15);
   transform: translateY(-1px);
-  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.6);
+  box-shadow: 0 6px 24px rgba(2, 132, 199, 0.7);
 }
 
 .referral-start-big-btn:active {

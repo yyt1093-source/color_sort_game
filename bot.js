@@ -103,6 +103,12 @@ async function startBot() {
  * Handle incoming Telegram messages
  */
 async function handleUpdate(update) {
+  // Handle inline queries
+  if (update.inline_query) {
+    await handleInlineQuery(update.inline_query);
+    return;
+  }
+
   // Handle callback queries (inline buttons)
   if (update.callback_query) {
     const cq = update.callback_query;
@@ -213,23 +219,22 @@ async function handleUpdate(update) {
 
 async function sendReferralInvite(chatId, userId, firstName) {
   const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
-  const webAppUrl = `${getWebAppUrl()}?startapp=ref_${userId}`;
   const botRefUrl = `https://t.me/sortcolors_bot?startapp=ref_${userId}`;
-  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(webAppUrl)}&text=${encodeURIComponent(`${botRefUrl}\n\nSTART: ${botRefUrl}`)}`;
+  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(botRefUrl)}`;
 
-  const caption = `${botRefUrl}`;
+  const caption = `🧪 **Реферальная карточка Color Sort:**\n\n${botRefUrl}\n\nНажмите кнопку START ниже, чтобы запустить игру, или перешлите это сообщение другу!`;
 
   const inlineKeyboard = {
     inline_keyboard: [
       [
         {
           text: 'START',
-          web_app: { url: webAppUrl }
+          url: botRefUrl
         }
       ],
       [
         {
-          text: '📢 Поделиться с друзьями',
+          text: '📢 Отправить ссылку другу',
           url: shareTgUrl
         }
       ]
@@ -240,6 +245,7 @@ async function sendReferralInvite(chatId, userId, firstName) {
     chat_id: chatId,
     photo: photoUrl,
     caption: caption,
+    parse_mode: 'Markdown',
     reply_markup: inlineKeyboard
   });
 
@@ -247,9 +253,48 @@ async function sendReferralInvite(chatId, userId, firstName) {
     await tgApi('sendMessage', {
       chat_id: chatId,
       text: caption,
+      parse_mode: 'Markdown',
       reply_markup: inlineKeyboard
     });
   }
+}
+
+async function handleInlineQuery(inlineQuery) {
+  const query = inlineQuery.query || '';
+  const fromId = String(inlineQuery.from.id);
+  let refId = fromId;
+  const m = query.match(/(?:ref_)?(\d+)/i);
+  if (m && m[1]) refId = m[1];
+
+  const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
+  const botRefUrl = `https://t.me/sortcolors_bot?startapp=ref_${refId}`;
+
+  await tgApi('answerInlineQuery', {
+    inline_query_id: inlineQuery.id,
+    cache_time: 1,
+    is_personal: true,
+    results: [
+      {
+        type: 'photo',
+        id: 'ref_' + refId,
+        photo_url: photoUrl,
+        thumb_url: photoUrl,
+        title: 'Color Sort — START',
+        description: 'Отправить реферальную карточку с кнопкой START',
+        caption: `🧪 Color Sort`,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: 'START',
+                url: botRefUrl
+              }
+            ]
+          ]
+        }
+      }
+    ]
+  });
 }
 
 async function sendLeaderboard(chatId) {
