@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47207">
+  <link rel="stylesheet" href="style.css?v=47208">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -553,11 +553,39 @@
 
         <div class="admin-divider"></div>
 
+        <p class="admin-desc" id="adminResetPurchasesDesc">Аннулировать все действующие покупки преимуществ в сундучке за GRAM (например, «Все краски открыты») у всех игроков без списания валюты с кошельков.</p>
+        <button type="button" id="adminResetPurchasesBtn" class="admin-reset-purchases-btn">
+          <span class="reset-btn-icon">💎</span>
+          <span class="reset-btn-label" id="adminResetPurchasesBtnLabel">Сбросить все покупки за GRAM</span>
+        </button>
+
+        <div class="admin-divider"></div>
+
         <p class="admin-desc">Сброс сезона полностью удаляет всю информацию, обнуляет глобальный лидерборд, уровни, монеты и награды всех игроков.</p>
         <button id="adminResetSeasonBtn" class="admin-reset-season-btn">
           <span class="reset-btn-icon">🔥</span>
           <span class="reset-btn-label">Сбросить сезон (Всё в ноль)</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Purchases Reset Confirmation Modal -->
+  <div id="resetPurchasesModal" class="modal-overlay hidden">
+    <div class="glass-modal reset-modal-content">
+      <div class="warning-icon-glow">💎</div>
+      <h2 id="resetPurchasesModalTitle" class="reset-modal-title">Сброс покупок за GRAM</h2>
+      <div class="reset-warning-card">
+        <p class="reset-warning-lead">Внимание! Будут аннулированы действующие покупки:</p>
+        <ul class="reset-warning-list">
+          <li>🎨 Преимущество «Все краски открыты» будет выключено у всех игроков</li>
+          <li>⏳ Время действия всех активных улучшений из сундука будет обнулено</li>
+          <li>💎 <strong>Баланс монет GRAM на кошельках игроков не изменится</strong></li>
+        </ul>
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
+        <button type="button" id="cancelResetPurchasesBtn" class="btn-cancel" style="flex: 1;">Отмена</button>
+        <button type="button" id="confirmResetPurchasesBtn" class="btn-confirm-danger btn-confirm-purple" style="flex: 1;">💎 Сбросить покупки</button>
       </div>
     </div>
   </div>
@@ -718,12 +746,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47207"></script>
-  <script src="js/audio.js?v=47207"></script>
-  <script src="js/solver.js?v=47207"></script>
-  <script src="js/levelGenerator.js?v=47207"></script>
-  <script src="js/gameEngine.js?v=47207"></script>
-  <script src="js/renderer.js?v=47207"></script>
-  <script src="js/app.js?v=47207"></script>
+  <script src="js/telegram.js?v=47208"></script>
+  <script src="js/audio.js?v=47208"></script>
+  <script src="js/solver.js?v=47208"></script>
+  <script src="js/levelGenerator.js?v=47208"></script>
+  <script src="js/gameEngine.js?v=47208"></script>
+  <script src="js/renderer.js?v=47208"></script>
+  <script src="js/app.js?v=47208"></script>
 </body>
 </html>

@@ -196,6 +196,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
       adminCoinsAddedMsg: (count) => `🪙 +500 Монет добавлено (Всего: ${count})`,
       adminAllAddedMsg: '⚡ Все бонусы пополнены (+10 к каждому)!',
+      adminResetPurchasesBtnLabel: 'Сбросить все покупки за GRAM',
+      adminResetPurchasesSuccessTitle: '💎 Покупки аннулированы!',
+      adminResetPurchasesSuccessDesc: 'Все действующие преимущества за GRAM из сундучка у всех игроков успешно аннулированы. Балансы кошельков не изменились.',
       adminResetSuccessTitle: '💥 Сезон сброшен!',
       adminResetSuccessDesc: 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!'
     },
@@ -262,6 +265,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Відкриттів додано (Всього: ${count})`,
       adminCoinsAddedMsg: (count) => `🪙 +500 Монет додано (Всього: ${count})`,
       adminAllAddedMsg: '⚡ Всі бонуси поповнено (+10 до кожного)!',
+      adminResetPurchasesBtnLabel: 'Скинути всі покупки за GRAM',
+      adminResetPurchasesSuccessTitle: '💎 Покупки анульовано!',
+      adminResetPurchasesSuccessDesc: 'Всі діючі переваги за GRAM із скриньки у всіх гравців успішно анульовані. Баланси гаманців не змінилися.',
       adminResetSuccessTitle: '💥 Сезон скинуто!',
       adminResetSuccessDesc: 'Всі данные гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!'
     },
@@ -328,6 +334,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Reveals added (Total: ${count})`,
       adminCoinsAddedMsg: (count) => `🪙 +500 Coins added (Total: ${count})`,
       adminAllAddedMsg: '⚡ All boosters replenished (+10 to each)!',
+      adminResetPurchasesBtnLabel: 'Reset all GRAM purchases',
+      adminResetPurchasesSuccessTitle: '💎 Purchases Annulled!',
+      adminResetPurchasesSuccessDesc: 'All active GRAM perks from the chest have been annulled for all players. Wallet balances remain untouched.',
       adminResetSuccessTitle: '💥 Season Reset!',
       adminResetSuccessDesc: 'All player data, levels, achievements, and the global leaderboard have been wiped to zero!'
     },
@@ -394,6 +403,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Aufdeckungen hinzugefügt (Gesamt: ${count})`,
       adminCoinsAddedMsg: (count) => `🪙 +500 Münzen hinzugefügt (Gesamt: ${count})`,
       adminAllAddedMsg: '⚡ Alle Boni aufgefüllt (+10 auf alle)!',
+      adminResetPurchasesBtnLabel: 'Alle GRAM-Käufe zurücksetzen',
+      adminResetPurchasesSuccessTitle: '💎 Käufe annulliert!',
+      adminResetPurchasesSuccessDesc: 'Alle aktiven GRAM-Vorteile aus der Truhe wurden für alle Spieler annulliert. Wallet-Guthaben bleiben unberührt.',
       adminResetSuccessTitle: '💥 Saison zurückgesetzt!',
       adminResetSuccessDesc: 'Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!'
     },
@@ -588,6 +600,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const profileAdminBadge = document.getElementById('profileAdminBadge');
   const adminPanelSection = document.getElementById('adminPanelSection');
   const adminPanelTitle = document.getElementById('adminPanelTitle');
+  const adminResetPurchasesBtn = document.getElementById('adminResetPurchasesBtn');
+  const adminResetPurchasesBtnLabel = document.getElementById('adminResetPurchasesBtnLabel');
+  const resetPurchasesModal = document.getElementById('resetPurchasesModal');
+  const cancelResetPurchasesBtn = document.getElementById('cancelResetPurchasesBtn');
+  const confirmResetPurchasesBtn = document.getElementById('confirmResetPurchasesBtn');
   const adminResetSeasonBtn = document.getElementById('adminResetSeasonBtn');
   const resetSeasonModal = document.getElementById('resetSeasonModal');
   const cancelResetSeasonBtn = document.getElementById('cancelResetSeasonBtn');
@@ -690,6 +707,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (adminAddRevealsLabel) adminAddRevealsLabel.textContent = t('adminAddReveals');
     if (adminAddCoinsLabel) adminAddCoinsLabel.textContent = t('adminAddCoins');
     if (adminAddAllLabel) adminAddAllLabel.textContent = t('adminAddAll');
+    if (adminResetPurchasesBtnLabel) adminResetPurchasesBtnLabel.textContent = t('adminResetPurchasesBtnLabel') || 'Сбросить все покупки за GRAM';
   }
 
   // 4. App state
@@ -707,7 +725,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     ton_balance: 0.0,
     ton_wallet: '',
     memo_code: '',
-    all_colors_until: 0
+    all_colors_until: 0,
+    all_colors_purchased_at: 0
   };
 
   window.isAllColorsActive = function () {
@@ -999,6 +1018,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (serverUser.user.all_colors_until !== undefined) {
         currentUser.all_colors_until = serverUser.user.all_colors_until;
       }
+      if (serverUser.user.all_colors_purchased_at !== undefined) {
+        currentUser.all_colors_purchased_at = serverUser.user.all_colors_purchased_at;
+      }
       updateTonWalletUI();
       updateShopUI();
       saveLocalUser();
@@ -1008,7 +1030,38 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
     syncPlayerToCloud(currentUser);
-  }).catch(() => {});
+    checkGlobalPurchasesReset();
+  }).catch(() => {
+    checkGlobalPurchasesReset();
+  });
+
+  async function checkGlobalPurchasesReset() {
+    try {
+      const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_gram_purchases_reset`, {
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.resetAt) {
+          const lastPurchased = Number(currentUser.all_colors_purchased_at || 0);
+          if (currentUser.all_colors_until && Number(currentUser.all_colors_until) > 0 && lastPurchased < data.resetAt) {
+            currentUser.all_colors_until = 0;
+            saveLocalUser();
+            updateShopUI();
+            if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
+              engine.revealed = engine.bottles.map(b => {
+                if (!b || b.length === 0) return [];
+                const rev = new Array(b.length).fill(false);
+                rev[b.length - 1] = true;
+                return rev;
+              });
+              if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
+            }
+          }
+        }
+      }
+    } catch (e) {}
+  }
 
   initAdsgram().catch(() => {});
   setTimeout(() => {
@@ -2040,6 +2093,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (res && res.success && res.user) {
         currentUser.ton_balance = res.user.ton_balance;
         if (res.user.all_colors_until !== undefined) currentUser.all_colors_until = res.user.all_colors_until;
+        if (res.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = res.user.all_colors_purchased_at;
         if (res.user.extra_bottles !== undefined) currentUser.extraBottles = res.user.extra_bottles;
         if (res.user.hints !== undefined) currentUser.hints = res.user.hints;
         if (res.user.undos !== undefined) currentUser.undos = res.user.undos;
@@ -2051,6 +2105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           const curr = Number(currentUser.all_colors_until || 0);
           const base = (curr > now) ? curr : now;
           currentUser.all_colors_until = base + (15 * 24 * 60 * 60 * 1000);
+          currentUser.all_colors_purchased_at = now;
         } else if (itemId === 'bottles_pack_15') {
           currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
         } else if (itemId === 'hints_pack_20') {
@@ -2306,6 +2361,109 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
       showAdminFeedback(t('adminAllAddedMsg'));
+    });
+  }
+
+  // Admin Reset GRAM Purchases Handlers
+  if (adminResetPurchasesBtn) {
+    adminResetPurchasesBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+      if (resetPurchasesModal) openModal(resetPurchasesModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('medium');
+      }
+    });
+  }
+
+  if (cancelResetPurchasesBtn && resetPurchasesModal) {
+    cancelResetPurchasesBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeModal(resetPurchasesModal);
+    });
+  }
+
+  if (resetPurchasesModal) {
+    resetPurchasesModal.addEventListener('click', (e) => {
+      if (e.target === resetPurchasesModal) {
+        closeModal(resetPurchasesModal);
+      }
+    });
+  }
+
+  if (confirmResetPurchasesBtn) {
+    confirmResetPurchasesBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+
+      confirmResetPurchasesBtn.disabled = true;
+      const originalHtml = confirmResetPurchasesBtn.innerHTML;
+      confirmResetPurchasesBtn.innerHTML = '⏳ Сброс...';
+
+      try {
+        const resetTimestamp = Date.now();
+
+        // 1. Broadcast global purchases reset timestamp to KVDB cloud
+        try {
+          await fetch(`${GLOBAL_CLOUD_BASE}/meta_gram_purchases_reset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resetAt: resetTimestamp })
+          });
+        } catch (kvErr) {
+          console.warn('[Purchases Reset] KVDB meta notice:', kvErr);
+        }
+
+        // 2. Call server reset endpoint to update SQLite DB
+        try {
+          await apiCall('/api/admin/reset-purchases', 'POST', {
+            telegramId: currentUser.telegramId,
+            firstName: currentUser.firstName,
+            username: currentUser.username
+          });
+        } catch (apiErr) {
+          console.warn('[Purchases Reset] API reset notice:', apiErr);
+        }
+
+        // 3. Reset local active perks without touching ton_balance (GRAM currency remains intact)
+        currentUser.all_colors_until = 0;
+        currentUser.all_colors_purchased_at = 0;
+        saveLocalUser();
+        updateShopUI();
+
+        // 4. Restore hidden bottle layers if current game board has hidden colors
+        if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
+          engine.revealed = engine.bottles.map(b => {
+            if (!b || b.length === 0) return [];
+            const rev = new Array(b.length).fill(false);
+            rev[b.length - 1] = true;
+            return rev;
+          });
+          if (renderer && renderer.renderBoard) {
+            renderer.renderBoard(engine);
+          }
+        }
+
+        // 5. Close modals
+        closeModal(resetPurchasesModal);
+        closeModal(profileModal);
+
+        // 6. Success haptic and notification
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('success');
+        }
+        showInfoModal(
+          '💎',
+          t('adminResetPurchasesSuccessTitle') || 'Покупки аннулированы!',
+          t('adminResetPurchasesSuccessDesc') || 'Все действующие преимущества за GRAM из сундучка у всех игроков успешно аннулированы.\n\nБалансы кошельков не изменились.'
+        );
+      } catch (err) {
+        console.error('[Purchases Reset Error]', err);
+        alert('Ошибка при сбросе покупок: ' + err.message);
+      } finally {
+        confirmResetPurchasesBtn.disabled = false;
+        confirmResetPurchasesBtn.innerHTML = originalHtml;
+      }
     });
   }
 
