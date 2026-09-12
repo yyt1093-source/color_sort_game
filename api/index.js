@@ -391,6 +391,55 @@ async function resetKvdbGramPurchasesServer(resetTimestamp) {
 }
 
 /**
+ * Admin Add Boosters & Perks (Admin Only)
+ */
+app.post('/api/admin/add-boosters', (req, res) => {
+  try {
+    if (!checkIsAdmin(req.body || {})) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+
+    const { telegramId, hints = 0, undos = 0, reveals = 0, extraBottles = 0, tonBalance = 0 } = req.body || {};
+    const id = telegramId || 'guest_dev_123';
+
+    const updatedUser = db.addBonus(id, {
+      hints: Number(hints || 0),
+      undos: Number(undos || 0),
+      reveals: Number(reveals || 0),
+      extraBottles: Number(extraBottles || 0),
+      ton_balance: Number(tonBalance || 0)
+    });
+
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      const baseUrl = `https://kvdb.io/${bucket}`;
+      fetch(`${baseUrl}/${encodeURIComponent('player_' + id)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(val => {
+          if (val && typeof val === 'object') {
+            val.hints = (val.hints || 0) + Number(hints || 0);
+            val.undos = (val.undos || 0) + Number(undos || 0);
+            val.reveals = (val.reveals || 0) + Number(reveals || 0);
+            val.extraBottles = (val.extraBottles || 0) + Number(extraBottles || 0);
+            val.ton_balance = (val.ton_balance || 0) + Number(tonBalance || 0);
+            val.updatedAt = Date.now();
+            fetch(`${baseUrl}/${encodeURIComponent('player_' + id)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(val)
+            }).catch(() => {});
+          }
+        }).catch(() => {});
+    }
+
+    res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/add-boosters:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * Admin Reset All GRAM Purchases (Admin Only)
  */
 app.post('/api/admin/reset-purchases', async (req, res) => {

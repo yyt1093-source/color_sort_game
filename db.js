@@ -210,11 +210,12 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
 /**
  * Add items / bonus rewards to user
  */
-function addBonus(telegramId, { coins = 0, hints = 0, undos = 0, reveals = 0, extra_bottles = 0, extraBottles = 0, shuffles = 0 }) {
+function addBonus(telegramId, { coins = 0, hints = 0, undos = 0, reveals = 0, extra_bottles = 0, extraBottles = 0, shuffles = 0, ton_balance = 0, tonBalance = 0 }) {
   const user = getUser(telegramId);
   if (!user) return null;
 
   const bottlesToAdd = extra_bottles || extraBottles || 0;
+  const tonToAdd = ton_balance || tonBalance || 0;
   const stmt = db.prepare(`
     UPDATE users
     SET coins = coins + ?,
@@ -223,11 +224,12 @@ function addBonus(telegramId, { coins = 0, hints = 0, undos = 0, reveals = 0, ex
         reveals = COALESCE(reveals, 0) + ?,
         extra_bottles = COALESCE(extra_bottles, 0) + ?,
         shuffles = COALESCE(shuffles, 0) + ?,
+        ton_balance = COALESCE(ton_balance, 0) + ?,
         updated_at = datetime('now')
     WHERE telegram_id = ?
   `);
 
-  stmt.run(coins, hints, undos, reveals, bottlesToAdd, shuffles, String(telegramId));
+  stmt.run(coins, hints, undos, reveals, bottlesToAdd, shuffles, tonToAdd, String(telegramId));
   return getUser(telegramId);
 }
 
