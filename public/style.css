@@ -2181,17 +2181,47 @@ body {
 }
 
 .referral-status-claimed {
-  background: rgba(100, 116, 139, 0.25);
-  color: #94a3b8;
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.ref-check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  background: #10b981;
+  color: #ffffff;
+  border-radius: 50%;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .referral-status-unclaimed {
   background: linear-gradient(135deg, #10b981, #059669);
   color: #ffffff;
-  border: none;
+  border: 1px solid rgba(52, 211, 153, 0.4);
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
-  transition: transform 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.referral-status-unclaimed:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45);
 }
 
 .referral-status-unclaimed:active {
