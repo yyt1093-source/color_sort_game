@@ -633,11 +633,30 @@
 
         <div class="admin-divider"></div>
 
-        <p class="admin-desc" id="adminResetPurchasesDesc">Аннулировать все действующие покупки преимуществ в сундучке за GRAM (например, «Все краски открыты») у всех игроков без списания валюты с кошельков.</p>
-        <button type="button" id="adminResetPurchasesBtn" class="admin-reset-purchases-btn">
-          <span class="reset-btn-icon">💎</span>
-          <span class="reset-btn-label" id="adminResetPurchasesBtnLabel">Сбросить все покупки за GRAM</span>
-        </button>
+        <!-- Section: Reset TON Purchases (Admin Only) -->
+        <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 14px; margin-top: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: #38bdf8; margin-bottom: 6px;">
+            <span>💎</span> <span>Управление покупками за TON (Только Admin)</span>
+          </div>
+          <p class="admin-desc" id="adminResetPurchasesDesc" style="margin-bottom: 12px; font-size: 12px; line-height: 1.4;">Аннулировать действующие покупки преимуществ за TON (например, «Все краски открыты») без списания баланса с кошельков игроков.</p>
+
+          <!-- Action Controls -->
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Reset All Players -->
+            <button type="button" id="adminResetPurchasesBtn" class="admin-reset-purchases-btn" style="width: 100%; margin: 0;">
+              <span class="reset-btn-icon">🌐</span>
+              <span class="reset-btn-label" id="adminResetPurchasesBtnLabel">Сбросить ВСЕМ игрокам в игре</span>
+            </button>
+
+            <!-- Reset Single Player -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="adminResetSinglePlayerInput" placeholder="Telegram ID игрока" style="flex: 1; padding: 9px 12px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; font-size: 13px; outline: none;">
+              <button type="button" id="adminResetSinglePlayerBtn" style="padding: 9px 14px; background: linear-gradient(135deg, #e11d48, #be123c); border: 1px solid rgba(244,63,94,0.4); border-radius: 10px; color: #fff; font-weight: 800; font-size: 12px; cursor: pointer; white-space: nowrap;">
+                👤 Сбросить игроку
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div class="admin-divider"></div>
 
@@ -654,13 +673,13 @@
   <div id="resetPurchasesModal" class="modal-overlay hidden">
     <div class="glass-modal reset-modal-content">
       <div class="warning-icon-glow">💎</div>
-      <h2 id="resetPurchasesModalTitle" class="reset-modal-title">Сброс покупок за GRAM</h2>
+      <h2 id="resetPurchasesModalTitle" class="reset-modal-title">Сброс покупок за TON</h2>
       <div class="reset-warning-card">
         <p class="reset-warning-lead">Внимание! Будут аннулированы действующие покупки:</p>
         <ul class="reset-warning-list">
           <li>🎨 Преимущество «Все краски открыты» будет выключено у всех игроков</li>
           <li>⏳ Время действия всех активных улучшений из сундука будет обнулено</li>
-          <li>💎 <strong>Баланс монет GRAM на кошельках игроков не изменится</strong></li>
+          <li>💎 <strong>Балансы TON / GRAM на кошельках игроков не изменятся</strong></li>
         </ul>
       </div>
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
