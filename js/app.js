@@ -779,7 +779,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.isAllColorsActive = function () {
-    if (!currentUser || !currentUser.all_colors_until) return false;
+    if (!currentUser) return false;
+
+    const localResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
+    const purchasedAt = Number(currentUser.all_colors_purchased_at || 0);
+
+    if (localResetAt > 0 && (purchasedAt < localResetAt || !purchasedAt)) {
+      if (currentUser.all_colors_until) {
+        currentUser.all_colors_until = 0;
+        currentUser.all_colors_purchased_at = 0;
+        saveLocalUser();
+      }
+      return false;
+    }
+
+    if (!currentUser.all_colors_until) return false;
     return Number(currentUser.all_colors_until) > Date.now();
   };
 
@@ -1133,14 +1147,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function checkGlobalPurchasesReset() {
     try {
       const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_gram_purchases_reset`, {
-        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(3000) : undefined
       });
       if (res.ok) {
-        const data = await res.json();
-        if (data && data.resetAt) {
+        const rawText = await res.text();
+        let resetAt = 0;
+        try {
+          const data = JSON.parse(rawText);
+          resetAt = Number(data.resetAt || data) || 0;
+        } catch (e) {
+          resetAt = Number(rawText) || 0;
+        }
+
+        if (resetAt > 0) {
+          localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
           const lastPurchased = Number(currentUser.all_colors_purchased_at || 0);
-          if (currentUser.all_colors_until && Number(currentUser.all_colors_until) > 0 && lastPurchased < data.resetAt) {
+          if (currentUser.all_colors_until && Number(currentUser.all_colors_until) > 0 && (lastPurchased < resetAt || !lastPurchased)) {
             currentUser.all_colors_until = 0;
+            currentUser.all_colors_purchased_at = 0;
             saveLocalUser();
             updateShopUI();
             if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
@@ -2903,6 +2927,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       try {
         const resetTimestamp = Date.now();
+        localStorage.setItem('color_sort_gram_reset_at', String(resetTimestamp));
 
         // 1. Broadcast global purchases reset timestamp to KVDB cloud
         try {
@@ -2926,13 +2951,46 @@ document.addEventListener('DOMContentLoaded', async () => {
           console.warn('[Purchases Reset] API reset notice:', apiErr);
         }
 
-        // 3. Reset local active perks without touching ton_balance (GRAM currency remains intact)
+        // 3. Scan and update all player keys in KVDB cloud directly from client
+        try {
+          const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json`);
+          if (listRes.ok) {
+            const pairs = await listRes.json();
+            if (Array.isArray(pairs)) {
+              for (const [key, val] of pairs) {
+                if (val && typeof val === 'object') {
+                  let modified = false;
+                  if (val.all_colors_until) {
+                    val.all_colors_until = 0;
+                    modified = true;
+                  }
+                  if (val.all_colors_purchased_at) {
+                    val.all_colors_purchased_at = 0;
+                    modified = true;
+                  }
+                  if (modified) {
+                    await fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(key)}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(val)
+                    }).catch(() => {});
+                  }
+                }
+              }
+            }
+          }
+        } catch (kvScanErr) {
+          console.warn('[Purchases Reset] KVDB player scan error:', kvScanErr);
+        }
+
+        // 4. Reset local active perks without touching ton_balance (GRAM currency remains intact)
         currentUser.all_colors_until = 0;
         currentUser.all_colors_purchased_at = 0;
         saveLocalUser();
         updateShopUI();
+        syncPlayerToCloud(currentUser);
 
-        // 4. Restore hidden bottle layers if current game board has hidden colors
+        // 5. Restore hidden bottle layers if current game board has hidden colors
         if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
           engine.revealed = engine.bottles.map(b => {
             if (!b || b.length === 0) return [];
@@ -2945,7 +3003,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         }
 
-        // 5. Close modals
+        // 6. Close modals
         closeModal(resetPurchasesModal);
         closeModal(profileModal);
 
