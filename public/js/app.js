@@ -974,12 +974,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (refParam && String(refParam) !== String(currentUser.telegramId)) {
-      // If opened outside Telegram WebApp (e.g. external browser), redirect immediately to Telegram bot so the referral is 100% credited
-      if (!tg || !tg.initData || !tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-        window.location.replace(`https://t.me/sortcolors_bot?startapp=ref_${refParam}`);
-        return;
-      }
-
       const alreadySent = localStorage.getItem(`cs_ref_sent_${refParam}`);
       if (!alreadySent) {
         localStorage.setItem(`cs_ref_sent_${refParam}`, 'true');
@@ -1732,7 +1726,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // TON Wallet & Deposit Modal Controller
   // ==========================================================================
   let selectedTonAmount = 0.5;
-  let tonDepositAddress = 'EQBvW8Z5huBkMJYdnfHCTvMzNkVx0842_TONFARMER_OFFICIAL_DEPLOYED';
+  let tonDepositAddress = 'UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5';
   let isTonVerifying = false;
   let tonConnectUIInstance = null;
   let connectedWalletAddress = '';

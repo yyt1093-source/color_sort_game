@@ -126,7 +126,7 @@ app.get('/api/config', (req, res) => {
   res.json({
     success: true,
     adsgramBlockId: process.env.ADSGRAM_BLOCK_ID || '',
-    tonDepositAddress: process.env.TON_DEPOSIT_ADDRESS || 'EQBvW8Z5huBkMJYdnfHCTvMzNkVx0842_TONFARMER_OFFICIAL_DEPLOYED'
+    tonDepositAddress: process.env.TON_DEPOSIT_ADDRESS || 'UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5'
   });
 });
 
