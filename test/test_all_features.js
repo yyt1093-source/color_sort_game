@@ -105,6 +105,16 @@ runTest('Shop Purchase: All Colors 15 Days (5 GRAM)', () => {
   assert.ok(result.user.all_colors_until > Date.now(), 'Active perk expiration date should be in future');
 });
 
+runTest('Shop Purchase: Reveals Pack 20 (1 GRAM)', () => {
+  const buyerId = 'reveals_buyer_' + Date.now();
+  db.getUser(buyerId);
+  db.addBonus(buyerId, { tonBalance: 2.0 });
+  const result = db.buyShopItem(buyerId, 'reveals_pack_20');
+  assert.strictEqual(result.success, true);
+  assert.strictEqual(result.user.ton_balance, 1.0);
+  assert.strictEqual(result.user.reveals, 20);
+});
+
 runTest('Shop Purchase with Insufficient Balance', () => {
   const poorId = 'poor_user_' + Date.now();
   db.getUser(poorId); // balance = 0
