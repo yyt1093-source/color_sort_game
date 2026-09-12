@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "bot": "node bot.js",
-    "test": "node test/test_generator.js"
+    "test": "node test/test_generator.js",
+    "deploy": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1"
   },
   "dependencies": {
     "cors": "^2.8.5",
