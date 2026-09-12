@@ -3783,7 +3783,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (referrals.length === 0) {
         referralsListContainer.innerHTML = `
           <div class="referrals-empty-state">
-            <span>Пока никто не зашёл по вашей ссылке.<br>Отправьте ссылку друзьям в Telegram!</span>
+            <span id="referralsEmptyText">${t('refEmptyText')}</span>
           </div>
         `;
       } else {
