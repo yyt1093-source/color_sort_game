@@ -652,6 +652,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const adminAddAllBtn = document.getElementById('adminAddAllBtn');
   const adminAddAllLabel = document.getElementById('adminAddAllLabel');
   const adminFeedbackMsg = document.getElementById('adminFeedbackMsg');
+  const adminResetSinglePlayerBtn = document.getElementById('adminResetSinglePlayerBtn');
+  const adminResetSinglePlayerInput = document.getElementById('adminResetSinglePlayerInput');
 
   // Referral Program Elements
   const referralCountVal = document.getElementById('referralCountVal');
@@ -3026,7 +3028,78 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Admin Season Reset Handlers
+  // Admin Single Player Reset Handler
+  if (adminResetSinglePlayerBtn) {
+    adminResetSinglePlayerBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+
+      const targetId = String(adminResetSinglePlayerInput ? adminResetSinglePlayerInput.value : '').trim();
+      if (!targetId) {
+        showInfoModal('⚠️', 'Внимание', 'Пожалуйста, введите Telegram ID игрока для сброса.');
+        return;
+      }
+
+      adminResetSinglePlayerBtn.disabled = true;
+      const origText = adminResetSinglePlayerBtn.innerHTML;
+      adminResetSinglePlayerBtn.innerHTML = '⏳...';
+
+      try {
+        let apiRes = null;
+        try {
+          apiRes = await apiCall('/api/admin/reset-purchases', 'POST', {
+            telegramId: currentUser.telegramId,
+            firstName: currentUser.firstName,
+            username: currentUser.username,
+            targetTelegramId: targetId
+          });
+        } catch (err) {}
+
+        // Direct KVDB Cloud reset for target player
+        try {
+          const key = `player_${targetId}`;
+          const res = await fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(key)}`);
+          if (res.ok) {
+            const val = await res.json();
+            if (val && typeof val === 'object') {
+              val.all_colors_until = 0;
+              val.all_colors_purchased_at = 0;
+              await fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(key)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(val)
+              });
+            }
+          }
+        } catch (e) {}
+
+        if (String(currentUser.telegramId) === targetId) {
+          currentUser.all_colors_until = 0;
+          currentUser.all_colors_purchased_at = 0;
+          saveLocalUser();
+          updateShopUI();
+          syncPlayerToCloud(currentUser);
+        }
+
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('success');
+        }
+
+        showInfoModal(
+          '👤',
+          'Сброс выполнен!',
+          `Покупки за TON игрока (ID: ${targetId}) успешно аннулированы.`
+        );
+
+        if (adminResetSinglePlayerInput) adminResetSinglePlayerInput.value = '';
+      } catch (err) {
+        showInfoModal('⚠️', 'Ошибка', 'Не удалось сбросить покупки игроку: ' + err.message);
+      } finally {
+        adminResetSinglePlayerBtn.disabled = false;
+        adminResetSinglePlayerBtn.innerHTML = origText;
+      }
+    });
+  }
   if (adminResetSeasonBtn) {
     adminResetSeasonBtn.addEventListener('click', (e) => {
       e.stopPropagation();

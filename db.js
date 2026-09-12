@@ -515,6 +515,35 @@ function resetGramPurchases() {
 }
 
 /**
+ * Admin: Reset active TON/GRAM purchases for a single specific player by Telegram ID.
+ */
+function resetGramPurchasesSingle(targetTelegramId) {
+  const id = String(targetTelegramId || '').trim();
+  if (!id) return { success: false, error: 'Telegram ID не указан' };
+
+  try {
+    const stmt = db.prepare(`
+      UPDATE users
+      SET all_colors_until = 0,
+          all_colors_purchased_at = 0,
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+    const info = stmt.run(id);
+    db.prepare(`DELETE FROM shop_purchases WHERE telegram_id = ?`).run(id);
+
+    return {
+      success: true,
+      targetTelegramId: id,
+      updated: info.changes > 0
+    };
+  } catch (err) {
+    console.error('[DB Reset Single Player Error]', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Referral System Methods
  */
 
@@ -655,6 +684,7 @@ module.exports = {
   getAllTelegramIds,
   resetSeason,
   resetGramPurchases,
+  resetGramPurchasesSingle,
   updateTonWallet,
   recordTonDeposit,
   buyShopItem,

@@ -571,7 +571,7 @@ async function resetKvdbGramPurchasesServer(resetTimestamp) {
  */
 app.post('/api/admin/reset-purchases', async (req, res) => {
   try {
-    const { telegramId, firstName, username } = req.body || {};
+    const { telegramId, firstName, username, targetTelegramId } = req.body || {};
     const tid = String(telegramId || '').trim();
     const fname = String(firstName || '').toLowerCase().trim();
     const uname = String(username || '').toLowerCase().trim();
@@ -584,13 +584,44 @@ app.post('/api/admin/reset-purchases', async (req, res) => {
       return res.status(403).json({ success: false, error: 'Доступ запрещён: права администратора только у Аллигатора' });
     }
 
+    const targetId = String(targetTelegramId || '').trim();
+
+    if (targetId) {
+      const result = db.resetGramPurchasesSingle(targetId);
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      const baseUrl = `https://kvdb.io/${bucket}`;
+      fetch(`${baseUrl}/${encodeURIComponent('player_' + targetId)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(val => {
+          if (val && typeof val === 'object') {
+            val.all_colors_until = 0;
+            val.all_colors_purchased_at = 0;
+            fetch(`${baseUrl}/${encodeURIComponent('player_' + targetId)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(val)
+            }).catch(() => {});
+          }
+        }).catch(() => {});
+
+      return res.json({
+        success: true,
+        targetTelegramId: targetId,
+        message: `Покупки за TON игрока ID ${targetId} успешно аннулированы!`
+      });
+    }
+
     const result = db.resetGramPurchases();
     const resetTs = result.resetAt || Date.now();
 
     // Async KVDB cloud cleanup for all players
     resetKvdbGramPurchasesServer(resetTs).catch(() => {});
 
-    res.json({ success: true, ...result });
+    res.json({
+      success: true,
+      resetAt: resetTs,
+      message: 'Покупки за TON ВСЕХ игроков успешно аннулированы!'
+    });
   } catch (err) {
     console.error('[API ERROR] /api/admin/reset-purchases:', err);
     res.status(500).json({ success: false, error: err.message });
