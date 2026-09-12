@@ -2768,6 +2768,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateTonWalletUI();
       syncPlayerToCloud(currentUser);
 
+      const revealBadgeEl = document.getElementById('revealBadge');
+      if (revealBadgeEl) {
+        revealBadgeEl.textContent = String(currentUser.reveals || 0);
+        revealBadgeEl.classList.toggle('badge-zero', (currentUser.reveals || 0) === 0);
+      }
+      const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
+      if (extraBottleBadgeEl) {
+        extraBottleBadgeEl.textContent = String(currentUser.extraBottles || 0);
+        extraBottleBadgeEl.classList.toggle('badge-zero', (currentUser.extraBottles || 0) === 0);
+      }
+      const hintBadgeEl = document.getElementById('hintBadge');
+      if (hintBadgeEl) {
+        hintBadgeEl.textContent = String(currentUser.hints || 0);
+        hintBadgeEl.classList.toggle('badge-zero', (currentUser.hints || 0) === 0);
+      }
+      const undoBadgeEl = document.getElementById('undoBadge');
+      if (undoBadgeEl) {
+        undoBadgeEl.textContent = String(currentUser.undos || 0);
+        undoBadgeEl.classList.toggle('badge-zero', (currentUser.undos || 0) === 0);
+      }
+
       if (itemId === 'all_colors_15d') {
         if (engine && typeof engine.revealAllColors === 'function') {
           engine.revealAllColors();
@@ -2780,13 +2801,33 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playWin();
 
-      showInfoModal(
-        '✨',
-        'Успешно активировано!',
-        itemId === 'all_colors_15d'
-          ? 'Функция «Все краски открыты» активирована на 15 дней!\n\nВсе скрытые слои жидкостей во всех колбах теперь видны сразу с 1-й секунды каждого уровня!'
-          : 'Преимущество успешно зачислено на ваш аккаунт!'
-      );
+      let successTitle = 'Успешно зачислено!';
+      let successMsg = 'Преимущество успешно зачислено на ваш аккаунт!';
+      let successIcon = '✨';
+
+      if (itemId === 'all_colors_15d') {
+        successIcon = '✨';
+        successTitle = 'Все краски открыты!';
+        successMsg = 'Функция активирована на 15 дней!\n\nВсе скрытые слои жидкостей во всех колбах теперь видны сразу с 1-й секунды каждого уровня!';
+      } else if (itemId === 'reveals_pack_20') {
+        successIcon = '🔮';
+        successTitle = '+20 Открыть цвета!';
+        successMsg = `Вам успешно начислено +20 открытий цвета (всего в наличии: ${currentUser.reveals || 0}).\n\nСчётчик на кнопке 🔮 «Открыть цвета» обновлён!`;
+      } else if (itemId === 'bottles_pack_15') {
+        successIcon = '🧪';
+        successTitle = '+15 Пустых колб!';
+        successMsg = `Вам успешно начислено +15 пустых колб (всего в наличии: ${currentUser.extraBottles || 0}).\n\nСчётчик на кнопке 🧪 «Пустая колба» обновлён!`;
+      } else if (itemId === 'hints_pack_20') {
+        successIcon = '💡';
+        successTitle = '+20 Подсказок!';
+        successMsg = `Вам успешно начислено +20 подсказок (всего в наличии: ${currentUser.hints || 0}).\n\nСчётчик на кнопке 💡 «Подсказка» обновлён!`;
+      } else if (itemId === 'undos_pack_20') {
+        successIcon = '↩️';
+        successTitle = '+20 Отмен хода!';
+        successMsg = `Вам успешно начислено +20 отмен хода (всего в наличии: ${currentUser.undos || 0}).\n\nСчётчик на кнопке ↩️ «Отмена» обновлён!`;
+      }
+
+      showInfoModal(successIcon, successTitle, successMsg);
     } catch (err) {
       console.error('[Shop Purchase Error]', err);
     } finally {
