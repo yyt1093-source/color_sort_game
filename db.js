@@ -99,6 +99,15 @@ function initDatabase() {
   try {
     db.exec(`ALTER TABLE users ADD COLUMN all_colors_purchased_at INTEGER DEFAULT 0;`);
   } catch (e) {}
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (e) {}
 }
 
 initDatabase();
@@ -291,11 +300,12 @@ function getAdRewardsCount(telegramId) {
  * Get global leaderboard + user's rank
  */
 function getLeaderboard(telegramId, limit = 50) {
-  // Only real Telegram human players (strictly NO bots or guests)
+  // Only real Telegram human players who have completed at least 1 level in the current season (strictly NO bots or guests)
   const topStmt = db.prepare(`
     SELECT telegram_id, first_name, username, photo_url, max_level, stars, total_moves
     FROM users
-    WHERE telegram_id NOT LIKE 'guest%' AND telegram_id NOT LIKE 'dev%'
+    WHERE (max_level > 1 OR stars > 0)
+      AND telegram_id NOT LIKE 'guest%' AND telegram_id NOT LIKE 'dev%'
     ORDER BY max_level DESC, stars DESC
     LIMIT ?
   `);
@@ -306,11 +316,12 @@ function getLeaderboard(telegramId, limit = 50) {
   const isRealUser = telegramId && !String(telegramId).startsWith('guest') && !String(telegramId).startsWith('dev');
   if (isRealUser) {
     const user = getUser(telegramId);
-    if (user) {
+    if (user && (user.max_level > 1 || user.stars > 0)) {
       const rankStmt = db.prepare(`
         SELECT COUNT(*) as rank
         FROM users
-        WHERE (telegram_id NOT LIKE 'guest%' AND telegram_id NOT LIKE 'dev%')
+        WHERE (max_level > 1 OR stars > 0)
+          AND (telegram_id NOT LIKE 'guest%' AND telegram_id NOT LIKE 'dev%')
           AND (max_level > ? OR (max_level = ? AND stars > ?))
       `);
       const rankResult = rankStmt.get(user.max_level, user.max_level, user.stars);
@@ -341,9 +352,18 @@ function getAllTelegramIds() {
   }
 }
 
-function resetSeason() {
+function getSeasonResetTimestamp() {
   try {
-    // Reset player scores and levels to 1, but PRESERVE user accounts, wallets, and referral records!
+    const row = db.prepare(`SELECT value FROM system_settings WHERE key = 'season_reset_at'`).get();
+    return row ? Number(row.value) : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function resetSeason(resetTimestamp = Date.now()) {
+  try {
+    // Reset player scores, levels, boosters, and perks to 0/1, but PRESERVE user accounts, wallets, and referral records!
     db.exec(`
       UPDATE users 
       SET current_level = 1,
@@ -356,11 +376,22 @@ function resetSeason() {
           extra_bottles = 0,
           shuffles = 0,
           total_moves = 0,
+          all_colors_until = 0,
+          all_colors_purchased_at = 0,
           updated_at = datetime('now');
     `);
     db.exec('DELETE FROM ad_rewards_log;');
+
+    try {
+      db.prepare(`
+        INSERT INTO system_settings (key, value)
+        VALUES ('season_reset_at', ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+      `).run(String(resetTimestamp));
+    } catch (e) {}
+
     // Referrals table is strictly preserved!
-    return { success: true };
+    return { success: true, resetAt: resetTimestamp };
   } catch (err) {
     console.error('[DB Reset Season Error]', err);
     return { success: false, error: err.message };
@@ -723,6 +754,7 @@ module.exports = {
   getLeaderboard,
   getAllTelegramIds,
   resetSeason,
+  getSeasonResetTimestamp,
   resetGramPurchases,
   resetGramPurchasesSingle,
   updateTonWallet,

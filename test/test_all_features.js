@@ -151,16 +151,26 @@ runTest('Admin Reset ALL GRAM Purchases', () => {
   assert.strictEqual(user.all_colors_until, 0);
 });
 
-runTest('Admin Season Reset (Zero Stats, Preserves Accounts)', () => {
+runTest('Admin Season Reset (Zero Stats, Preserves Accounts, Empty Leaderboard)', () => {
   const seasonRes = db.resetSeason();
   assert.strictEqual(seasonRes.success, true);
+  assert.ok(seasonRes.resetAt > 0, 'seasonRes should return resetAt timestamp');
+  assert.ok(db.getSeasonResetTimestamp() > 0, 'getSeasonResetTimestamp should be > 0');
   const user = db.getUser(testId);
   assert.strictEqual(user.current_level, 1);
   assert.strictEqual(user.max_level, 1);
   assert.strictEqual(user.stars, 0);
   assert.strictEqual(user.coins, 0);
   assert.strictEqual(user.hints, 0);
+  assert.strictEqual(user.reveals, 0);
   assert.strictEqual(user.extra_bottles, 0);
+  assert.strictEqual(user.all_colors_until, 0);
+  assert.strictEqual(user.all_colors_purchased_at, 0);
+
+  // Leaderboard should be completely empty because all players are reset to Level 1 with 0 stars
+  const lb = db.getLeaderboard(testId);
+  assert.strictEqual(lb.topPlayers.length, 0, 'Leaderboard must be completely empty after season reset');
+  assert.strictEqual(lb.userRank, null, 'User rank must be null until completing at least 1 level');
 });
 
 // ------------------------------------------------------------------

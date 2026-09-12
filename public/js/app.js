@@ -1189,17 +1189,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const id = String(user.telegramId);
     const isRealTelegramUser = !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id);
 
-    // 1. Send live signal to single global 24/7 cloud database
-    if (id) {
+    const localSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+    const lvl = Number(user.maxLevel || user.currentLevel || 1);
+    const stars = Number(user.stars || 0);
+
+    // 1. Send live signal to single global 24/7 cloud database ONLY if player has progress in this season
+    if (id && (lvl > 1 || stars > 0)) {
       try {
         const payload = {
           telegramId: id,
           firstName: user.firstName || 'Игрок',
           username: user.username || '',
           photoUrl: user.photoUrl || '',
-          maxLevel: Number(user.maxLevel || user.currentLevel || 1),
-          level: Number(user.maxLevel || user.currentLevel || 1),
-          stars: Number(user.stars || 0),
+          maxLevel: lvl,
+          level: lvl,
+          stars: stars,
           hints: Number(user.hints || 0),
           undos: Number(user.undos || 0),
           reveals: Number(user.reveals || 0),
@@ -1208,6 +1212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           ton_balance: Number(user.ton_balance || 0),
           all_colors_until: Number(user.all_colors_until || 0),
           all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
+          seasonResetAt: localSeasonReset,
           updatedAt: Date.now()
         };
         fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
@@ -1232,6 +1237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       extraBottles: user.extraBottles,
       extra_bottles: user.extraBottles,
       ton_balance: user.ton_balance,
+      seasonResetAt: localSeasonReset,
       starsAdded: 0,
       coinsAdded: 0
     }).catch(() => {});
@@ -1334,65 +1340,80 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 6. Fetch user from local storage first (instant baseline)
   loadLocalUser();
 
-  // Also fetch live cloud inventory & stats from KVDB (works 24/7 on GitHub Pages)
-  if (currentUser.telegramId) {
-    fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(cloudData => {
-        if (cloudData && typeof cloudData === 'object') {
-          let changed = false;
-          if (cloudData.hints !== undefined) {
-            const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
-            if (h !== currentUser.hints) { currentUser.hints = h; changed = true; }
-          }
-          if (cloudData.undos !== undefined) {
-            const u = Math.max(currentUser.undos || 0, Number(cloudData.undos || 0));
-            if (u !== currentUser.undos) { currentUser.undos = u; changed = true; }
-          }
-          if (cloudData.reveals !== undefined) {
-            const r = Math.max(currentUser.reveals || 0, Number(cloudData.reveals || 0));
-            if (r !== currentUser.reveals) { currentUser.reveals = r; changed = true; }
-          }
-          const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
-          if (cloudB !== undefined) {
-            const b = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(cloudB || 0));
-            if (b !== currentUser.extraBottles) {
-              currentUser.extraBottles = b;
-              currentUser.extra_bottles = b;
-              changed = true;
+  // 6.1 Check global season reset immediately before trusting local data or merging cloud data
+  checkGlobalSeasonReset().then(wasReset => {
+    if (wasReset) {
+      console.log('[Startup] Season was reset globally. Starting clean from Level 1.');
+      return;
+    }
+
+    // Also fetch live cloud inventory & stats from KVDB (works 24/7 on GitHub Pages)
+    if (currentUser.telegramId) {
+      fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(cloudData => {
+          if (cloudData && typeof cloudData === 'object') {
+            const localReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+            const cloudTime = Number(cloudData.seasonResetAt || cloudData.updatedAt || 0);
+            if (localReset > 0 && cloudTime > 0 && cloudTime < localReset) {
+              // Stale record from previous season
+              fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`, { method: 'DELETE' }).catch(() => {});
+              return;
+            }
+            let changed = false;
+            if (cloudData.hints !== undefined) {
+              const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
+              if (h !== currentUser.hints) { currentUser.hints = h; changed = true; }
+            }
+            if (cloudData.undos !== undefined) {
+              const u = Math.max(currentUser.undos || 0, Number(cloudData.undos || 0));
+              if (u !== currentUser.undos) { currentUser.undos = u; changed = true; }
+            }
+            if (cloudData.reveals !== undefined) {
+              const r = Math.max(currentUser.reveals || 0, Number(cloudData.reveals || 0));
+              if (r !== currentUser.reveals) { currentUser.reveals = r; changed = true; }
+            }
+            const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
+            if (cloudB !== undefined) {
+              const b = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(cloudB || 0));
+              if (b !== currentUser.extraBottles) {
+                currentUser.extraBottles = b;
+                currentUser.extra_bottles = b;
+                changed = true;
+              }
+            }
+            if (cloudData.ton_balance !== undefined) {
+              const tb = Math.max(Number(currentUser.ton_balance || 0), Number(cloudData.ton_balance || 0));
+              if (tb !== currentUser.ton_balance) { currentUser.ton_balance = tb; changed = true; }
+            }
+            if (cloudData.all_colors_until !== undefined) {
+              const ac = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
+              if (ac !== currentUser.all_colors_until) { currentUser.all_colors_until = ac; changed = true; }
+            }
+            if (cloudData.all_colors_purchased_at !== undefined) {
+              const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
+              if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
+            }
+            if (cloudData.level !== undefined || cloudData.maxLevel !== undefined) {
+              const lvl = Math.max(currentUser.currentLevel || 1, Number(cloudData.level || cloudData.maxLevel || 1));
+              if (lvl > (currentUser.currentLevel || 1)) {
+                currentUser.currentLevel = lvl;
+                currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, lvl);
+                changed = true;
+                loadCurrentLevel();
+              }
+            }
+            if (changed) {
+              normalizeUserObject(currentUser);
+              saveLocalUser();
+              updateHeaderUI();
+              if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
+              if (typeof updateShopUI === 'function') updateShopUI();
             }
           }
-          if (cloudData.ton_balance !== undefined) {
-            const tb = Math.max(Number(currentUser.ton_balance || 0), Number(cloudData.ton_balance || 0));
-            if (tb !== currentUser.ton_balance) { currentUser.ton_balance = tb; changed = true; }
-          }
-          if (cloudData.all_colors_until !== undefined) {
-            const ac = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
-            if (ac !== currentUser.all_colors_until) { currentUser.all_colors_until = ac; changed = true; }
-          }
-          if (cloudData.all_colors_purchased_at !== undefined) {
-            const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
-            if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
-          }
-          if (cloudData.level !== undefined || cloudData.maxLevel !== undefined) {
-            const lvl = Math.max(currentUser.currentLevel || 1, Number(cloudData.level || cloudData.maxLevel || 1));
-            if (lvl > (currentUser.currentLevel || 1)) {
-              currentUser.currentLevel = lvl;
-              currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, lvl);
-              changed = true;
-              loadCurrentLevel();
-            }
-          }
-          if (changed) {
-            normalizeUserObject(currentUser);
-            saveLocalUser();
-            updateHeaderUI();
-            if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
-            if (typeof updateShopUI === 'function') updateShopUI();
-          }
-        }
-      }).catch(() => {});
-  }
+        }).catch(() => {});
+    }
+  });
 
   processIncomingReferral();
   applyLanguage(currentLang);
@@ -1481,6 +1502,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Background Cloud Sync & Init (non-blocking for instant startup)
   apiCall('/api/user/init', 'POST', userData).then(serverUser => {
     if (serverUser && serverUser.success && serverUser.user) {
+      const localReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+      const serverReset = Number(serverUser.seasonResetAt || 0);
+      if (serverReset > localReset) {
+        localStorage.setItem('color_sort_season_reset_at', String(serverReset));
+        localStorage.setItem('color_sort_gram_reset_at', String(serverReset));
+        currentUser.currentLevel = 1;
+        currentUser.maxLevel = 1;
+        currentUser.stars = 0;
+        currentUser.coins = 0;
+        currentUser.hints = 0;
+        currentUser.undos = 0;
+        currentUser.reveals = 0;
+        currentUser.extraBottles = 0;
+        currentUser.extra_bottles = 0;
+        currentUser.all_colors_until = 0;
+        currentUser.all_colors_purchased_at = 0;
+        currentUser.season_reset_at = serverReset;
+        saveLocalUser();
+        updateHeaderUI();
+        updateShopUI();
+        loadCurrentLevel();
+        return;
+      }
       const oldLevel = currentUser.currentLevel;
       if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints || 0);
       if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos || 0);
@@ -1508,10 +1552,116 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
     syncPlayerToCloud(currentUser);
-    checkGlobalPurchasesReset();
+    checkGlobalSeasonReset();
   }).catch(() => {
-    checkGlobalPurchasesReset();
+    checkGlobalSeasonReset();
   });
+
+  async function checkGlobalSeasonReset() {
+    let wasReset = false;
+    try {
+      let resetAt = 0;
+
+      // 1. Fetch from KVDB Cloud
+      try {
+        const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at`, {
+          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(3500) : undefined
+        });
+        if (res.ok) {
+          const rawText = await res.text();
+          try {
+            const data = JSON.parse(rawText);
+            resetAt = Number(data.resetAt || data) || 0;
+          } catch (e) {
+            resetAt = Number(rawText) || 0;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Fallback to server config
+      if (!resetAt) {
+        try {
+          const sRes = await apiCall('/api/config/season-status');
+          if (sRes && sRes.success && sRes.seasonResetAt) {
+            resetAt = Number(sRes.seasonResetAt) || 0;
+          }
+        } catch (e) {}
+      }
+
+      const localResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+
+      if (resetAt > 0 && resetAt > localResetAt) {
+        console.log(`[Season Reset] Global season reset detected (server: ${resetAt}, local: ${localResetAt}). Wiping all player progress!`);
+        localStorage.setItem('color_sort_season_reset_at', String(resetAt));
+        localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
+
+        currentUser.currentLevel = 1;
+        currentUser.maxLevel = 1;
+        currentUser.stars = 0;
+        currentUser.coins = 0;
+        currentUser.hints = 0;
+        currentUser.undos = 0;
+        currentUser.reveals = 0;
+        currentUser.extraBottles = 0;
+        currentUser.extra_bottles = 0;
+        currentUser.all_colors_until = 0;
+        currentUser.all_colors_purchased_at = 0;
+        currentUser.season_reset_at = resetAt;
+
+        saveLocalUser();
+        updateHeaderUI();
+        updateShopUI();
+        updateTonWalletUI();
+
+        // Clear toolbar badges explicitly
+        const revealBadgeEl = document.getElementById('revealBadge');
+        if (revealBadgeEl) {
+          revealBadgeEl.textContent = '0';
+          revealBadgeEl.classList.add('badge-zero');
+        }
+        const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
+        if (extraBottleBadgeEl) {
+          extraBottleBadgeEl.textContent = '0';
+          extraBottleBadgeEl.classList.add('badge-zero');
+        }
+        const hintBadgeEl = document.getElementById('hintBadge');
+        if (hintBadgeEl) {
+          hintBadgeEl.textContent = '0';
+          hintBadgeEl.classList.add('badge-zero');
+        }
+        const undoBadgeEl = document.getElementById('undoBadge');
+        if (undoBadgeEl) {
+          undoBadgeEl.textContent = '0';
+          undoBadgeEl.classList.add('badge-zero');
+        }
+
+        // Reload Level 1 on board
+        if (typeof loadCurrentLevel === 'function') {
+          await loadCurrentLevel();
+        }
+
+        // Delete old KVDB cloud player record to avoid re-syncing old data
+        if (currentUser.telegramId) {
+          fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`, {
+            method: 'DELETE'
+          }).catch(() => {});
+        }
+
+        wasReset = true;
+      }
+    } catch (err) {
+      console.warn('[Season Reset Check Error]', err);
+    }
+
+    // Also check purchases reset if season was not reset
+    if (!wasReset) {
+      try {
+        await checkGlobalPurchasesReset();
+      } catch (e) {}
+    }
+
+    return wasReset;
+  }
 
   async function checkGlobalPurchasesReset() {
     try {
@@ -1551,6 +1701,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     } catch (e) {}
   }
+
+  // Periodic season & purchases reset check (every 15 seconds)
+  setInterval(async () => {
+    const wasReset = await checkGlobalSeasonReset();
+    if (wasReset) {
+      showInfoModal(
+        '🌟',
+        'Начался новый сезон!',
+        'Все уровни, рейтинг и достижения игроков были сброшены под ноль.\nУдачи в покорении вершины таблицы лидеров!'
+      );
+    }
+  }, 15000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkGlobalSeasonReset();
+    }
+  });
 
   initAdsgram().catch(() => {});
   setTimeout(() => {
@@ -1980,10 +2148,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     } catch (e) {}
 
-    // 3. Ensure current user is included if they are a real Telegram player
-    if (isRealUser) {
+    // 3. Ensure current user is included ONLY IF they have actually completed at least Level 1 in current season
+    const currentMaxLvl = Math.max(currentUser.maxLevel || 1, currentUser.currentLevel || 1);
+    const currentStars = Number(currentUser.stars || 0);
+
+    if (isRealUser && (currentMaxLvl > 1 || currentStars > 0)) {
       const selfIndex = players.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
-      const currentMaxLvl = Math.max(currentUser.maxLevel || 1, currentUser.currentLevel || 1);
       if (selfIndex === -1) {
         players.push({
           telegramId: String(currentUser.telegramId),
@@ -1992,7 +2162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           photoUrl: currentUser.photoUrl || '',
           maxLevel: currentMaxLvl,
           level: currentMaxLvl,
-          stars: currentUser.stars || 0
+          stars: currentStars
         });
       } else if (currentMaxLvl > (players[selfIndex].maxLevel || players[selfIndex].level || 1)) {
         players[selfIndex].maxLevel = currentMaxLvl;
@@ -2000,12 +2170,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    // 4. Strict filter: NO BOTS, ONLY REAL PLAYERS, UNIQUE BY TELEGRAM ID
+    // 4. Strict filter: NO BOTS, ONLY REAL PLAYERS, UNIQUE BY TELEGRAM ID, WHO COMPLETED AT LEAST 1 LEVEL IN CURRENT SEASON
+    const localSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
     const uniqueMap = new Map();
     players.forEach(p => {
       const id = String(p.telegramId);
       if (!id || id.startsWith('guest') || id.startsWith('dev') || !/^\d+$/.test(id)) return;
+
+      // Ignore records from before current season reset
+      if (localSeasonReset > 0) {
+        const pTime = Number(p.seasonResetAt || p.updatedAt || 0);
+        if (pTime > 0 && pTime < localSeasonReset) return;
+      }
+
       const lvl = Number(p.maxLevel || p.level || 1);
+      const stars = Number(p.stars || 0);
+      // Strictly ignore anyone who hasn't completed Level 1
+      if (lvl <= 1 && stars <= 0) return;
+
       const existing = uniqueMap.get(id);
       if (!existing || lvl > (existing.maxLevel || existing.level || 1)) {
         uniqueMap.set(id, {
@@ -2013,7 +2195,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           telegramId: id,
           firstName: p.firstName || (existing ? existing.firstName : 'Игрок'),
           maxLevel: lvl,
-          level: lvl
+          level: lvl,
+          stars: stars
         });
       }
     });
@@ -3675,20 +3858,61 @@ document.addEventListener('DOMContentLoaded', async () => {
       confirmResetSeasonBtn.innerHTML = '⏳ Сброс...';
 
       try {
-        // 1. Call server reset endpoint
+        const resetTimestamp = Date.now();
+
+        // 1. Write global season reset timestamp to KVDB Cloud Database so ALL other clients (online or offline) detect it!
+        try {
+          await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resetAt: resetTimestamp })
+          });
+        } catch (kvMetaErr) {
+          console.warn('[Season Reset] KVDB meta write notice:', kvMetaErr);
+        }
+
+        // Also update meta_gram_purchases_reset to clear all purchases globally
+        try {
+          await fetch(`${GLOBAL_CLOUD_BASE}/meta_gram_purchases_reset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resetAt: resetTimestamp })
+          });
+        } catch (e) {}
+
+        // 2. Call server reset endpoint (if Express backend running)
         try {
           await apiCall('/api/admin/reset-season', 'POST', {
             telegramId: currentUser.telegramId,
             firstName: currentUser.firstName,
             username: currentUser.username,
-            isAdmin: true
+            isAdmin: true,
+            resetAt: resetTimestamp
           });
         } catch (apiErr) {
           console.warn('[Season Reset] API reset notice:', apiErr);
         }
 
-        // 2. Wipe player record in Local Storage & Reset player progress to Level 1
+        // 3. Wipe ALL player records from KVDB Cloud (strictly ALL players so no ghost players remain)
+        try {
+          const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&format=json`);
+          if (listRes.ok) {
+            const keys = await listRes.json();
+            if (Array.isArray(keys)) {
+              await Promise.allSettled(
+                keys.map(k => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
+              );
+            }
+          }
+        } catch (kvErr) {
+          console.warn('[Season Reset] KVDB wipe notice:', kvErr);
+        }
+
+        // 4. Update admin's own local storage & currentUser state to completely fresh Level 1 state
+        localStorage.setItem('color_sort_season_reset_at', String(resetTimestamp));
+        localStorage.setItem('color_sort_gram_reset_at', String(resetTimestamp));
         localStorage.removeItem(`color_sort_user_${currentUser.telegramId}`);
+
         currentUser.currentLevel = 1;
         currentUser.maxLevel = 1;
         currentUser.stars = 0;
@@ -3698,58 +3922,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser.reveals = 0;
         currentUser.extraBottles = 0;
         currentUser.extra_bottles = 0;
+        currentUser.all_colors_until = 0;
+        currentUser.all_colors_purchased_at = 0;
+        currentUser.season_reset_at = resetTimestamp;
+
         saveLocalUser();
         updateHeaderUI();
+        updateShopUI();
+        updateTonWalletUI();
 
-        // 3. Update KVDB Cloud Database record for player
-        if (currentUser.telegramId) {
-          try {
-            const payload = {
-              telegramId: String(currentUser.telegramId),
-              firstName: currentUser.firstName || 'Игрок',
-              username: currentUser.username || '',
-              photoUrl: currentUser.photoUrl || '',
-              maxLevel: 1,
-              level: 1,
-              stars: 0,
-              hints: 0,
-              undos: 0,
-              reveals: 0,
-              extraBottles: 0,
-              extra_bottles: 0,
-              ton_balance: Number(currentUser.ton_balance || 0),
-              updatedAt: Date.now()
-            };
-            await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            }).catch(() => {});
-          } catch (e) {}
+        // Clear all toolbar badges explicitly to 0
+        const revealBadgeEl = document.getElementById('revealBadge');
+        if (revealBadgeEl) {
+          revealBadgeEl.textContent = '0';
+          revealBadgeEl.classList.add('badge-zero');
+        }
+        const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
+        if (extraBottleBadgeEl) {
+          extraBottleBadgeEl.textContent = '0';
+          extraBottleBadgeEl.classList.add('badge-zero');
+        }
+        const hintBadgeEl = document.getElementById('hintBadge');
+        if (hintBadgeEl) {
+          hintBadgeEl.textContent = '0';
+          hintBadgeEl.classList.add('badge-zero');
+        }
+        const undoBadgeEl = document.getElementById('undoBadge');
+        if (undoBadgeEl) {
+          undoBadgeEl.textContent = '0';
+          undoBadgeEl.classList.add('badge-zero');
         }
 
-        // 4. Wipe other player records from KVDB Cloud
-        try {
-          const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&format=json`);
-          if (listRes.ok) {
-            const keys = await listRes.json();
-            if (Array.isArray(keys)) {
-              const myKey = `player_${currentUser.telegramId}`;
-              const otherKeys = keys.filter(k => k !== myKey);
-              await Promise.allSettled(
-                otherKeys.map(k => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
-              );
-            }
-          }
-        } catch (kvErr) {
-          console.warn('[Season Reset] KVDB wipe notice:', kvErr);
-        }
-
-        // 5. Restart Level 1 on the game board and ensure all UI elements reflect Level 1
-        currentUser.currentLevel = 1;
-        currentUser.maxLevel = 1;
-        saveLocalUser();
-        updateHeaderUI();
+        // 5. Restart Level 1 on the game board and ensure board is fresh Level 1
         if (levelDisplay) levelDisplay.textContent = '1';
         if (profileCardLevel) profileCardLevel.textContent = t('levelDisplayVal', 1);
         await loadCurrentLevel();
@@ -3758,7 +3962,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         closeModal(resetSeasonModal);
         closeModal(profileModal);
 
-        // 7. Reload leaderboard to show empty/initial state
+        // 7. Reload leaderboard to show completely empty state
         await loadLeaderboardData();
 
         // 8. Success haptic and notification

@@ -144,7 +144,8 @@ app.post('/api/user/init', (req, res) => {
       photo_url: photoUrl || ''
     });
 
-    res.json({ success: true, user });
+    const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
+    res.json({ success: true, user, seasonResetAt });
   } catch (err) {
     console.error('[API ERROR] /api/user/init:', err);
     res.status(500).json({ success: false, error: err.message });
@@ -526,24 +527,75 @@ function checkIsAdmin(reqBody) {
 /**
  * Admin Season Reset (Admin Only)
  */
-app.post('/api/admin/reset-season', (req, res) => {
+app.post('/api/admin/reset-season', async (req, res) => {
   try {
     const reqBody = req.body || {};
     if (!checkIsAdmin(reqBody)) {
       return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
     }
 
-    const result = db.resetSeason();
+    const resetTimestamp = Number(reqBody.resetAt) || Date.now();
+    const result = db.resetSeason(resetTimestamp);
     let updatedUser = null;
     if (reqBody.telegramId) {
       updatedUser = db.getUser(reqBody.telegramId);
     }
-    res.json({ success: true, ...result, user: updatedUser });
+
+    // Wipe KVDB records on the server asynchronously
+    resetKvdbSeasonServer(resetTimestamp).catch(err => console.warn('[KVDB Season Reset Server Error]', err));
+
+    res.json({ success: true, ...result, resetAt: resetTimestamp, user: updatedUser });
   } catch (err) {
     console.error('[API ERROR] /api/admin/reset-season:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+/**
+ * Get current season status
+ */
+app.get('/api/config/season-status', (req, res) => {
+  try {
+    const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
+    res.json({ success: true, seasonResetAt });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+async function resetKvdbSeasonServer(resetTimestamp) {
+  const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+  const baseUrl = `https://kvdb.io/${bucket}`;
+
+  try {
+    await fetch(`${baseUrl}/meta_season_reset_at`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resetAt: resetTimestamp })
+    });
+    await fetch(`${baseUrl}/meta_gram_purchases_reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resetAt: resetTimestamp })
+    });
+  } catch (e) {
+    console.warn('[SERVER KVDB RESET] Meta notice error:', e.message);
+  }
+
+  try {
+    const listRes = await fetch(`${baseUrl}/?prefix=player_&format=json`);
+    if (listRes.ok) {
+      const keys = await listRes.json();
+      if (Array.isArray(keys)) {
+        await Promise.allSettled(
+          keys.map(k => fetch(`${baseUrl}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
+        );
+      }
+    }
+  } catch (e) {
+    console.warn('[SERVER KVDB RESET] Player keys wipe error:', e.message);
+  }
+}
 
 async function resetKvdbGramPurchasesServer(resetTimestamp) {
   const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
