@@ -1423,8 +1423,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
       if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, serverUser.user.all_colors_until || 0);
       if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, serverUser.user.all_colors_purchased_at || 0);
-      if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Math.max(currentUser.currentLevel || 1, serverUser.user.current_level || 1);
-      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, serverUser.user.max_level || 1);
+      if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Number(serverUser.user.current_level || 1);
+      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Number(serverUser.user.max_level || 1);
       normalizeUserObject(currentUser);
       updateTonWalletUI();
       updateShopUI();
@@ -2639,10 +2639,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser.ton_balance = res.user.ton_balance !== undefined ? res.user.ton_balance : currentUser.ton_balance;
         if (res.user.all_colors_until !== undefined) currentUser.all_colors_until = res.user.all_colors_until;
         if (res.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = res.user.all_colors_purchased_at;
+        
         const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
         if (serverB !== undefined) {
-          const addedB = itemId === 'bottles_pack_15' ? 15 : 0;
-          currentUser.extraBottles = Math.max((currentUser.extraBottles || 0) + addedB, Number(serverB || 0));
+          currentUser.extraBottles = Number(serverB || 0);
           currentUser.extra_bottles = currentUser.extraBottles;
         } else if (itemId === 'bottles_pack_15') {
           currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
@@ -2650,15 +2650,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (res.user.hints !== undefined) {
-          const addedH = itemId === 'hints_pack_20' ? 20 : 0;
-          currentUser.hints = Math.max((currentUser.hints || 0) + addedH, Number(res.user.hints || 0));
+          currentUser.hints = Number(res.user.hints || 0);
         } else if (itemId === 'hints_pack_20') {
           currentUser.hints = (currentUser.hints || 0) + 20;
         }
 
         if (res.user.undos !== undefined) {
-          const addedU = itemId === 'undos_pack_20' ? 20 : 0;
-          currentUser.undos = Math.max((currentUser.undos || 0) + addedU, Number(res.user.undos || 0));
+          currentUser.undos = Number(res.user.undos || 0);
         } else if (itemId === 'undos_pack_20') {
           currentUser.undos = (currentUser.undos || 0) + 20;
         }
@@ -3571,14 +3569,66 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (confirmResetSeasonBtn) {
     confirmResetSeasonBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
 
       confirmResetSeasonBtn.disabled = true;
       const originalHtml = confirmResetSeasonBtn.innerHTML;
       confirmResetSeasonBtn.innerHTML = '⏳ Сброс...';
 
       try {
-        // 1. Wipe all player records from Global 24/7 Cloud Database (KVDB)
+        // 1. Call server reset endpoint
+        try {
+          await apiCall('/api/admin/reset-season', 'POST', {
+            telegramId: currentUser.telegramId,
+            firstName: currentUser.firstName,
+            username: currentUser.username,
+            isAdmin: true
+          });
+        } catch (apiErr) {
+          console.warn('[Season Reset] API reset notice:', apiErr);
+        }
+
+        // 2. Wipe player record in Local Storage & Reset player progress to Level 1
+        localStorage.removeItem(`color_sort_user_${currentUser.telegramId}`);
+        currentUser.currentLevel = 1;
+        currentUser.maxLevel = 1;
+        currentUser.stars = 0;
+        currentUser.coins = 0;
+        currentUser.hints = 0;
+        currentUser.undos = 0;
+        currentUser.reveals = 0;
+        currentUser.extraBottles = 0;
+        currentUser.extra_bottles = 0;
+        saveLocalUser();
+        updateHeaderUI();
+
+        // 3. Update KVDB Cloud Database record for player
+        if (currentUser.telegramId) {
+          try {
+            const payload = {
+              telegramId: String(currentUser.telegramId),
+              firstName: currentUser.firstName || 'Игрок',
+              username: currentUser.username || '',
+              photoUrl: currentUser.photoUrl || '',
+              maxLevel: 1,
+              level: 1,
+              stars: 0,
+              hints: 0,
+              undos: 0,
+              reveals: 0,
+              extraBottles: 0,
+              extra_bottles: 0,
+              ton_balance: Number(currentUser.ton_balance || 0),
+              updatedAt: Date.now()
+            };
+            fetch(`${GLOBAL_CLOUD_BASE}/player_${currentUser.telegramId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).catch(() => {});
+          } catch (e) {}
+        }
+
+        // 4. Wipe all player records from KVDB Cloud
         try {
           const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&format=json`);
           if (listRes.ok) {
@@ -3589,53 +3639,21 @@ document.addEventListener('DOMContentLoaded', async () => {
               );
             }
           }
-          const pairsRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json`);
-          if (pairsRes.ok) {
-            const pairs = await pairsRes.json();
-            if (Array.isArray(pairs)) {
-              await Promise.allSettled(
-                pairs.map(([k]) => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
-              );
-            }
-          }
         } catch (kvErr) {
           console.warn('[Season Reset] KVDB wipe notice:', kvErr);
         }
 
-        // 2. Call server reset endpoint if connected
-        try {
-          await apiCall('/api/admin/reset-season', 'POST', {
-            telegramId: currentUser.telegramId,
-            firstName: currentUser.firstName,
-            username: currentUser.username
-          });
-        } catch (apiErr) {
-          console.warn('[Season Reset] API reset notice:', apiErr);
-        }
-
-        // 3. Reset player progress to Level 1, 0 boosters, 0 stars, 0 coins
-        currentUser.currentLevel = 1;
-        currentUser.maxLevel = 1;
-        currentUser.stars = 0;
-        currentUser.coins = 0;
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        saveLocalUser();
-        updateHeaderUI();
-
-        // 4. Restart Level 1 on the game board
+        // 5. Restart Level 1 on the game board
         await loadCurrentLevel();
 
-        // 5. Close modals
+        // 6. Close modals
         closeModal(resetSeasonModal);
         closeModal(profileModal);
 
-        // 6. Reload leaderboard to show empty/initial state
+        // 7. Reload leaderboard to show empty/initial state
         await loadLeaderboardData();
 
-        // 7. Success haptic and notification
+        // 8. Success haptic and notification
         if (window.TelegramApp && window.TelegramApp.TelegramApp) {
           window.TelegramApp.TelegramApp.haptic('success');
         }

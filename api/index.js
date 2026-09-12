@@ -341,12 +341,17 @@ function checkIsAdmin(reqBody) {
  */
 app.post('/api/admin/reset-season', (req, res) => {
   try {
-    if (!checkIsAdmin(req.body || {})) {
+    const reqBody = req.body || {};
+    if (!checkIsAdmin(reqBody)) {
       return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
     }
 
     const result = db.resetSeason();
-    res.json({ success: true, ...result });
+    let updatedUser = null;
+    if (reqBody.telegramId) {
+      updatedUser = db.getUser(reqBody.telegramId);
+    }
+    res.json({ success: true, ...result, user: updatedUser });
   } catch (err) {
     console.error('[API ERROR] /api/admin/reset-season:', err);
     res.status(500).json({ success: false, error: err.message });
