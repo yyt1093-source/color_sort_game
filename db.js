@@ -330,7 +330,7 @@ function resetSeason() {
       SET current_level = 1,
           max_level = 1,
           stars = 0,
-          coins = 100,
+          coins = 0,
           hints = 0,
           undos = 0,
           reveals = 0,
