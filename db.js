@@ -500,7 +500,7 @@ function buyShopItem(telegramId, itemId) {
 function resetGramPurchases() {
   try {
     db.exec(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT DEFAULT (datetime('now')));`);
-    db.exec(`UPDATE users SET all_colors_until = 0, all_colors_purchased_at = 0;`);
+    db.exec(`UPDATE users SET all_colors_until = 0, all_colors_purchased_at = 0, hints = 0, undos = 0, reveals = 0, extra_bottles = 0, shuffles = 0;`);
     db.exec(`DELETE FROM shop_purchases;`);
     const nowTs = Date.now();
     db.prepare(`
@@ -515,7 +515,7 @@ function resetGramPurchases() {
 }
 
 /**
- * Admin: Reset active TON/GRAM purchases for a single specific player by Telegram ID.
+ * Admin: Reset active TON/GRAM purchases and purchased perks for a single specific player by Telegram ID.
  */
 function resetGramPurchasesSingle(targetTelegramId) {
   const id = String(targetTelegramId || '').trim();
@@ -526,6 +526,11 @@ function resetGramPurchasesSingle(targetTelegramId) {
       UPDATE users
       SET all_colors_until = 0,
           all_colors_purchased_at = 0,
+          hints = 0,
+          undos = 0,
+          reveals = 0,
+          extra_bottles = 0,
+          shuffles = 0,
           updated_at = datetime('now')
       WHERE telegram_id = ?
     `);

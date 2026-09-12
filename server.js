@@ -548,22 +548,18 @@ async function resetKvdbGramPurchasesServer(resetTimestamp) {
       if (Array.isArray(pairs)) {
         for (const [key, val] of pairs) {
           if (val && typeof val === 'object') {
-            let modified = false;
-            if (val.all_colors_until) {
-              val.all_colors_until = 0;
-              modified = true;
-            }
-            if (val.all_colors_purchased_at) {
-              val.all_colors_purchased_at = 0;
-              modified = true;
-            }
-            if (modified) {
-              await fetch(`${baseUrl}/${encodeURIComponent(key)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(val)
-              }).catch(() => {});
-            }
+            val.all_colors_until = 0;
+            val.all_colors_purchased_at = 0;
+            val.hints = 0;
+            val.undos = 0;
+            val.reveals = 0;
+            val.extraBottles = 0;
+            val.shuffles = 0;
+            await fetch(`${baseUrl}/${encodeURIComponent(key)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(val)
+            }).catch(() => {});
           }
         }
       }
@@ -595,6 +591,11 @@ app.post('/api/admin/reset-purchases', async (req, res) => {
           if (val && typeof val === 'object') {
             val.all_colors_until = 0;
             val.all_colors_purchased_at = 0;
+            val.hints = 0;
+            val.undos = 0;
+            val.reveals = 0;
+            val.extraBottles = 0;
+            val.shuffles = 0;
             fetch(`${baseUrl}/${encodeURIComponent('player_' + targetId)}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
