@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47320">
+  <link rel="stylesheet" href="style.css?v=47330">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -202,12 +202,12 @@
             <span class="ton-gem-icon">💎</span>
           </div>
           <div class="ton-status-texts">
-            <span class="ton-sub-label">Ваш текущий баланс TON:</span>
+            <span class="ton-sub-label" id="tonBalanceSub">Ваш текущий баланс TON:</span>
             <span id="tonModalUserBalance" class="ton-balance-value">0.00 TON</span>
           </div>
         </div>
         <div class="ton-status-right">
-          <span class="ton-sub-label">Статус кошелька:</span>
+          <span class="ton-sub-label" id="tonWalletStatusSub">Статус кошелька:</span>
           <span id="tonModalWalletStatus" class="ton-wallet-status-disconnected">
             <span class="status-check">✓</span> <span id="tonWalletStatusLabel">Не подключен</span>
           </span>
@@ -218,7 +218,7 @@
       <div class="ton-card ton-connect-card">
         <div class="ton-card-title-row">
           <span class="wallet-icon-pink">👛</span>
-          <strong class="ton-card-heading">Подключение кошелька</strong>
+          <strong class="ton-card-heading" id="tonConnectHeading">Подключение кошелька</strong>
         </div>
         <button type="button" id="tonConnectBtn" class="ton-btn-connect">
           <span class="btn-gem-icon">💎</span>
@@ -229,7 +229,7 @@
       <!-- Choose Deposit Amount Card -->
       <div class="ton-card ton-amount-card">
         <div class="ton-amount-header">
-          <strong class="ton-amount-title">Выберите сумму пополнения:</strong>
+          <strong class="ton-amount-title" id="tonAmountTitle">Выберите сумму пополнения:</strong>
           <span class="ton-amount-badge">
             <span class="gem-amber-icon">💎</span>
             <span id="tonSelectedAmountBadge">0.50 TON</span>
@@ -255,7 +255,7 @@
         <!-- Calculation Box -->
         <div class="ton-reward-info-box">
           <div class="ton-reward-row">
-            <span class="ton-reward-label">Зачисление на баланс GRAM:</span>
+            <span class="ton-reward-label" id="tonRewardLabel">Зачисление на баланс GRAM:</span>
             <span id="tonRewardGram" class="ton-reward-val-blue">+0.50 GRAM</span>
           </div>
         </div>
@@ -265,7 +265,7 @@
       <div class="ton-card-plain">
         <div class="ton-wallet-choice-header">
           <span class="card-emoji">💳</span>
-          <strong>Выберите кошелёк для оплаты:</strong>
+          <strong id="tonChoiceHeading">Выберите кошелёк для оплаты:</strong>
         </div>
         <div class="ton-wallet-options-grid">
           <!-- Tonkeeper Button -->
@@ -273,7 +273,7 @@
             <span class="tile-link-icon">↗</span>
             <div class="tile-gem-icon">💎</div>
             <strong class="tile-title">Tonkeeper</strong>
-            <span class="tile-sub">Приложение TON</span>
+            <span class="tile-sub" id="tonSpaceSub">Приложение TON</span>
           </button>
 
           <!-- @wallet Button -->
@@ -281,7 +281,7 @@
             <span class="tile-link-icon">↗</span>
             <div class="tile-plane-icon">✈️</div>
             <strong class="tile-title">@wallet</strong>
-            <span class="tile-sub">Telegram Кошелёк</span>
+            <span class="tile-sub" id="tonWalletSub">Telegram Кошелёк</span>
           </button>
         </div>
       </div>
@@ -290,10 +290,10 @@
       <div class="ton-instructions-card">
         <div class="ton-inst-title">
           <span class="plane-blue-icon">✈️</span>
-          <strong>Как оплатить через Telegram Wallet (@wallet):</strong>
+          <strong id="tonInstHeading">Как оплатить через Telegram Wallet (@wallet):</strong>
         </div>
-        <p class="ton-inst-step">1. Нажмите на <strong>@wallet</strong> выше (комментарий автоматически скопируется).</p>
-        <p class="ton-inst-step">2. В боте выберите <strong>Отправить ➔ На сторонний кошелёк (TON)</strong>.</p>
+        <p class="ton-inst-step" id="tonInstStep1">1. Нажмите на <strong>@wallet</strong> выше (комментарий автоматически скопируется).</p>
+        <p class="ton-inst-step" id="tonInstStep2">2. В боте выберите <strong>Отправить ➔ На сторонний кошелёк (TON)</strong>.</p>
       </div>
 
       <!-- Direct TON Address & Memo Row -->
@@ -301,7 +301,7 @@
         <!-- Address Box -->
         <div class="ton-copy-card ton-addr-card">
           <div class="ton-copy-card-info">
-            <span class="ton-copy-sub">Адрес TON:</span>
+            <span class="ton-copy-sub" id="tonAddrSub">Адрес TON:</span>
             <span id="tonAddressDisplay" class="ton-copy-text" title="UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5">UQCH...PIv5</span>
           </div>
           <button type="button" id="tonCopyAddrBtn" class="ton-copy-btn">
@@ -353,14 +353,14 @@
       <!-- Current Balance Card -->
       <div class="shop-balance-card">
         <div class="shop-balance-info">
-          <span class="shop-balance-sub">Баланс в кошельке:</span>
+          <span class="shop-balance-sub" id="shopBalanceSub">Баланс в кошельке:</span>
           <div class="shop-balance-row">
             <span class="shop-gram-gem">💎</span>
             <strong id="shopUserBalance" class="shop-balance-val">0.00 GRAM</strong>
           </div>
         </div>
         <button type="button" id="shopTopUpBtn" class="shop-topup-btn">
-          <span>+ Пополнить</span>
+          <span id="shopTopUpBtnLabel">+ Пополнить</span>
         </button>
       </div>
 
@@ -377,24 +377,24 @@
       <div class="shop-items-list">
         <!-- Featured Item: All Colors 15 Days -->
         <div class="shop-item-card shop-item-featured">
-          <div class="shop-featured-ribbon">ХИТ 🔥</div>
+          <div class="shop-featured-ribbon" id="shopFeaturedRibbon">ХИТ 🔥</div>
           <div class="shop-item-top">
             <div class="shop-item-icon-box item-icon-allcolors">
               <span class="shop-item-emoji">🎨</span>
             </div>
             <div class="shop-item-details">
               <div class="shop-item-name-row">
-                <strong class="shop-item-title">Все краски открыты</strong>
-                <span class="shop-duration-tag">⏳ 15 дней</span>
+                <strong class="shop-item-title" id="shopItemFeaturedTitle">Все краски открыты</strong>
+                <span class="shop-duration-tag" id="shopFeaturedDurationTag">⏳ 15 дней</span>
               </div>
-              <p class="shop-item-desc">
+              <p class="shop-item-desc" id="shopFeaturedDesc">
                 Все цвета во всех бутылочках открыты сразу с самого начала каждого уровня! Скрытые слои с вопросом «?» полностью убраны.
               </p>
             </div>
           </div>
           <div class="shop-item-bottom">
             <div class="shop-item-price-box">
-              <span class="shop-price-label">Цена:</span>
+              <span class="shop-price-label" id="shopFeaturedPriceLabel">Цена:</span>
               <strong class="shop-price-value">💎 5.00 GRAM</strong>
             </div>
             <button type="button" class="shop-buy-btn shop-buy-featured-btn" id="buyAllColorsBtn" data-item="all_colors_15d">
@@ -405,7 +405,7 @@
 
         <!-- Section Divider -->
         <div class="shop-section-divider">
-          <span>Бустеры за криптовалюту GRAM</span>
+          <span id="shopSectionDividerText">Бустеры за криптовалюту GRAM</span>
         </div>
 
         <!-- Extra Bottles Pack -->
@@ -415,8 +415,8 @@
               <span class="shop-item-emoji">🧪</span>
             </div>
             <div class="shop-item-details">
-              <strong class="shop-item-title">+15 Пустых колб</strong>
-              <p class="shop-item-desc">Запас дополнительных пустых колб для прохождения сложных уровней.</p>
+              <strong class="shop-item-title" id="shopBottlesTitle">+15 Пустых колб</strong>
+              <p class="shop-item-desc" id="shopBottlesDesc">Запас дополнительных пустых колб для прохождения сложных уровней.</p>
             </div>
           </div>
           <div class="shop-item-bottom">
@@ -436,8 +436,8 @@
               <span class="shop-item-emoji">💡</span>
             </div>
             <div class="shop-item-details">
-              <strong class="shop-item-title">+20 Подсказок</strong>
-              <p class="shop-item-desc">Показывает лучший следующий ход при затруднении.</p>
+              <strong class="shop-item-title" id="shopHintsTitle">+20 Подсказок</strong>
+              <p class="shop-item-desc" id="shopHintsDesc">Показывает лучший следующий ход при затруднении.</p>
             </div>
           </div>
           <div class="shop-item-bottom">
@@ -457,8 +457,8 @@
               <span class="shop-item-emoji">↩️</span>
             </div>
             <div class="shop-item-details">
-              <strong class="shop-item-title">+20 Отмен хода</strong>
-              <p class="shop-item-desc">Возвращает ход назад в любой критической ситуации.</p>
+              <strong class="shop-item-title" id="shopUndosTitle">+20 Отмен хода</strong>
+              <p class="shop-item-desc" id="shopUndosDesc">Возвращает ход назад в любой критической ситуации.</p>
             </div>
           </div>
           <div class="shop-item-bottom">
@@ -478,8 +478,8 @@
               <span class="shop-item-emoji">🔮</span>
             </div>
             <div class="shop-item-details">
-              <strong class="shop-item-title">+20 Открыть цвета</strong>
-              <p class="shop-item-desc">Открывает скрытые цвета во всех колбах.</p>
+              <strong class="shop-item-title" id="shopRevealsTitle">+20 Открыть цвета</strong>
+              <p class="shop-item-desc" id="shopRevealsDesc">Открывает скрытые цвета во всех колбах.</p>
             </div>
           </div>
           <div class="shop-item-bottom">
@@ -528,7 +528,7 @@
           </div>
           <div class="referral-badge-count">
             <span id="referralCountVal">0</span>
-            <span class="ref-unit-label">друзей</span>
+            <span class="ref-unit-label" id="referralUnitLabel">друзей</span>
           </div>
         </div>
 
@@ -562,11 +562,11 @@
         <!-- Friends List -->
         <div class="referrals-list-wrapper">
           <div class="referrals-list-header">
-            <span>Приглашённые друзья:</span>
+            <span id="referralsListHeader">Приглашённые друзья:</span>
           </div>
           <div id="referralsListContainer" class="referrals-list">
             <div class="referrals-empty-state">
-              <span>Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!</span>
+              <span id="referralsEmptyText">Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!</span>
             </div>
           </div>
         </div>
@@ -612,7 +612,7 @@
           <span class="admin-shield-icon">🛡️</span>
           <div>
             <strong id="adminPanelTitle">Панель Администратора</strong>
-            <span class="admin-panel-sub">Доступно только Аллигатору</span>
+            <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору</span>
           </div>
         </div>
 
@@ -653,7 +653,7 @@
         <!-- Section: Reset TON Purchases (Admin Only) -->
         <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 14px; margin-top: 10px;">
           <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: #38bdf8; margin-bottom: 6px;">
-            <span>💎</span> <span>Управление покупками за TON (Только Admin)</span>
+            <span>💎</span> <span id="adminPurchasesHeader">Управление покупками за TON (Только Admin)</span>
           </div>
           <p class="admin-desc" id="adminResetPurchasesDesc" style="margin-bottom: 12px; font-size: 12px; line-height: 1.4;">Аннулировать действующие покупки преимуществ за TON (например, «Все краски открыты») без списания баланса с кошельков игроков.</p>
 
@@ -662,7 +662,7 @@
             <!-- Reset Admin's Own Account Only -->
             <button type="button" id="adminResetSelfPurchasesBtn" style="width: 100%; padding: 11px 14px; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(56,189,248,0.4); border-radius: 10px; color: #fff; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(2,132,199,0.25);">
               <span>👑</span>
-              <span>Сбросить только мой аккаунт</span>
+              <span id="adminResetSelfPurchasesBtnLabel">Сбросить только мой аккаунт</span>
             </button>
 
             <!-- Reset ALL Players in the Game -->
@@ -675,10 +675,10 @@
 
         <div class="admin-divider"></div>
 
-        <p class="admin-desc">Сброс сезона полностью удаляет всю информацию, обнуляет глобальный лидерборд, уровни, монеты и награды всех игроков.</p>
+        <p class="admin-desc" id="adminResetSeasonDesc">Сброс сезона полностью удаляет всю информацию, обнуляет глобальный лидерборд, уровни, монеты и награды всех игроков.</p>
         <button id="adminResetSeasonBtn" class="admin-reset-season-btn">
           <span class="reset-btn-icon">🔥</span>
-          <span class="reset-btn-label">Сбросить сезон (Всё в ноль)</span>
+          <span class="reset-btn-label" id="adminResetSeasonBtnLabel">Сбросить сезон (Всё в ноль)</span>
         </button>
       </div>
     </div>
@@ -690,11 +690,11 @@
       <div class="warning-icon-glow">💎</div>
       <h2 id="resetPurchasesModalTitle" class="reset-modal-title">Сброс покупок за TON</h2>
       <div class="reset-warning-card">
-        <p class="reset-warning-lead">Внимание! Будут аннулированы действующие покупки:</p>
+        <p class="reset-warning-lead" id="resetPurchasesLead">Внимание! Будут аннулированы действующие покупки:</p>
         <ul class="reset-warning-list">
-          <li>🎨 Преимущество «Все краски открыты» будет выключено у всех игроков</li>
-          <li>⏳ Время действия всех активных улучшений из сундука будет обнулено</li>
-          <li>💎 <strong>Балансы TON / GRAM на кошельках игроков не изменятся</strong></li>
+          <li id="resetPurchasesItem1">🎨 Преимущество «Все краски открыты» будет выключено у всех игроков</li>
+          <li id="resetPurchasesItem2">⏳ Время действия всех активных улучшений из сундука будет обнулено</li>
+          <li id="resetPurchasesItem3">💎 <strong>Балансы TON / GRAM на кошельках игроков не изменятся</strong></li>
         </ul>
       </div>
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
@@ -710,12 +710,12 @@
       <div class="warning-icon-glow">⚠️</div>
       <h2 id="resetModalTitle" class="reset-modal-title">Сброс сезона</h2>
       <div class="reset-warning-card">
-        <p class="reset-warning-lead">Внимание! Это действие необратимо:</p>
+        <p class="reset-warning-lead" id="resetSeasonLead">Внимание! Это действие необратимо:</p>
         <ul class="reset-warning-list">
-          <li>💥 Глобальный лидерборд будет полностью очищен</li>
-          <li>📉 Все игроки вернутся на Уровень 1</li>
-          <li>💰 Все звёзды, монеты и награды обнулятся</li>
-          <li>🔄 Игра начнется заново с чистого листа</li>
+          <li id="resetSeasonItem1">💥 Глобальный лидерборд будет полностью очищен</li>
+          <li id="resetSeasonItem2">📉 Все игроки вернутся на Уровень 1</li>
+          <li id="resetSeasonItem3">💰 Все звёзды, монеты и награды обнулятся</li>
+          <li id="resetSeasonItem4">🔄 Игра начнется заново с чистого листа</li>
         </ul>
       </div>
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
@@ -793,14 +793,14 @@
         </div>
         <div class="ad-card" data-reward="hints">
           <div class="ad-card-icon">💡</div>
-          <h3>+1 подсказка</h3>
-          <p>1 точная подсказка хода <span class="ad-user-count" id="adModalHintsCount"></span></p>
+          <h3 id="adModalHintsTitle">+1 подсказка</h3>
+          <p id="adModalHintsDesc">1 точная подсказка хода <span class="ad-user-count" id="adModalHintsCount"></span></p>
           <button class="claim-ad-btn">▶ Смотреть рекламу</button>
         </div>
         <div class="ad-card" data-reward="undos">
           <div class="ad-card-icon">↩️</div>
-          <h3>+1 отмена хода</h3>
-          <p>1 бесплатная отмена хода <span class="ad-user-count" id="adModalUndosCount"></span></p>
+          <h3 id="adModalUndosTitle">+1 отмена хода</h3>
+          <p id="adModalUndosDesc">1 бесплатная отмена хода <span class="ad-user-count" id="adModalUndosCount"></span></p>
           <button class="claim-ad-btn">▶ Смотреть рекламу</button>
         </div>
         <div class="ad-card" data-reward="reveal_bottle">
@@ -841,11 +841,11 @@
         <div class="ad-media-card">
           <div class="ad-preview-screen">
             <div class="ad-glow-orb"></div>
-            <div class="ad-sponsor-label">РЕКЛАМНЫЙ СПОНСОР</div>
+            <div class="ad-sponsor-label" id="adVideoSponsor">РЕКЛАМНЫЙ СПОНСОР</div>
             <div class="ad-sponsor-icon">🎮</div>
-            <h3 class="ad-sponsor-title">Новые игры в Telegram</h3>
-            <p class="ad-sponsor-desc">Играйте в топовые Mini Apps без установки!</p>
-            <button class="ad-cta-btn" onclick="window.open('https://t.me/sortcolors_bot', '_blank')">Смотреть каталог</button>
+            <h3 class="ad-sponsor-title" id="adVideoSponsorTitle">Новые игры в Telegram</h3>
+            <p class="ad-sponsor-desc" id="adVideoSponsorDesc">Играйте в топовые Mini Apps без установки!</p>
+            <button class="ad-cta-btn" id="adVideoCtaBtn" onclick="window.open('https://t.me/sortcolors_bot', '_blank')">Смотреть каталог</button>
           </div>
         </div>
       </div>
@@ -860,12 +860,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47320"></script>
-  <script src="js/audio.js?v=47320"></script>
-  <script src="js/solver.js?v=47320"></script>
-  <script src="js/levelGenerator.js?v=47320"></script>
-  <script src="js/gameEngine.js?v=47320"></script>
-  <script src="js/renderer.js?v=47320"></script>
-  <script src="js/app.js?v=47320"></script>
+  <script src="js/telegram.js?v=47330"></script>
+  <script src="js/audio.js?v=47330"></script>
+  <script src="js/solver.js?v=47330"></script>
+  <script src="js/levelGenerator.js?v=47330"></script>
+  <script src="js/gameEngine.js?v=47330"></script>
+  <script src="js/renderer.js?v=47330"></script>
+  <script src="js/app.js?v=47330"></script>
 </body>
 </html>
