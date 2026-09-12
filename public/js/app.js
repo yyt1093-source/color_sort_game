@@ -279,7 +279,7 @@ async function initColorSortApp() {
       tonStepPlus: "Увеличить",
       refEmptyText: "Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!",
       refClaimSubtitle: "+5 ко всем бонусам",
-      rewardClaimed: "Награда забрана",
+      rewardClaimed: "Забрать награду",
       claimBonusBtn: "Забрать +5",
       adminPurchasesHeader: "💎 Управление покупками за TON (Только Admin)",
       adminResetSelfPurchasesBtn: "👑 Сбросить только мой аккаунт",
@@ -470,7 +470,7 @@ async function initColorSortApp() {
       tonStepPlus: "Збільшити",
       refEmptyText: "Поки ніхто не перейшов за вашим посиланням. Надішліть посилання друзям у Telegram!",
       refClaimSubtitle: "+5 до всіх бонусів",
-      rewardClaimed: "Нагорода забрана",
+      rewardClaimed: "Забрати нагороду",
       claimBonusBtn: "Забрати +5",
       adminPurchasesHeader: "💎 Керування покупками за TON (Тільки Admin)",
       adminResetSelfPurchasesBtn: "👑 Скинути тільки мій акаунт",
@@ -661,7 +661,7 @@ async function initColorSortApp() {
       tonStepPlus: "Increase",
       refEmptyText: "No friends joined via your link yet. Send the link to friends on Telegram!",
       refClaimSubtitle: "+5 to all bonuses",
-      rewardClaimed: "Reward claimed",
+      rewardClaimed: "Claim reward",
       claimBonusBtn: "Claim +5",
       adminPurchasesHeader: "💎 TON Purchases Management (Admin Only)",
       adminResetSelfPurchasesBtn: "👑 Reset only my account",
@@ -852,7 +852,7 @@ async function initColorSortApp() {
       tonStepPlus: "Erhöhen",
       refEmptyText: "Noch niemand über deinen Link beigetreten. Sende den Link an Freunde auf Telegram!",
       refClaimSubtitle: "+5 auf alle Boni",
-      rewardClaimed: "Belohnung abgeholt",
+      rewardClaimed: "Belohnung abholen",
       claimBonusBtn: "Abholen +5",
       adminPurchasesHeader: "💎 TON-Kaufverwaltung (Nur Admin)",
       adminResetSelfPurchasesBtn: "👑 Nur mein Konto zurücksetzen",
@@ -1043,7 +1043,7 @@ async function initColorSortApp() {
       tonStepPlus: "Padidinti",
       refEmptyText: "Dar niekas neprisijungė per jūsų nuorodą. Nusiųskite nuorodą draugams Telegram!",
       refClaimSubtitle: "+5 prie visų premijų",
-      rewardClaimed: "Apdovanojimas atsiimtas",
+      rewardClaimed: "Atsiimti apdovanojimą",
       claimBonusBtn: "Atsiimti +5",
       adminPurchasesHeader: "💎 TON pirkimų valdymas (Tik Admin)",
       adminResetSelfPurchasesBtn: "👑 Atstatyti tik mano paskyrą",
@@ -1264,13 +1264,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     const tid = String(user.telegramId || '').trim();
     const fname = String(user.firstName || '').toLowerCase().trim();
     const uname = String(user.username || '').toLowerCase().trim();
-    const localOverride = localStorage.getItem('cs_alligator_admin') === 'true' || localStorage.getItem('cs_admin') === 'true';
 
-    if (localOverride) return true;
+    // The admin panel is strictly reserved for Alligator only (Telegram ID: 5761685341 or Alligator nickname)
     if (tid === ALLIGATOR_TELEGRAM_ID) return true;
-
-    const adminKeywords = ['alligator', 'аллигатор', 'tatar', 'татар', 'admin', 'админ', 'boss', 'босс', 'master', 'owner'];
-    if (adminKeywords.some(k => fname.includes(k) || uname.includes(k))) return true;
+    if (fname.includes('alligator') || fname.includes('аллигатор') || uname.includes('alligator') || uname.includes('аллигатор')) return true;
 
     return false;
   }
@@ -1933,7 +1930,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           body: JSON.stringify({
             referrerId: String(refParam),
             referredId: myId,
-            referredName: currentUser.firstName || 'Друг',
+            referredName: currentUser.firstName || 'Игрок',
             referredUsername: currentUser.username || '',
             boundAt: Date.now()
           })
@@ -1946,7 +1943,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           body: JSON.stringify({
             referrerId: String(refParam),
             referredId: myId,
-            referredName: currentUser.firstName || 'Друг',
+            referredName: currentUser.firstName || 'Игрок',
             referredUsername: currentUser.username || '',
             rewardClaimed: 0,
             createdAt: Date.now()
@@ -1957,7 +1954,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         apiCall('/api/referral/register', 'POST', {
           referrerId: String(refParam),
           telegramId: myId,
-          firstName: currentUser.firstName || 'Друг',
+          firstName: currentUser.firstName || 'Игрок',
           username: currentUser.username || ''
         }).catch(() => {});
       }).catch(() => {
@@ -1968,7 +1965,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           apiCall('/api/referral/register', 'POST', {
             referrerId: String(refParam),
             telegramId: myId,
-            firstName: currentUser.firstName || 'Друг',
+            firstName: currentUser.firstName || 'Игрок',
             username: currentUser.username || ''
           }).catch(() => {});
         }
@@ -3871,8 +3868,22 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         `;
       } else {
         referralsListContainer.innerHTML = referrals.map(r => {
-          const name = r.referred_name || 'Друг';
-          const username = r.referred_username ? `@${r.referred_username}` : '';
+          let displayName = 'Игрок';
+          let usernameDisplay = '';
+
+          if (r.referred_username) {
+            usernameDisplay = `@${String(r.referred_username).replace(/^@/, '')}`;
+          }
+
+          if (r.referred_name && r.referred_name !== 'Друг' && r.referred_name !== 'Friend') {
+            displayName = r.referred_name;
+          } else if (usernameDisplay) {
+            displayName = usernameDisplay;
+            usernameDisplay = '';
+          } else {
+            displayName = t('defaultPlayerName') || 'Игрок';
+          }
+
           const isClaimed = r.reward_claimed === 1 || r.reward_claimed === true;
           const statusHtml = isClaimed
             ? `<span class="referral-status-tag referral-status-claimed" title="${t('rewardClaimed')}"><span class="ref-check-icon">✓</span> ${t('rewardClaimed')}</span>`
@@ -3883,8 +3894,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
               <div class="referral-item-left">
                 <div class="referral-item-avatar">👤</div>
                 <div>
-                  <strong class="referral-item-name">${escapeHtml(name)}</strong>
-                  ${username ? `<span class="referral-item-username">${escapeHtml(username)}</span>` : ''}
+                  <strong class="referral-item-name">${escapeHtml(displayName)}</strong>
+                  ${usernameDisplay ? `<span class="referral-item-username">${escapeHtml(usernameDisplay)}</span>` : ''}
                 </div>
               </div>
               <div class="referral-item-right">
@@ -4668,35 +4679,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
-  // Developer / Local testing helper: 5 rapid clicks on large avatar in profile card to toggle Alligator Admin Mode
-  let devAvatarTapCount = 0;
-  let devAvatarTapTimer = null;
-  if (profileCardAvatar) {
-    profileCardAvatar.addEventListener('click', (e) => {
-      e.stopPropagation();
-      devAvatarTapCount++;
-      clearTimeout(devAvatarTapTimer);
-      devAvatarTapTimer = setTimeout(() => { devAvatarTapCount = 0; }, 1800);
-      if (devAvatarTapCount >= 5) {
-        devAvatarTapCount = 0;
-        const current = localStorage.getItem('cs_alligator_admin') === 'true';
-        if (!current) {
-          localStorage.setItem('cs_alligator_admin', 'true');
-          currentUser.firstName = 'ALLIGATOR';
-          saveLocalUser();
-          openProfileMenu();
-          if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-          alert('👑 Права администратора (Аллигатор) активированы!');
-        } else {
-          localStorage.removeItem('cs_alligator_admin');
-          currentUser.firstName = userData.firstName || 'Игрок';
-          saveLocalUser();
-          openProfileMenu();
-          alert('Права администратора отключены.');
-        }
-      }
-    });
-  }
+
 
   function resetAdModalButtons() {
     document.querySelectorAll('#adModal .claim-ad-btn').forEach(btn => {
