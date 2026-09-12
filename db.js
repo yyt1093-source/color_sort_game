@@ -100,6 +100,18 @@ function initDatabase() {
     db.exec(`ALTER TABLE users ADD COLUMN all_colors_purchased_at INTEGER DEFAULT 0;`);
   } catch (e) {}
   try {
+    db.exec(`ALTER TABLE users ADD COLUMN referrer_id TEXT DEFAULT NULL;`);
+  } catch (e) {}
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS referral_bindings (
+        referred_id TEXT PRIMARY KEY,
+        referrer_id TEXT NOT NULL,
+        bound_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+  } catch (e) {}
+  try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS system_settings (
         key TEXT PRIMARY KEY,
@@ -624,16 +636,44 @@ function registerReferral(referrerId, referredId, referredName = '', referredUse
   if (!refId || !newId || refId === newId) return null;
 
   try {
-    const existing = db.prepare('SELECT id FROM referrals WHERE referred_id = ?').get(newId);
-    if (existing) {
-      return { success: false, error: 'already_referred' };
+    // 1. Check permanent referral bindings table
+    const existingBinding = db.prepare('SELECT referred_id, referrer_id FROM referral_bindings WHERE referred_id = ?').get(newId);
+    if (existingBinding) {
+      return { success: false, error: 'already_referred', alreadyReferred: true, referrerId: existingBinding.referrer_id };
     }
 
+    // 2. Check referrals table
+    const existing = db.prepare('SELECT id, referrer_id FROM referrals WHERE referred_id = ?').get(newId);
+    if (existing) {
+      return { success: false, error: 'already_referred', alreadyReferred: true, referrerId: existing.referrer_id };
+    }
+
+    // 3. Check users table: existing players cannot be referred later
+    const existingUser = db.prepare('SELECT telegram_id, referrer_id, max_level FROM users WHERE telegram_id = ?').get(newId);
+    if (existingUser) {
+      if (existingUser.referrer_id) {
+        return { success: false, error: 'already_referred', alreadyReferred: true, referrerId: existingUser.referrer_id };
+      }
+      if (Number(existingUser.max_level || 1) > 1) {
+        return { success: false, error: 'existing_player', message: 'Игрок уже начал игру ранее' };
+      }
+    }
+
+    // 4. Save permanent binding
+    db.prepare('INSERT OR IGNORE INTO referral_bindings (referred_id, referrer_id) VALUES (?, ?)').run(newId, refId);
+
+    // 5. Insert referral record
     const stmt = db.prepare(`
       INSERT INTO referrals (referrer_id, referred_id, referred_name, referred_username, reward_claimed)
       VALUES (?, ?, ?, ?, 0)
     `);
     const result = stmt.run(refId, newId, referredName || 'Друг', referredUsername || '');
+
+    // 6. Update user's referrer_id if user already exists
+    try {
+      db.prepare('UPDATE users SET referrer_id = ? WHERE telegram_id = ?').run(refId, newId);
+    } catch (e) {}
+
     return {
       success: true,
       referral: {

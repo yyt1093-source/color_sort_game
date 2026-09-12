@@ -196,6 +196,43 @@ runTest('Claim Referral Rewards (+5 to All Boosters)', () => {
   assert.strictEqual(claimRes.bonusesAdded.reveals, 5);
   assert.strictEqual(claimRes.user.hints, 5);
   assert.strictEqual(claimRes.user.extra_bottles, 5);
+  // Ensure referral is STILL in the list and marked claimed = 1
+  const refList = db.getReferrals(refOwnerId);
+  assert.strictEqual(refList.totalCount, 1);
+  assert.strictEqual(refList.unclaimedCount, 0);
+  assert.strictEqual(refList.referrals[0].reward_claimed, 1);
+});
+
+runTest('Prevent Duplicate Referral Binding (Cannot re-refer same player)', () => {
+  const otherOwnerId = 'ref_other_' + Date.now();
+  const dupRes = db.registerReferral(otherOwnerId, refFriendId, 'ДругВступивший', 'friend_uname');
+  assert.strictEqual(dupRes.success, false);
+  assert.strictEqual(dupRes.error, 'already_referred');
+  // Re-referring with original owner also rejected
+  const dupRes2 = db.registerReferral(refOwnerId, refFriendId, 'ДругВступивший', 'friend_uname');
+  assert.strictEqual(dupRes2.success, false);
+  assert.strictEqual(dupRes2.error, 'already_referred');
+});
+
+runTest('Reject Referral for Existing Active Player (max_level > 1)', () => {
+  const veteranPlayerId = 'veteran_player_' + Date.now();
+  db.getUser(veteranPlayerId, { first_name: 'ОпытныйИгрок' });
+  db.updateUserProgress(veteranPlayerId, { currentLevel: 5, maxLevel: 5, starsAdded: 15, coinsAdded: 50 });
+  const vetRes = db.registerReferral(refOwnerId, veteranPlayerId, 'ОпытныйИгрок', 'vet');
+  assert.strictEqual(vetRes.success, false);
+  assert.strictEqual(vetRes.error, 'existing_player');
+});
+
+runTest('Referral Progress and Binding IMMUNE to Season Reset', () => {
+  db.resetSeason();
+  // Ensure the referral record is STILL in the list for the inviter
+  const refListAfterSeasonReset = db.getReferrals(refOwnerId);
+  assert.strictEqual(refListAfterSeasonReset.totalCount, 1);
+  assert.strictEqual(refListAfterSeasonReset.referrals[0].referred_id, refFriendId);
+  // Ensure the binding STILL prevents duplicate referral after season reset
+  const afterResetDup = db.registerReferral('someone_else', refFriendId, 'ДругВступивший', 'friend_uname');
+  assert.strictEqual(afterResetDup.success, false);
+  assert.strictEqual(afterResetDup.error, 'already_referred');
 });
 
 // ------------------------------------------------------------------

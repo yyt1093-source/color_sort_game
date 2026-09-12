@@ -279,6 +279,8 @@ async function initColorSortApp() {
       tonStepPlus: "Увеличить",
       refEmptyText: "Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!",
       refClaimSubtitle: "+5 ко всем бонусам",
+      rewardClaimed: "Награда забрана",
+      claimBonusBtn: "Забрать +5",
       adminPurchasesHeader: "💎 Управление покупками за TON (Только Admin)",
       adminResetSelfPurchasesBtn: "👑 Сбросить только мой аккаунт",
       resetPurchasesItem1: "🎨 Преимущество «Все краски открыты» будет выключено у всех игроков",
@@ -468,6 +470,8 @@ async function initColorSortApp() {
       tonStepPlus: "Збільшити",
       refEmptyText: "Поки ніхто не перейшов за вашим посиланням. Надішліть посилання друзям у Telegram!",
       refClaimSubtitle: "+5 до всіх бонусів",
+      rewardClaimed: "Нагорода забрана",
+      claimBonusBtn: "Забрати +5",
       adminPurchasesHeader: "💎 Керування покупками за TON (Тільки Admin)",
       adminResetSelfPurchasesBtn: "👑 Скинути тільки мій акаунт",
       resetPurchasesItem1: "🎨 Перевага «Всі фарби відкриті» буде вимкнена у всіх гравців",
@@ -657,6 +661,8 @@ async function initColorSortApp() {
       tonStepPlus: "Increase",
       refEmptyText: "No friends joined via your link yet. Send the link to friends on Telegram!",
       refClaimSubtitle: "+5 to all bonuses",
+      rewardClaimed: "Reward claimed",
+      claimBonusBtn: "Claim +5",
       adminPurchasesHeader: "💎 TON Purchases Management (Admin Only)",
       adminResetSelfPurchasesBtn: "👑 Reset only my account",
       resetPurchasesItem1: "🎨 \"All Colors Revealed\" perk will be deactivated for all players",
@@ -846,6 +852,8 @@ async function initColorSortApp() {
       tonStepPlus: "Erhöhen",
       refEmptyText: "Noch niemand über deinen Link beigetreten. Sende den Link an Freunde auf Telegram!",
       refClaimSubtitle: "+5 auf alle Boni",
+      rewardClaimed: "Belohnung abgeholt",
+      claimBonusBtn: "Abholen +5",
       adminPurchasesHeader: "💎 TON-Kaufverwaltung (Nur Admin)",
       adminResetSelfPurchasesBtn: "👑 Nur mein Konto zurücksetzen",
       resetPurchasesItem1: "🎨 Der Vorteil „Alle Farben aufgedeckt“ wird für alle Spieler deaktiviert",
@@ -1035,6 +1043,8 @@ async function initColorSortApp() {
       tonStepPlus: "Padidinti",
       refEmptyText: "Dar niekas neprisijungė per jūsų nuorodą. Nusiųskite nuorodą draugams Telegram!",
       refClaimSubtitle: "+5 prie visų premijų",
+      rewardClaimed: "Apdovanojimas atsiimtas",
+      claimBonusBtn: "Atsiimti +5",
       adminPurchasesHeader: "💎 TON pirkimų valdymas (Tik Admin)",
       adminResetSelfPurchasesBtn: "👑 Atstatyti tik mano paskyrą",
       resetPurchasesItem1: "🎨 Privalumas „Visos spalvos atskleistos“ bus išjungtas visiems žaidėjams",
@@ -1877,33 +1887,93 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
     }
 
-    if (refParam && String(refParam) !== String(currentUser.telegramId)) {
-      const alreadySent = localStorage.getItem(`cs_ref_sent_${refParam}`);
-      if (!alreadySent) {
-        localStorage.setItem(`cs_ref_sent_${refParam}`, 'true');
+    if (!currentUser || !currentUser.telegramId) return;
+    const myId = String(currentUser.telegramId).trim();
+
+    // 1. Check permanent local lock: if this user was already bound or locked, reject any new referral
+    const isLocked = localStorage.getItem('cs_ref_permanently_locked') === 'true';
+    const boundReferrer = localStorage.getItem('cs_bound_referrer_id');
+    if (isLocked || boundReferrer) {
+      return;
+    }
+
+    // 2. If user is an established player (maxLevel > 1 or stars > 0), they cannot be referred later
+    if ((Number(currentUser.maxLevel || 1) > 1) || (Number(currentUser.stars || 0) > 0)) {
+      localStorage.setItem('cs_ref_permanently_locked', 'true');
+      return;
+    }
+
+    if (!refParam || String(refParam) === myId) return;
+
+    // 3. Asynchronously verify against KVDB Cloud binding before committing
+    try {
+      fetch(`${GLOBAL_CLOUD_BASE}/binding_ref_${encodeURIComponent(myId)}`, {
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+      }).then(async (res) => {
+        if (res.ok) {
+          const raw = await res.text();
+          let cloudBinding = null;
+          try { cloudBinding = JSON.parse(raw); } catch (e) {}
+          if (cloudBinding && cloudBinding.referrerId) {
+            // Already bound in cloud! Lock locally and do not create duplicate
+            localStorage.setItem('cs_bound_referrer_id', String(cloudBinding.referrerId));
+            localStorage.setItem('cs_ref_permanently_locked', 'true');
+            return;
+          }
+        }
+
+        // Lock permanently once and for all
+        localStorage.setItem('cs_bound_referrer_id', String(refParam));
+        localStorage.setItem('cs_ref_permanently_locked', 'true');
+
+        // A. Save binding in KVDB Cloud
+        fetch(`${GLOBAL_CLOUD_BASE}/binding_ref_${encodeURIComponent(myId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            referrerId: String(refParam),
+            referredId: myId,
+            referredName: currentUser.firstName || 'Друг',
+            referredUsername: currentUser.username || '',
+            boundAt: Date.now()
+          })
+        }).catch(() => {});
+
+        // B. Save referral item for inviter in KVDB Cloud
+        fetch(`${GLOBAL_CLOUD_BASE}/ref_${encodeURIComponent(refParam)}_${encodeURIComponent(myId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            referrerId: String(refParam),
+            referredId: myId,
+            referredName: currentUser.firstName || 'Друг',
+            referredUsername: currentUser.username || '',
+            rewardClaimed: 0,
+            createdAt: Date.now()
+          })
+        }).catch(() => {});
+
+        // C. Register on server database (SQLite)
         apiCall('/api/referral/register', 'POST', {
-          referrerId: refParam,
-          telegramId: currentUser.telegramId,
+          referrerId: String(refParam),
+          telegramId: myId,
           firstName: currentUser.firstName || 'Друг',
           username: currentUser.username || ''
         }).catch(() => {});
-
-        try {
-          fetch(`${GLOBAL_CLOUD_BASE}/ref_${refParam}_${currentUser.telegramId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              referrerId: refParam,
-              referredId: currentUser.telegramId,
-              referredName: currentUser.firstName || 'Друг',
-              referredUsername: currentUser.username || '',
-              rewardClaimed: 0,
-              createdAt: Date.now()
-            })
+      }).catch(() => {
+        // Fallback if cloud request errors: lock locally and try server API
+        if (!localStorage.getItem('cs_ref_permanently_locked')) {
+          localStorage.setItem('cs_bound_referrer_id', String(refParam));
+          localStorage.setItem('cs_ref_permanently_locked', 'true');
+          apiCall('/api/referral/register', 'POST', {
+            referrerId: String(refParam),
+            telegramId: myId,
+            firstName: currentUser.firstName || 'Друг',
+            username: currentUser.username || ''
           }).catch(() => {});
-        } catch (e) {}
-      }
-    }
+        }
+      });
+    } catch (e) {}
   }
 
   // 5. Init renderer
@@ -3712,9 +3782,11 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     return `https://t.me/sortcolors_bot?startapp=ref_${id}`;
   }
 
+  let cachedReferralsList = [];
+
   async function loadReferralsData() {
     if (!currentUser || !currentUser.telegramId) return;
-    const myId = String(currentUser.telegramId);
+    const myId = String(currentUser.telegramId).trim();
 
     let totalCount = 0;
     let unclaimedCount = 0;
@@ -3739,25 +3811,36 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         const pairs = await cloudRes.json();
         if (Array.isArray(pairs)) {
           pairs.forEach(([key, val]) => {
-            if (val && val.referredId) {
-              const exists = referrals.some(r => String(r.referred_id) === String(val.referredId));
+            if (val && (val.referredId || key.split('_')[2])) {
+              const refFriendId = String(val.referredId || key.split('_')[2]);
+              const isClaimedLocally = localStorage.getItem(`cs_ref_claimed_${myId}_${refFriendId}`) === 'true';
+              const isClaimed = !!(val.rewardClaimed || isClaimedLocally);
+              const exists = referrals.some(r => String(r.referred_id) === refFriendId);
               if (!exists) {
                 referrals.push({
                   id: key,
-                  referred_id: val.referredId,
+                  referred_id: refFriendId,
                   referred_name: val.referredName || 'Друг',
                   referred_username: val.referredUsername || '',
-                  reward_claimed: val.rewardClaimed ? 1 : 0,
+                  reward_claimed: isClaimed ? 1 : 0,
                   created_at: val.createdAt ? new Date(val.createdAt).toLocaleDateString() : ''
                 });
                 totalCount++;
-                if (!val.rewardClaimed) unclaimedCount++;
+                if (!isClaimed) unclaimedCount++;
+              } else {
+                const existing = referrals.find(r => String(r.referred_id) === refFriendId);
+                if (existing && isClaimed && !existing.reward_claimed) {
+                  existing.reward_claimed = 1;
+                  if (unclaimedCount > 0) unclaimedCount--;
+                }
               }
             }
           });
         }
       }
     } catch (e) {}
+
+    cachedReferralsList = referrals;
 
     // 3. Update UI
     if (referralCountVal) {
@@ -3790,10 +3873,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         referralsListContainer.innerHTML = referrals.map(r => {
           const name = r.referred_name || 'Друг';
           const username = r.referred_username ? `@${r.referred_username}` : '';
-          const isClaimed = r.reward_claimed === 1;
+          const isClaimed = r.reward_claimed === 1 || r.reward_claimed === true;
           const statusHtml = isClaimed
-            ? `<span class="referral-status-tag referral-status-claimed">✅ Награда получена</span>`
-            : `<button type="button" class="referral-status-tag referral-status-unclaimed claim-single-ref-btn" data-ref-id="${escapeHtml(String(r.id))}">🎁 Забрать +5</button>`;
+            ? `<span class="referral-status-tag referral-status-claimed" title="${t('rewardClaimed')}"><span class="ref-check-icon">✓</span> ${t('rewardClaimed')}</span>`
+            : `<button type="button" class="referral-status-tag referral-status-unclaimed claim-single-ref-btn" data-ref-id="${escapeHtml(String(r.id))}">🎁 ${t('claimBonusBtn')}</button>`;
 
           return `
             <div class="referral-item-row">
@@ -3820,9 +3903,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
     try {
       let claimedCount = 0;
+      const myId = String(currentUser.telegramId).trim();
 
       const res = await apiCall('/api/referral/claim', 'POST', {
-        telegramId: currentUser.telegramId,
+        telegramId: myId,
         referralId: referralId
       });
 
@@ -3833,22 +3917,48 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.reveals = res.user.reveals;
         claimedCount = res.claimedCount || 1;
       } else {
-        claimedCount = 1;
-        currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
-        currentUser.hints = (currentUser.hints || 0) + 5;
-        currentUser.undos = (currentUser.undos || 0) + 5;
-        currentUser.reveals = (currentUser.reveals || 0) + 5;
-
-        // In KVDB, mark record claimed if present
-        if (referralId && String(referralId).startsWith('ref_')) {
-          try {
-            fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(referralId)}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ rewardClaimed: 1, claimedAt: Date.now() })
-            }).catch(() => {});
-          } catch (e) {}
+        // Client-side cloud fallback: identify target items to claim
+        let itemsToClaim = [];
+        if (referralId) {
+          const target = cachedReferralsList.find(r => String(r.id) === String(referralId) || String(r.referred_id) === String(referralId));
+          if (target) itemsToClaim.push(target);
+        } else {
+          itemsToClaim = cachedReferralsList.filter(r => !r.reward_claimed);
         }
+
+        if (itemsToClaim.length === 0 && referralId) {
+          const fallbackTarget = cachedReferralsList.find(r => String(r.id) === String(referralId) || String(r.referred_id) === String(referralId));
+          if (fallbackTarget) itemsToClaim.push(fallbackTarget);
+        }
+
+        claimedCount = itemsToClaim.length || 1;
+        const addAmount = claimedCount * 5;
+        currentUser.extraBottles = (currentUser.extraBottles || 0) + addAmount;
+        currentUser.hints = (currentUser.hints || 0) + addAmount;
+        currentUser.undos = (currentUser.undos || 0) + addAmount;
+        currentUser.reveals = (currentUser.reveals || 0) + addAmount;
+
+        // Persist claimed status in KVDB and localStorage without erasing the referee!
+        itemsToClaim.forEach(item => {
+          const refFriendId = String(item.referred_id);
+          localStorage.setItem(`cs_ref_claimed_${myId}_${refFriendId}`, 'true');
+          item.reward_claimed = 1;
+
+          const kvdbKey = String(item.id).startsWith('ref_') ? item.id : `ref_${myId}_${refFriendId}`;
+          fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(kvdbKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              referrerId: myId,
+              referredId: refFriendId,
+              referredName: item.referred_name || 'Друг',
+              referredUsername: item.referred_username || '',
+              rewardClaimed: 1,
+              claimedAt: Date.now(),
+              createdAt: item.created_at || Date.now()
+            })
+          }).catch(() => {});
+        });
       }
 
       saveLocalUser();
