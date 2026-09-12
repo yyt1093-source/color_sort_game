@@ -499,9 +499,15 @@ function buyShopItem(telegramId, itemId) {
  */
 function resetGramPurchases() {
   try {
+    db.exec(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT DEFAULT (datetime('now')));`);
     db.exec(`UPDATE users SET all_colors_until = 0, all_colors_purchased_at = 0;`);
     db.exec(`DELETE FROM shop_purchases;`);
-    return { success: true };
+    const nowTs = Date.now();
+    db.prepare(`
+      INSERT INTO system_settings (key, value) VALUES ('gram_reset_timestamp', ?)
+      ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=datetime('now')
+    `).run(String(nowTs));
+    return { success: true, resetAt: nowTs };
   } catch (err) {
     console.error('[DB Reset Gram Purchases Error]', err);
     return { success: false, error: err.message };

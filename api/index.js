@@ -341,10 +341,56 @@ app.post('/api/admin/reset-season', (req, res) => {
   }
 });
 
+async function resetKvdbGramPurchasesServer(resetTimestamp) {
+  const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+  const baseUrl = `https://kvdb.io/${bucket}`;
+
+  try {
+    await fetch(`${baseUrl}/meta_gram_purchases_reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resetAt: resetTimestamp })
+    });
+  } catch (e) {
+    console.warn('[SERVER KVDB RESET] Meta notice error:', e.message);
+  }
+
+  try {
+    const listRes = await fetch(`${baseUrl}/?prefix=player_&values=true&format=json`);
+    if (listRes.ok) {
+      const pairs = await listRes.json();
+      if (Array.isArray(pairs)) {
+        for (const [key, val] of pairs) {
+          if (val && typeof val === 'object') {
+            let modified = false;
+            if (val.all_colors_until) {
+              val.all_colors_until = 0;
+              modified = true;
+            }
+            if (val.all_colors_purchased_at) {
+              val.all_colors_purchased_at = 0;
+              modified = true;
+            }
+            if (modified) {
+              await fetch(`${baseUrl}/${encodeURIComponent(key)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(val)
+              }).catch(() => {});
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[SERVER KVDB RESET] Player keys update error:', e.message);
+  }
+}
+
 /**
  * Admin Reset All GRAM Purchases (Alligator Only)
  */
-app.post('/api/admin/reset-purchases', (req, res) => {
+app.post('/api/admin/reset-purchases', async (req, res) => {
   try {
     const { telegramId, firstName, username } = req.body || {};
     const tid = String(telegramId || '').trim();
@@ -360,6 +406,11 @@ app.post('/api/admin/reset-purchases', (req, res) => {
     }
 
     const result = db.resetGramPurchases();
+    const resetTs = result.resetAt || Date.now();
+
+    // Async KVDB cloud cleanup for all players
+    resetKvdbGramPurchasesServer(resetTs).catch(() => {});
+
     res.json({ success: true, ...result });
   } catch (err) {
     console.error('[API ERROR] /api/admin/reset-purchases:', err);
