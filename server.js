@@ -510,16 +510,15 @@ app.post('/api/shop/buy', (req, res) => {
 
 function checkIsAdmin(reqBody) {
   if (!reqBody) return false;
-  const { telegramId, firstName, username, isAdmin } = reqBody;
-  if (isAdmin === true) return true;
+  const { telegramId, firstName, username } = reqBody;
 
   const tid = String(telegramId || '').trim();
   const fname = String(firstName || '').toLowerCase().trim();
   const uname = String(username || '').toLowerCase().trim();
 
-  const adminKeywords = ['alligator', 'аллигатор', 'tatar', 'татар', 'admin', 'админ', 'boss', 'босс', 'master', 'owner'];
+  // The admin panel is strictly reserved for Alligator only (ID: 5761685341 or alligator name)
   if (tid === '5761685341') return true;
-  if (adminKeywords.some(k => fname.includes(k) || uname.includes(k))) return true;
+  if (fname.includes('alligator') || fname.includes('аллигатор') || uname.includes('alligator') || uname.includes('аллигатор')) return true;
 
   return false;
 }

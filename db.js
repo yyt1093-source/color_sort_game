@@ -667,7 +667,7 @@ function registerReferral(referrerId, referredId, referredName = '', referredUse
       INSERT INTO referrals (referrer_id, referred_id, referred_name, referred_username, reward_claimed)
       VALUES (?, ?, ?, ?, 0)
     `);
-    const result = stmt.run(refId, newId, referredName || 'Друг', referredUsername || '');
+    const result = stmt.run(refId, newId, referredName || 'Игрок', referredUsername || '');
 
     // 6. Update user's referrer_id if user already exists
     try {
@@ -680,7 +680,7 @@ function registerReferral(referrerId, referredId, referredName = '', referredUse
         id: result.lastInsertRowid,
         referrer_id: refId,
         referred_id: newId,
-        referred_name: referredName || 'Друг',
+        referred_name: referredName || 'Игрок',
         referred_username: referredUsername || '',
         reward_claimed: 0
       }
