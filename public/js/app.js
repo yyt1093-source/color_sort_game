@@ -1164,9 +1164,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     user.extraBottles = Number(bVal || 0);
     user.extra_bottles = Number(bVal || 0);
-    user.hints = Number(user.hints || 0);
-    user.undos = Number(user.undos || 0);
-    user.reveals = Number(user.reveals || 0);
+    user.hints = Math.max(0, Number(user.hints || 0));
+    user.undos = Math.max(0, Number(user.undos || 0));
+    user.reveals = Math.max(0, Number(user.reveals || 0));
     user.ton_balance = Number(user.ton_balance !== undefined ? user.ton_balance : (user.tonBalance !== undefined ? user.tonBalance : 0));
     return user;
   }
@@ -1218,6 +1218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undos: user.undos,
       reveals: user.reveals,
       extraBottles: user.extraBottles,
+      extra_bottles: user.extraBottles,
       ton_balance: user.ton_balance,
       starsAdded: 0,
       coinsAdded: 0
@@ -1408,17 +1409,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   apiCall('/api/user/init', 'POST', userData).then(serverUser => {
     if (serverUser && serverUser.success && serverUser.user) {
       const oldLevel = currentUser.currentLevel;
-      if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints);
-      if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos);
-      if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, serverUser.user.reveals);
-      if (serverUser.user.extra_bottles !== undefined) currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, serverUser.user.extra_bottles);
-      if (serverUser.user.ton_balance !== undefined) currentUser.ton_balance = Math.max(currentUser.ton_balance || 0, serverUser.user.ton_balance);
+      if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints || 0);
+      if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos || 0);
+      if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, serverUser.user.reveals || 0);
+      const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
+      if (serverB !== undefined) {
+        const maxB = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(serverB || 0));
+        currentUser.extraBottles = maxB;
+        currentUser.extra_bottles = maxB;
+      }
+      if (serverUser.user.ton_balance !== undefined) currentUser.ton_balance = Math.max(currentUser.ton_balance || 0, serverUser.user.ton_balance || 0);
       if (serverUser.user.ton_wallet !== undefined) currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
       if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
-      if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, serverUser.user.all_colors_until);
-      if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, serverUser.user.all_colors_purchased_at);
-      if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Math.max(currentUser.currentLevel || 1, serverUser.user.current_level);
-      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, serverUser.user.max_level);
+      if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, serverUser.user.all_colors_until || 0);
+      if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, serverUser.user.all_colors_purchased_at || 0);
+      if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Math.max(currentUser.currentLevel || 1, serverUser.user.current_level || 1);
+      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, serverUser.user.max_level || 1);
+      normalizeUserObject(currentUser);
       updateTonWalletUI();
       updateShopUI();
       saveLocalUser();
@@ -1614,6 +1621,13 @@ document.addEventListener('DOMContentLoaded', async () => {
               apiCall('/api/ad-reward', 'POST', {
                 telegramId: currentUser.telegramId,
                 rewardType: 'undos'
+              }).then(res => {
+                if (res && res.success && res.user && res.user.undos !== undefined) {
+                  currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
+                  normalizeUserObject(currentUser);
+                  saveLocalUser();
+                  updateHeaderUI();
+                }
               }).catch(() => {});
             }
           }
@@ -1629,7 +1643,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
-          undosUsed: 1
+          undosUsed: 1,
+          undos: currentUser.undos
         });
       }
     });
@@ -1659,6 +1674,13 @@ document.addEventListener('DOMContentLoaded', async () => {
               apiCall('/api/ad-reward', 'POST', {
                 telegramId: currentUser.telegramId,
                 rewardType: 'hints'
+              }).then(res => {
+                if (res && res.success && res.user && res.user.hints !== undefined) {
+                  currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
+                  normalizeUserObject(currentUser);
+                  saveLocalUser();
+                  updateHeaderUI();
+                }
               }).catch(() => {});
             }
           }
@@ -1674,7 +1696,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
-          hintsUsed: 1
+          hintsUsed: 1,
+          hints: currentUser.hints
         });
       } else {
         showInfoModal('🤷', 'Нет ходов', 'Текущее расположение заблокировано. Используйте отмену хода ↩️ или начните уровень сначала 🔄.');
@@ -1711,6 +1734,13 @@ document.addEventListener('DOMContentLoaded', async () => {
               apiCall('/api/ad-reward', 'POST', {
                 telegramId: currentUser.telegramId,
                 rewardType: 'reveal_bottle'
+              }).then(res => {
+                if (res && res.success && res.user && res.user.reveals !== undefined) {
+                  currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
+                  normalizeUserObject(currentUser);
+                  saveLocalUser();
+                  updateHeaderUI();
+                }
               }).catch(() => {});
             }
           }
@@ -1728,7 +1758,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveLocalUser();
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
-          revealsUsed: 1
+          revealsUsed: 1,
+          reveals: currentUser.reveals
         });
       }
     });
@@ -1752,6 +1783,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const adWatched = await showRewardedAd();
             if (adWatched) {
               currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+              currentUser.extra_bottles = currentUser.extraBottles;
               normalizeUserObject(currentUser);
               saveLocalUser();
               updateHeaderUI();
@@ -1760,6 +1792,17 @@ document.addEventListener('DOMContentLoaded', async () => {
               apiCall('/api/ad-reward', 'POST', {
                 telegramId: currentUser.telegramId,
                 rewardType: 'extra_bottle'
+              }).then(res => {
+                if (res && res.success && res.user) {
+                  const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+                  if (serverB !== undefined) {
+                    currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+                    currentUser.extra_bottles = currentUser.extraBottles;
+                    normalizeUserObject(currentUser);
+                    saveLocalUser();
+                    updateHeaderUI();
+                  }
+                }
               }).catch(() => {});
             }
           }
@@ -1770,13 +1813,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const added = engine.addExtraBottle();
       if (added) {
         currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
+        currentUser.extra_bottles = currentUser.extraBottles;
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
         updateHeaderUI();
         saveLocalUser();
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
-          extraBottlesUsed: 1
+          extraBottlesUsed: 1,
+          extraBottles: currentUser.extraBottles,
+          extra_bottles: currentUser.extraBottles
         });
       }
     });
@@ -2590,12 +2636,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       if (res && res.success && res.user) {
-        currentUser.ton_balance = res.user.ton_balance;
+        currentUser.ton_balance = res.user.ton_balance !== undefined ? res.user.ton_balance : currentUser.ton_balance;
         if (res.user.all_colors_until !== undefined) currentUser.all_colors_until = res.user.all_colors_until;
         if (res.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = res.user.all_colors_purchased_at;
-        if (res.user.extra_bottles !== undefined) currentUser.extraBottles = res.user.extra_bottles;
-        if (res.user.hints !== undefined) currentUser.hints = res.user.hints;
-        if (res.user.undos !== undefined) currentUser.undos = res.user.undos;
+        const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+        if (serverB !== undefined) {
+          const addedB = itemId === 'bottles_pack_15' ? 15 : 0;
+          currentUser.extraBottles = Math.max((currentUser.extraBottles || 0) + addedB, Number(serverB || 0));
+          currentUser.extra_bottles = currentUser.extraBottles;
+        } else if (itemId === 'bottles_pack_15') {
+          currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
+          currentUser.extra_bottles = currentUser.extraBottles;
+        }
+
+        if (res.user.hints !== undefined) {
+          const addedH = itemId === 'hints_pack_20' ? 20 : 0;
+          currentUser.hints = Math.max((currentUser.hints || 0) + addedH, Number(res.user.hints || 0));
+        } else if (itemId === 'hints_pack_20') {
+          currentUser.hints = (currentUser.hints || 0) + 20;
+        }
+
+        if (res.user.undos !== undefined) {
+          const addedU = itemId === 'undos_pack_20' ? 20 : 0;
+          currentUser.undos = Math.max((currentUser.undos || 0) + addedU, Number(res.user.undos || 0));
+        } else if (itemId === 'undos_pack_20') {
+          currentUser.undos = (currentUser.undos || 0) + 20;
+        }
       } else {
         // Fallback for static GitHub Pages / client-side test
         currentUser.ton_balance = Number((currentBal - price).toFixed(4));
@@ -2607,6 +2673,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           currentUser.all_colors_purchased_at = now;
         } else if (itemId === 'bottles_pack_15') {
           currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
+          currentUser.extra_bottles = currentUser.extraBottles;
         } else if (itemId === 'hints_pack_20') {
           currentUser.hints = (currentUser.hints || 0) + 20;
         } else if (itemId === 'undos_pack_20') {
@@ -3043,6 +3110,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
+      currentUser.extra_bottles = currentUser.extraBottles;
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateHeaderUI();
       syncPlayerToCloud(currentUser);
@@ -3052,6 +3121,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         username: currentUser.username,
         isAdmin: true,
         extraBottles: 5
+      }).then(res => {
+        if (res && res.success && res.user) {
+          const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+          if (serverB !== undefined) {
+            currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+            currentUser.extra_bottles = currentUser.extraBottles;
+            normalizeUserObject(currentUser);
+            saveLocalUser();
+            updateHeaderUI();
+          }
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
@@ -3076,6 +3156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
       currentUser.hints = (currentUser.hints || 0) + 5;
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateHeaderUI();
       syncPlayerToCloud(currentUser);
@@ -3085,6 +3166,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         username: currentUser.username,
         isAdmin: true,
         hints: 5
+      }).then(res => {
+        if (res && res.success && res.user && res.user.hints !== undefined) {
+          currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
+          normalizeUserObject(currentUser);
+          saveLocalUser();
+          updateHeaderUI();
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
@@ -3097,6 +3185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
       currentUser.undos = (currentUser.undos || 0) + 5;
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateHeaderUI();
       syncPlayerToCloud(currentUser);
@@ -3106,6 +3195,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         username: currentUser.username,
         isAdmin: true,
         undos: 5
+      }).then(res => {
+        if (res && res.success && res.user && res.user.undos !== undefined) {
+          currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
+          normalizeUserObject(currentUser);
+          saveLocalUser();
+          updateHeaderUI();
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
@@ -3118,6 +3214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
       currentUser.reveals = (currentUser.reveals || 0) + 5;
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateHeaderUI();
       syncPlayerToCloud(currentUser);
@@ -3127,6 +3224,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         username: currentUser.username,
         isAdmin: true,
         reveals: 5
+      }).then(res => {
+        if (res && res.success && res.user && res.user.reveals !== undefined) {
+          currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
+          normalizeUserObject(currentUser);
+          saveLocalUser();
+          updateHeaderUI();
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
@@ -3166,8 +3270,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentUser.undos = (currentUser.undos || 0) + 10;
       currentUser.reveals = (currentUser.reveals || 0) + 10;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 10;
+      currentUser.extra_bottles = currentUser.extraBottles;
       const currentBal = parseFloat(currentUser.ton_balance || 0);
       currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
+      normalizeUserObject(currentUser);
       saveLocalUser();
       if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
       if (typeof updateShopUI === 'function') updateShopUI();
@@ -3183,6 +3289,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         reveals: 10,
         extraBottles: 10,
         tonBalance: 5.0
+      }).then(res => {
+        if (res && res.success && res.user) {
+          if (res.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
+          if (res.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
+          if (res.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
+          const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+          if (serverB !== undefined) {
+            currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+            currentUser.extra_bottles = currentUser.extraBottles;
+          }
+          normalizeUserObject(currentUser);
+          saveLocalUser();
+          updateHeaderUI();
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
@@ -3643,7 +3763,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
         else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
         else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
-        else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+        else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') {
+          currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+          currentUser.extra_bottles = currentUser.extraBottles;
+        }
 
         normalizeUserObject(currentUser);
         saveLocalUser();
@@ -3653,6 +3776,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         apiCall('/api/ad-reward', 'POST', {
           telegramId: currentUser.telegramId,
           rewardType
+        }).then(res => {
+          if (res && res.success && res.user) {
+            if (res.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
+            if (res.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
+            if (res.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
+            const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+            if (serverB !== undefined) {
+              currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+              currentUser.extra_bottles = currentUser.extraBottles;
+            }
+            normalizeUserObject(currentUser);
+            saveLocalUser();
+            updateHeaderUI();
+          }
         }).catch(() => {});
 
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');

@@ -166,7 +166,7 @@ function getUser(telegramId, defaultUserData = {}) {
 /**
  * Update user game progress
  */
-function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed = 0, undosUsed = 0, revealsUsed = 0, extraBottlesUsed = 0, shufflesUsed = 0, totalMoves = 0, firstName, username, photoUrl }) {
+function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed = 0, undosUsed = 0, revealsUsed = 0, extraBottlesUsed = 0, shufflesUsed = 0, totalMoves = 0, firstName, username, photoUrl, hints, undos, reveals, extraBottles, extra_bottles, shuffles }) {
   const user = getUser(telegramId, { first_name: firstName, username, photo_url: photoUrl });
   if (!user) return null;
 
@@ -174,11 +174,33 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
   const newCurrentLevel = currentLevel || user.current_level;
   const newStars = user.stars + (starsAdded || 0);
   const newCoins = Math.max(0, user.coins + (coinsAdded || 0));
-  const newHints = Math.max(0, user.hints - hintsUsed);
-  const newUndos = Math.max(0, user.undos - undosUsed);
-  const newReveals = Math.max(0, (user.reveals || 0) - revealsUsed);
-  const newExtraBottles = Math.max(0, (user.extra_bottles || 0) - extraBottlesUsed);
-  const newShuffles = Math.max(0, (user.shuffles || 0) - shufflesUsed);
+
+  let newHints = Math.max(0, user.hints - hintsUsed);
+  if (hints !== undefined && hints !== null) {
+    newHints = Math.max(newHints, Number(hints || 0));
+  }
+
+  let newUndos = Math.max(0, user.undos - undosUsed);
+  if (undos !== undefined && undos !== null) {
+    newUndos = Math.max(newUndos, Number(undos || 0));
+  }
+
+  let newReveals = Math.max(0, (user.reveals || 0) - revealsUsed);
+  if (reveals !== undefined && reveals !== null) {
+    newReveals = Math.max(newReveals, Number(reveals || 0));
+  }
+
+  let newExtraBottles = Math.max(0, (user.extra_bottles || 0) - extraBottlesUsed);
+  const targetBottles = extraBottles !== undefined ? extraBottles : extra_bottles;
+  if (targetBottles !== undefined && targetBottles !== null) {
+    newExtraBottles = Math.max(newExtraBottles, Number(targetBottles || 0));
+  }
+
+  let newShuffles = Math.max(0, (user.shuffles || 0) - shufflesUsed);
+  if (shuffles !== undefined && shuffles !== null) {
+    newShuffles = Math.max(newShuffles, Number(shuffles || 0));
+  }
+
   const newTotalMoves = user.total_moves + (totalMoves || 0);
 
   const stmt = db.prepare(`

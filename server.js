@@ -156,7 +156,7 @@ app.post('/api/user/init', (req, res) => {
  */
 app.post('/api/user/sync', (req, res) => {
   try {
-    const { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves } = req.body;
+    const { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves, hints, undos, reveals, extraBottles, extra_bottles, shuffles } = req.body;
 
     const id = telegramId || 'guest_dev_123';
     const updatedUser = db.updateUserProgress(id, {
@@ -172,7 +172,12 @@ app.post('/api/user/sync', (req, res) => {
       revealsUsed,
       extraBottlesUsed,
       shufflesUsed,
-      totalMoves
+      totalMoves,
+      hints,
+      undos,
+      reveals,
+      extraBottles: extraBottles !== undefined ? extraBottles : extra_bottles,
+      shuffles
     });
 
     // Also forward sync to global cloud bucket if real player
