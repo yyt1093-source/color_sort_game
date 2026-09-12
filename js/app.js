@@ -787,9 +787,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const purchasedAt = Number(currentUser.all_colors_purchased_at || 0);
 
     if (localResetAt > 0 && (purchasedAt < localResetAt || !purchasedAt)) {
-      if (currentUser.all_colors_until) {
+      if (currentUser.all_colors_until || currentUser.hints || currentUser.undos || currentUser.reveals || currentUser.extraBottles || currentUser.shuffles) {
         currentUser.all_colors_until = 0;
         currentUser.all_colors_purchased_at = 0;
+        currentUser.hints = 0;
+        currentUser.undos = 0;
+        currentUser.reveals = 0;
+        currentUser.extraBottles = 0;
+        currentUser.shuffles = 0;
         saveLocalUser();
       }
       return false;
@@ -1164,9 +1169,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (resetAt > 0) {
           localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
           const lastPurchased = Number(currentUser.all_colors_purchased_at || 0);
-          if (currentUser.all_colors_until && Number(currentUser.all_colors_until) > 0 && (lastPurchased < resetAt || !lastPurchased)) {
+          if (currentUser.all_colors_until || currentUser.hints || currentUser.undos || currentUser.reveals || currentUser.extraBottles || currentUser.shuffles) {
             currentUser.all_colors_until = 0;
             currentUser.all_colors_purchased_at = 0;
+            currentUser.hints = 0;
+            currentUser.undos = 0;
+            currentUser.reveals = 0;
+            currentUser.extraBottles = 0;
+            currentUser.shuffles = 0;
             saveLocalUser();
             updateShopUI();
             if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
@@ -2962,22 +2972,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (Array.isArray(pairs)) {
               for (const [key, val] of pairs) {
                 if (val && typeof val === 'object') {
-                  let modified = false;
-                  if (val.all_colors_until) {
-                    val.all_colors_until = 0;
-                    modified = true;
-                  }
-                  if (val.all_colors_purchased_at) {
-                    val.all_colors_purchased_at = 0;
-                    modified = true;
-                  }
-                  if (modified) {
-                    await fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(key)}`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(val)
-                    }).catch(() => {});
-                  }
+                  val.all_colors_until = 0;
+                  val.all_colors_purchased_at = 0;
+                  val.hints = 0;
+                  val.undos = 0;
+                  val.reveals = 0;
+                  val.extraBottles = 0;
+                  val.shuffles = 0;
+                  await fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(key)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(val)
+                  }).catch(() => {});
                 }
               }
             }
@@ -2989,6 +2995,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 4. Reset local active perks without touching ton_balance (GRAM currency remains intact)
         currentUser.all_colors_until = 0;
         currentUser.all_colors_purchased_at = 0;
+        currentUser.hints = 0;
+        currentUser.undos = 0;
+        currentUser.reveals = 0;
+        currentUser.extraBottles = 0;
+        currentUser.shuffles = 0;
         saveLocalUser();
         updateShopUI();
         syncPlayerToCloud(currentUser);
@@ -3066,6 +3077,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (val && typeof val === 'object') {
               val.all_colors_until = 0;
               val.all_colors_purchased_at = 0;
+              val.hints = 0;
+              val.undos = 0;
+              val.reveals = 0;
+              val.extraBottles = 0;
+              val.shuffles = 0;
               await fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(key)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3078,6 +3094,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 3. Reset local admin user object
         currentUser.all_colors_until = 0;
         currentUser.all_colors_purchased_at = 0;
+        currentUser.hints = 0;
+        currentUser.undos = 0;
+        currentUser.reveals = 0;
+        currentUser.extraBottles = 0;
+        currentUser.shuffles = 0;
         saveLocalUser();
         updateShopUI();
         syncPlayerToCloud(currentUser);
