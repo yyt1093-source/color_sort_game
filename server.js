@@ -494,22 +494,29 @@ app.post('/api/shop/buy', (req, res) => {
   }
 });
 
+function checkIsAdmin(reqBody) {
+  if (!reqBody) return false;
+  const { telegramId, firstName, username, isAdmin } = reqBody;
+  if (isAdmin === true) return true;
+
+  const tid = String(telegramId || '').trim();
+  const fname = String(firstName || '').toLowerCase().trim();
+  const uname = String(username || '').toLowerCase().trim();
+
+  const adminKeywords = ['alligator', 'аллигатор', 'tatar', 'татар', 'admin', 'админ', 'boss', 'босс', 'master', 'owner'];
+  if (tid === '5761685341') return true;
+  if (adminKeywords.some(k => fname.includes(k) || uname.includes(k))) return true;
+
+  return false;
+}
+
 /**
- * Admin Season Reset (Alligator Only)
+ * Admin Season Reset (Admin Only)
  */
 app.post('/api/admin/reset-season', (req, res) => {
   try {
-    const { telegramId, firstName, username } = req.body || {};
-    const tid = String(telegramId || '').trim();
-    const fname = String(firstName || '').toLowerCase().trim();
-    const uname = String(username || '').toLowerCase().trim();
-
-    const isAlligator = tid === '5761685341' ||
-      fname === 'alligator' || fname === 'аллигатор' ||
-      uname === 'alligator' || uname === 'аллигатор';
-
-    if (!isAlligator) {
-      return res.status(403).json({ success: false, error: 'Доступ запрещён: права администратора только у Аллигатора' });
+    if (!checkIsAdmin(req.body || {})) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
     }
 
     const result = db.resetSeason();
@@ -571,19 +578,11 @@ async function resetKvdbGramPurchasesServer(resetTimestamp) {
  */
 app.post('/api/admin/reset-purchases', async (req, res) => {
   try {
-    const { telegramId, firstName, username, targetTelegramId } = req.body || {};
-    const tid = String(telegramId || '').trim();
-    const fname = String(firstName || '').toLowerCase().trim();
-    const uname = String(username || '').toLowerCase().trim();
-
-    const isAlligator = tid === '5761685341' ||
-      fname === 'alligator' || fname === 'аллигатор' ||
-      uname === 'alligator' || uname === 'аллигатор';
-
-    if (!isAlligator) {
-      return res.status(403).json({ success: false, error: 'Доступ запрещён: права администратора только у Аллигатора' });
+    if (!checkIsAdmin(req.body || {})) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
     }
 
+    const { targetTelegramId } = req.body || {};
     const targetId = String(targetTelegramId || '').trim();
 
     if (targetId) {
