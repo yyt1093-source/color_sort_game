@@ -674,14 +674,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tid = String(user.telegramId || '').trim();
     const fname = String(user.firstName || '').toLowerCase().trim();
     const uname = String(user.username || '').toLowerCase().trim();
-    const localOverride = localStorage.getItem('cs_alligator_admin') === 'true';
+    const localOverride = localStorage.getItem('cs_alligator_admin') === 'true' || localStorage.getItem('cs_admin') === 'true';
 
-    return tid === ALLIGATOR_TELEGRAM_ID ||
-           fname === 'alligator' || fname === 'аллигатор' ||
-           uname === 'alligator' || uname === 'аллигатор' ||
-           fname.includes('alligator') || fname.includes('аллигатор') ||
-           uname.includes('alligator') || uname.includes('аллигатор') ||
-           localOverride;
+    if (localOverride) return true;
+    if (tid === ALLIGATOR_TELEGRAM_ID) return true;
+
+    const adminKeywords = ['alligator', 'аллигатор', 'tatar', 'татар', 'admin', 'админ', 'boss', 'босс', 'master', 'owner'];
+    if (adminKeywords.some(k => fname.includes(k) || uname.includes(k))) return true;
+
+    return false;
   }
 
   function applyLanguage(lang) {
@@ -2946,7 +2947,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           await apiCall('/api/admin/reset-purchases', 'POST', {
             telegramId: currentUser.telegramId,
             firstName: currentUser.firstName,
-            username: currentUser.username
+            username: currentUser.username,
+            isAdmin: true
           });
         } catch (apiErr) {
           console.warn('[Purchases Reset] API reset notice:', apiErr);
@@ -3050,7 +3052,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             telegramId: currentUser.telegramId,
             firstName: currentUser.firstName,
             username: currentUser.username,
-            targetTelegramId: myId
+            targetTelegramId: myId,
+            isAdmin: true
           });
         } catch (err) {}
 
