@@ -163,6 +163,30 @@ body {
   transform: scale(0.9);
 }
 
+.header-ton-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(14, 165, 233, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #38bdf8;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.header-ton-pill:active {
+  transform: scale(0.94);
+}
+
+.header-ton-pill .pill-gem {
+  font-size: 0.9rem;
+}
+
 /* Stats Bar */
 .stats-bar {
   display: flex;

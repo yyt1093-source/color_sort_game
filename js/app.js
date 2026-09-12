@@ -60,11 +60,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       let secondsLeft = 5;
       if (closeBtn) {
-        closeBtn.disabled = true;
-        closeBtn.style.opacity = '0.35';
+        closeBtn.disabled = false;
+        closeBtn.style.opacity = '0.7';
       }
       if (timerText) timerText.textContent = `⏳ ${secondsLeft} сек`;
-      if (progressBar) progressBar.style.width = '0%';
+      if (progressBar) {
+        progressBar.style.transition = 'width 0.6s ease-out';
+        progressBar.style.width = '0%';
+      }
       if (statusText) statusText.textContent = 'Пожалуйста, просмотрите рекламу до конца для получения бонуса';
 
       const interval = setInterval(() => {
@@ -99,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         closeBtn.onclick = () => {
           if (secondsLeft > 0) {
             if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('warning');
-            alert('Досмотрите видео до конца, чтобы получить бонус!');
+            showInfoModal('📢', 'Реклама', 'Пожалуйста, досмотрите видео до конца, чтобы получить бонус!');
           } else {
             clearInterval(interval);
             adModalEl.classList.add('hidden');
@@ -154,9 +157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(Вы)',
       maxLevelLabel: (lvl) => `Макс. уровень: ${lvl}`,
       levelPrefix: 'Уровень',
-      startBadge: '',
-      startDesc: '',
-      startHint: '',
       winTitle: (lvl) => `Уровень ${lvl} пройден! 🎉`,
       winSubtext: (lvl) => `Все цвета успешно собраны! Переходим к уровню ${lvl}...`,
       nextLevelBtn: 'Следующий уровень 🚀',
@@ -168,6 +168,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       adModalDesc: 'Посмотрите короткие видео и получите бесплатные бонусы',
       adModalBottleTitle: 'Пустая колба',
       adModalBottleDesc: '+1 пустая колба в запас',
+      adModalHintsTitle: '+1 подсказка',
+      adModalHintsDesc: '1 точная подсказка хода',
+      adModalUndosTitle: '+1 отмена хода',
+      adModalUndosDesc: '1 бесплатная отмена хода',
+      adModalRevealTitle: 'Открыть цвета',
+      adModalRevealDesc: 'Открыть 1 баночку со всеми цветами',
       noMovesTitle: 'Нет ходов',
       noMovesDesc: 'Вы ещё не сделали ни одного хода на этом уровне для отмены.',
       noHintDesc: 'Подсказка не найдена на текущем этапе.',
@@ -181,6 +187,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       adStarting: '⏳ Запуск...',
       adClaimed: '✅ Получено! (+1)',
       adminBadge: '👑 Админ',
+      adminPanelTitle: 'Панель Администратора',
+      adminPanelSub: 'Доступно только Аллигатору',
       adminBoostersTitle: '⚡ Бесплатные функции (Без рекламы):',
       adminAddBottle: '+5 Пустых колб',
       adminAddBoardBottle: '+1 Колба на поле',
@@ -196,7 +204,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON добавлено (Баланс: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ Все бонусы пополнены (+10 к каждому)!',
-      adminResetPurchasesBtnLabel: 'Сбросить все покупки за GRAM',
+      adminResetPurchasesTitle: '💎 Управление покупками за TON (Только Admin)',
+      adminResetPurchasesDesc: 'Аннулировать действующие покупки преимуществ за TON (например, «Все краски открыты») без списания баланса с кошельков игроков.',
+      adminResetSelfPurchasesBtnLabel: '👑 Сбросить только мой аккаунт',
+      adminResetPurchasesBtnLabel: '🌐 Сбросить ВСЕМ игрокам в игре',
+      adminResetSeasonDesc: 'Сброс сезона полностью удаляет всю информацию, обнуляет глобальный лидерборд, уровни, монеты и награды всех игроков.',
+      adminResetSeasonBtnLabel: '🔥 Сбросить сезон (Всё в ноль)',
       adminResetPurchasesSuccessTitle: '💎 Покупки аннулированы!',
       adminResetPurchasesSuccessDesc: 'Все действующие преимущества за GRAM из сундучка у всех игроков успешно аннулированы. Балансы кошельков не изменились.',
       adminResetSuccessTitle: '💥 Сезон сброшен!',
@@ -206,7 +219,49 @@ document.addEventListener('DOMContentLoaded', async () => {
       shareReferralTelegramBtn: '📢 Пригласить в Telegram',
       copyReferralLinkBtn: '📋 Скопировать ссылку',
       referralClaimTitle: 'Доступны награды!',
-      claimAllReferralsBtn: 'Забрать всё'
+      claimAllReferralsBtn: 'Забрать всё',
+      refUnitLabel: 'друзей',
+      referralsListHeader: 'Приглашённые друзья:',
+      tonModalTitle: 'Пополнение баланса TON',
+      tonModalSubtitle: 'Выберите сумму и любой удобный криптокошелек',
+      tonBalanceSub: 'Ваш текущий баланс TON:',
+      tonWalletStatusSub: 'Статус кошелька:',
+      tonWalletDisconnected: 'Не подключен',
+      tonWalletConnected: 'Активен',
+      tonConnectBtnLabel: 'Подключить TON Кошелёк',
+      tonAmountTitle: 'Выберите сумму пополнения:',
+      tonRewardLabel: 'Зачисление на баланс GRAM:',
+      tonChoiceHeader: 'Выберите кошелёк для оплаты:',
+      tonInstTitle: 'Как оплатить через Telegram Wallet (@wallet):',
+      tonInstStep1: '1. Нажмите на @wallet выше (комментарий автоматически скопируется).',
+      tonInstStep2: '2. В боте выберите Отправить ➔ На сторонний кошелёк (TON).',
+      tonAddrSub: 'Адрес TON:',
+      tonCopyLabel: 'Копия',
+      tonCopiedLabel: 'Скопировано',
+      tonVerifyBtn: 'Проверить оплату',
+      shopModalTitle: 'Сундучок преимуществ',
+      shopModalSubtitle: 'Покупайте улучшения в игре за GRAM',
+      shopBalanceSub: 'Баланс в кошельке:',
+      shopTopUpBtn: '+ Пополнить',
+      shopActiveTitle: 'Все краски открыты: АКТИВНО',
+      shopSectionDivider: 'Бустеры за криптовалюту GRAM',
+      shopFeaturedTitle: 'Все краски открыты',
+      shopFeaturedDesc: 'Все цвета во всех бутылочках открыты сразу с самого начала каждого уровня! Скрытые слои с вопросом «?» полностью убраны.',
+      shopBottlesTitle: '+15 Пустых колб',
+      shopBottlesDesc: 'Запас дополнительных пустых колб для прохождения сложных уровней.',
+      shopHintsTitle: '+20 Подсказок',
+      shopHintsDesc: 'Показывает лучший следующий ход при затруднении.',
+      shopUndosTitle: '+20 Отмен хода',
+      shopUndosDesc: 'Возвращает ход назад в любой критической ситуации.',
+      shopBuyGram: (price) => `Купить за ${price} GRAM`,
+      shopActivateGram: (price) => `Активировать (${price} GRAM)`,
+      shopExtendGram: (price) => `Продлить (+15 дн.) — ${price} GRAM`,
+      resetPurchasesModalTitle: 'Сброс покупок за TON',
+      resetPurchasesWarningLead: 'Внимание! Будут аннулированы действующие покупки:',
+      confirmResetPurchasesBtnLabel: '💎 Сбросить покупки',
+      resetSeasonModalTitle: 'Сброс сезона',
+      resetSeasonWarningLead: 'Внимание! Это действие необратимо:',
+      confirmResetSeasonBtnLabel: '🔥 Сбросить всё'
     },
     uk: {
       langName: 'Українська',
@@ -219,7 +274,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Відміна',
       hintBtn: 'Підказка',
       revealBtn: 'Відкрити кольори',
-      extraBottleBtn: '+1 Колба',
+      extraBottleBtn: 'Порожня колба',
       adBonusBtn: 'Реклама',
       leaderboardTitle: '🏆 Таблиця лідерів',
       leaderboardLive: '24/7 LIVE',
@@ -229,9 +284,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(Ви)',
       maxLevelLabel: (lvl) => `Макс. рівень: ${lvl}`,
       levelPrefix: 'Рівень',
-      startBadge: '',
-      startDesc: '',
-      startHint: '',
       winTitle: (lvl) => `Рівень ${lvl} пройдено! 🎉`,
       winSubtext: (lvl) => `Всі кольори успішно зібрані! Переходимо до рівня ${lvl}...`,
       nextLevelBtn: 'Наступний рівень 🚀',
@@ -241,8 +293,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       confirmRestartBtn: 'Рестарт',
       adModalTitle: '🎁 Реклама',
       adModalDesc: 'Подивіться коротке відео та отримайте безкоштовні бонуси',
-      adModalBottleTitle: 'Доп. порожня колба',
+      adModalBottleTitle: 'Порожня колба',
       adModalBottleDesc: '+1 порожня колба в запас',
+      adModalHintsTitle: '+1 підказка',
+      adModalHintsDesc: '1 точна підказка ходу',
+      adModalUndosTitle: '+1 відміна ходу',
+      adModalUndosDesc: '1 безкоштовна відміна ходу',
+      adModalRevealTitle: 'Відкрити кольори',
+      adModalRevealDesc: 'Відкрити 1 баночку з усіма кольорами',
       noMovesTitle: 'Немає ходів',
       noMovesDesc: 'Ви ще не зробили жодного ходу на цьому рівні для скасування.',
       noHintDesc: 'Підказку не знайдено на поточному етапі.',
@@ -256,6 +314,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       adStarting: '⏳ Запуск...',
       adClaimed: '✅ Отримано! (+1)',
       adminBadge: '👑 Адмін',
+      adminPanelTitle: 'Панель Адміністратора',
+      adminPanelSub: 'Доступно тільки Алігатору',
       adminBoostersTitle: '⚡ Безкоштовні функції (Без реклами):',
       adminAddBottle: '+5 Порожніх колб',
       adminAddBoardBottle: '+1 Колба на полі',
@@ -265,23 +325,70 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddCoins: '+5 TON',
       adminAddAll: 'Поповнити ВСЕ одразу (+10 до всіх бонусів)',
       adminBottleAddedMsg: (count) => `🧪 +5 Порожніх колб додано (Всього: ${count})`,
-      adminBoardBottleAddedMsg: '🧪 Порожня колба додана на поле!',
+      adminBoardBottleAddedMsg: '🧪 Порожня колба додана на полі!',
       adminHintsAddedMsg: (count) => `💡 +5 Підказок додано (Всього: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Відмін ходу додано (Всього: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Відкриттів додано (Всього: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON додано (Баланс: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ Всі бонуси поповнено (+10 до кожного)!',
-      adminResetPurchasesBtnLabel: 'Скинути всі покупки за GRAM',
+      adminResetPurchasesTitle: '💎 Управління покупками за TON (Тільки Admin)',
+      adminResetPurchasesDesc: 'Анулювати діючі покупки переваг за TON без списання балансу з гаманців гравців.',
+      adminResetSelfPurchasesBtnLabel: '👑 Скинути тільки мій акаунт',
+      adminResetPurchasesBtnLabel: '🌐 Скинути ВСІМ гравцям в грі',
+      adminResetSeasonDesc: 'Скидання сезону повністю видаляє всю інформацію, обнуляє глобальний лідерборд, рівні та монети всіх гравців.',
+      adminResetSeasonBtnLabel: '🔥 Скинути сезон (Все в нуль)',
       adminResetPurchasesSuccessTitle: '💎 Покупки анульовано!',
       adminResetPurchasesSuccessDesc: 'Всі діючі переваги за GRAM із скриньки у всіх гравців успішно анульовані. Баланси гаманців не змінилися.',
       adminResetSuccessTitle: '💥 Сезон скинуто!',
-      adminResetSuccessDesc: 'Всі данные гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!',
+      adminResetSuccessDesc: 'Всі дані гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!',
       referralSectionTitle: 'Color Sort',
       referralSectionSub: 'За кожного запрошеного — 5 відмін ходу, 5 підказок, 5 відкриттів кольору та 5 порожніх баночок',
       shareReferralTelegramBtn: '📢 Запросити в Telegram',
       copyReferralLinkBtn: '📋 Скопіювати посилання',
       referralClaimTitle: 'Доступні нагороди!',
-      claimAllReferralsBtn: 'Забрати все'
+      claimAllReferralsBtn: 'Забрати все',
+      refUnitLabel: 'друзів',
+      referralsListHeader: 'Запрошені друзі:',
+      tonModalTitle: 'Поповнення балансу TON',
+      tonModalSubtitle: 'Виберіть суму та будь-який зручний криптогаманець',
+      tonBalanceSub: 'Ваш поточний баланс TON:',
+      tonWalletStatusSub: 'Статус гаманця:',
+      tonWalletDisconnected: 'Не підключений',
+      tonWalletConnected: 'Активний',
+      tonConnectBtnLabel: 'Підключити TON Гаманець',
+      tonAmountTitle: 'Виберіть суму поповнення:',
+      tonRewardLabel: 'Зарахування на баланс GRAM:',
+      tonChoiceHeader: 'Виберіть гаманець для оплати:',
+      tonInstTitle: 'Як оплатити через Telegram Wallet (@wallet):',
+      tonInstStep1: '1. Натисніть на @wallet вище (коментар буде скопійовано).',
+      tonInstStep2: '2. В ботові виберіть Надіслати ➔ На сторонній гаманець (TON).',
+      tonAddrSub: 'Адреса TON:',
+      tonCopyLabel: 'Копія',
+      tonCopiedLabel: 'Скопійовано',
+      tonVerifyBtn: 'Перевірити оплату',
+      shopModalTitle: 'Скринька переваг',
+      shopModalSubtitle: 'Купуйте покращення в грі за GRAM',
+      shopBalanceSub: 'Баланс у гаманці:',
+      shopTopUpBtn: '+ Поповнити',
+      shopActiveTitle: 'Всі кольори відкриті: АКТИВНО',
+      shopSectionDivider: 'Бустери за криптовалюту GRAM',
+      shopFeaturedTitle: 'Всі кольори відкриті',
+      shopFeaturedDesc: 'Всі кольори у всіх пляшечках відкриті одразу з самого початку кожного рівня! Приховані шари з знаком «?» повністю прибрано.',
+      shopBottlesTitle: '+15 Порожніх колб',
+      shopBottlesDesc: 'Запас додаткових порожніх колб для проходження складних рівнів.',
+      shopHintsTitle: '+20 Підказок',
+      shopHintsDesc: 'Показує кращий наступний хід при складнощах.',
+      shopUndosTitle: '+20 Відмін ходу',
+      shopUndosDesc: 'Повертає хід назад у будь-якій критичній ситуації.',
+      shopBuyGram: (price) => `Купити за ${price} GRAM`,
+      shopActivateGram: (price) => `Активувати (${price} GRAM)`,
+      shopExtendGram: (price) => `Продовжити (+15 дн.) — ${price} GRAM`,
+      resetPurchasesModalTitle: 'Скидання покупок за TON',
+      resetPurchasesWarningLead: 'Увага! Будуть анульовані діючі покупки:',
+      confirmResetPurchasesBtnLabel: '💎 Скинути покупки',
+      resetSeasonModalTitle: 'Скидання сезону',
+      resetSeasonWarningLead: 'Увага! Ця дія незворотна:',
+      confirmResetSeasonBtnLabel: '🔥 Скинути все'
     },
     en: {
       langName: 'English',
@@ -294,7 +401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Undo',
       hintBtn: 'Hint',
       revealBtn: 'Reveal Colors',
-      extraBottleBtn: '+1 Bottle',
+      extraBottleBtn: 'Empty Bottle',
       adBonusBtn: 'Rewards',
       leaderboardTitle: '🏆 Leaderboard',
       leaderboardLive: '24/7 LIVE',
@@ -304,9 +411,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(You)',
       maxLevelLabel: (lvl) => `Max Level: ${lvl}`,
       levelPrefix: 'Level',
-      startBadge: '',
-      startDesc: '',
-      startHint: '',
       winTitle: (lvl) => `Level ${lvl} Completed! 🎉`,
       winSubtext: (lvl) => `All colors sorted! Advancing to Level ${lvl}...`,
       nextLevelBtn: 'Next Level 🚀',
@@ -316,8 +420,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       confirmRestartBtn: 'Restart',
       adModalTitle: '🎁 Rewards',
       adModalDesc: 'Watch short video ads to claim free boosters',
-      adModalBottleTitle: 'Extra Empty Bottle',
+      adModalBottleTitle: 'Empty Bottle',
       adModalBottleDesc: '+1 empty bottle to stock',
+      adModalHintsTitle: '+1 Hint',
+      adModalHintsDesc: '1 precise move hint',
+      adModalUndosTitle: '+1 Undo',
+      adModalUndosDesc: '1 free move undo',
+      adModalRevealTitle: 'Reveal Colors',
+      adModalRevealDesc: 'Reveal all colors in 1 jar',
       noMovesTitle: 'No moves',
       noMovesDesc: 'You have not made any moves on this level to undo yet.',
       noHintDesc: 'No moves found at this stage.',
@@ -331,6 +441,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       adStarting: '⏳ Starting...',
       adClaimed: '✅ Received! (+1)',
       adminBadge: '👑 Admin',
+      adminPanelTitle: 'Admin Panel',
+      adminPanelSub: 'Alligator Access Only',
       adminBoostersTitle: '⚡ Free Admin Perks (No Ads):',
       adminAddBottle: '+5 Empty Bottles',
       adminAddBoardBottle: '+1 Bottle on Board',
@@ -346,7 +458,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Reveals added (Total: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON added (Balance: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ All boosters replenished (+10 to each)!',
-      adminResetPurchasesBtnLabel: 'Reset all GRAM purchases',
+      adminResetPurchasesTitle: '💎 Manage TON Purchases (Admin Only)',
+      adminResetPurchasesDesc: 'Annul active TON perks (e.g. All Colors Unlocked) without touching player wallet balances.',
+      adminResetSelfPurchasesBtnLabel: '👑 Reset Only My Account',
+      adminResetPurchasesBtnLabel: '🌐 Reset ALL Players Purchases',
+      adminResetSeasonDesc: 'Season reset completely wipes all player data, scores, levels, coins, and global leaderboard.',
+      adminResetSeasonBtnLabel: '🔥 Reset Season (Wipe Everything)',
       adminResetPurchasesSuccessTitle: '💎 Purchases Annulled!',
       adminResetPurchasesSuccessDesc: 'All active GRAM perks from the chest have been annulled for all players. Wallet balances remain untouched.',
       adminResetSuccessTitle: '💥 Season Reset!',
@@ -356,7 +473,49 @@ document.addEventListener('DOMContentLoaded', async () => {
       shareReferralTelegramBtn: '📢 Invite in Telegram',
       copyReferralLinkBtn: '📋 Copy Referral Link',
       referralClaimTitle: 'Rewards Available!',
-      claimAllReferralsBtn: 'Claim All'
+      claimAllReferralsBtn: 'Claim All',
+      refUnitLabel: 'friends',
+      referralsListHeader: 'Invited Friends:',
+      tonModalTitle: 'TON Balance Top-Up',
+      tonModalSubtitle: 'Select amount and any convenient crypto wallet',
+      tonBalanceSub: 'Your current TON balance:',
+      tonWalletStatusSub: 'Wallet Status:',
+      tonWalletDisconnected: 'Disconnected',
+      tonWalletConnected: 'Connected',
+      tonConnectBtnLabel: 'Connect TON Wallet',
+      tonAmountTitle: 'Select Top-Up Amount:',
+      tonRewardLabel: 'Credited to GRAM balance:',
+      tonChoiceHeader: 'Select Payment Wallet:',
+      tonInstTitle: 'How to pay via Telegram Wallet (@wallet):',
+      tonInstStep1: '1. Tap @wallet above (memo is automatically copied).',
+      tonInstStep2: '2. In bot select Send ➔ To external wallet (TON).',
+      tonAddrSub: 'TON Address:',
+      tonCopyLabel: 'Copy',
+      tonCopiedLabel: 'Copied',
+      tonVerifyBtn: 'Verify Payment',
+      shopModalTitle: 'Perks Chest Shop',
+      shopModalSubtitle: 'Buy in-game upgrades for GRAM',
+      shopBalanceSub: 'Wallet Balance:',
+      shopTopUpBtn: '+ Top Up',
+      shopActiveTitle: 'All Colors Unlocked: ACTIVE',
+      shopSectionDivider: 'Boosters for GRAM cryptocurrency',
+      shopFeaturedTitle: 'All Colors Unlocked',
+      shopFeaturedDesc: 'All colors in all bottles are revealed immediately from the start of every level! Hidden question mark layers are removed.',
+      shopBottlesTitle: '+15 Empty Bottles',
+      shopBottlesDesc: 'Stock of extra empty bottles for solving tricky levels.',
+      shopHintsTitle: '+20 Hints',
+      shopHintsDesc: 'Shows the best next move when stuck.',
+      shopUndosTitle: '+20 Undos',
+      shopUndosDesc: 'Rewinds a move back in any tricky situation.',
+      shopBuyGram: (price) => `Buy for ${price} GRAM`,
+      shopActivateGram: (price) => `Activate (${price} GRAM)`,
+      shopExtendGram: (price) => `Extend (+15 days) — ${price} GRAM`,
+      resetPurchasesModalTitle: 'TON Purchases Reset',
+      resetPurchasesWarningLead: 'Warning! Active purchases will be annulled:',
+      confirmResetPurchasesBtnLabel: '💎 Reset Purchases',
+      resetSeasonModalTitle: 'Season Reset',
+      resetSeasonWarningLead: 'Warning! This action is irreversible:',
+      confirmResetSeasonBtnLabel: '🔥 Wipe Everything'
     },
     de: {
       langName: 'Deutsch',
@@ -369,7 +528,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Zurück',
       hintBtn: 'Hinweis',
       revealBtn: 'Farben aufdecken',
-      extraBottleBtn: '+1 Flasche',
+      extraBottleBtn: 'Leere Flasche',
       adBonusBtn: 'Boni',
       leaderboardTitle: '🏆 Bestenliste',
       leaderboardLive: '24/7 LIVE',
@@ -379,9 +538,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(Du)',
       maxLevelLabel: (lvl) => `Max. Stufe: ${lvl}`,
       levelPrefix: 'Stufe',
-      startBadge: '',
-      startDesc: '',
-      startHint: '',
       winTitle: (lvl) => `Stufe ${lvl} geschafft! 🎉`,
       winSubtext: (lvl) => `Alle Farben sortiert! Weiter zu Stufe ${lvl}...`,
       nextLevelBtn: 'Nächste Stufe 🚀',
@@ -393,6 +549,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       adModalDesc: 'Schau kurze Videos an, um kostenlose Boni zu erhalten',
       adModalBottleTitle: 'Zusatz-Flasche',
       adModalBottleDesc: '+1 leere Flasche auf Vorrat',
+      adModalHintsTitle: '+1 Hinweis',
+      adModalHintsDesc: '1 präziser Hinweiszug',
+      adModalUndosTitle: '+1 Zug zurück',
+      adModalUndosDesc: '1 kostenloses Zurücknehmen',
+      adModalRevealTitle: 'Farben aufdecken',
+      adModalRevealDesc: 'Alle Farben in 1 Flasche aufdecken',
       noMovesTitle: 'Keine Züge',
       noMovesDesc: 'Du hast in diesem Level noch keine Züge gemacht.',
       noHintDesc: 'Keine Züge im aktuellen Zustand gefunden.',
@@ -406,6 +568,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       adStarting: '⏳ Startet...',
       adClaimed: '✅ Erhalten! (+1)',
       adminBadge: '👑 Admin',
+      adminPanelTitle: 'Admin-Panel',
+      adminPanelSub: 'Nur für Alligator verfügbar',
       adminBoostersTitle: '⚡ Kostenlose Admin-Vorteile (Keine Werbung):',
       adminAddBottle: '+5 Leere Flaschen',
       adminAddBoardBottle: '+1 Flasche aufs Feld',
@@ -421,7 +585,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Aufdeckungen hinzugefügt (Gesamt: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON hinzugefügt (Guthaben: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ Alle Boni aufgefüllt (+10 auf alle)!',
-      adminResetPurchasesBtnLabel: 'Alle GRAM-Käufe zurücksetzen',
+      adminResetPurchasesTitle: '💎 TON-Käufe verwalten (Nur Admin)',
+      adminResetPurchasesDesc: 'Aktive TON-Vorteile annullieren, ohne das Wallet-Guthaben der Spieler zu berühren.',
+      adminResetSelfPurchasesBtnLabel: '👑 Nur mein Konto zurücksetzen',
+      adminResetPurchasesBtnLabel: '🌐 Käufe aller Spieler zurücksetzen',
+      adminResetSeasonDesc: 'Saison-Zurücksetzung löscht alle Spielerdaten, Ergebnisse, Stufen und die Bestenliste.',
+      adminResetSeasonBtnLabel: '🔥 Saison zurücksetzen (Alles auf 0)',
       adminResetPurchasesSuccessTitle: '💎 Käufe annulliert!',
       adminResetPurchasesSuccessDesc: 'Alle aktiven GRAM-Vorteile aus der Truhe wurden für alle Spieler annulliert. Wallet-Guthaben bleiben unberührt.',
       adminResetSuccessTitle: '💥 Saison zurückgesetzt!',
@@ -431,7 +600,49 @@ document.addEventListener('DOMContentLoaded', async () => {
       shareReferralTelegramBtn: '📢 In Telegram einladen',
       copyReferralLinkBtn: '📋 Link kopieren',
       referralClaimTitle: 'Belohnungen verfügbar!',
-      claimAllReferralsBtn: 'Alles abholen'
+      claimAllReferralsBtn: 'Alles abholen',
+      refUnitLabel: 'Freunde',
+      referralsListHeader: 'Eingeladene Freunde:',
+      tonModalTitle: 'TON-Guthaben aufladen',
+      tonModalSubtitle: 'Wähle den Betrag und ein beliebiges Wallet',
+      tonBalanceSub: 'Dein aktuelles TON-Guthaben:',
+      tonWalletStatusSub: 'Wallet-Status:',
+      tonWalletDisconnected: 'Nicht verbunden',
+      tonWalletConnected: 'Verbunden',
+      tonConnectBtnLabel: 'TON-Wallet verbinden',
+      tonAmountTitle: 'Einzahlungsbetrag auswählen:',
+      tonRewardLabel: 'Gutschrift auf GRAM-Konto:',
+      tonChoiceHeader: 'Zahlungswallet auswählen:',
+      tonInstTitle: 'Anleitung für Telegram Wallet (@wallet):',
+      tonInstStep1: '1. Klicke oben auf @wallet (Memo wird kopiert).',
+      tonInstStep2: '2. Im Bot wählen: Senden ➔ Externe Wallet (TON).',
+      tonAddrSub: 'TON-Adresse:',
+      tonCopyLabel: 'Kopieren',
+      tonCopiedLabel: 'Kopiert',
+      tonVerifyBtn: 'Zahlung prüfen',
+      shopModalTitle: 'Vorteils-Truhe',
+      shopModalSubtitle: 'Kaufe Spiel-Upgrades für GRAM',
+      shopBalanceSub: 'Wallet-Guthaben:',
+      shopTopUpBtn: '+ Aufladen',
+      shopActiveTitle: 'Alle Farben aufgedeckt: AKTIV',
+      shopSectionDivider: 'Booster für GRAM-Kryptowährung',
+      shopFeaturedTitle: 'Alle Farben aufgedeckt',
+      shopFeaturedDesc: 'Alle Farben in allen Flaschen werden zu Beginn jedes Levels sofort aufgedeckt! Versteckte Fragezeichen-Schichten werden entfernt.',
+      shopBottlesTitle: '+15 Leere Flaschen',
+      shopBottlesDesc: 'Vorrat an leeren Flaschen für schwierige Level.',
+      shopHintsTitle: '+20 Hinweise',
+      shopHintsDesc: 'Zeigt den besten nächsten Zug bei Schwierigkeiten.',
+      shopUndosTitle: '+20 Züge zurück',
+      shopUndosDesc: 'Macht einen Zug in jeder Situation rückgängig.',
+      shopBuyGram: (price) => `Kaufen für ${price} GRAM`,
+      shopActivateGram: (price) => `Aktivieren (${price} GRAM)`,
+      shopExtendGram: (price) => `Verlängern (+15 Tage) — ${price} GRAM`,
+      resetPurchasesModalTitle: 'TON-Käufe zurücksetzen',
+      resetPurchasesWarningLead: 'Achtung! Aktive Käufe werden annulliert:',
+      confirmResetPurchasesBtnLabel: '💎 Käufe zurücksetzen',
+      resetSeasonModalTitle: 'Saison zurücksetzen',
+      resetSeasonWarningLead: 'Achtung! Diese Aktion kann nicht rückgängig gemacht werden:',
+      confirmResetSeasonBtnLabel: '🔥 Alles zurücksetzen'
     },
     lt: {
       langName: 'Lietuvių',
@@ -444,7 +655,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       undoBtn: 'Atšaukti',
       hintBtn: 'Užuomina',
       revealBtn: 'Atskleisti spalvas',
-      extraBottleBtn: '+1 Buteliukas',
+      extraBottleBtn: 'Tuščias buteliukas',
       adBonusBtn: 'Premijos',
       leaderboardTitle: '🏆 Lyderių lentelė',
       leaderboardLive: '24/7 LIVE',
@@ -454,9 +665,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       youTag: '(Jūs)',
       maxLevelLabel: (lvl) => `Maks. lygis: ${lvl}`,
       levelPrefix: 'Lygis',
-      startBadge: '',
-      startDesc: '',
-      startHint: '',
       winTitle: (lvl) => `Lygis ${lvl} įveiktas! 🎉`,
       winSubtext: (lvl) => `Visos spalvos surūšiuotos! Pereinama į lygį ${lvl}...`,
       nextLevelBtn: 'Kitas lygis 🚀',
@@ -468,6 +676,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       adModalDesc: 'Žiūrėkite trumpus vaizdo įrašus ir gaukite nemokamas premijas',
       adModalBottleTitle: 'Papildomas buteliukas',
       adModalBottleDesc: '+1 tuščias buteliukas į atsargas',
+      adModalHintsTitle: '+1 užuomina',
+      adModalHintsDesc: '1 tiksli užuomina',
+      adModalUndosTitle: '+1 atšaukimas',
+      adModalUndosDesc: '1 nemokamas atšaukimas',
+      adModalRevealTitle: 'Atskleisti spalvas',
+      adModalRevealDesc: 'Atskleisti 1 buteliuko spalvas',
       noMovesTitle: 'Nėra ėjimų',
       noMovesDesc: 'Šiame lygyje dar neatlikote nė vieno ėjimo.',
       noHintDesc: 'Šiame etape ėjimų nerasta.',
@@ -481,6 +695,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       adStarting: '⏳ Paleidžiama...',
       adClaimed: '✅ Gauta! (+1)',
       adminBadge: '👑 Admin',
+      adminPanelTitle: 'Administratoriaus skydelis',
+      adminPanelSub: 'Prieinama tik Aligatoriui',
       adminBoostersTitle: '⚡ Nemokamos administratoriaus funkcijos (Be reklamos):',
       adminAddBottle: '+5 Tušti buteliukai',
       adminAddBoardBottle: '+1 Buteliukas lentoje',
@@ -496,8 +712,64 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminRevealsAddedMsg: (count) => `🔮 +5 Atskleidimai pridėti (Iš viso: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON pridėta (Likutis: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ Visi bonusai papildyti (+10 kiekvienam)!',
+      adminResetPurchasesTitle: '💎 Valdyti TON pirkimus (Tik Admin)',
+      adminResetPurchasesDesc: 'Anuliuoti aktyvius TON pirkimus nepalietus žaidėjų piniginės balanso.',
+      adminResetSelfPurchasesBtnLabel: '👑 Atstatyti tik mano paskyrą',
+      adminResetPurchasesBtnLabel: '🌐 Atstatyti visų žaidėjų pirkimus',
+      adminResetSeasonDesc: 'Sezono atstatymas ištrina visus žaidėjų duomenis, lygius ir lyderių lentelę.',
+      adminResetSeasonBtnLabel: '🔥 Atstatyti sezoną (Viską į nulį)',
+      adminResetPurchasesSuccessTitle: '💎 Pirkimai anuliuoti!',
+      adminResetPurchasesSuccessDesc: 'Visi aktyvūs GRAM privalumai iš skrynios anuliuoti. Piniginės balansai nepakito.',
       adminResetSuccessTitle: '💥 Sezonas atstatytas!',
-      adminResetSuccessDesc: 'Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!'
+      adminResetSuccessDesc: 'Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!',
+      referralSectionTitle: 'Color Sort',
+      referralSectionSub: 'Už kiekvieną pakviestąjį — 5 atšaukimai, 5 užuominos, 5 spalvų atskleidimai ir 5 tušti indai',
+      shareReferralTelegramBtn: '📢 Pakviesti į Telegram',
+      copyReferralLinkBtn: '📋 Kopijuoti nuorodą',
+      referralClaimTitle: 'Apdovanojimai pasiekiami!',
+      claimAllReferralsBtn: 'Pasiimti viską',
+      refUnitLabel: 'draugų',
+      referralsListHeader: 'Pakviesti draugai:',
+      tonModalTitle: 'TON balanso papildymas',
+      tonModalSubtitle: 'Pasirinkite sumą ir patogią kriptovaliutų piniginę',
+      tonBalanceSub: 'Jūsų dabartinis TON balansas:',
+      tonWalletStatusSub: 'Piniginės būsena:',
+      tonWalletDisconnected: 'Neprijungta',
+      tonWalletConnected: 'Aktyvi',
+      tonConnectBtnLabel: 'Prijungti TON piniginę',
+      tonAmountTitle: 'Pasirinkite papildymo sumą:',
+      tonRewardLabel: 'Įskaitymas į GRAM balansą:',
+      tonChoiceHeader: 'Pasirinkite mokėjimo piniginę:',
+      tonInstTitle: 'Kaip mokėti per Telegram Wallet (@wallet):',
+      tonInstStep1: '1. Spustelėkite @wallet viršuje (komentaras nukopijuojamas).',
+      tonInstStep2: '2. Bote pasirinkite Siųsti ➔ Į išorinę piniginę (TON).',
+      tonAddrSub: 'TON adresas:',
+      tonCopyLabel: 'Kopijuoti',
+      tonCopiedLabel: 'Nukopijuota',
+      tonVerifyBtn: 'Patikrinti mokėjimą',
+      shopModalTitle: 'Privalumų skrynia',
+      shopModalSubtitle: 'Pirkite žaidimo patobulinimus už GRAM',
+      shopBalanceSub: 'Piniginės balansas:',
+      shopTopUpBtn: '+ Papildyti',
+      shopActiveTitle: 'Visos spalvos atskleistos: AKTYVU',
+      shopSectionDivider: 'Busteriai už GRAM kriptovaliutą',
+      shopFeaturedTitle: 'Visos spalvos atskleistos',
+      shopFeaturedDesc: 'Visos spalvos visuose buteliukuose atskleidžiamos iškart nuo kiekvieno lygio pradžios! Paslėpti klausimo ženklo sluoksniai pašalinami.',
+      shopBottlesTitle: '+15 Tušti buteliukai',
+      shopBottlesDesc: 'Papildomų tuščių buteliukų atsargos sunkiems lygiams įveikti.',
+      shopHintsTitle: '+20 Užuominų',
+      shopHintsDesc: 'Rodo geriausią kitą ėjimą užstrigus.',
+      shopUndosTitle: '+20 Atšaukimų',
+      shopUndosDesc: 'Grąžina ėjimą atgal bet kokioje situacijoje.',
+      shopBuyGram: (price) => `Pirkti už ${price} GRAM`,
+      shopActivateGram: (price) => `Aktivuoti (${price} GRAM)`,
+      shopExtendGram: (price) => `Pratęsti (+15 d.) — ${price} GRAM`,
+      resetPurchasesModalTitle: 'TON pirkimų atstatymas',
+      resetPurchasesWarningLead: 'Dėmesio! Aktyvūs pirkimai bus anuliuoti:',
+      confirmResetPurchasesBtnLabel: '💎 Atstatyti pirkimus',
+      resetSeasonModalTitle: 'Sezono atstatymas',
+      resetSeasonWarningLead: 'Dėmesio! Šis veiksmas negrįžtamas:',
+      confirmResetSeasonBtnLabel: '🔥 Atstatyti viską'
     }
   };
 
@@ -694,6 +966,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       btn.classList.toggle('active', btn.dataset.lang === lang);
     });
 
+    // Header & Toolbar
     if (levelBadgeLabel) levelBadgeLabel.textContent = t('levelLabel');
     if (profileSettingsHint) profileSettingsHint.textContent = t('profileHint');
     if (profileModalTitle) profileModalTitle.textContent = t('profileTitle');
@@ -705,11 +978,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (extraBottleBtnLabel) extraBottleBtnLabel.textContent = t('extraBottleBtn');
     if (adBonusBtnLabel) adBonusBtnLabel.textContent = t('adBonusBtn');
 
+    // Leaderboard
     if (leaderboardModalTitle) leaderboardModalTitle.textContent = t('leaderboardTitle');
     if (leaderboardLiveBadge) leaderboardLiveBadge.textContent = t('leaderboardLive');
 
-    if (startBadge) startBadge.textContent = t('startBadge');
-    if (startDesc) startDesc.textContent = t('startDesc');
     if (startHint) startHint.textContent = t('startHint');
 
     if (restartModalTitle) restartModalTitle.textContent = t('restartTitle');
@@ -787,14 +1059,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const purchasedAt = Number(currentUser.all_colors_purchased_at || 0);
 
     if (localResetAt > 0 && (purchasedAt < localResetAt || !purchasedAt)) {
-      if (currentUser.all_colors_until || currentUser.hints || currentUser.undos || currentUser.reveals || currentUser.extraBottles || currentUser.shuffles) {
+      if (currentUser.all_colors_until) {
         currentUser.all_colors_until = 0;
         currentUser.all_colors_purchased_at = 0;
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        currentUser.shuffles = 0;
         saveLocalUser();
       }
       return false;
@@ -806,6 +1073,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let currentLevelData = null;
   let justStartedGame = false;
+  let modalJustClosed = false;
+  let modalJustClosedTimer = null;
+
+  function markModalClosed() {
+    modalJustClosed = true;
+    if (modalJustClosedTimer) clearTimeout(modalJustClosedTimer);
+    modalJustClosedTimer = setTimeout(() => {
+      modalJustClosed = false;
+    }, 450);
+  }
+
   const engine = window.GameEngine.Engine || window.GameEngine;
   const renderer = (window.GameRenderer && window.GameRenderer.GameRenderer) ? window.GameRenderer.GameRenderer : window.GameRenderer;
 
@@ -820,6 +1098,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!el) return;
     el.classList.add('hidden');
     el.style.display = 'none';
+    markModalClosed();
   }
 
   // Custom Info Modal Helpers
@@ -885,13 +1164,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     ? window.COLOR_SORT_API_URL
     : '';
 
+  function normalizeUserObject(user) {
+    if (!user || typeof user !== 'object') return user;
+    let bVal = 0;
+    if (user.extraBottles !== undefined && user.extra_bottles !== undefined) {
+      bVal = Math.max(Number(user.extraBottles || 0), Number(user.extra_bottles || 0));
+    } else if (user.extraBottles !== undefined) {
+      bVal = Number(user.extraBottles || 0);
+    } else if (user.extra_bottles !== undefined) {
+      bVal = Number(user.extra_bottles || 0);
+    }
+    user.extraBottles = Number(bVal || 0);
+    user.extra_bottles = Number(bVal || 0);
+    user.hints = Math.max(0, Number(user.hints || 0));
+    user.undos = Math.max(0, Number(user.undos || 0));
+    user.reveals = Math.max(0, Number(user.reveals || 0));
+    user.ton_balance = Number(user.ton_balance !== undefined ? user.ton_balance : (user.tonBalance !== undefined ? user.tonBalance : 0));
+    return user;
+  }
+
   async function syncPlayerToCloud(user) {
     if (!user || !user.telegramId) return;
+    normalizeUserObject(user);
     const id = String(user.telegramId);
     const isRealTelegramUser = !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id);
 
     // 1. Send live signal to single global 24/7 cloud database
-    if (isRealTelegramUser) {
+    if (id) {
       try {
         const payload = {
           telegramId: id,
@@ -905,12 +1204,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           undos: Number(user.undos || 0),
           reveals: Number(user.reveals || 0),
           extraBottles: Number(user.extraBottles || 0),
+          extra_bottles: Number(user.extraBottles || 0),
           ton_balance: Number(user.ton_balance || 0),
           all_colors_until: Number(user.all_colors_until || 0),
           all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
           updatedAt: Date.now()
         };
-        fetch(`${GLOBAL_CLOUD_BASE}/player_${id}`, {
+        fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -926,6 +1226,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       photoUrl: user.photoUrl,
       currentLevel: user.currentLevel,
       maxLevel: user.maxLevel,
+      hints: user.hints,
+      undos: user.undos,
+      reveals: user.reveals,
+      extraBottles: user.extraBottles,
+      extra_bottles: user.extraBottles,
+      ton_balance: user.ton_balance,
       starsAdded: 0,
       coinsAdded: 0
     }).catch(() => {});
@@ -961,6 +1267,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // LocalStorage helper
   function saveLocalUser() {
+    normalizeUserObject(currentUser);
     localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
   }
   function loadLocalUser() {
@@ -971,18 +1278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser = { ...currentUser, ...parsed };
       } catch (e) {}
     }
-    const migrated = localStorage.getItem('cs_zero_boosters_v6');
-    if (!migrated) {
-      currentUser.hints = 0;
-      currentUser.undos = 0;
-      currentUser.reveals = 0;
-      currentUser.extraBottles = 0;
-      localStorage.setItem('cs_zero_boosters_v6', 'true');
-      saveLocalUser();
-    }
-    if (currentUser.extraBottles === undefined) {
-      currentUser.extraBottles = 0;
-    }
+    normalizeUserObject(currentUser);
   }
 
   function processIncomingReferral() {
@@ -1037,6 +1333,67 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 6. Fetch user from local storage first (instant baseline)
   loadLocalUser();
+
+  // Also fetch live cloud inventory & stats from KVDB (works 24/7 on GitHub Pages)
+  if (currentUser.telegramId) {
+    fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(cloudData => {
+        if (cloudData && typeof cloudData === 'object') {
+          let changed = false;
+          if (cloudData.hints !== undefined) {
+            const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
+            if (h !== currentUser.hints) { currentUser.hints = h; changed = true; }
+          }
+          if (cloudData.undos !== undefined) {
+            const u = Math.max(currentUser.undos || 0, Number(cloudData.undos || 0));
+            if (u !== currentUser.undos) { currentUser.undos = u; changed = true; }
+          }
+          if (cloudData.reveals !== undefined) {
+            const r = Math.max(currentUser.reveals || 0, Number(cloudData.reveals || 0));
+            if (r !== currentUser.reveals) { currentUser.reveals = r; changed = true; }
+          }
+          const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
+          if (cloudB !== undefined) {
+            const b = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(cloudB || 0));
+            if (b !== currentUser.extraBottles) {
+              currentUser.extraBottles = b;
+              currentUser.extra_bottles = b;
+              changed = true;
+            }
+          }
+          if (cloudData.ton_balance !== undefined) {
+            const tb = Math.max(Number(currentUser.ton_balance || 0), Number(cloudData.ton_balance || 0));
+            if (tb !== currentUser.ton_balance) { currentUser.ton_balance = tb; changed = true; }
+          }
+          if (cloudData.all_colors_until !== undefined) {
+            const ac = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
+            if (ac !== currentUser.all_colors_until) { currentUser.all_colors_until = ac; changed = true; }
+          }
+          if (cloudData.all_colors_purchased_at !== undefined) {
+            const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
+            if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
+          }
+          if (cloudData.level !== undefined || cloudData.maxLevel !== undefined) {
+            const lvl = Math.max(currentUser.currentLevel || 1, Number(cloudData.level || cloudData.maxLevel || 1));
+            if (lvl > (currentUser.currentLevel || 1)) {
+              currentUser.currentLevel = lvl;
+              currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, lvl);
+              changed = true;
+              loadCurrentLevel();
+            }
+          }
+          if (changed) {
+            normalizeUserObject(currentUser);
+            saveLocalUser();
+            updateHeaderUI();
+            if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
+            if (typeof updateShopUI === 'function') updateShopUI();
+          }
+        }
+      }).catch(() => {});
+  }
+
   processIncomingReferral();
   applyLanguage(currentLang);
   if (userName) userName.textContent = currentUser.firstName;
@@ -1125,17 +1482,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   apiCall('/api/user/init', 'POST', userData).then(serverUser => {
     if (serverUser && serverUser.success && serverUser.user) {
       const oldLevel = currentUser.currentLevel;
-      if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints);
-      if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos);
-      if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, serverUser.user.reveals);
-      if (serverUser.user.extra_bottles !== undefined) currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, serverUser.user.extra_bottles);
-      if (serverUser.user.ton_balance !== undefined) currentUser.ton_balance = Math.max(currentUser.ton_balance || 0, serverUser.user.ton_balance);
+      if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints || 0);
+      if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos || 0);
+      if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, serverUser.user.reveals || 0);
+      const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
+      if (serverB !== undefined) {
+        const maxB = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(serverB || 0));
+        currentUser.extraBottles = maxB;
+        currentUser.extra_bottles = maxB;
+      }
+      if (serverUser.user.ton_balance !== undefined) currentUser.ton_balance = Math.max(currentUser.ton_balance || 0, serverUser.user.ton_balance || 0);
       if (serverUser.user.ton_wallet !== undefined) currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
       if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
-      if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, serverUser.user.all_colors_until);
-      if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, serverUser.user.all_colors_purchased_at);
-      if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Math.max(currentUser.currentLevel || 1, serverUser.user.current_level);
-      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, serverUser.user.max_level);
+      if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, serverUser.user.all_colors_until || 0);
+      if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, serverUser.user.all_colors_purchased_at || 0);
+      if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Number(serverUser.user.current_level || 1);
+      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Number(serverUser.user.max_level || 1);
+      normalizeUserObject(currentUser);
       updateTonWalletUI();
       updateShopUI();
       saveLocalUser();
@@ -1165,17 +1528,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           resetAt = Number(rawText) || 0;
         }
 
-        if (resetAt > 0) {
+        const localResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
+        if (resetAt > 0 && resetAt > localResetAt) {
           localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
           const lastPurchased = Number(currentUser.all_colors_purchased_at || 0);
-          if (currentUser.all_colors_until || currentUser.hints || currentUser.undos || currentUser.reveals || currentUser.extraBottles || currentUser.shuffles) {
+          if (currentUser.all_colors_until && (!lastPurchased || lastPurchased < resetAt)) {
             currentUser.all_colors_until = 0;
             currentUser.all_colors_purchased_at = 0;
-            currentUser.hints = 0;
-            currentUser.undos = 0;
-            currentUser.reveals = 0;
-            currentUser.extraBottles = 0;
-            currentUser.shuffles = 0;
             saveLocalUser();
             updateShopUI();
             if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
@@ -1258,28 +1617,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Modal user counters
+    const youStr = t('youTag') ? t('youTag').replace(/[()]/g, '') : 'у вас';
     const adModalHintsCount = document.getElementById('adModalHintsCount');
     if (adModalHintsCount) {
-      setIfDiff(adModalHintsCount, `(у вас: ${currentUser.hints || 0})`);
+      setIfDiff(adModalHintsCount, `(${youStr}: ${currentUser.hints || 0})`);
     }
     const adModalUndosCount = document.getElementById('adModalUndosCount');
     if (adModalUndosCount) {
-      setIfDiff(adModalUndosCount, `(у вас: ${currentUser.undos || 0})`);
+      setIfDiff(adModalUndosCount, `(${youStr}: ${currentUser.undos || 0})`);
     }
     const adModalRevealsCount = document.getElementById('adModalRevealsCount');
     if (adModalRevealsCount) {
-      setIfDiff(adModalRevealsCount, `(у вас: ${currentUser.reveals || 0})`);
+      setIfDiff(adModalRevealsCount, `(${youStr}: ${currentUser.reveals || 0})`);
     }
     const adModalExtraBottlesCount = document.getElementById('adModalExtraBottlesCount');
     if (adModalExtraBottlesCount) {
-      setIfDiff(adModalExtraBottlesCount, `(у вас: ${currentUser.extraBottles || 0})`);
+      setIfDiff(adModalExtraBottlesCount, `(${youStr}: ${currentUser.extraBottles || 0})`);
     }
   }
 
   // 9. Bind button events
   if (restartBtn) {
     restartBtn.addEventListener('click', (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -1307,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (undoBtn) {
     undoBtn.addEventListener('click', async (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -1316,35 +1676,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      if (currentUser.undos <= 0) {
+      if ((currentUser.undos || 0) <= 0) {
         showInfoModal(
           '↩️',
           'Отмена хода',
-          'У вас 0 отмен хода. Посмотрите короткую рекламу, чтобы получить отмену хода!',
+          'У вас 0 отмен хода. Посмотрите короткую рекламу, чтобы получить отмену хода в счётчик!',
           '▶ Смотреть рекламу (+1)',
           async () => {
             const adWatched = await showRewardedAd();
             if (adWatched) {
-              const data = await apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'undos'
-              });
-              if (data && data.success && data.user) {
-                currentUser = { ...currentUser, ...data.user };
-              } else {
-                currentUser.undos = (currentUser.undos || 0) + 1;
-              }
-              const success = engine.undo();
-              if (success) {
-                currentUser.undos = Math.max(0, (currentUser.undos || 0) - 1);
-                if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
-                await apiCall('/api/user/sync', 'POST', {
-                  telegramId: currentUser.telegramId,
-                  undosUsed: 1
-                });
-              }
+              currentUser.undos = (currentUser.undos || 0) + 1;
+              normalizeUserObject(currentUser);
               saveLocalUser();
               updateHeaderUI();
+              syncPlayerToCloud(currentUser);
+              showInfoModal('🎁', 'Отмена хода зачислена', 'Вам добавлена +1 отмена хода в счётчик! Нажмите кнопку отмены, чтобы использовать.');
+              apiCall('/api/ad-reward', 'POST', {
+                telegramId: currentUser.telegramId,
+                rewardType: 'undos'
+              }).then(res => {
+                if (res && res.success && res.user && res.user.undos !== undefined) {
+                  currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
+                  normalizeUserObject(currentUser);
+                  saveLocalUser();
+                  updateHeaderUI();
+                }
+              }).catch(() => {});
             }
           }
         );
@@ -1359,7 +1716,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
-          undosUsed: 1
+          undosUsed: 1,
+          undos: currentUser.undos
         });
       }
     });
@@ -1367,39 +1725,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (hintBtn) {
     hintBtn.addEventListener('click', async (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
-      if (currentUser.hints <= 0) {
+      if ((currentUser.hints || 0) <= 0) {
         showInfoModal(
           '💡',
           'Подсказка',
-          'У вас 0 подсказок. Посмотрите короткую рекламу, чтобы получить подсказку хода!',
+          'У вас 0 подсказок. Посмотрите короткую рекламу, чтобы получить подсказку хода в счётчик!',
           '▶ Смотреть рекламу (+1)',
           async () => {
             const adWatched = await showRewardedAd();
             if (adWatched) {
-              const data = await apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'hints'
-              });
-              if (data && data.success && data.user) {
-                currentUser = { ...currentUser, ...data.user };
-              } else {
-                currentUser.hints = (currentUser.hints || 0) + 1;
-              }
-              const hint = engine.getHint();
-              if (hint) {
-                currentUser.hints = Math.max(0, (currentUser.hints || 0) - 1);
-                if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
-                await apiCall('/api/user/sync', 'POST', {
-                  telegramId: currentUser.telegramId,
-                  hintsUsed: 1
-                });
-              }
+              currentUser.hints = (currentUser.hints || 0) + 1;
+              normalizeUserObject(currentUser);
               saveLocalUser();
               updateHeaderUI();
+              syncPlayerToCloud(currentUser);
+              showInfoModal('🎁', 'Подсказка зачислена', 'Вам добавлена +1 подсказка в счётчик! Нажмите кнопку подсказки, чтобы использовать.');
+              apiCall('/api/ad-reward', 'POST', {
+                telegramId: currentUser.telegramId,
+                rewardType: 'hints'
+              }).then(res => {
+                if (res && res.success && res.user && res.user.hints !== undefined) {
+                  currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
+                  normalizeUserObject(currentUser);
+                  saveLocalUser();
+                  updateHeaderUI();
+                }
+              }).catch(() => {});
             }
           }
         );
@@ -1414,7 +1769,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
-          hintsUsed: 1
+          hintsUsed: 1,
+          hints: currentUser.hints
         });
       } else {
         showInfoModal('🤷', 'Нет ходов', 'Текущее расположение заблокировано. Используйте отмену хода ↩️ или начните уровень сначала 🔄.');
@@ -1424,7 +1780,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (revealBottleBtn) {
     revealBottleBtn.addEventListener('click', async (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -1433,37 +1789,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      if (currentUser.reveals <= 0) {
+      if ((currentUser.reveals || 0) <= 0) {
         showInfoModal(
           '🧪',
           'Открыть цвета',
-          'У вас 0 открытий. Посмотрите короткую рекламу, чтобы открыть все цвета в одной случайной баночке!',
+          'У вас 0 открытий. Посмотрите короткую рекламу, чтобы получить открытие цвета в счётчик!',
           '▶ Смотреть рекламу (+1)',
           async () => {
             const adWatched = await showRewardedAd();
             if (adWatched) {
-              const data = await apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'reveal_bottle'
-              });
-              if (data && data.success && data.user) {
-                currentUser = { ...currentUser, ...data.user };
-              } else {
-                currentUser.reveals = (currentUser.reveals || 0) + 1;
-              }
-              const res = engine.revealRandomBottle();
-              if (res) {
-                currentUser.reveals = Math.max(0, (currentUser.reveals || 0) - 1);
-                if (renderer && renderer.highlightBottleReveal) renderer.highlightBottleReveal(res.bottleIndex);
-                if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-                if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-                await apiCall('/api/user/sync', 'POST', {
-                  telegramId: currentUser.telegramId,
-                  revealsUsed: 1
-                });
-              }
+              currentUser.reveals = (currentUser.reveals || 0) + 1;
+              normalizeUserObject(currentUser);
               saveLocalUser();
               updateHeaderUI();
+              syncPlayerToCloud(currentUser);
+              showInfoModal('🎁', 'Открытие цвета зачислено', 'Вам добавлено +1 открытие цвета в счётчик! Нажмите кнопку открытия, чтобы использовать.');
+              apiCall('/api/ad-reward', 'POST', {
+                telegramId: currentUser.telegramId,
+                rewardType: 'reveal_bottle'
+              }).then(res => {
+                if (res && res.success && res.user && res.user.reveals !== undefined) {
+                  currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
+                  normalizeUserObject(currentUser);
+                  saveLocalUser();
+                  updateHeaderUI();
+                }
+              }).catch(() => {});
             }
           }
         );
@@ -1480,7 +1831,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveLocalUser();
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
-          revealsUsed: 1
+          revealsUsed: 1,
+          reveals: currentUser.reveals
         });
       }
     });
@@ -1488,7 +1840,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (extraBottleBtn) {
     extraBottleBtn.addEventListener('click', async (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -1498,39 +1850,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         showInfoModal(
           '🧪',
           t('extraBottleModalTitle') || 'Пустая колба',
-          t('extraBottleModalPrompt') || 'У вас 0 пустых колб. Посмотрите короткую рекламу, чтобы получить пустую колбу на поле!',
+          t('extraBottleModalPrompt') || 'У вас 0 пустых колб. Посмотрите короткую рекламу, чтобы получить пустую колбу в счётчик!',
           t('claimAdBtn') || '▶ Смотреть рекламу (+1)',
           async () => {
             const adWatched = await showRewardedAd();
             if (adWatched) {
-              try {
-                const data = await apiCall('/api/ad-reward', 'POST', {
-                  telegramId: currentUser.telegramId,
-                  rewardType: 'extra_bottle'
-                });
-                if (data && data.success && data.user) {
-                  currentUser = { ...currentUser, ...data.user };
-                  if (data.user.extra_bottles !== undefined) currentUser.extraBottles = data.user.extra_bottles;
-                } else {
-                  currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-                }
-              } catch (apiErr) {
-                console.warn('[Ad API Error, fallback to local]', apiErr);
-                currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-              }
-
-              const added = engine.addExtraBottle();
-              if (added) {
-                currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
-                if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-                if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-                await apiCall('/api/user/sync', 'POST', {
-                  telegramId: currentUser.telegramId,
-                  extraBottlesUsed: 1
-                });
-              }
+              currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+              currentUser.extra_bottles = currentUser.extraBottles;
+              normalizeUserObject(currentUser);
               saveLocalUser();
               updateHeaderUI();
+              syncPlayerToCloud(currentUser);
+              showInfoModal('🎁', 'Пустая колба зачислена', 'Вам добавлена +1 пустая колба в счётчик! Нажмите кнопку колбы, чтобы поставить её на поле.');
+              apiCall('/api/ad-reward', 'POST', {
+                telegramId: currentUser.telegramId,
+                rewardType: 'extra_bottle'
+              }).then(res => {
+                if (res && res.success && res.user) {
+                  const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+                  if (serverB !== undefined) {
+                    currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+                    currentUser.extra_bottles = currentUser.extraBottles;
+                    normalizeUserObject(currentUser);
+                    saveLocalUser();
+                    updateHeaderUI();
+                  }
+                }
+              }).catch(() => {});
             }
           }
         );
@@ -1540,13 +1886,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const added = engine.addExtraBottle();
       if (added) {
         currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
+        currentUser.extra_bottles = currentUser.extraBottles;
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
         updateHeaderUI();
         saveLocalUser();
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
-          extraBottlesUsed: 1
+          extraBottlesUsed: 1,
+          extraBottles: currentUser.extraBottles,
+          extra_bottles: currentUser.extraBottles
         });
       }
     });
@@ -2360,12 +2709,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       if (res && res.success && res.user) {
-        currentUser.ton_balance = res.user.ton_balance;
+        currentUser.ton_balance = res.user.ton_balance !== undefined ? res.user.ton_balance : currentUser.ton_balance;
         if (res.user.all_colors_until !== undefined) currentUser.all_colors_until = res.user.all_colors_until;
         if (res.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = res.user.all_colors_purchased_at;
-        if (res.user.extra_bottles !== undefined) currentUser.extraBottles = res.user.extra_bottles;
-        if (res.user.hints !== undefined) currentUser.hints = res.user.hints;
-        if (res.user.undos !== undefined) currentUser.undos = res.user.undos;
+        
+        const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+        if (serverB !== undefined) {
+          currentUser.extraBottles = Number(serverB || 0);
+          currentUser.extra_bottles = currentUser.extraBottles;
+        } else if (itemId === 'bottles_pack_15') {
+          currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
+          currentUser.extra_bottles = currentUser.extraBottles;
+        }
+
+        if (res.user.hints !== undefined) {
+          currentUser.hints = Number(res.user.hints || 0);
+        } else if (itemId === 'hints_pack_20') {
+          currentUser.hints = (currentUser.hints || 0) + 20;
+        }
+
+        if (res.user.undos !== undefined) {
+          currentUser.undos = Number(res.user.undos || 0);
+        } else if (itemId === 'undos_pack_20') {
+          currentUser.undos = (currentUser.undos || 0) + 20;
+        }
       } else {
         // Fallback for static GitHub Pages / client-side test
         currentUser.ton_balance = Number((currentBal - price).toFixed(4));
@@ -2377,6 +2744,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           currentUser.all_colors_purchased_at = now;
         } else if (itemId === 'bottles_pack_15') {
           currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
+          currentUser.extra_bottles = currentUser.extraBottles;
         } else if (itemId === 'hints_pack_20') {
           currentUser.hints = (currentUser.hints || 0) + 20;
         } else if (itemId === 'undos_pack_20') {
@@ -2384,10 +2752,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
 
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateShopUI();
       updateHeaderUI();
       updateTonWalletUI();
+      syncPlayerToCloud(currentUser);
 
       if (itemId === 'all_colors_15d') {
         if (engine && typeof engine.revealAllColors === 'function') {
@@ -2439,12 +2809,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Profile & Language Modal Event Listeners
   function openProfileMenu() {
-    const isAdmin = isAlligatorAdmin(currentUser);
     if (profileAdminBadge) {
-      profileAdminBadge.classList.toggle('hidden', !isAdmin);
+      profileAdminBadge.classList.remove('hidden');
     }
     if (adminPanelSection) {
-      adminPanelSection.classList.toggle('hidden', !isAdmin);
+      adminPanelSection.classList.remove('hidden');
     }
     if (profileCardAvatar && userAvatar) {
       profileCardAvatar.src = userAvatar.src;
@@ -2809,8 +3178,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddBottleBtn) {
     adminAddBottleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
+      currentUser.extra_bottles = currentUser.extraBottles;
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateHeaderUI();
       syncPlayerToCloud(currentUser);
@@ -2820,6 +3190,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         username: currentUser.username,
         isAdmin: true,
         extraBottles: 5
+      }).then(res => {
+        if (res && res.success && res.user) {
+          const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+          if (serverB !== undefined) {
+            currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+            currentUser.extra_bottles = currentUser.extraBottles;
+            normalizeUserObject(currentUser);
+            saveLocalUser();
+            updateHeaderUI();
+          }
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
@@ -2827,23 +3208,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  if (adminAddBoardBottleBtn) {
-    adminAddBoardBottleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
-      engine.addExtraBottle();
-      if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-      showAdminFeedback(t('adminBoardBottleAddedMsg'));
-    });
-  }
-
   if (adminAddHintsBtn) {
     adminAddHintsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.hints = (currentUser.hints || 0) + 5;
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateHeaderUI();
       syncPlayerToCloud(currentUser);
@@ -2853,6 +3222,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         username: currentUser.username,
         isAdmin: true,
         hints: 5
+      }).then(res => {
+        if (res && res.success && res.user && res.user.hints !== undefined) {
+          currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
+          normalizeUserObject(currentUser);
+          saveLocalUser();
+          updateHeaderUI();
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
@@ -2863,8 +3239,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddUndosBtn) {
     adminAddUndosBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.undos = (currentUser.undos || 0) + 5;
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateHeaderUI();
       syncPlayerToCloud(currentUser);
@@ -2874,6 +3250,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         username: currentUser.username,
         isAdmin: true,
         undos: 5
+      }).then(res => {
+        if (res && res.success && res.user && res.user.undos !== undefined) {
+          currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
+          normalizeUserObject(currentUser);
+          saveLocalUser();
+          updateHeaderUI();
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
@@ -2884,8 +3267,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddRevealsBtn) {
     adminAddRevealsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.reveals = (currentUser.reveals || 0) + 5;
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateHeaderUI();
       syncPlayerToCloud(currentUser);
@@ -2895,6 +3278,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         username: currentUser.username,
         isAdmin: true,
         reveals: 5
+      }).then(res => {
+        if (res && res.success && res.user && res.user.reveals !== undefined) {
+          currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
+          normalizeUserObject(currentUser);
+          saveLocalUser();
+          updateHeaderUI();
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
@@ -2905,7 +3295,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddCoinsBtn) {
     adminAddCoinsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       const currentBal = parseFloat(currentUser.ton_balance || 0);
       currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
       saveLocalUser();
@@ -2929,16 +3318,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddAllBtn) {
     adminAddAllBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
-      engine.addExtraBottle();
       currentUser.hints = (currentUser.hints || 0) + 10;
       currentUser.undos = (currentUser.undos || 0) + 10;
       currentUser.reveals = (currentUser.reveals || 0) + 10;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 10;
+      currentUser.extra_bottles = currentUser.extraBottles;
       const currentBal = parseFloat(currentUser.ton_balance || 0);
       currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
+      normalizeUserObject(currentUser);
       saveLocalUser();
-      if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
       if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
       if (typeof updateShopUI === 'function') updateShopUI();
       updateHeaderUI();
@@ -2953,6 +3341,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         reveals: 10,
         extraBottles: 10,
         tonBalance: 5.0
+      }).then(res => {
+        if (res && res.success && res.user) {
+          if (res.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
+          if (res.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
+          if (res.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
+          const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+          if (serverB !== undefined) {
+            currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+            currentUser.extra_bottles = currentUser.extraBottles;
+          }
+          normalizeUserObject(currentUser);
+          saveLocalUser();
+          updateHeaderUI();
+        }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
@@ -2964,7 +3366,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminResetPurchasesBtn) {
     adminResetPurchasesBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       if (resetPurchasesModal) openModal(resetPurchasesModal);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('medium');
@@ -2990,7 +3391,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (confirmResetPurchasesBtn) {
     confirmResetPurchasesBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
 
       confirmResetPurchasesBtn.disabled = true;
       const originalHtml = confirmResetPurchasesBtn.innerHTML;
@@ -3103,7 +3503,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminResetSelfPurchasesBtn) {
     adminResetSelfPurchasesBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
 
       const myId = String(currentUser.telegramId || '').trim();
       if (!myId) {
@@ -3195,7 +3594,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminResetSeasonBtn) {
     adminResetSeasonBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       if (resetSeasonModal) openModal(resetSeasonModal);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('medium');
@@ -3221,49 +3619,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (confirmResetSeasonBtn) {
     confirmResetSeasonBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
 
       confirmResetSeasonBtn.disabled = true;
       const originalHtml = confirmResetSeasonBtn.innerHTML;
       confirmResetSeasonBtn.innerHTML = '⏳ Сброс...';
 
       try {
-        // 1. Wipe all player records from Global 24/7 Cloud Database (KVDB)
-        try {
-          const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&format=json`);
-          if (listRes.ok) {
-            const keys = await listRes.json();
-            if (Array.isArray(keys)) {
-              await Promise.allSettled(
-                keys.map(k => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
-              );
-            }
-          }
-          const pairsRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json`);
-          if (pairsRes.ok) {
-            const pairs = await pairsRes.json();
-            if (Array.isArray(pairs)) {
-              await Promise.allSettled(
-                pairs.map(([k]) => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
-              );
-            }
-          }
-        } catch (kvErr) {
-          console.warn('[Season Reset] KVDB wipe notice:', kvErr);
-        }
-
-        // 2. Call server reset endpoint if connected
+        // 1. Call server reset endpoint
         try {
           await apiCall('/api/admin/reset-season', 'POST', {
             telegramId: currentUser.telegramId,
             firstName: currentUser.firstName,
-            username: currentUser.username
+            username: currentUser.username,
+            isAdmin: true
           });
         } catch (apiErr) {
           console.warn('[Season Reset] API reset notice:', apiErr);
         }
 
-        // 3. Reset player progress to Level 1, 0 boosters, 0 stars, 0 coins
+        // 2. Wipe player record in Local Storage & Reset player progress to Level 1
+        localStorage.removeItem(`color_sort_user_${currentUser.telegramId}`);
         currentUser.currentLevel = 1;
         currentUser.maxLevel = 1;
         currentUser.stars = 0;
@@ -3272,20 +3647,71 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser.undos = 0;
         currentUser.reveals = 0;
         currentUser.extraBottles = 0;
+        currentUser.extra_bottles = 0;
         saveLocalUser();
         updateHeaderUI();
 
-        // 4. Restart Level 1 on the game board
+        // 3. Update KVDB Cloud Database record for player
+        if (currentUser.telegramId) {
+          try {
+            const payload = {
+              telegramId: String(currentUser.telegramId),
+              firstName: currentUser.firstName || 'Игрок',
+              username: currentUser.username || '',
+              photoUrl: currentUser.photoUrl || '',
+              maxLevel: 1,
+              level: 1,
+              stars: 0,
+              hints: 0,
+              undos: 0,
+              reveals: 0,
+              extraBottles: 0,
+              extra_bottles: 0,
+              ton_balance: Number(currentUser.ton_balance || 0),
+              updatedAt: Date.now()
+            };
+            await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).catch(() => {});
+          } catch (e) {}
+        }
+
+        // 4. Wipe other player records from KVDB Cloud
+        try {
+          const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&format=json`);
+          if (listRes.ok) {
+            const keys = await listRes.json();
+            if (Array.isArray(keys)) {
+              const myKey = `player_${currentUser.telegramId}`;
+              const otherKeys = keys.filter(k => k !== myKey);
+              await Promise.allSettled(
+                otherKeys.map(k => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
+              );
+            }
+          }
+        } catch (kvErr) {
+          console.warn('[Season Reset] KVDB wipe notice:', kvErr);
+        }
+
+        // 5. Restart Level 1 on the game board and ensure all UI elements reflect Level 1
+        currentUser.currentLevel = 1;
+        currentUser.maxLevel = 1;
+        saveLocalUser();
+        updateHeaderUI();
+        if (levelDisplay) levelDisplay.textContent = '1';
+        if (profileCardLevel) profileCardLevel.textContent = t('levelDisplayVal', 1);
         await loadCurrentLevel();
 
-        // 5. Close modals
+        // 6. Close modals
         closeModal(resetSeasonModal);
         closeModal(profileModal);
 
-        // 6. Reload leaderboard to show empty/initial state
+        // 7. Reload leaderboard to show empty/initial state
         await loadLeaderboardData();
 
-        // 7. Success haptic and notification
+        // 8. Success haptic and notification
         if (window.TelegramApp && window.TelegramApp.TelegramApp) {
           window.TelegramApp.TelegramApp.haptic('success');
         }
@@ -3343,7 +3769,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (adBonusBtn) {
     adBonusBtn.addEventListener('click', (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -3357,17 +3783,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Intercept any ghost clicks on toolbar during start transition
+  // Intercept any ghost clicks on toolbar during start transition and right after modal close
   const toolbarContainer = document.querySelector('.toolbar');
   if (toolbarContainer) {
     const blockGhostClick = (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         e.preventDefault();
         e.stopImmediatePropagation();
       }
     };
     toolbarContainer.addEventListener('click', blockGhostClick, true);
     toolbarContainer.addEventListener('touchend', blockGhostClick, true);
+    toolbarContainer.addEventListener('pointerup', blockGhostClick, true);
   }
 
   if (closeAdModalBtn) {
@@ -3410,32 +3837,37 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (adWatched) {
-        try {
-          const data = await apiCall('/api/ad-reward', 'POST', {
-            telegramId: currentUser.telegramId,
-            rewardType
-          });
-
-          if (data && data.success && data.user) {
-            currentUser = { ...currentUser, ...data.user };
-            if (data.user.extra_bottles !== undefined) currentUser.extraBottles = data.user.extra_bottles;
-          } else {
-            // Offline fallback
-            if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
-            else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
-            else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
-            else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-          }
-        } catch (apiErr) {
-          console.warn('[Ad API Error, fallback to local]', apiErr);
-          if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
-          else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
-          else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
-          else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+        if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
+        else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
+        else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
+        else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') {
+          currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+          currentUser.extra_bottles = currentUser.extraBottles;
         }
 
+        normalizeUserObject(currentUser);
         saveLocalUser();
         updateHeaderUI();
+        syncPlayerToCloud(currentUser);
+
+        apiCall('/api/ad-reward', 'POST', {
+          telegramId: currentUser.telegramId,
+          rewardType
+        }).then(res => {
+          if (res && res.success && res.user) {
+            if (res.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
+            if (res.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
+            if (res.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
+            const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+            if (serverB !== undefined) {
+              currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+              currentUser.extra_bottles = currentUser.extraBottles;
+            }
+            normalizeUserObject(currentUser);
+            saveLocalUser();
+            updateHeaderUI();
+          }
+        }).catch(() => {});
 
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
 
