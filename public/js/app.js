@@ -901,6 +901,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           maxLevel: Number(user.maxLevel || user.currentLevel || 1),
           level: Number(user.maxLevel || user.currentLevel || 1),
           stars: Number(user.stars || 0),
+          hints: Number(user.hints || 0),
+          undos: Number(user.undos || 0),
+          reveals: Number(user.reveals || 0),
+          extraBottles: Number(user.extraBottles || 0),
+          ton_balance: Number(user.ton_balance || 0),
+          all_colors_until: Number(user.all_colors_until || 0),
+          all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
           updatedAt: Date.now()
         };
         fetch(`${GLOBAL_CLOUD_BASE}/player_${id}`, {
@@ -1118,25 +1125,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   apiCall('/api/user/init', 'POST', userData).then(serverUser => {
     if (serverUser && serverUser.success && serverUser.user) {
       const oldLevel = currentUser.currentLevel;
-      currentUser = { ...currentUser, ...serverUser.user };
-      if (serverUser.user.extra_bottles !== undefined) {
-        currentUser.extraBottles = serverUser.user.extra_bottles;
-      }
-      if (serverUser.user.ton_balance !== undefined) {
-        currentUser.ton_balance = serverUser.user.ton_balance;
-      }
-      if (serverUser.user.ton_wallet !== undefined) {
-        currentUser.ton_wallet = serverUser.user.ton_wallet;
-      }
-      if (serverUser.user.memo_code !== undefined) {
-        currentUser.memo_code = serverUser.user.memo_code;
-      }
-      if (serverUser.user.all_colors_until !== undefined) {
-        currentUser.all_colors_until = serverUser.user.all_colors_until;
-      }
-      if (serverUser.user.all_colors_purchased_at !== undefined) {
-        currentUser.all_colors_purchased_at = serverUser.user.all_colors_purchased_at;
-      }
+      if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints);
+      if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos);
+      if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, serverUser.user.reveals);
+      if (serverUser.user.extra_bottles !== undefined) currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, serverUser.user.extra_bottles);
+      if (serverUser.user.ton_balance !== undefined) currentUser.ton_balance = Math.max(currentUser.ton_balance || 0, serverUser.user.ton_balance);
+      if (serverUser.user.ton_wallet !== undefined) currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
+      if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
+      if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, serverUser.user.all_colors_until);
+      if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, serverUser.user.all_colors_purchased_at);
+      if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Math.max(currentUser.currentLevel || 1, serverUser.user.current_level);
+      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, serverUser.user.max_level);
       updateTonWalletUI();
       updateShopUI();
       saveLocalUser();
@@ -2814,6 +2813,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
       saveLocalUser();
       updateHeaderUI();
+      syncPlayerToCloud(currentUser);
+      apiCall('/api/admin/add-boosters', 'POST', {
+        telegramId: currentUser.telegramId,
+        firstName: currentUser.firstName,
+        username: currentUser.username,
+        isAdmin: true,
+        extraBottles: 5
+      }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
       showAdminFeedback(t('adminBottleAddedMsg', currentUser.extraBottles));
@@ -2825,6 +2832,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
       engine.addExtraBottle();
+      if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
       showAdminFeedback(t('adminBoardBottleAddedMsg'));
@@ -2838,6 +2846,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentUser.hints = (currentUser.hints || 0) + 5;
       saveLocalUser();
       updateHeaderUI();
+      syncPlayerToCloud(currentUser);
+      apiCall('/api/admin/add-boosters', 'POST', {
+        telegramId: currentUser.telegramId,
+        firstName: currentUser.firstName,
+        username: currentUser.username,
+        isAdmin: true,
+        hints: 5
+      }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
       showAdminFeedback(t('adminHintsAddedMsg', currentUser.hints));
@@ -2851,6 +2867,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentUser.undos = (currentUser.undos || 0) + 5;
       saveLocalUser();
       updateHeaderUI();
+      syncPlayerToCloud(currentUser);
+      apiCall('/api/admin/add-boosters', 'POST', {
+        telegramId: currentUser.telegramId,
+        firstName: currentUser.firstName,
+        username: currentUser.username,
+        isAdmin: true,
+        undos: 5
+      }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
       showAdminFeedback(t('adminUndosAddedMsg', currentUser.undos));
@@ -2864,6 +2888,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentUser.reveals = (currentUser.reveals || 0) + 5;
       saveLocalUser();
       updateHeaderUI();
+      syncPlayerToCloud(currentUser);
+      apiCall('/api/admin/add-boosters', 'POST', {
+        telegramId: currentUser.telegramId,
+        firstName: currentUser.firstName,
+        username: currentUser.username,
+        isAdmin: true,
+        reveals: 5
+      }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
       showAdminFeedback(t('adminRevealsAddedMsg', currentUser.reveals));
@@ -2880,7 +2912,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
       if (typeof updateShopUI === 'function') updateShopUI();
       updateHeaderUI();
-      if (typeof syncPlayerToCloud === 'function') syncPlayerToCloud(currentUser);
+      syncPlayerToCloud(currentUser);
+      apiCall('/api/admin/add-boosters', 'POST', {
+        telegramId: currentUser.telegramId,
+        firstName: currentUser.firstName,
+        username: currentUser.username,
+        isAdmin: true,
+        tonBalance: 5.0
+      }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
       showAdminFeedback(t('adminCoinsAddedMsg', currentUser.ton_balance));
@@ -2899,10 +2938,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       const currentBal = parseFloat(currentUser.ton_balance || 0);
       currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
       saveLocalUser();
+      if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
       if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
       if (typeof updateShopUI === 'function') updateShopUI();
       updateHeaderUI();
-      if (typeof syncPlayerToCloud === 'function') syncPlayerToCloud(currentUser);
+      syncPlayerToCloud(currentUser);
+      apiCall('/api/admin/add-boosters', 'POST', {
+        telegramId: currentUser.telegramId,
+        firstName: currentUser.firstName,
+        username: currentUser.username,
+        isAdmin: true,
+        hints: 10,
+        undos: 10,
+        reveals: 10,
+        extraBottles: 10,
+        tonBalance: 5.0
+      }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
       showAdminFeedback(t('adminAllAddedMsg'));
