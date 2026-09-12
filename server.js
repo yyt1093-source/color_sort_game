@@ -514,11 +514,13 @@ function checkIsAdmin(reqBody) {
 
   const tid = String(telegramId || '').trim();
   const fname = String(firstName || '').toLowerCase().trim();
-  const uname = String(username || '').toLowerCase().trim();
+  const uname = String(username || '').toLowerCase().replace(/^@/, '').trim();
 
-  // The admin panel is strictly reserved for Alligator only (ID: 5761685341 or alligator name)
+  // The admin panel is strictly reserved for one administrator: Alligator
+  // Telegram ID: 5761685341 or exact username/nickname "alligator" / "аллигатор"
   if (tid === '5761685341') return true;
-  if (fname.includes('alligator') || fname.includes('аллигатор') || uname.includes('alligator') || uname.includes('аллигатор')) return true;
+  if (uname === 'alligator' || uname === 'аллигатор') return true;
+  if (fname === 'alligator' || fname === 'аллигатор') return true;
 
   return false;
 }

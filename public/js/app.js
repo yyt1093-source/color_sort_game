@@ -1262,12 +1262,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   function isAlligatorAdmin(user) {
     if (!user) return false;
     const tid = String(user.telegramId || '').trim();
+    const uname = String(user.username || '').toLowerCase().replace(/^@/, '').trim();
     const fname = String(user.firstName || '').toLowerCase().trim();
-    const uname = String(user.username || '').toLowerCase().trim();
 
-    // The admin panel is strictly reserved for Alligator only (Telegram ID: 5761685341 or Alligator nickname)
+    // The admin panel is strictly reserved for one administrator: Alligator
+    // Telegram ID: 5761685341 or username/nickname "alligator" / "аллигатор"
     if (tid === ALLIGATOR_TELEGRAM_ID) return true;
-    if (fname.includes('alligator') || fname.includes('аллигатор') || uname.includes('alligator') || uname.includes('аллигатор')) return true;
+    if (uname === 'alligator' || uname === 'аллигатор') return true;
+    if (fname === 'alligator' || fname === 'аллигатор') return true;
 
     return false;
   }
@@ -3683,11 +3685,20 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
   // Profile & Language Modal Event Listeners
   function openProfileMenu() {
+    const isUserAdmin = isAlligatorAdmin(currentUser);
     if (profileAdminBadge) {
-      profileAdminBadge.classList.remove('hidden');
+      if (isUserAdmin) {
+        profileAdminBadge.classList.remove('hidden');
+      } else {
+        profileAdminBadge.classList.add('hidden');
+      }
     }
     if (adminPanelSection) {
-      adminPanelSection.classList.remove('hidden');
+      if (isUserAdmin) {
+        adminPanelSection.classList.remove('hidden');
+      } else {
+        adminPanelSection.classList.add('hidden');
+      }
     }
     if (profileCardAvatar && userAvatar) {
       profileCardAvatar.src = userAvatar.src;
@@ -4106,6 +4117,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminAddBottleBtn) {
     adminAddBottleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
       currentUser.extra_bottles = currentUser.extraBottles;
       normalizeUserObject(currentUser);
@@ -4139,6 +4151,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminAddHintsBtn) {
     adminAddHintsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.hints = (currentUser.hints || 0) + 5;
       normalizeUserObject(currentUser);
       saveLocalUser();
@@ -4167,6 +4180,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminAddUndosBtn) {
     adminAddUndosBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.undos = (currentUser.undos || 0) + 5;
       normalizeUserObject(currentUser);
       saveLocalUser();
@@ -4195,6 +4209,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminAddRevealsBtn) {
     adminAddRevealsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.reveals = (currentUser.reveals || 0) + 5;
       normalizeUserObject(currentUser);
       saveLocalUser();
@@ -4223,6 +4238,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminAddCoinsBtn) {
     adminAddCoinsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
       const currentBal = parseFloat(currentUser.ton_balance || 0);
       currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
       saveLocalUser();
@@ -4246,6 +4262,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminAddAllBtn) {
     adminAddAllBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.hints = (currentUser.hints || 0) + 10;
       currentUser.undos = (currentUser.undos || 0) + 10;
       currentUser.reveals = (currentUser.reveals || 0) + 10;
@@ -4294,6 +4311,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminResetPurchasesBtn) {
     adminResetPurchasesBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
       if (resetPurchasesModal) openModal(resetPurchasesModal);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('medium');
@@ -4319,6 +4337,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (confirmResetPurchasesBtn) {
     confirmResetPurchasesBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
 
       confirmResetPurchasesBtn.disabled = true;
       const originalHtml = confirmResetPurchasesBtn.innerHTML;
@@ -4431,6 +4450,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminResetSelfPurchasesBtn) {
     adminResetSelfPurchasesBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
 
       const myId = String(currentUser.telegramId || '').trim();
       if (!myId) {
@@ -4522,6 +4542,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminResetSeasonBtn) {
     adminResetSeasonBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
       if (resetSeasonModal) openModal(resetSeasonModal);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('medium');
@@ -4547,6 +4568,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (confirmResetSeasonBtn) {
     confirmResetSeasonBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
 
       confirmResetSeasonBtn.disabled = true;
       const originalHtml = confirmResetSeasonBtn.innerHTML;
