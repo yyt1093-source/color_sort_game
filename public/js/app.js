@@ -187,14 +187,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Подсказок',
       adminAddUndos: '+5 Отмен хода',
       adminAddReveals: '+5 Открытий',
-      adminAddCoins: '+500 Монет',
+      adminAddCoins: '+5 TON',
       adminAddAll: 'Пополнить ВСЁ сразу (+10 ко всем бонусам)',
       adminBottleAddedMsg: (count) => `🧪 +5 Пустых колб добавлено (Всего: ${count})`,
       adminBoardBottleAddedMsg: '🧪 Пустая колба добавлена на поле!',
       adminHintsAddedMsg: (count) => `💡 +5 Подсказок добавлено (Всего: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Отмен хода добавлено (Всего: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
-      adminCoinsAddedMsg: (count) => `🪙 +500 Монет добавлено (Всего: ${count})`,
+      adminCoinsAddedMsg: (count) => `💎 +5 TON добавлено (Баланс: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ Все бонусы пополнены (+10 к каждому)!',
       adminResetPurchasesBtnLabel: 'Сбросить все покупки за GRAM',
       adminResetPurchasesSuccessTitle: '💎 Покупки аннулированы!',
@@ -262,14 +262,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Підказок',
       adminAddUndos: '+5 Відмін ходу',
       adminAddReveals: '+5 Відкриттів',
-      adminAddCoins: '+500 Монет',
+      adminAddCoins: '+5 TON',
       adminAddAll: 'Поповнити ВСЕ одразу (+10 до всіх бонусів)',
       adminBottleAddedMsg: (count) => `🧪 +5 Порожніх колб додано (Всього: ${count})`,
       adminBoardBottleAddedMsg: '🧪 Порожня колба додана на поле!',
       adminHintsAddedMsg: (count) => `💡 +5 Підказок додано (Всього: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Відмін ходу додано (Всього: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Відкриттів додано (Всього: ${count})`,
-      adminCoinsAddedMsg: (count) => `🪙 +500 Монет додано (Всього: ${count})`,
+      adminCoinsAddedMsg: (count) => `💎 +5 TON додано (Баланс: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ Всі бонуси поповнено (+10 до кожного)!',
       adminResetPurchasesBtnLabel: 'Скинути всі покупки за GRAM',
       adminResetPurchasesSuccessTitle: '💎 Покупки анульовано!',
@@ -337,14 +337,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Hints',
       adminAddUndos: '+5 Undos',
       adminAddReveals: '+5 Color Reveals',
-      adminAddCoins: '+500 Coins',
+      adminAddCoins: '+5 TON',
       adminAddAll: 'Replenish ALL (+10 to all boosters)',
       adminBottleAddedMsg: (count) => `🧪 +5 Empty Bottles added (Total: ${count})`,
       adminBoardBottleAddedMsg: '🧪 Empty bottle added to the board!',
       adminHintsAddedMsg: (count) => `💡 +5 Hints added (Total: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Undos added (Total: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Reveals added (Total: ${count})`,
-      adminCoinsAddedMsg: (count) => `🪙 +500 Coins added (Total: ${count})`,
+      adminCoinsAddedMsg: (count) => `💎 +5 TON added (Balance: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ All boosters replenished (+10 to each)!',
       adminResetPurchasesBtnLabel: 'Reset all GRAM purchases',
       adminResetPurchasesSuccessTitle: '💎 Purchases Annulled!',
@@ -412,14 +412,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Hinweise',
       adminAddUndos: '+5 Züge zurück',
       adminAddReveals: '+5 Aufdeckungen',
-      adminAddCoins: '+500 Münzen',
+      adminAddCoins: '+5 TON',
       adminAddAll: 'ALLES auffüllen (+10 auf alle Boni)',
       adminBottleAddedMsg: (count) => `🧪 +5 Leere Flaschen hinzugefügt (Gesamt: ${count})`,
       adminBoardBottleAddedMsg: '🧪 Leere Flasche aufs Feld hinzugefügt!',
       adminHintsAddedMsg: (count) => `💡 +5 Hinweise hinzugefügt (Gesamt: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Züge zurück hinzugefügt (Gesamt: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Aufdeckungen hinzugefügt (Gesamt: ${count})`,
-      adminCoinsAddedMsg: (count) => `🪙 +500 Münzen hinzugefügt (Gesamt: ${count})`,
+      adminCoinsAddedMsg: (count) => `💎 +5 TON hinzugefügt (Guthaben: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ Alle Boni aufgefüllt (+10 auf alle)!',
       adminResetPurchasesBtnLabel: 'Alle GRAM-Käufe zurücksetzen',
       adminResetPurchasesSuccessTitle: '💎 Käufe annulliert!',
@@ -487,14 +487,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       adminAddHints: '+5 Užuominos',
       adminAddUndos: '+5 Atšaukimai',
       adminAddReveals: '+5 Atskleidimai',
-      adminAddCoins: '+500 Monetų',
+      adminAddCoins: '+5 TON',
       adminAddAll: 'Papildyti VISKĄ (+10 visiems)',
       adminBottleAddedMsg: (count) => `🧪 +5 Tušti buteliukai pridėti (Iš viso: ${count})`,
       adminBoardBottleAddedMsg: '🧪 Tuščias buteliukas pridėtas į lentą!',
       adminHintsAddedMsg: (count) => `💡 +5 Užuominos pridėtos (Iš viso: ${count})`,
       adminUndosAddedMsg: (count) => `↩️ +5 Atšaukimai pridėti (Iš viso: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Atskleidimai pridėti (Iš viso: ${count})`,
-      adminCoinsAddedMsg: (count) => `🪙 +500 Monetų pridėta (Iš viso: ${count})`,
+      adminCoinsAddedMsg: (count) => `💎 +5 TON pridėta (Likutis: ${Number(count || 0).toFixed(2)} TON)`,
       adminAllAddedMsg: '⚡ Visi bonusai papildyti (+10 kiekvienam)!',
       adminResetSuccessTitle: '💥 Sezonas atstatytas!',
       adminResetSuccessDesc: 'Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!'
@@ -2874,12 +2874,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     adminAddCoinsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      currentUser.coins = (currentUser.coins || 0) + 500;
+      const currentBal = parseFloat(currentUser.ton_balance || 0);
+      currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
       saveLocalUser();
+      if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
+      if (typeof updateShopUI === 'function') updateShopUI();
       updateHeaderUI();
+      if (typeof syncPlayerToCloud === 'function') syncPlayerToCloud(currentUser);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
-      showAdminFeedback(t('adminCoinsAddedMsg', currentUser.coins));
+      showAdminFeedback(t('adminCoinsAddedMsg', currentUser.ton_balance));
     });
   }
 
@@ -2892,9 +2896,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentUser.undos = (currentUser.undos || 0) + 10;
       currentUser.reveals = (currentUser.reveals || 0) + 10;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 10;
-      currentUser.coins = (currentUser.coins || 0) + 500;
+      const currentBal = parseFloat(currentUser.ton_balance || 0);
+      currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
       saveLocalUser();
+      if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
+      if (typeof updateShopUI === 'function') updateShopUI();
       updateHeaderUI();
+      if (typeof syncPlayerToCloud === 'function') syncPlayerToCloud(currentUser);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
       showAdminFeedback(t('adminAllAddedMsg'));
