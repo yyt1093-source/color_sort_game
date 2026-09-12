@@ -652,8 +652,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const adminAddAllBtn = document.getElementById('adminAddAllBtn');
   const adminAddAllLabel = document.getElementById('adminAddAllLabel');
   const adminFeedbackMsg = document.getElementById('adminFeedbackMsg');
-  const adminResetSinglePlayerBtn = document.getElementById('adminResetSinglePlayerBtn');
-  const adminResetSinglePlayerInput = document.getElementById('adminResetSinglePlayerInput');
+  const adminResetSelfPurchasesBtn = document.getElementById('adminResetSelfPurchasesBtn');
 
   // Referral Program Elements
   const referralCountVal = document.getElementById('referralCountVal');
@@ -3028,36 +3027,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Admin Single Player Reset Handler
-  if (adminResetSinglePlayerBtn) {
-    adminResetSinglePlayerBtn.addEventListener('click', async (e) => {
+  // Admin Self Account Purchases Reset Handler
+  if (adminResetSelfPurchasesBtn) {
+    adminResetSelfPurchasesBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
 
-      const targetId = String(adminResetSinglePlayerInput ? adminResetSinglePlayerInput.value : '').trim();
-      if (!targetId) {
-        showInfoModal('⚠️', 'Внимание', 'Пожалуйста, введите Telegram ID игрока для сброса.');
+      const myId = String(currentUser.telegramId || '').trim();
+      if (!myId) {
+        showInfoModal('⚠️', 'Внимание', 'Не удалось определить ваш Telegram ID.');
         return;
       }
 
-      adminResetSinglePlayerBtn.disabled = true;
-      const origText = adminResetSinglePlayerBtn.innerHTML;
-      adminResetSinglePlayerBtn.innerHTML = '⏳...';
+      adminResetSelfPurchasesBtn.disabled = true;
+      const origText = adminResetSelfPurchasesBtn.innerHTML;
+      adminResetSelfPurchasesBtn.innerHTML = '⏳ Сброс...';
 
       try {
-        let apiRes = null;
+        // 1. Call server API to reset admin's purchases in SQLite DB
         try {
-          apiRes = await apiCall('/api/admin/reset-purchases', 'POST', {
+          await apiCall('/api/admin/reset-purchases', 'POST', {
             telegramId: currentUser.telegramId,
             firstName: currentUser.firstName,
             username: currentUser.username,
-            targetTelegramId: targetId
+            targetTelegramId: myId
           });
         } catch (err) {}
 
-        // Direct KVDB Cloud reset for target player
+        // 2. Direct KVDB Cloud reset for admin's player record
         try {
-          const key = `player_${targetId}`;
+          const key = `player_${myId}`;
           const res = await fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(key)}`);
           if (res.ok) {
             const val = await res.json();
@@ -3073,12 +3072,24 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
         } catch (e) {}
 
-        if (String(currentUser.telegramId) === targetId) {
-          currentUser.all_colors_until = 0;
-          currentUser.all_colors_purchased_at = 0;
-          saveLocalUser();
-          updateShopUI();
-          syncPlayerToCloud(currentUser);
+        // 3. Reset local admin user object
+        currentUser.all_colors_until = 0;
+        currentUser.all_colors_purchased_at = 0;
+        saveLocalUser();
+        updateShopUI();
+        syncPlayerToCloud(currentUser);
+
+        // 4. Restore hidden bottle layers on current board
+        if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
+          engine.revealed = engine.bottles.map(b => {
+            if (!b || b.length === 0) return [];
+            const rev = new Array(b.length).fill(false);
+            rev[b.length - 1] = true;
+            return rev;
+          });
+          if (renderer && renderer.renderBoard) {
+            renderer.renderBoard(engine);
+          }
         }
 
         if (window.TelegramApp && window.TelegramApp.TelegramApp) {
@@ -3086,17 +3097,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         showInfoModal(
-          '👤',
-          'Сброс выполнен!',
-          `Покупки за TON игрока (ID: ${targetId}) успешно аннулированы.`
+          '👑',
+          'Сброс аккаунта выполнен!',
+          'Действующие покупки за TON на вашем администраторском аккаунте успешно аннулированы.\n\nБалансы кошелька не изменились.'
         );
-
-        if (adminResetSinglePlayerInput) adminResetSinglePlayerInput.value = '';
       } catch (err) {
-        showInfoModal('⚠️', 'Ошибка', 'Не удалось сбросить покупки игроку: ' + err.message);
+        showInfoModal('⚠️', 'Ошибка', 'Не удалось сбросить покупки: ' + err.message);
       } finally {
-        adminResetSinglePlayerBtn.disabled = false;
-        adminResetSinglePlayerBtn.innerHTML = origText;
+        adminResetSelfPurchasesBtn.disabled = false;
+        adminResetSelfPurchasesBtn.innerHTML = origText;
       }
     });
   }

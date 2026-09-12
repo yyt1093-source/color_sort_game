@@ -642,19 +642,17 @@
 
           <!-- Action Controls -->
           <div style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Reset All Players -->
+            <!-- Reset Admin's Own Account Only -->
+            <button type="button" id="adminResetSelfPurchasesBtn" style="width: 100%; padding: 11px 14px; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(56,189,248,0.4); border-radius: 10px; color: #fff; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(2,132,199,0.25);">
+              <span>👑</span>
+              <span>Сбросить только мой аккаунт</span>
+            </button>
+
+            <!-- Reset ALL Players in the Game -->
             <button type="button" id="adminResetPurchasesBtn" class="admin-reset-purchases-btn" style="width: 100%; margin: 0;">
               <span class="reset-btn-icon">🌐</span>
               <span class="reset-btn-label" id="adminResetPurchasesBtnLabel">Сбросить ВСЕМ игрокам в игре</span>
             </button>
-
-            <!-- Reset Single Player -->
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <input type="text" id="adminResetSinglePlayerInput" placeholder="Telegram ID игрока" style="flex: 1; padding: 9px 12px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; font-size: 13px; outline: none;">
-              <button type="button" id="adminResetSinglePlayerBtn" style="padding: 9px 14px; background: linear-gradient(135deg, #e11d48, #be123c); border: 1px solid rgba(244,63,94,0.4); border-radius: 10px; color: #fff; font-weight: 800; font-size: 12px; cursor: pointer; white-space: nowrap;">
-                👤 Сбросить игроку
-              </button>
-            </div>
           </div>
         </div>
 
