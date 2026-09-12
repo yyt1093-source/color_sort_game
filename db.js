@@ -433,6 +433,11 @@ function buyShopItem(telegramId, itemId) {
       name: '+20 Отмен хода',
       price: 1.0,
       undos: 20
+    },
+    reveals_pack_20: {
+      name: '+20 Открыть цвета',
+      price: 1.0,
+      reveals: 20
     }
   };
 
@@ -495,6 +500,15 @@ function buyShopItem(telegramId, itemId) {
       WHERE telegram_id = ?
     `);
     updateStmt.run(newBalance, item.undos, String(telegramId));
+  } else if (item.reveals) {
+    const updateStmt = db.prepare(`
+      UPDATE users
+      SET ton_balance = ?,
+          reveals = COALESCE(reveals, 0) + ?,
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+    updateStmt.run(newBalance, item.reveals, String(telegramId));
   }
 
   // Log purchase
