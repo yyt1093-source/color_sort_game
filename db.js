@@ -99,9 +99,6 @@ function initDatabase() {
   try {
     db.exec(`ALTER TABLE users ADD COLUMN all_colors_purchased_at INTEGER DEFAULT 0;`);
   } catch (e) {}
-  try {
-    db.exec(`UPDATE users SET hints = 0, undos = 0, reveals = 0, shuffles = 0;`);
-  } catch (e) {}
 }
 
 initDatabase();

@@ -1059,14 +1059,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const purchasedAt = Number(currentUser.all_colors_purchased_at || 0);
 
     if (localResetAt > 0 && (purchasedAt < localResetAt || !purchasedAt)) {
-      if (currentUser.all_colors_until || currentUser.hints || currentUser.undos || currentUser.reveals || currentUser.extraBottles || currentUser.shuffles) {
+      if (currentUser.all_colors_until) {
         currentUser.all_colors_until = 0;
         currentUser.all_colors_purchased_at = 0;
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        currentUser.shuffles = 0;
         saveLocalUser();
       }
       return false;
@@ -1242,15 +1237,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const parsed = JSON.parse(data);
         currentUser = { ...currentUser, ...parsed };
       } catch (e) {}
-    }
-    const migrated = localStorage.getItem('cs_zero_boosters_v6');
-    if (!migrated) {
-      currentUser.hints = 0;
-      currentUser.undos = 0;
-      currentUser.reveals = 0;
-      currentUser.extraBottles = 0;
-      localStorage.setItem('cs_zero_boosters_v6', 'true');
-      saveLocalUser();
     }
     if (currentUser.extraBottles === undefined) {
       currentUser.extraBottles = 0;
@@ -1437,17 +1423,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           resetAt = Number(rawText) || 0;
         }
 
-        if (resetAt > 0) {
+        const localResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
+        if (resetAt > 0 && resetAt > localResetAt) {
           localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
           const lastPurchased = Number(currentUser.all_colors_purchased_at || 0);
-          if (currentUser.all_colors_until || currentUser.hints || currentUser.undos || currentUser.reveals || currentUser.extraBottles || currentUser.shuffles) {
+          if (currentUser.all_colors_until && (!lastPurchased || lastPurchased < resetAt)) {
             currentUser.all_colors_until = 0;
             currentUser.all_colors_purchased_at = 0;
-            currentUser.hints = 0;
-            currentUser.undos = 0;
-            currentUser.reveals = 0;
-            currentUser.extraBottles = 0;
-            currentUser.shuffles = 0;
             saveLocalUser();
             updateShopUI();
             if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
