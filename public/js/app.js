@@ -1152,8 +1152,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     ? window.COLOR_SORT_API_URL
     : '';
 
+  function normalizeUserObject(user) {
+    if (!user || typeof user !== 'object') return user;
+    let bVal = 0;
+    if (user.extraBottles !== undefined && user.extra_bottles !== undefined) {
+      bVal = Math.max(Number(user.extraBottles || 0), Number(user.extra_bottles || 0));
+    } else if (user.extraBottles !== undefined) {
+      bVal = Number(user.extraBottles || 0);
+    } else if (user.extra_bottles !== undefined) {
+      bVal = Number(user.extra_bottles || 0);
+    }
+    user.extraBottles = Number(bVal || 0);
+    user.extra_bottles = Number(bVal || 0);
+    user.hints = Number(user.hints || 0);
+    user.undos = Number(user.undos || 0);
+    user.reveals = Number(user.reveals || 0);
+    user.ton_balance = Number(user.ton_balance !== undefined ? user.ton_balance : (user.tonBalance !== undefined ? user.tonBalance : 0));
+    return user;
+  }
+
   async function syncPlayerToCloud(user) {
     if (!user || !user.telegramId) return;
+    normalizeUserObject(user);
     const id = String(user.telegramId);
     const isRealTelegramUser = !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id);
 
@@ -1172,6 +1192,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           undos: Number(user.undos || 0),
           reveals: Number(user.reveals || 0),
           extraBottles: Number(user.extraBottles || 0),
+          extra_bottles: Number(user.extraBottles || 0),
           ton_balance: Number(user.ton_balance || 0),
           all_colors_until: Number(user.all_colors_until || 0),
           all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
@@ -1193,6 +1214,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       photoUrl: user.photoUrl,
       currentLevel: user.currentLevel,
       maxLevel: user.maxLevel,
+      hints: user.hints,
+      undos: user.undos,
+      reveals: user.reveals,
+      extraBottles: user.extraBottles,
+      ton_balance: user.ton_balance,
       starsAdded: 0,
       coinsAdded: 0
     }).catch(() => {});
@@ -1228,6 +1254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // LocalStorage helper
   function saveLocalUser() {
+    normalizeUserObject(currentUser);
     localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
   }
   function loadLocalUser() {
@@ -1238,9 +1265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser = { ...currentUser, ...parsed };
       } catch (e) {}
     }
-    if (currentUser.extraBottles === undefined) {
-      currentUser.extraBottles = 0;
-    }
+    normalizeUserObject(currentUser);
   }
 
   function processIncomingReferral() {
@@ -1580,18 +1605,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           async () => {
             const adWatched = await showRewardedAd();
             if (adWatched) {
-              const data = await apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'undos'
-              });
-              if (data && data.success && data.user) {
-                currentUser = { ...currentUser, ...data.user };
-              } else {
-                currentUser.undos = (currentUser.undos || 0) + 1;
-              }
+              currentUser.undos = (currentUser.undos || 0) + 1;
+              normalizeUserObject(currentUser);
               saveLocalUser();
               updateHeaderUI();
+              syncPlayerToCloud(currentUser);
               showInfoModal('🎁', 'Отмена хода зачислена', 'Вам добавлена +1 отмена хода в счётчик! Нажмите кнопку отмены, чтобы использовать.');
+              apiCall('/api/ad-reward', 'POST', {
+                telegramId: currentUser.telegramId,
+                rewardType: 'undos'
+              }).catch(() => {});
             }
           }
         );
@@ -1627,18 +1650,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           async () => {
             const adWatched = await showRewardedAd();
             if (adWatched) {
-              const data = await apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'hints'
-              });
-              if (data && data.success && data.user) {
-                currentUser = { ...currentUser, ...data.user };
-              } else {
-                currentUser.hints = (currentUser.hints || 0) + 1;
-              }
+              currentUser.hints = (currentUser.hints || 0) + 1;
+              normalizeUserObject(currentUser);
               saveLocalUser();
               updateHeaderUI();
+              syncPlayerToCloud(currentUser);
               showInfoModal('🎁', 'Подсказка зачислена', 'Вам добавлена +1 подсказка в счётчик! Нажмите кнопку подсказки, чтобы использовать.');
+              apiCall('/api/ad-reward', 'POST', {
+                telegramId: currentUser.telegramId,
+                rewardType: 'hints'
+              }).catch(() => {});
             }
           }
         );
@@ -1681,18 +1702,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           async () => {
             const adWatched = await showRewardedAd();
             if (adWatched) {
-              const data = await apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'reveal_bottle'
-              });
-              if (data && data.success && data.user) {
-                currentUser = { ...currentUser, ...data.user };
-              } else {
-                currentUser.reveals = (currentUser.reveals || 0) + 1;
-              }
+              currentUser.reveals = (currentUser.reveals || 0) + 1;
+              normalizeUserObject(currentUser);
               saveLocalUser();
               updateHeaderUI();
+              syncPlayerToCloud(currentUser);
               showInfoModal('🎁', 'Открытие цвета зачислено', 'Вам добавлено +1 открытие цвета в счётчик! Нажмите кнопку открытия, чтобы использовать.');
+              apiCall('/api/ad-reward', 'POST', {
+                telegramId: currentUser.telegramId,
+                rewardType: 'reveal_bottle'
+              }).catch(() => {});
             }
           }
         );
@@ -1732,24 +1751,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           async () => {
             const adWatched = await showRewardedAd();
             if (adWatched) {
-              try {
-                const data = await apiCall('/api/ad-reward', 'POST', {
-                  telegramId: currentUser.telegramId,
-                  rewardType: 'extra_bottle'
-                });
-                if (data && data.success && data.user) {
-                  currentUser = { ...currentUser, ...data.user };
-                  if (data.user.extra_bottles !== undefined) currentUser.extraBottles = data.user.extra_bottles;
-                } else {
-                  currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-                }
-              } catch (apiErr) {
-                console.warn('[Ad API Error, fallback to local]', apiErr);
-                currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-              }
+              currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+              normalizeUserObject(currentUser);
               saveLocalUser();
               updateHeaderUI();
+              syncPlayerToCloud(currentUser);
               showInfoModal('🎁', 'Пустая колба зачислена', 'Вам добавлена +1 пустая колба в счётчик! Нажмите кнопку колбы, чтобы поставить её на поле.');
+              apiCall('/api/ad-reward', 'POST', {
+                telegramId: currentUser.telegramId,
+                rewardType: 'extra_bottle'
+              }).catch(() => {});
             }
           }
         );
@@ -2603,10 +2614,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
 
+      normalizeUserObject(currentUser);
       saveLocalUser();
       updateShopUI();
       updateHeaderUI();
       updateTonWalletUI();
+      syncPlayerToCloud(currentUser);
 
       if (itemId === 'all_colors_15d') {
         if (engine && typeof engine.revealAllColors === 'function') {
@@ -3627,32 +3640,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (adWatched) {
-        try {
-          const data = await apiCall('/api/ad-reward', 'POST', {
-            telegramId: currentUser.telegramId,
-            rewardType
-          });
+        if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
+        else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
+        else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
+        else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
 
-          if (data && data.success && data.user) {
-            currentUser = { ...currentUser, ...data.user };
-            if (data.user.extra_bottles !== undefined) currentUser.extraBottles = data.user.extra_bottles;
-          } else {
-            // Offline fallback
-            if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
-            else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
-            else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
-            else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-          }
-        } catch (apiErr) {
-          console.warn('[Ad API Error, fallback to local]', apiErr);
-          if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
-          else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
-          else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
-          else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-        }
-
+        normalizeUserObject(currentUser);
         saveLocalUser();
         updateHeaderUI();
+        syncPlayerToCloud(currentUser);
+
+        apiCall('/api/ad-reward', 'POST', {
+          telegramId: currentUser.telegramId,
+          rewardType
+        }).catch(() => {});
 
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
 

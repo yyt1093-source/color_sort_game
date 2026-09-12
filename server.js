@@ -188,6 +188,14 @@ app.post('/api/user/sync', (req, res) => {
           photoUrl: updatedUser.photo_url || photoUrl || '',
           maxLevel: updatedUser.max_level || maxLevel || currentLevel || 1,
           stars: updatedUser.stars || 0,
+          hints: updatedUser.hints || 0,
+          undos: updatedUser.undos || 0,
+          reveals: updatedUser.reveals || 0,
+          extraBottles: updatedUser.extra_bottles || 0,
+          extra_bottles: updatedUser.extra_bottles || 0,
+          ton_balance: updatedUser.ton_balance || 0,
+          all_colors_until: updatedUser.all_colors_until || 0,
+          all_colors_purchased_at: updatedUser.all_colors_purchased_at || 0,
           updatedAt: Date.now()
         }),
         signal: AbortSignal.timeout(3000)
