@@ -1,7 +1,7 @@
 /**
  * Main Application Controller for Color Sort Telegram Mini App
  */
-document.addEventListener('DOMContentLoaded', async () => {
+async function initColorSortApp() {
   console.log('[App] Initializing Color Sort Game...');
 
   // 1. Init Telegram
@@ -12,6 +12,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     firstName: 'Игрок',
     photoUrl: ''
   };
+
+  // TON Wallet & Deposit State (declared at top of DOMContentLoaded to prevent TDZ ReferenceError)
+  let selectedTonAmount = 0.5;
+  let tonDepositAddress = 'UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5';
+  let isTonVerifying = false;
+  let tonConnectUIInstance = null;
+  let connectedWalletAddress = '';
 
   // 2. Init Adsgram
   let AdController = null;
@@ -2872,11 +2879,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // ==========================================================================
   // TON Wallet & Deposit Modal Controller
   // ==========================================================================
-  let selectedTonAmount = 0.5;
-  let tonDepositAddress = 'UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5';
-  let isTonVerifying = false;
-  let tonConnectUIInstance = null;
-  let connectedWalletAddress = '';
+  // Note: selectedTonAmount, tonDepositAddress, isTonVerifying, tonConnectUIInstance, connectedWalletAddress
+  // are declared at the top of DOMContentLoaded to prevent TDZ ReferenceErrors.
 
   function formatShortTonAddress(addr) {
     if (!addr) return '';
@@ -2893,17 +2897,23 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         tonConnectUIInstance.onStatusChange((wallet) => {
           if (wallet && wallet.account) {
             connectedWalletAddress = wallet.account.address || '';
-            currentUser.ton_wallet = connectedWalletAddress;
-            saveLocalUser();
+            if (currentUser) {
+              currentUser.ton_wallet = connectedWalletAddress;
+              saveLocalUser();
+            }
             updateTonWalletUI();
-            apiCall('/api/wallet/connect', 'POST', {
-              telegramId: currentUser.telegramId,
-              walletAddress: connectedWalletAddress
-            }).catch(() => {});
+            if (currentUser && currentUser.telegramId) {
+              apiCall('/api/wallet/connect', 'POST', {
+                telegramId: currentUser.telegramId,
+                walletAddress: connectedWalletAddress
+              }).catch(() => {});
+            }
           } else {
             connectedWalletAddress = '';
-            currentUser.ton_wallet = '';
-            saveLocalUser();
+            if (currentUser) {
+              currentUser.ton_wallet = '';
+              saveLocalUser();
+            }
             updateTonWalletUI();
           }
         });
@@ -2934,12 +2944,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   }
 
   function updateTonWalletUI() {
-    const balance = parseFloat(currentUser.ton_balance || 0);
+    const balance = parseFloat((currentUser && currentUser.ton_balance) || 0);
     if (tonModalUserBalance) {
       tonModalUserBalance.textContent = `${balance.toFixed(2)} TON`;
     }
 
-    const activeAddr = connectedWalletAddress || currentUser.ton_wallet || '';
+    const activeAddr = (typeof connectedWalletAddress !== 'undefined' ? connectedWalletAddress : '') || ((currentUser && currentUser.ton_wallet) ? currentUser.ton_wallet : '');
     const isConnected = !!activeAddr;
 
     if (tonModalWalletStatus) {
@@ -2956,8 +2966,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
 
     // Memo
-    const memo = currentUser.memo_code || `SORT-${String(currentUser.telegramId || '').replace(/\D/g, '').slice(-8) || '88294012'}`;
-    currentUser.memo_code = memo;
+    const memo = (currentUser && currentUser.memo_code) || `SORT-${String((currentUser && currentUser.telegramId) || '').replace(/\D/g, '').slice(-8) || '88294012'}`;
+    if (currentUser) {
+      currentUser.memo_code = memo;
+    }
     if (tonMemoDisplay) {
       tonMemoDisplay.textContent = memo;
     }
@@ -3377,17 +3389,17 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // Chest / Upgrades Shop Modal Logic
   // ==========================================
   function updateShopUI() {
-    const bal = parseFloat(currentUser.ton_balance || 0);
+    const bal = parseFloat((currentUser && currentUser.ton_balance) || 0);
     if (shopUserBalance) {
       shopUserBalance.textContent = `${bal.toFixed(2)} GRAM`;
     }
 
-    const isAllColors = window.isAllColorsActive();
+    const isAllColors = (typeof window.isAllColorsActive === 'function') ? window.isAllColorsActive() : false;
     if (shopActivePerkBanner) {
       shopActivePerkBanner.classList.toggle('hidden', !isAllColors);
     }
 
-    if (isAllColors && shopActiveTimerText) {
+    if (isAllColors && shopActiveTimerText && currentUser) {
       const msLeft = Number(currentUser.all_colors_until) - Date.now();
       if (msLeft > 0) {
         const days = Math.floor(msLeft / (24 * 3600 * 1000));
@@ -4783,6 +4795,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       });
     }
   }
+}
 
-});
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initColorSortApp);
+} else {
+  initColorSortApp();
+}
+
 
