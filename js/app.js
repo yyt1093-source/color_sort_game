@@ -2681,7 +2681,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       all_colors_15d: 5.0,
       bottles_pack_15: 1.0,
       hints_pack_20: 1.0,
-      undos_pack_20: 1.0
+      undos_pack_20: 1.0,
+      reveals_pack_20: 1.0
     };
     const price = itemPrices[itemId] || 1.0;
 
@@ -2733,6 +2734,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (itemId === 'undos_pack_20') {
           currentUser.undos = (currentUser.undos || 0) + 20;
         }
+
+        if (res.user.reveals !== undefined) {
+          currentUser.reveals = Number(res.user.reveals || 0);
+        } else if (itemId === 'reveals_pack_20') {
+          currentUser.reveals = (currentUser.reveals || 0) + 20;
+        }
       } else {
         // Fallback for static GitHub Pages / client-side test
         currentUser.ton_balance = Number((currentBal - price).toFixed(4));
@@ -2749,6 +2756,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           currentUser.hints = (currentUser.hints || 0) + 20;
         } else if (itemId === 'undos_pack_20') {
           currentUser.undos = (currentUser.undos || 0) + 20;
+        } else if (itemId === 'reveals_pack_20') {
+          currentUser.reveals = (currentUser.reveals || 0) + 20;
         }
       }
 
