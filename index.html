@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=47220">
+  <link rel="stylesheet" href="style.css?v=47221">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -80,11 +80,6 @@
           if (e) {
             e.preventDefault();
             e.stopPropagation();
-          }
-          var tg = window.Telegram && window.Telegram.WebApp;
-          if (ref && (!tg || !tg.initData)) {
-            window.location.href = 'https://t.me/sortcolors_bot?startapp=' + ref;
-            return;
           }
           scr.style.pointerEvents = 'none';
           scr.classList.add('start-screen-hidden');
@@ -307,7 +302,7 @@
         <div class="ton-copy-card ton-addr-card">
           <div class="ton-copy-card-info">
             <span class="ton-copy-sub">Адрес TON:</span>
-            <span id="tonAddressDisplay" class="ton-copy-text" title="EQBvW8Z5huBkMJYdnfHCTvMzNkVx0842_TONFARMER_OFFICIAL_DEPLOYED">EQBv...OYED</span>
+            <span id="tonAddressDisplay" class="ton-copy-text" title="UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5">UQCH...PIv5</span>
           </div>
           <button type="button" id="tonCopyAddrBtn" class="ton-copy-btn">
             <span class="copy-icon">📋</span>
