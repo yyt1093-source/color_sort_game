@@ -3208,17 +3208,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  if (adminAddBoardBottleBtn) {
-    adminAddBoardBottleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      engine.addExtraBottle();
-      if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-      showAdminFeedback(t('adminBoardBottleAddedMsg'));
-    });
-  }
-
   if (adminAddHintsBtn) {
     adminAddHintsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
