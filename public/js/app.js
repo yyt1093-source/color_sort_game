@@ -2014,6 +2014,116 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  const processedTxHashesClient = new Set();
+
+  async function verifyTonDepositOnChainClient(memo, expectedAmount, walletAddress) {
+    const targetWallet = 'UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5';
+    const targetMemo = (memo || '').trim().toLowerCase();
+    const userWallet = (walletAddress || '').trim().toLowerCase();
+    const reqAmountNano = Math.floor((parseFloat(expectedAmount) || 0) * 1e9);
+
+    try {
+      const url = `https://toncenter.com/api/v2/getTransactions?address=${targetWallet}&limit=40`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.ok && Array.isArray(data.result)) {
+          for (const tx of data.result) {
+            const txHash = tx.transaction_id ? (tx.transaction_id.hash || String(tx.transaction_id.lt)) : null;
+            if (!txHash || processedTxHashesClient.has(String(txHash))) continue;
+
+            const inMsg = tx.in_msg;
+            if (!inMsg) continue;
+
+            const valueNano = parseInt(inMsg.value || '0', 10);
+            if (isNaN(valueNano) || valueNano <= 0) continue;
+
+            let comment = '';
+            if (typeof inMsg.message === 'string') {
+              comment = inMsg.message;
+            } else if (inMsg.msg_data && typeof inMsg.msg_data.text === 'string') {
+              comment = inMsg.msg_data.text;
+            }
+
+            const commentLower = comment.trim().toLowerCase();
+            const sourceAddr = (inMsg.source || '').trim().toLowerCase();
+
+            let isMatch = false;
+            if (targetMemo && commentLower.includes(targetMemo)) {
+              isMatch = true;
+            } else if (userWallet && sourceAddr && (sourceAddr.includes(userWallet) || userWallet.includes(sourceAddr))) {
+              isMatch = true;
+            }
+
+            if (isMatch && valueNano >= Math.floor(reqAmountNano * 0.9)) {
+              processedTxHashesClient.add(String(txHash));
+              return {
+                verified: true,
+                txHash: String(txHash),
+                amount: valueNano / 1e9
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[FRONTEND TON VERIFY] Toncenter API error:', e);
+    }
+
+    try {
+      const url = `https://tonapi.io/v2/blockchain/accounts/${targetWallet}/transactions?limit=40`;
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data.transactions)) {
+          for (const tx of data.transactions) {
+            const txHash = tx.hash || (tx.transaction_id ? tx.transaction_id.hash : null);
+            if (!txHash || processedTxHashesClient.has(String(txHash))) continue;
+
+            const inMsg = tx.in_msg;
+            if (!inMsg) continue;
+
+            const valueNano = parseInt(inMsg.value || '0', 10);
+            if (isNaN(valueNano) || valueNano <= 0) continue;
+
+            let comment = '';
+            if (inMsg.decoded_body && typeof inMsg.decoded_body.text === 'string') {
+              comment = inMsg.decoded_body.text;
+            } else if (typeof inMsg.message === 'string') {
+              comment = inMsg.message;
+            }
+
+            const commentLower = comment.trim().toLowerCase();
+            const sourceAddr = (inMsg.source && inMsg.source.address ? inMsg.source.address : (inMsg.source || '')).trim().toLowerCase();
+
+            let isMatch = false;
+            if (targetMemo && commentLower.includes(targetMemo)) {
+              isMatch = true;
+            } else if (userWallet && sourceAddr && (sourceAddr.includes(userWallet) || userWallet.includes(sourceAddr))) {
+              isMatch = true;
+            }
+
+            if (isMatch && valueNano >= Math.floor(reqAmountNano * 0.9)) {
+              processedTxHashesClient.add(String(txHash));
+              return {
+                verified: true,
+                txHash: String(txHash),
+                amount: valueNano / 1e9
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[FRONTEND TON VERIFY] Tonapi error:', e);
+    }
+
+    return {
+      verified: false,
+      error: 'Транзакция не найдена на кошельке UQCH...PIv5. Убедитесь, что перевели TON с указанным Memo и повторите попытку через 10-20 секунд.'
+    };
+  }
+
   // Verify Payment Button
   if (tonVerifyPaymentBtn) {
     tonVerifyPaymentBtn.addEventListener('click', async () => {
@@ -2030,20 +2140,55 @@ document.addEventListener('DOMContentLoaded', async () => {
       const walletAddr = connectedWalletAddress || currentUser.ton_wallet || '';
 
       try {
-        const res = await apiCall('/api/wallet/verify-deposit', 'POST', {
-          telegramId: currentUser.telegramId,
-          amount: selectedTonAmount,
-          memo: memo,
-          walletAddress: walletAddr
-        });
+        let apiRes = null;
+        try {
+          apiRes = await apiCall('/api/wallet/verify-deposit', 'POST', {
+            telegramId: currentUser.telegramId,
+            amount: selectedTonAmount,
+            memo: memo,
+            walletAddress: walletAddr
+          });
+        } catch (e) {}
 
-        setTimeout(() => {
-          isTonVerifying = false;
-          tonVerifyPaymentBtn.disabled = false;
-          if (tonVerifyBtnLabel) tonVerifyBtnLabel.textContent = 'Проверить оплату';
+        isTonVerifying = false;
+        tonVerifyPaymentBtn.disabled = false;
+        if (tonVerifyBtnLabel) tonVerifyBtnLabel.textContent = 'Проверить оплату';
 
-          if (res && res.success && res.user) {
-            currentUser.ton_balance = res.user.ton_balance;
+        if (apiRes && apiRes.success && apiRes.user) {
+          currentUser.ton_balance = apiRes.user.ton_balance;
+          saveLocalUser();
+          updateTonWalletUI();
+          updateShopUI();
+          updateHeaderUI();
+
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+            window.TelegramApp.TelegramApp.haptic('success');
+          }
+          if (window.SoundEngine && window.SoundEngine.SoundEngine) {
+            window.SoundEngine.SoundEngine.playComplete();
+          }
+
+          showInfoModal(
+            '💎',
+            'Оплата подтверждена!',
+            `На ваш баланс успешно зачислено +${selectedTonAmount.toFixed(2)} GRAM!`
+          );
+        } else if (apiRes && apiRes.success === false) {
+          // Server returned explicit error (transaction not found on chain)
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+            window.TelegramApp.TelegramApp.haptic('error');
+          }
+          showInfoModal(
+            '⚠️',
+            'Платеж не найден',
+            apiRes.error || 'Транзакция пока не обнаружена на кошельке TON. Проверьте перевод и повторите попытку.'
+          );
+        } else {
+          // Direct client-side blockchain check if backend API unreachable (e.g. GitHub Pages static host)
+          const onChainCheck = await verifyTonDepositOnChainClient(memo, selectedTonAmount, walletAddr);
+          if (onChainCheck.verified) {
+            const addVal = onChainCheck.amount || selectedTonAmount;
+            currentUser.ton_balance = (parseFloat(currentUser.ton_balance || 0) + addVal);
             saveLocalUser();
             updateTonWalletUI();
             updateShopUI();
@@ -2052,37 +2197,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (window.TelegramApp && window.TelegramApp.TelegramApp) {
               window.TelegramApp.TelegramApp.haptic('success');
             }
-            if (window.SoundEngine && window.SoundEngine.SoundEngine) {
-              window.SoundEngine.SoundEngine.playComplete();
-            }
-
             showInfoModal(
               '💎',
               'Оплата подтверждена!',
-              `На ваш баланс успешно зачислено +${selectedTonAmount.toFixed(2)} GRAM!`
+              `На ваш баланс успешно зачислено +${addVal.toFixed(2)} GRAM!`
             );
           } else {
-            // Simulated instant fallback in local/offline environment
-            currentUser.ton_balance = (parseFloat(currentUser.ton_balance || 0) + selectedTonAmount);
-            saveLocalUser();
-            updateTonWalletUI();
-            updateShopUI();
-            updateHeaderUI();
-
             if (window.TelegramApp && window.TelegramApp.TelegramApp) {
-              window.TelegramApp.TelegramApp.haptic('success');
+              window.TelegramApp.TelegramApp.haptic('error');
             }
             showInfoModal(
-              '💎',
-              'Оплата подтверждена!',
-              `На ваш баланс успешно зачислено +${selectedTonAmount.toFixed(2)} GRAM!`
+              '⚠️',
+              'Платеж не найден',
+              onChainCheck.error || 'Транзакция пока не обнаружена на кошельке TON. Проверьте перевод и повторите попытку.'
             );
           }
-        }, 1200);
+        }
       } catch (err) {
         isTonVerifying = false;
         tonVerifyPaymentBtn.disabled = false;
         if (tonVerifyBtnLabel) tonVerifyBtnLabel.textContent = 'Проверить оплату';
+        showInfoModal(
+          '⚠️',
+          'Ошибка проверки',
+          'Не удалось проверить платеж. Пожалуйста, попробуйте еще раз через несколько секунд.'
+        );
       }
     });
   }
