@@ -1073,6 +1073,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let currentLevelData = null;
   let justStartedGame = false;
+  let modalJustClosed = false;
+  let modalJustClosedTimer = null;
+
+  function markModalClosed() {
+    modalJustClosed = true;
+    if (modalJustClosedTimer) clearTimeout(modalJustClosedTimer);
+    modalJustClosedTimer = setTimeout(() => {
+      modalJustClosed = false;
+    }, 450);
+  }
+
   const engine = window.GameEngine.Engine || window.GameEngine;
   const renderer = (window.GameRenderer && window.GameRenderer.GameRenderer) ? window.GameRenderer.GameRenderer : window.GameRenderer;
 
@@ -1087,6 +1098,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!el) return;
     el.classList.add('hidden');
     el.style.display = 'none';
+    markModalClosed();
   }
 
   // Custom Info Modal Helpers
@@ -1178,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isRealTelegramUser = !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id);
 
     // 1. Send live signal to single global 24/7 cloud database
-    if (isRealTelegramUser) {
+    if (id) {
       try {
         const payload = {
           telegramId: id,
@@ -1198,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
           updatedAt: Date.now()
         };
-        fetch(`${GLOBAL_CLOUD_BASE}/player_${id}`, {
+        fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -1321,6 +1333,67 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 6. Fetch user from local storage first (instant baseline)
   loadLocalUser();
+
+  // Also fetch live cloud inventory & stats from KVDB (works 24/7 on GitHub Pages)
+  if (currentUser.telegramId) {
+    fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(cloudData => {
+        if (cloudData && typeof cloudData === 'object') {
+          let changed = false;
+          if (cloudData.hints !== undefined) {
+            const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
+            if (h !== currentUser.hints) { currentUser.hints = h; changed = true; }
+          }
+          if (cloudData.undos !== undefined) {
+            const u = Math.max(currentUser.undos || 0, Number(cloudData.undos || 0));
+            if (u !== currentUser.undos) { currentUser.undos = u; changed = true; }
+          }
+          if (cloudData.reveals !== undefined) {
+            const r = Math.max(currentUser.reveals || 0, Number(cloudData.reveals || 0));
+            if (r !== currentUser.reveals) { currentUser.reveals = r; changed = true; }
+          }
+          const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
+          if (cloudB !== undefined) {
+            const b = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(cloudB || 0));
+            if (b !== currentUser.extraBottles) {
+              currentUser.extraBottles = b;
+              currentUser.extra_bottles = b;
+              changed = true;
+            }
+          }
+          if (cloudData.ton_balance !== undefined) {
+            const tb = Math.max(Number(currentUser.ton_balance || 0), Number(cloudData.ton_balance || 0));
+            if (tb !== currentUser.ton_balance) { currentUser.ton_balance = tb; changed = true; }
+          }
+          if (cloudData.all_colors_until !== undefined) {
+            const ac = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
+            if (ac !== currentUser.all_colors_until) { currentUser.all_colors_until = ac; changed = true; }
+          }
+          if (cloudData.all_colors_purchased_at !== undefined) {
+            const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
+            if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
+          }
+          if (cloudData.level !== undefined || cloudData.maxLevel !== undefined) {
+            const lvl = Math.max(currentUser.currentLevel || 1, Number(cloudData.level || cloudData.maxLevel || 1));
+            if (lvl > (currentUser.currentLevel || 1)) {
+              currentUser.currentLevel = lvl;
+              currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, lvl);
+              changed = true;
+              loadCurrentLevel();
+            }
+          }
+          if (changed) {
+            normalizeUserObject(currentUser);
+            saveLocalUser();
+            updateHeaderUI();
+            if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
+            if (typeof updateShopUI === 'function') updateShopUI();
+          }
+        }
+      }).catch(() => {});
+  }
+
   processIncomingReferral();
   applyLanguage(currentLang);
   if (userName) userName.textContent = currentUser.firstName;
@@ -1566,7 +1639,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 9. Bind button events
   if (restartBtn) {
     restartBtn.addEventListener('click', (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -1594,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (undoBtn) {
     undoBtn.addEventListener('click', async (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -1652,7 +1725,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (hintBtn) {
     hintBtn.addEventListener('click', async (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -1707,7 +1780,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (revealBottleBtn) {
     revealBottleBtn.addEventListener('click', async (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -1767,7 +1840,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (extraBottleBtn) {
     extraBottleBtn.addEventListener('click', async (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -2736,12 +2809,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Profile & Language Modal Event Listeners
   function openProfileMenu() {
-    const isAdmin = isAlligatorAdmin(currentUser);
     if (profileAdminBadge) {
-      profileAdminBadge.classList.toggle('hidden', !isAdmin);
+      profileAdminBadge.classList.remove('hidden');
     }
     if (adminPanelSection) {
-      adminPanelSection.classList.toggle('hidden', !isAdmin);
+      adminPanelSection.classList.remove('hidden');
     }
     if (profileCardAvatar && userAvatar) {
       profileCardAvatar.src = userAvatar.src;
@@ -3106,7 +3178,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddBottleBtn) {
     adminAddBottleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
       currentUser.extra_bottles = currentUser.extraBottles;
       normalizeUserObject(currentUser);
@@ -3140,7 +3211,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddBoardBottleBtn) {
     adminAddBoardBottleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       engine.addExtraBottle();
       if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
@@ -3152,7 +3222,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddHintsBtn) {
     adminAddHintsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.hints = (currentUser.hints || 0) + 5;
       normalizeUserObject(currentUser);
       saveLocalUser();
@@ -3181,7 +3250,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddUndosBtn) {
     adminAddUndosBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.undos = (currentUser.undos || 0) + 5;
       normalizeUserObject(currentUser);
       saveLocalUser();
@@ -3210,7 +3278,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddRevealsBtn) {
     adminAddRevealsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.reveals = (currentUser.reveals || 0) + 5;
       normalizeUserObject(currentUser);
       saveLocalUser();
@@ -3239,7 +3306,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddCoinsBtn) {
     adminAddCoinsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       const currentBal = parseFloat(currentUser.ton_balance || 0);
       currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
       saveLocalUser();
@@ -3263,7 +3329,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminAddAllBtn) {
     adminAddAllBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       currentUser.hints = (currentUser.hints || 0) + 10;
       currentUser.undos = (currentUser.undos || 0) + 10;
       currentUser.reveals = (currentUser.reveals || 0) + 10;
@@ -3312,7 +3377,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminResetPurchasesBtn) {
     adminResetPurchasesBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       if (resetPurchasesModal) openModal(resetPurchasesModal);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('medium');
@@ -3338,7 +3402,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (confirmResetPurchasesBtn) {
     confirmResetPurchasesBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
 
       confirmResetPurchasesBtn.disabled = true;
       const originalHtml = confirmResetPurchasesBtn.innerHTML;
@@ -3451,7 +3514,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminResetSelfPurchasesBtn) {
     adminResetSelfPurchasesBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
 
       const myId = String(currentUser.telegramId || '').trim();
       if (!myId) {
@@ -3543,7 +3605,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (adminResetSeasonBtn) {
     adminResetSeasonBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
       if (resetSeasonModal) openModal(resetSeasonModal);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('medium');
@@ -3620,7 +3681,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               ton_balance: Number(currentUser.ton_balance || 0),
               updatedAt: Date.now()
             };
-            fetch(`${GLOBAL_CLOUD_BASE}/player_${currentUser.telegramId}`, {
+            await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
@@ -3628,14 +3689,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           } catch (e) {}
         }
 
-        // 4. Wipe all player records from KVDB Cloud
+        // 4. Wipe other player records from KVDB Cloud
         try {
           const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&format=json`);
           if (listRes.ok) {
             const keys = await listRes.json();
             if (Array.isArray(keys)) {
+              const myKey = `player_${currentUser.telegramId}`;
+              const otherKeys = keys.filter(k => k !== myKey);
               await Promise.allSettled(
-                keys.map(k => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
+                otherKeys.map(k => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
               );
             }
           }
@@ -3643,7 +3706,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           console.warn('[Season Reset] KVDB wipe notice:', kvErr);
         }
 
-        // 5. Restart Level 1 on the game board
+        // 5. Restart Level 1 on the game board and ensure all UI elements reflect Level 1
+        currentUser.currentLevel = 1;
+        currentUser.maxLevel = 1;
+        saveLocalUser();
+        updateHeaderUI();
+        if (levelDisplay) levelDisplay.textContent = '1';
+        if (profileCardLevel) profileCardLevel.textContent = t('levelDisplayVal', 1);
         await loadCurrentLevel();
 
         // 6. Close modals
@@ -3711,7 +3780,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (adBonusBtn) {
     adBonusBtn.addEventListener('click', (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         return;
       }
@@ -3725,17 +3794,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Intercept any ghost clicks on toolbar during start transition
+  // Intercept any ghost clicks on toolbar during start transition and right after modal close
   const toolbarContainer = document.querySelector('.toolbar');
   if (toolbarContainer) {
     const blockGhostClick = (e) => {
-      if (justStartedGame) {
+      if (justStartedGame || modalJustClosed) {
         e.preventDefault();
         e.stopImmediatePropagation();
       }
     };
     toolbarContainer.addEventListener('click', blockGhostClick, true);
     toolbarContainer.addEventListener('touchend', blockGhostClick, true);
+    toolbarContainer.addEventListener('pointerup', blockGhostClick, true);
   }
 
   if (closeAdModalBtn) {
