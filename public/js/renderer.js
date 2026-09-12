@@ -208,6 +208,7 @@
         type: 'circle'
       });
     }
+    ensureParticleLoopRunning();
   }
 
   function animatePour(fromIdx, toIdx, amount, colorIdx, onComplete) {
@@ -572,9 +573,18 @@
         type: Math.random() > 0.5 ? 'circle' : 'star'
       });
     }
+    ensureParticleLoopRunning();
   }
 
-  function startParticleLoop() {
+  let isParticleLoopRunning = false;
+
+  function ensureParticleLoopRunning() {
+    if (isParticleLoopRunning) return;
+    if (!particleCtx || !particleCanvas) return;
+    if (activeParticles.length === 0) return;
+
+    isParticleLoopRunning = true;
+
     function loop() {
       if (particleCtx && particleCanvas) {
         particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
@@ -621,9 +631,25 @@
           particleCtx.restore();
         }
       }
-      animFrameId = requestAnimationFrame(loop);
+
+      if (activeParticles.length > 0) {
+        animFrameId = requestAnimationFrame(loop);
+      } else {
+        isParticleLoopRunning = false;
+        animFrameId = null;
+        if (particleCtx && particleCanvas) {
+          particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+        }
+      }
     }
-    loop();
+
+    animFrameId = requestAnimationFrame(loop);
+  }
+
+  function startParticleLoop() {
+    if (activeParticles.length > 0) {
+      ensureParticleLoopRunning();
+    }
   }
 
   function triggerWinConfetti() {
