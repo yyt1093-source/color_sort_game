@@ -21,7 +21,7 @@ git checkout gh-pages
 git checkout main -- public
 
 # Copy all assets from public/ into root for GitHub Pages
-Copy-Item -Recurse -Force public/* .
+Get-ChildItem -Path public\* | Copy-Item -Destination . -Recurse -Force
 
 git add -A
 try {
