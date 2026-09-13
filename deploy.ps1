@@ -33,6 +33,7 @@ git push origin gh-pages
 
 Write-Host "=== Step 3: Returning to 'main' branch ===" -ForegroundColor Cyan
 git checkout main
+git clean -fd
 
 Write-Host "`n Deployment to live server complete!" -ForegroundColor Green
 Write-Host "Live WebApp URL: https://yyt1093-source.github.io/color_sort_game/" -ForegroundColor Green
