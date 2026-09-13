@@ -222,11 +222,23 @@ app.get('/api/leaderboard', async (req, res) => {
   try {
     const telegramId = req.query.telegramId || '';
     const leaderboard = db.getLeaderboard(telegramId, 50);
-    const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
+    let seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+
+    // Query global cloud KVDB meta_season_reset_at
+    try {
+      const metaRes = await fetch(`https://kvdb.io/${bucket}/meta_season_reset_at?_cb=${Date.now()}`, {
+        signal: AbortSignal.timeout(1500)
+      });
+      if (metaRes.ok) {
+        const metaData = await metaRes.json();
+        const kvResetAt = Number(metaData.resetAt || metaData) || 0;
+        if (kvResetAt > seasonResetAt) seasonResetAt = kvResetAt;
+      }
+    } catch (e) {}
 
     // Merge from global cloud KVDB so offline/online players are unified
     try {
-      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
       const cloudRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
         signal: AbortSignal.timeout(2500)
       });
@@ -549,6 +561,11 @@ app.post('/api/admin/reset-season', async (req, res) => {
       return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
     }
 
+    // 1. Pre-check: inspect leaderboard before reset
+    const beforeData = db.getLeaderboard ? db.getLeaderboard(null, 100) : { topPlayers: [] };
+    const beforePlayers = (beforeData && beforeData.topPlayers) ? beforeData.topPlayers : [];
+    console.log(`[API /reset-season] Контроль ДО сброса: ${beforePlayers.length} игроков в лидерборде.`);
+
     const resetTimestamp = Number(reqBody.resetAt) || Date.now();
     const result = db.resetSeason(resetTimestamp);
     let updatedUser = null;
@@ -556,10 +573,29 @@ app.post('/api/admin/reset-season', async (req, res) => {
       updatedUser = db.getUser(reqBody.telegramId);
     }
 
-    // Wipe KVDB records on the server asynchronously
-    resetKvdbSeasonServer(resetTimestamp).catch(err => console.warn('[KVDB Season Reset Server Error]', err));
+    // Combine player IDs from req.body and SQLite leaderboard
+    const targetPlayerIds = Array.from(new Set([
+      ...(Array.isArray(reqBody.leaderboardPlayerIds) ? reqBody.leaderboardPlayerIds.map(String) : []),
+      ...beforePlayers.map(p => String(p.telegram_id))
+    ]));
 
-    res.json({ success: true, ...result, resetAt: resetTimestamp, user: updatedUser });
+    // Wipe KVDB records on the server with pre-check target list
+    resetKvdbSeasonServer(resetTimestamp, targetPlayerIds).catch(err => console.warn('[KVDB Season Reset Server Error]', err));
+
+    // 2. Post-check: verify leaderboard after reset
+    const afterData = db.getLeaderboard ? db.getLeaderboard(null, 100) : { topPlayers: [] };
+    const afterPlayers = (afterData && afterData.topPlayers) ? afterData.topPlayers : [];
+    console.log(`[API /reset-season] Контроль ПОСЛЕ сброса: ${afterPlayers.length} игроков в лидерборде.`);
+
+    res.json({
+      success: true,
+      ...result,
+      resetAt: resetTimestamp,
+      user: updatedUser,
+      beforeCount: beforePlayers.length,
+      afterCount: afterPlayers.length,
+      verified: afterPlayers.length === 0
+    });
   } catch (err) {
     console.error('[API ERROR] /api/admin/reset-season:', err);
     res.status(500).json({ success: false, error: err.message });
@@ -578,17 +614,13 @@ app.get('/api/config/season-status', (req, res) => {
   }
 });
 
-async function resetKvdbSeasonServer(resetTimestamp) {
+async function resetKvdbSeasonServer(resetTimestamp, targetPlayerIds = []) {
   const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
   const baseUrl = `https://kvdb.io/${bucket}`;
 
   try {
+    // 1. Write season reset timestamp to KVDB (purchases are NOT reset!)
     await fetch(`${baseUrl}/meta_season_reset_at`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resetAt: resetTimestamp })
-    });
-    await fetch(`${baseUrl}/meta_gram_purchases_reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ resetAt: resetTimestamp })
@@ -597,6 +629,39 @@ async function resetKvdbSeasonServer(resetTimestamp) {
     console.warn('[SERVER KVDB RESET] Meta notice error:', e.message);
   }
 
+  // 2. Targeted reset of known leaderboard players (redundancy control)
+  if (Array.isArray(targetPlayerIds) && targetPlayerIds.length > 0) {
+    await Promise.allSettled(
+      targetPlayerIds.map(async (pid) => {
+        try {
+          const pRes = await fetch(`${baseUrl}/player_${encodeURIComponent(pid)}?_cb=${Date.now()}`);
+          let p = null;
+          if (pRes.ok) {
+            p = await pRes.json();
+            if (typeof p === 'string') {
+              try { p = JSON.parse(p); } catch (e) { p = null; }
+            }
+          }
+          if (!p || typeof p !== 'object') p = { telegramId: pid };
+          p.currentLevel = 1;
+          p.maxLevel = 0;
+          p.level = 0;
+          p.stars = 0;
+          p.total_moves = 0;
+          p.seasonResetAt = resetTimestamp;
+          p.updatedAt = resetTimestamp;
+          // STRICTLY PRESERVED: ton_balance, ton_wallet, memo_code, all_colors_until, all_colors_purchased_at
+          return fetch(`${baseUrl}/player_${encodeURIComponent(pid)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(p)
+          });
+        } catch (e) {}
+      })
+    );
+  }
+
+  // 3. Mass reset of all other player records
   try {
     const listRes = await fetch(`${baseUrl}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
     if (listRes.ok) {
@@ -613,18 +678,10 @@ async function resetKvdbSeasonServer(resetTimestamp) {
               p.maxLevel = 0;
               p.level = 0;
               p.stars = 0;
-              p.hints = 0;
-              p.undos = 0;
-              p.reveals = 0;
-              p.extraBottles = 0;
-              p.extra_bottles = 0;
-              p.shuffles = 0;
               p.total_moves = 0;
-              p.all_colors_until = 0;
-              p.all_colors_purchased_at = 0;
               p.seasonResetAt = resetTimestamp;
               p.updatedAt = resetTimestamp;
-              // Preserves: telegramId, firstName, username, photoUrl, ton_balance, ton_wallet, memo_code!
+              // STRICTLY PRESERVED: ton_balance, ton_wallet, memo_code, all_colors_until, all_colors_purchased_at
               return fetch(`${baseUrl}/${encodeURIComponent(key)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

@@ -228,6 +228,8 @@ async function handleUpdate(update) {
     await sendLeaderboard(chatId);
   } else if (text.startsWith('/mystats')) {
     await sendMyStats(chatId, userId);
+  } else if (text.startsWith('/reset_season') || text.startsWith('/season_reset')) {
+    await handleAdminResetSeason(chatId, userId);
   } else if (text.startsWith('/help')) {
     await tgApi('sendMessage', {
       chat_id: chatId,
@@ -314,28 +316,66 @@ async function handleInlineQuery(inlineQuery) {
 
 async function sendLeaderboard(chatId) {
   let topPlayers = [];
+  const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+
+  // Get current season reset timestamp from KVDB and SQLite
+  let seasonResetAt = 0;
+  try {
+    const metaRes = await fetch(`https://kvdb.io/${bucket}/meta_season_reset_at?_cb=${Date.now()}`, {
+      signal: AbortSignal.timeout(2000)
+    });
+    if (metaRes.ok) {
+      const metaData = await metaRes.json();
+      seasonResetAt = Number(metaData.resetAt || metaData) || 0;
+    }
+  } catch (e) {}
+
+  if (!seasonResetAt) {
+    try {
+      seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
+    } catch (e) {}
+  }
 
   // Query SQLite
   try {
     const res = db.getLeaderboard(null, 10);
-    if (res && res.topPlayers) topPlayers = res.topPlayers;
+    if (res && res.topPlayers) {
+      // Only real players with at least 1 completed level (level >= 1)
+      topPlayers = res.topPlayers.filter(p => Number(p.max_level || 0) >= 1);
+    }
   } catch (e) {}
 
-  // Query global cloud KVDB
+  // Query global cloud KVDB (Single Source of Truth)
   try {
-    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
-    const cloudRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json`, {
+    const cloudRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
       signal: AbortSignal.timeout(2500)
     });
     if (cloudRes.ok) {
       const pairs = await cloudRes.json();
-      const cloudPlayers = pairs.map(([k, p]) => p).filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev'));
+      const cloudPlayers = pairs.map(([k, p]) => {
+        if (typeof p === 'string') {
+          try { return JSON.parse(p); } catch (e) { return null; }
+        }
+        return p;
+      }).filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev') && /^\d+$/.test(String(p.telegramId)));
       
       const map = new Map();
-      topPlayers.forEach(p => map.set(String(p.telegram_id), { name: p.first_name, level: p.max_level, stars: p.stars || 0 }));
+      topPlayers.forEach(p => {
+        const lvl = Number(p.max_level || 0);
+        if (lvl >= 1) {
+          map.set(String(p.telegram_id), { name: p.first_name, level: lvl, stars: p.stars || 0 });
+        }
+      });
+
       cloudPlayers.forEach(p => {
         const id = String(p.telegramId);
-        const lvl = Number(p.maxLevel || p.level || 1);
+        const pTime = Number(p.updatedAt || p.seasonResetAt || 0);
+        if (seasonResetAt > 0 && pTime > 0 && pTime < seasonResetAt) return;
+
+        // STRICT RULE: Only players with maxLevel >= 1 appear in leaderboard
+        const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
+        if (lvl < 1) return;
+
         const existing = map.get(id);
         if (!existing || lvl > existing.level) {
           map.set(id, { name: p.firstName || (existing ? existing.name : 'Игрок'), level: lvl, stars: p.stars || (existing ? existing.stars : 0) });
@@ -351,7 +391,7 @@ async function sendLeaderboard(chatId) {
   if (!topPlayers || topPlayers.length === 0) {
     await tgApi('sendMessage', { 
       chat_id: chatId, 
-      text: '🏆 **Глобальный рейтинг игроков**\n\nПока ни один игрок не зафиксировал победу в глобальной базе данных. Пройдите первый уровень и станьте лидером!\n\n🎮 Нажмите кнопку ниже для запуска игры.',
+      text: '🏆 **Глобальный рейтинг игроков**\n\nТаблица лидеров пуста (0 игроков).\nПройдите первый уровень и станьте первым в рейтинге!\n\n🎮 Нажмите кнопку ниже для запуска игры.',
       parse_mode: 'Markdown'
     });
     return;
@@ -386,19 +426,134 @@ async function sendMyStats(chatId, userId) {
     return;
   }
 
+  const maxLvl = Number(user.max_level || 0);
+  const maxLvlText = maxLvl >= 1 ? `${maxLvl}` : '0 (пройдите 1-й тур для лидерборда)';
+
   const msg = `📊 **Ваша статистика**\n\n` +
     `👤 Игрок: ${user.first_name}\n` +
-    `📈 Макс. уровень: ${user.max_level}\n` +
-    `Текущий уровень: ${user.current_level}\n` +
-    `⭐ Звезды: ${user.stars}\n` +
-    `💰 Монеты: ${user.coins}\n` +
-    `🔄 Ходов: ${user.total_moves}\n` +
-    `💡 Подсказок: ${user.hints}\n` +
-    `🔙 Отмен хода: ${user.undos}\n`;
+    `📈 Макс. уровень: ${maxLvlText}\n` +
+    `Текущий уровень: ${user.current_level || 1}\n` +
+    `⭐ Звезды: ${user.stars || 0}\n` +
+    `💰 Монеты: ${user.coins || 0}\n` +
+    `🔄 Ходов: ${user.total_moves || 0}\n` +
+    `💡 Подсказок: ${user.hints || 0}\n` +
+    `🔙 Отмен хода: ${user.undos || 0}\n`;
 
   await tgApi('sendMessage', {
     chat_id: chatId,
     text: msg,
+    parse_mode: 'Markdown'
+  });
+}
+
+/**
+ * Admin reset season from Telegram Bot
+ */
+async function handleAdminResetSeason(chatId, userId) {
+  const ALLIGATOR_ID = '5761685341';
+  const adminIds = (process.env.ADMIN_IDS || '').split(',').map(s => s.trim());
+  const isAdmin = (String(userId) === ALLIGATOR_ID) || adminIds.includes(String(userId));
+
+  if (!isAdmin) {
+    await tgApi('sendMessage', {
+      chat_id: chatId,
+      text: '⛔ **Доступ запрещен.** Команда доступна только администратору игры.'
+    });
+    return;
+  }
+
+  await tgApi('sendMessage', {
+    chat_id: chatId,
+    text: '⏳ **Выполняется сброс сезона под ноль...**\nБот выполняет резервный контроль лидерборда до и после сброса.'
+  });
+
+  const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+  const baseUrl = `https://kvdb.io/${bucket}`;
+
+  // 1. КОНТРОЛЬ ДО СБРОСА: заходим в лидерборд и собираем всех актуальных игроков
+  let beforePlayers = [];
+  try {
+    const listRes = await fetch(`${baseUrl}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
+    if (listRes.ok) {
+      const pairs = await listRes.json();
+      beforePlayers = pairs
+        .map(([k, p]) => (typeof p === 'string' ? JSON.parse(p) : p))
+        .filter(p => p && p.telegramId && Number(p.maxLevel || p.level || 0) >= 1);
+    }
+  } catch (e) {}
+
+  const beforeCount = beforePlayers.length;
+  const resetTimestamp = Date.now();
+
+  // 2. СБРОС С ПЕРЕСТРАХОВКОЙ
+  // а) Ставим метку в KVDB
+  try {
+    await fetch(`${baseUrl}/meta_season_reset_at`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resetAt: resetTimestamp })
+    });
+  } catch (e) {}
+
+  // б) Индивидуальный сброс каждого игрока из топа
+  if (beforePlayers.length > 0) {
+    await Promise.allSettled(
+      beforePlayers.map(async (p) => {
+        try {
+          const pid = String(p.telegramId);
+          p.currentLevel = 1;
+          p.maxLevel = 0;
+          p.level = 0;
+          p.stars = 0;
+          p.total_moves = 0;
+          p.seasonResetAt = resetTimestamp;
+          p.updatedAt = resetTimestamp;
+          // ton_wallet, ton_balance, memo_code, all_colors_until СТРОГО СОХРАНЯЮТСЯ!
+          return fetch(`${baseUrl}/player_${encodeURIComponent(pid)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(p)
+          });
+        } catch (e) {}
+      })
+    );
+  }
+
+  // в) Сброс в локальной БД SQLite
+  try {
+    db.resetSeason(resetTimestamp);
+  } catch (e) {}
+
+  // 3. КОНТРОЛЬНЫЙ ВХОД ПОСЛЕ СБРОСА
+  let afterCount = 0;
+  try {
+    const checkRes = await fetch(`${baseUrl}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
+    if (checkRes.ok) {
+      const pairs = await checkRes.json();
+      const afterPlayers = pairs
+        .map(([k, p]) => (typeof p === 'string' ? JSON.parse(p) : p))
+        .filter(p => p && p.telegramId && Number(p.maxLevel || p.level || 0) >= 1 && Number(p.updatedAt || p.seasonResetAt || 0) >= resetTimestamp);
+      afterCount = afterPlayers.length;
+    }
+  } catch (e) {}
+
+  let sampleText = '';
+  if (beforePlayers.length > 0) {
+    const list = beforePlayers.slice(0, 5).map(p => `• ${p.firstName || 'Игрок'}: ур. ${p.maxLevel || p.level} ➔ 0`).join('\n');
+    sampleText = `\n📋 **Сброшены игроки из лидерборда (${beforeCount}):**\n${list}\n`;
+  }
+
+  const resultMsg = `🔥 **Сезон успешно сброшен под ноль!**\n` +
+    sampleText +
+    `\n✅ **Контрольная проверка ПОСЛЕ сброса:**\n` +
+    `• В лидерборде: ${afterCount} игроков (таблица пуста)\n` +
+    `• Все игроки получили Уровень 0\n` +
+    `• Игрок появится в рейтинге только после победы в 1-м туре\n\n` +
+    `🛡️ **Кошелек TON, покупки и рефералы сохранены!**`;
+
+  await tgApi('sendMessage', {
+    chat_id: chatId,
+    text: resultMsg,
     parse_mode: 'Markdown'
   });
 }

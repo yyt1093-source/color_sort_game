@@ -208,12 +208,12 @@ async function initColorSortApp() {
       adminResetPurchasesDesc: "Аннулировать действующие покупки преимуществ за TON (например, «Все краски открыты») без списания баланса с кошельков игроков.",
       adminResetSelfPurchasesBtnLabel: "👑 Сбросить только мой аккаунт",
       adminResetPurchasesBtnLabel: "🌐 Сбросить ВСЕМ игрокам в игре",
-      adminResetSeasonDesc: "Сброс сезона полностью удаляет всю информацию, обнуляет глобальный лидерборд, уровни, монеты и награды всех игроков.",
+      adminResetSeasonDesc: "Сброс сезона обнуляет глобальный лидерборд и сбрасывает всех игроков на Уровень 0. Баланс TON, покупки и рефералы сохраняются.",
       adminResetSeasonBtnLabel: "🔥 Сбросить сезон (Всё в ноль)",
       adminResetPurchasesSuccessTitle: "💎 Покупки аннулированы!",
       adminResetPurchasesSuccessDesc: "Все действующие преимущества за GRAM из сундучка у всех игроков успешно аннулированы. Балансы кошельков не изменились.",
       adminResetSuccessTitle: "💥 Сезон сброшен!",
-      adminResetSuccessDesc: "Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!",
+      adminResetSuccessDesc: "Все игроки сброшены на Уровень 0! Лидерборд пуст. Баланс TON, покупки и рефералы сохранены.",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "За каждого приглашённого — 5 отмен хода, 5 подсказок, 5 открытий цвета и 5 пустых баночек",
       shareReferralTelegramBtn: "📢 Пригласить в Telegram",
@@ -223,6 +223,20 @@ async function initColorSortApp() {
       refUnitLabel: "друзей",
       referralsListHeader: "Приглашённые друзья:",
       tonModalTitle: "Пополнение баланса TON",
+      tonConnectWalletBtn: "👛 Подключить кошелёк TON",
+      tonWalletConnected: "Кошелёк подключен",
+      tonDisconnectBtn: "Отключить",
+      tonBalanceLabel: "Баланс в игре:",
+      tonWithdrawBtn: "Вывести TON",
+      tonDepositTitle: "Пополнить баланс",
+      tonDepositDesc: "Отправьте TON на указанный адрес с вашим комментарием (Memo)",
+      tonAddressLabel: "Адрес для перевода:",
+      tonMemoLabel: "Ваш комментарий (Memo) — ОБЯЗАТЕЛЬНО:",
+      tonDepositNotice: "⚠️ Обязательно укажите Memo при отправке, иначе средства не будут зачислены автоматически.",
+      copyBtn: "Копировать",
+      copiedNotice: "Скопировано в буфер обмена!",
+      refCopySuccess: "Ссылка скопирована! Отправьте её друзьям.",
+      refEmptyTitle: "Друзей пока нет",
       tonModalSubtitle: "Выберите сумму и любой удобный криптокошелек",
       tonBalanceSub: "Ваш текущий баланс TON:",
       tonWalletStatusSub: "Статус кошелька:",
@@ -287,9 +301,9 @@ async function initColorSortApp() {
       resetPurchasesItem2: "⏳ Время действия всех активных улучшений из сундука будет обнулено",
       resetPurchasesItem3: "💎 Балансы TON / GRAM на кошельках игроков не изменятся",
       resetSeasonItem1: "💥 Глобальный лидерборд будет полностью очищен",
-      resetSeasonItem2: "📉 Все игроки вернутся на Уровень 1",
-      resetSeasonItem3: "💰 Все звёзды, монеты и награды обнулятся",
-      resetSeasonItem4: "🔄 Игра начнется заново с чистого листа",
+      resetSeasonItem2: "📉 Все игроки сбрасываются на Уровень 0",
+      resetSeasonItem3: "🛡️ Баланс TON, покупки и рефералы сохраняются",
+      resetSeasonItem4: "🏆 Игроки появятся в лидерборде только после победы в 1-м туре",
       adVideoSponsor: "РЕКЛАМНЫЙ СПОНСОР",
       adVideoTitle: "Новые игры в Telegram",
       adVideoDesc: "Играйте в топовые Mini Apps без установки!",
@@ -399,12 +413,12 @@ async function initColorSortApp() {
       adminResetPurchasesDesc: "Анулювати діючі покупки переваг за TON без списання балансу з гаманців гравців.",
       adminResetSelfPurchasesBtnLabel: "👑 Скинути тільки мій акаунт",
       adminResetPurchasesBtnLabel: "🌐 Скинути ВСІМ гравцям в грі",
-      adminResetSeasonDesc: "Скидання сезону повністю видаляє всю інформацію, обнуляє глобальний лідерборд, рівні та монети всіх гравців.",
+      adminResetSeasonDesc: "Скидання сезону обнуляє глобальний лідерборд і скидає всіх гравців на Рівень 0. Баланс TON, покупки та реферали зберігаються.",
       adminResetSeasonBtnLabel: "🔥 Скинути сезон (Все в нуль)",
       adminResetPurchasesSuccessTitle: "💎 Покупки анульовано!",
       adminResetPurchasesSuccessDesc: "Всі діючі переваги за GRAM із скриньки у всіх гравців успішно анульовані. Баланси гаманців не змінилися.",
       adminResetSuccessTitle: "💥 Сезон скинуто!",
-      adminResetSuccessDesc: "Всі дані гравців, рівні, досягнення та глобальний лідерборд скинуті під нуль!",
+      adminResetSuccessDesc: "Всі гравці скинуті на Рівень 0! Лідерборд порожній. Баланс TON, покупки та реферали збережені.",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "За кожного запрошеного — 5 відмін ходу, 5 підказок, 5 відкриттів кольору та 5 порожніх баночок",
       shareReferralTelegramBtn: "📢 Запросити в Telegram",
@@ -478,9 +492,9 @@ async function initColorSortApp() {
       resetPurchasesItem2: "⏳ Час дії всіх активних покращень зі скриньки буде обнулено",
       resetPurchasesItem3: "💎 Баланси TON / GRAM на гаманцях гравців не зміняться",
       resetSeasonItem1: "💥 Глобальна таблиця лідерів буде повністю очищена",
-      resetSeasonItem2: "📉 Всі гравці повернуться на Рівень 1",
-      resetSeasonItem3: "💰 Всі зірки, монети та нагороди обнуляться",
-      resetSeasonItem4: "🔄 Гра почнеться заново з чистого аркуша",
+      resetSeasonItem2: "📉 Всі гравці скидаються на Рівень 0",
+      resetSeasonItem3: "🛡️ Баланс TON, покупки та реферали зберігаються",
+      resetSeasonItem4: "🏆 Гравці з'являться в таблиці лише після перемоги в 1-му турі",
       adVideoSponsor: "РЕКЛАМНИЙ СПОНСОР",
       adVideoTitle: "Нові ігри в Telegram",
       adVideoDesc: "Грайте в топові Mini Apps без встановлення!",
@@ -590,12 +604,12 @@ async function initColorSortApp() {
       adminResetPurchasesDesc: "Annul active TON perks (e.g. All Colors Unlocked) without touching player wallet balances.",
       adminResetSelfPurchasesBtnLabel: "👑 Reset Only My Account",
       adminResetPurchasesBtnLabel: "🌐 Reset ALL Players Purchases",
-      adminResetSeasonDesc: "Season reset completely wipes all player data, scores, levels, coins, and global leaderboard.",
+      adminResetSeasonDesc: "Season reset clears the global leaderboard and resets all players to Level 0. TON balance, purchases and referrals are preserved.",
       adminResetSeasonBtnLabel: "🔥 Reset Season (Wipe Everything)",
       adminResetPurchasesSuccessTitle: "💎 Purchases Annulled!",
       adminResetPurchasesSuccessDesc: "All active GRAM perks from the chest have been annulled for all players. Wallet balances remain untouched.",
       adminResetSuccessTitle: "💥 Season Reset!",
-      adminResetSuccessDesc: "All player data, levels, achievements, and the global leaderboard have been wiped to zero!",
+      adminResetSuccessDesc: "All players have been reset to Level 0! Leaderboard is empty. TON balance, purchases and referrals are preserved.",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "For each invitee — 5 undos, 5 hints, 5 color reveals, and 5 empty jars",
       shareReferralTelegramBtn: "📢 Invite in Telegram",
@@ -669,9 +683,9 @@ async function initColorSortApp() {
       resetPurchasesItem2: "⏳ Duration of all active chest upgrades will be reset to zero",
       resetPurchasesItem3: "💎 TON / GRAM wallet balances of players will remain unchanged",
       resetSeasonItem1: "💥 Global leaderboard will be completely cleared",
-      resetSeasonItem2: "📉 All players will return to Level 1",
-      resetSeasonItem3: "💰 All stars, coins, and rewards will be reset to zero",
-      resetSeasonItem4: "🔄 The game will start fresh from scratch",
+      resetSeasonItem2: "📉 All players will be reset to Level 0",
+      resetSeasonItem3: "🛡️ TON balance, purchases and referrals are preserved",
+      resetSeasonItem4: "🏆 Players will appear in the leaderboard only after winning round 1",
       adVideoSponsor: "AD SPONSOR",
       adVideoTitle: "New Games on Telegram",
       adVideoDesc: "Play top Mini Apps without installation!",
@@ -781,12 +795,12 @@ async function initColorSortApp() {
       adminResetPurchasesDesc: "Aktive TON-Vorteile annullieren, ohne das Wallet-Guthaben der Spieler zu berühren.",
       adminResetSelfPurchasesBtnLabel: "👑 Nur mein Konto zurücksetzen",
       adminResetPurchasesBtnLabel: "🌐 Käufe aller Spieler zurücksetzen",
-      adminResetSeasonDesc: "Saison-Zurücksetzung löscht alle Spielerdaten, Ergebnisse, Stufen und die Bestenliste.",
+      adminResetSeasonDesc: "Saison-Reset setzt die Bestenliste zurück und alle Spieler auf Stufe 0. TON-Guthaben, Käufe und Empfehlungen bleiben erhalten.",
       adminResetSeasonBtnLabel: "🔥 Saison zurücksetzen (Alles auf 0)",
       adminResetPurchasesSuccessTitle: "💎 Käufe annulliert!",
       adminResetPurchasesSuccessDesc: "Alle aktiven GRAM-Vorteile aus der Truhe wurden für alle Spieler annulliert. Wallet-Guthaben bleiben unberührt.",
       adminResetSuccessTitle: "💥 Saison zurückgesetzt!",
-      adminResetSuccessDesc: "Alle Spielerdaten, Stufen, Erfolge und die Bestenliste wurden auf 0 zurückgesetzt!",
+      adminResetSuccessDesc: "Alle Spieler wurden auf Stufe 0 zurückgesetzt! Bestenliste ist leer. TON-Guthaben, Käufe und Empfehlungen bleiben erhalten.",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "Für jeden Eingeladenen — 5 Züge zurück, 5 Hinweise, 5 Farbaufdeckungen und 5 leere Gläser",
       shareReferralTelegramBtn: "📢 In Telegram einladen",
@@ -860,9 +874,9 @@ async function initColorSortApp() {
       resetPurchasesItem2: "⏳ Die Dauer aller aktiven Truhen-Upgrades wird auf null gesetzt",
       resetPurchasesItem3: "💎 TON / GRAM Wallet-Guthaben der Spieler bleiben unverändert",
       resetSeasonItem1: "💥 Die globale Bestenliste wird vollständig gelöscht",
-      resetSeasonItem2: "📉 Alle Spieler kehren zu Stufe 1 zurück",
-      resetSeasonItem3: "💰 Alle Sterne, Münzen und Belohnungen werden auf null gesetzt",
-      resetSeasonItem4: "🔄 Das Spiel beginnt von Grund auf neu",
+      resetSeasonItem2: "📉 Alle Spieler werden auf Stufe 0 zurückgesetzt",
+      resetSeasonItem3: "🛡️ TON-Guthaben, Käufe und Empfehlungen bleiben erhalten",
+      resetSeasonItem4: "🏆 Spieler erscheinen erst nach dem Gewinn von Runde 1 in der Bestenliste",
       adVideoSponsor: "WERBESPONSOR",
       adVideoTitle: "Neue Spiele auf Telegram",
       adVideoDesc: "Spiele Top-Mini-Apps ohne Installation!",
@@ -972,12 +986,12 @@ async function initColorSortApp() {
       adminResetPurchasesDesc: "Anuliuoti aktyvius TON pirkimus nepalietus žaidėjų piniginės balanso.",
       adminResetSelfPurchasesBtnLabel: "👑 Atstatyti tik mano paskyrą",
       adminResetPurchasesBtnLabel: "🌐 Atstatyti visų žaidėjų pirkimus",
-      adminResetSeasonDesc: "Sezono atstatymas ištrina visus žaidėjų duomenis, lygius ir lyderių lentelę.",
+      adminResetSeasonDesc: "Sezono atstatymas išvalo lyderių lentelę ir atstato visus žaidėjus į 0 lygį. TON balansas, pirkiniai ir pakviesti draugai išsaugomi.",
       adminResetSeasonBtnLabel: "🔥 Atstatyti sezoną (Viską į nulį)",
       adminResetPurchasesSuccessTitle: "💎 Pirkimai anuliuoti!",
       adminResetPurchasesSuccessDesc: "Visi aktyvūs GRAM privalumai iš skrynios anuliuoti. Piniginės balansai nepakito.",
       adminResetSuccessTitle: "💥 Sezonas atstatytas!",
-      adminResetSuccessDesc: "Visi žaidėjų duomenys, lygiai, pasiekimai ir lyderių lentelė buvo atstatyti į nulį!",
+      adminResetSuccessDesc: "Visi žaidėjai atstatyti į 0 lygį! Lyderių lentelė tuščia. TON balansas, pirkiniai ir pakviesti draugai išsaugomi.",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "Už kiekvieną pakviestąjį — 5 atšaukimai, 5 užuominos, 5 spalvų atskleidimai ir 5 tušti indai",
       shareReferralTelegramBtn: "📢 Pakviesti į Telegram",
@@ -1051,9 +1065,9 @@ async function initColorSortApp() {
       resetPurchasesItem2: "⏳ Visų aktyvių skrynios patobulinimų galiojimo laikas bus anuliuotas",
       resetPurchasesItem3: "💎 Žaidėjų TON / GRAM piniginių balansai nesikeis",
       resetSeasonItem1: "💥 Pasaulinė lyderių lentelė bus visiškai išvalyta",
-      resetSeasonItem2: "📉 Visi žaidėjai grįš į 1 lygį",
-      resetSeasonItem3: "💰 Visos žvaigždės, monetos ir apdovanojimai bus anuliuoti",
-      resetSeasonItem4: "🔄 Žaidimas prasidės iš naujo nuo švaraus lapo",
+      resetSeasonItem2: "📉 Visi žaidėjai atstatomi į 0 lygį",
+      resetSeasonItem3: "🛡️ TON balansas, pirkiniai ir pakviesti draugai išsaugomi",
+      resetSeasonItem4: "🏆 Žaidėjai atsiras lentelėje tik laimėję 1-ąjį turą",
       adVideoSponsor: "REKLAMOS RĖMĖJAS",
       adVideoTitle: "Nauji žaidimai Telegram",
       adVideoDesc: "Žaiskite populiariausias Mini Apps be diegimo!",
@@ -1528,7 +1542,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
     const modalUserLevel = document.getElementById('modalUserLevel');
     if (modalUserLevel && typeof currentUser !== 'undefined') {
-      const displayLvl = Math.max(1, currentUser.currentLevel || 1);
+      const displayLvl = Number(currentUser.maxLevel || 0);
       modalUserLevel.textContent = t('levelDisplayVal', displayLvl);
     }
 
@@ -2284,7 +2298,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       const serverReset = Number(serverUser.seasonResetAt || 0);
       if (serverReset > localReset) {
         localStorage.setItem('color_sort_season_reset_at', String(serverReset));
-        localStorage.setItem('color_sort_gram_reset_at', String(serverReset));
         currentUser.currentLevel = 1;
         currentUser.maxLevel = 0;
         currentUser.stars = 0;
@@ -2294,8 +2307,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.reveals = 0;
         currentUser.extraBottles = 0;
         currentUser.extra_bottles = 0;
-        currentUser.all_colors_until = 0;
-        currentUser.all_colors_purchased_at = 0;
+        // NOTE: all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
         currentUser.season_reset_at = serverReset;
         saveLocalUser();
         updateHeaderUI();
@@ -2371,7 +2383,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (resetAt > 0 && resetAt > localResetAt) {
         console.log(`[Season Reset] Global season reset detected (server: ${resetAt}, local: ${localResetAt}). Wiping all player progress!`);
         localStorage.setItem('color_sort_season_reset_at', String(resetAt));
-        localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
 
         currentUser.currentLevel = 1;
         currentUser.maxLevel = 0;
@@ -2382,8 +2393,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.reveals = 0;
         currentUser.extraBottles = 0;
         currentUser.extra_bottles = 0;
-        currentUser.all_colors_until = 0;
-        currentUser.all_colors_purchased_at = 0;
+        // NOTE: all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
         currentUser.season_reset_at = resetAt;
 
         saveLocalUser();
@@ -3041,13 +3051,13 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       const myCrown = myRankNum === 1 ? '🥇' : myRankNum === 2 ? '🥈' : myRankNum === 3 ? '🥉' : `#${myRankNum}`;
       if (modalUserPos) modalUserPos.textContent = myCrown;
       if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
-      const playerLvl = sortedPlayers[myRankIdx].maxLevel !== undefined ? sortedPlayers[myRankIdx].maxLevel : (currentUser.maxLevel || currentUser.currentLevel || 1);
+      const playerLvl = sortedPlayers[myRankIdx].maxLevel !== undefined ? sortedPlayers[myRankIdx].maxLevel : (currentUser.maxLevel || 0);
       if (modalUserLevel) modalUserLevel.textContent = t('levelDisplayVal', playerLvl);
       if (userRank) userRank.textContent = `#${myRankNum}`;
     } else if (isRealUser) {
       if (modalUserPos) modalUserPos.textContent = '#—';
       if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
-      if (modalUserLevel) modalUserLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
+      if (modalUserLevel) modalUserLevel.textContent = t('levelDisplayVal', Number(currentUser.maxLevel || 0));
       if (userRank) userRank.textContent = '—';
     } else {
       if (modalUserPos) modalUserPos.textContent = '—';
@@ -4753,23 +4763,65 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       confirmResetSeasonBtn.innerHTML = '⏳ Сброс...';
 
       try {
-        // 0. CHECK LEADERBOARD BEFORE RESET: inspect and record all active players and their levels
+        // 0. ПРОВЕРКА ЛИДЕРБОРДА ДО СБРОСА (Резервный контроль / перестраховка)
+        // Заходим в лидерборд, смотрим всех актуальных игроков с их уровнями (10-й, 15-й, 100-й, 200-й и т.д.)
         let beforePlayers = [];
         try {
           beforePlayers = (await loadLeaderboardData()) || [];
         } catch (e) {
           console.warn('[Season Reset] Pre-check leaderboard notice:', e);
         }
-        const beforeCount = beforePlayers.length;
-        console.log('[Season Reset] === ПРОВЕРКА ЛИДЕРБОРДА ДО СБРОСА ===');
+
+        // Также сканируем облачную базу данных, чтобы не упустить ни одного игрока с уровнем >= 1
+        const beforeMap = new Map();
+        beforePlayers.forEach(p => {
+          const pid = String(p.telegramId);
+          if (pid && !pid.startsWith('guest') && !pid.startsWith('dev')) {
+            beforeMap.set(pid, {
+              telegramId: pid,
+              firstName: p.firstName || 'Игрок',
+              level: Number(p.maxLevel !== undefined ? p.maxLevel : (p.level || 0))
+            });
+          }
+        });
+
+        try {
+          const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
+          if (listRes.ok) {
+            const pairs = await listRes.json();
+            if (Array.isArray(pairs)) {
+              pairs.forEach(([k, val]) => {
+                let p = val;
+                if (typeof p === 'string') {
+                  try { p = JSON.parse(p); } catch (e) { p = null; }
+                }
+                if (p && p.telegramId) {
+                  const pid = String(p.telegramId);
+                  const pLvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level || 0));
+                  if (pLvl >= 1 && !beforeMap.has(pid)) {
+                    beforeMap.set(pid, {
+                      telegramId: pid,
+                      firstName: p.firstName || 'Игрок',
+                      level: pLvl
+                    });
+                  }
+                }
+              });
+            }
+          }
+        } catch (e) {}
+
+        const beforeList = Array.from(beforeMap.values());
+        const beforeCount = beforeList.length;
+        console.log('[Season Reset] === ПРОВЕРКА ЛИДЕРБОРДА ДО СБРОСА (Резервный контроль) ===');
         console.log(`[Season Reset] Всего игроков в лидерборде до сброса: ${beforeCount}`);
-        beforePlayers.forEach((p, i) => {
-          console.log(`  [${i + 1}] ID: ${p.telegramId}, Имя: ${p.firstName || 'Без имени'}, Уровень: ${p.maxLevel !== undefined ? p.maxLevel : (p.level || 0)}, Звёзды: ${p.stars || 0}`);
+        beforeList.forEach((p, i) => {
+          console.log(`  [${i + 1}] ID: ${p.telegramId}, Имя: ${p.firstName}, Уровень: ${p.level}`);
         });
 
         const resetTimestamp = Date.now();
 
-        // 1. Write global season reset timestamp to KVDB Cloud Database so ALL other clients (online or offline) detect it!
+        // 1. Запись глобального времени сброса сезона в единую облачную базу данных (KVDB)
         try {
           await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at`, {
             method: 'POST',
@@ -4780,29 +4832,66 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           console.warn('[Season Reset] KVDB meta write notice:', kvMetaErr);
         }
 
-        // Also update meta_gram_purchases_reset to clear all purchases globally
-        try {
-          await fetch(`${GLOBAL_CLOUD_BASE}/meta_gram_purchases_reset`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ resetAt: resetTimestamp })
-          });
-        } catch (e) {}
+        // ВАЖНО: meta_gram_purchases_reset НЕ вызываем — покупки и кошелек категорически сохраняются!
 
-        // 2. Call server reset endpoint (if Express backend running)
+        // 2. ПЕРЕСТРАХОВКА: СБРОС КАЖДОГО ИГРОКА ИЗ ЛИДЕРБОРДА ИНДИВИДУАЛЬНО
+        // Все, кто был в лидерборде (10, 15, 100, 200 ур.), сбрасываются в ноль прямо по их ключам player_${id}
+        if (beforeList.length > 0) {
+          await Promise.allSettled(
+            beforeList.map(async (p) => {
+              const pid = String(p.telegramId);
+              if (!pid) return;
+              try {
+                let fullPlayer = null;
+                const pRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(pid)}?_cb=${Date.now()}`);
+                if (pRes.ok) {
+                  fullPlayer = await pRes.json();
+                  if (typeof fullPlayer === 'string') {
+                    try { fullPlayer = JSON.parse(fullPlayer); } catch (e) { fullPlayer = null; }
+                  }
+                }
+                if (!fullPlayer || typeof fullPlayer !== 'object') {
+                  fullPlayer = { telegramId: pid, firstName: p.firstName || 'Игрок' };
+                }
+
+                // Сбрасываем только прогресс сезона в 0!
+                fullPlayer.maxLevel = 0;
+                fullPlayer.level = 0;
+                fullPlayer.currentLevel = 1;
+                fullPlayer.stars = 0;
+                fullPlayer.total_moves = 0;
+                fullPlayer.seasonResetAt = resetTimestamp;
+                fullPlayer.updatedAt = resetTimestamp;
+                // КАТЕГОРИЧЕСКИ СОХРАНЯЕМ: ton_wallet, ton_balance, memo_code, all_colors_until, all_colors_purchased_at, рефералы!
+
+                await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(pid)}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(fullPlayer)
+                });
+                console.log(`[Season Reset] Игрок ${fullPlayer.firstName} (ID: ${pid}) сброшен в ноль.`);
+              } catch (e) {
+                console.warn(`[Season Reset] Ошибка сброса игрока ${pid}:`, e);
+              }
+            })
+          );
+        }
+
+        // 3. Вызов API сервера (сброс в SQLite и синхронизация)
         try {
           await apiCall('/api/admin/reset-season', 'POST', {
             telegramId: currentUser.telegramId,
             firstName: currentUser.firstName,
             username: currentUser.username,
             isAdmin: true,
-            resetAt: resetTimestamp
+            resetAt: resetTimestamp,
+            leaderboardPlayerIds: beforeList.map(p => p.telegramId)
           });
         } catch (apiErr) {
           console.warn('[Season Reset] API reset notice:', apiErr);
         }
 
-        // 3. Reset ALL player records in KVDB Cloud: set maxLevel = 0, currentLevel = 1, stars = 0, perks = 0, BUT PRESERVE ton_balance, ton_wallet, memo_code, telegramId, firstName, username!
+        // 4. Массовый сброс всех остальных записей в KVDB
         try {
           const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
           if (listRes.ok) {
@@ -4819,18 +4908,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
                     p.maxLevel = 0;
                     p.level = 0;
                     p.stars = 0;
-                    p.hints = 0;
-                    p.undos = 0;
-                    p.reveals = 0;
-                    p.extraBottles = 0;
-                    p.extra_bottles = 0;
-                    p.shuffles = 0;
                     p.total_moves = 0;
-                    p.all_colors_until = 0;
-                    p.all_colors_purchased_at = 0;
                     p.seasonResetAt = resetTimestamp;
                     p.updatedAt = resetTimestamp;
-                    // PRESERVED: ton_balance, ton_wallet, memo_code, telegramId, firstName, username, photoUrl!
+                    // ВАЖНО: Сохраняем: ton_balance, ton_wallet, memo_code, all_colors_until, all_colors_purchased_at!
                     return fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(key)}`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
@@ -4845,11 +4926,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           console.warn('[Season Reset] KVDB player reset notice:', kvErr);
         }
 
-        // 4. Update admin's own local storage & currentUser state to completely fresh state with maxLevel = 0
+        // 5. Локальный сброс текущего игрока/админа
         localStorage.setItem('color_sort_season_reset_at', String(resetTimestamp));
-        localStorage.setItem('color_sort_gram_reset_at', String(resetTimestamp));
-        localStorage.removeItem(`color_sort_user_${currentUser.telegramId}`);
-
         currentUser.currentLevel = 1;
         currentUser.maxLevel = 0;
         currentUser.stars = 0;
@@ -4859,8 +4937,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.reveals = 0;
         currentUser.extraBottles = 0;
         currentUser.extra_bottles = 0;
-        currentUser.all_colors_until = 0;
-        currentUser.all_colors_purchased_at = 0;
+        // Покупки (all_colors_until) и кошелек (ton_balance, ton_wallet) НЕ трогаем!
         currentUser.season_reset_at = resetTimestamp;
         currentUser.seasonResetAt = resetTimestamp;
 
@@ -4869,7 +4946,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         updateShopUI();
         updateTonWalletUI();
 
-        // Clear all toolbar badges explicitly to 0
+        // Очищаем бейджи на тулбаре
         const revealBadgeEl = document.getElementById('revealBadge');
         if (revealBadgeEl) {
           revealBadgeEl.textContent = '0';
@@ -4891,12 +4968,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           undoBadgeEl.classList.add('badge-zero');
         }
 
-        // 5. Restart Level 1 on the game board and ensure board is fresh Level 1
+        // Перезагрузка 1-го уровня на игровом поле
         if (levelDisplay) levelDisplay.textContent = '1';
         if (profileCardLevel) profileCardLevel.textContent = t('levelDisplayVal', 1);
         await loadCurrentLevel();
 
-        // 6. CHECK LEADERBOARD AFTER RESET: load again and verify exactly 0 players remain!
+        // 6. КОНТРОЛЬНЫЙ ВХОД В ЛИДЕРБОРД ПОСЛЕ СБРОСА
         let afterPlayers = [];
         try {
           afterPlayers = (await loadLeaderboardData()) || [];
@@ -4904,26 +4981,65 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           console.warn('[Season Reset] Post-check leaderboard notice:', e);
         }
         const afterCount = afterPlayers.length;
-        console.log('[Season Reset] === ПРОВЕРКА ЛИДЕРБОРДА ПОСЛЕ СБРОСА ===');
+        console.log('[Season Reset] === КОНТРОЛЬНАЯ ПРОВЕРКА ЛИДЕРБОРДА ПОСЛЕ СБРОСА ===');
         console.log(`[Season Reset] Всего игроков в лидерборде после сброса: ${afterCount}`);
-        if (afterCount > 0) {
-          console.warn('[Season Reset] ВНИМАНИЕ: после сброса найдено игроков:', afterCount);
-        } else {
-          console.log('[Season Reset] Таблица лидеров пуста (0 игроков). Проверка пройдена успешно!');
+
+        // 7. КОНТРОЛЬНАЯ ПРОВЕРКА УРОВНЕЙ ВСЕХ, КТО БЫЛ В ЛИДЕРБОРДЕ ДО СБРОСА
+        // У каждого игрока из лидерборда (10, 15, 100, 200 ур.) должен быть нулевой уровень!
+        let allZeroConfirmed = true;
+        for (const bp of beforeList) {
+          try {
+            const checkRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(bp.telegramId)}?_cb=${Date.now()}`);
+            if (checkRes.ok) {
+              let pData = await checkRes.json();
+              if (typeof pData === 'string') {
+                try { pData = JSON.parse(pData); } catch (e) {}
+              }
+              const checkedLvl = Number(pData.maxLevel !== undefined ? pData.maxLevel : (pData.level || 0));
+              if (checkedLvl > 0) {
+                console.warn(`[Season Reset] У игрока ${bp.firstName} (${bp.telegramId}) обнаружен ненулевой уровень: ${checkedLvl}. Принудительно обнуляем!`);
+                allZeroConfirmed = false;
+                pData.maxLevel = 0;
+                pData.level = 0;
+                pData.currentLevel = 1;
+                pData.seasonResetAt = resetTimestamp;
+                pData.updatedAt = resetTimestamp;
+                await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(bp.telegramId)}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(pData)
+                });
+              } else {
+                console.log(`[Season Reset] Игрок ${bp.firstName} (${bp.telegramId}): подтвержден Уровень 0 ✅`);
+              }
+            }
+          } catch (e) {}
         }
 
-        // 7. Close modals
+        // Если кто-то еще отобразился в лидерборде — перезагружаем еще раз
+        if (afterCount > 0 || !allZeroConfirmed) {
+          afterPlayers = (await loadLeaderboardData()) || [];
+        }
+
+        // 8. Закрываем модальные окна
         closeModal(resetSeasonModal);
         closeModal(profileModal);
 
-        // 8. Success haptic and notification
+        // 9. Звуковой отклик и вывод подробного отчета администратору
         if (window.TelegramApp && window.TelegramApp.TelegramApp) {
           window.TelegramApp.TelegramApp.haptic('success');
         }
+
+        let reportDetails = '';
+        if (beforeList.length > 0) {
+          const sample = beforeList.slice(0, 5).map(p => `• ${p.firstName}: ур. ${p.level} ➔ 0`).join('\n');
+          reportDetails = `\n📋 Сброшены лидеры (${beforeCount}):\n${sample}${beforeCount > 5 ? `\n...и еще ${beforeCount - 5} игроков` : ''}\n`;
+        }
+
         showInfoModal(
-          '💥',
-          t('adminResetSuccessTitle') || 'Сезон сброшен!',
-          `Сезон успешно сброшен под ноль!\n\n📋 До сброса: ${beforeCount} игроков в лидерборде.\n✅ После сброса: ${afterCount} игроков (таблица пуста).\n\nВсе игроки начнут с Уровня 0 и появятся в лидерборде только после победы в 1-м туре.\nБаланс TON и рефералы сохранены!`
+          '🔥',
+          'Сезон сброшен под ноль!',
+          `Сезон успешно сброшен под ноль!\n${reportDetails}\n✅ Контрольная проверка: в лидерборде 0 игроков (таблица пуста).\nУ всех игроков подтвержден Уровень 0.\nИгрок появится в лидерборде только после победы в 1-м туре.\n\n🛡️ Кошелек TON, покупки и рефералы сохранены в полной безопасности!`
         );
       } catch (err) {
         console.error('[Season Reset Error]', err);

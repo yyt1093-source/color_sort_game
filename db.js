@@ -394,12 +394,10 @@ function resetSeason(resetTimestamp = Date.now()) {
           extra_bottles = 0,
           shuffles = 0,
           total_moves = 0,
-          all_colors_until = 0,
-          all_colors_purchased_at = 0,
           updated_at = datetime('now');
     `);
     db.exec('DELETE FROM ad_rewards_log;');
-    db.exec('DELETE FROM shop_purchases;');
+    // NOTE: shop_purchases, all_colors_until, ton_wallet, ton_balance, memo_code, and referrals are STRICTLY PRESERVED
 
     try {
       db.prepare(`
