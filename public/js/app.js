@@ -2975,10 +2975,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       const id = String(p.telegramId);
       if (!id || id.startsWith('guest') || id.startsWith('dev') || !/^\d+$/.test(id)) return;
 
-      // Ignore records from before current season reset (check updatedAt first, then seasonResetAt)
+      // Ignore records from before current season reset
       if (localSeasonReset > 0) {
-        const playerTime = Number(p.updatedAt || p.seasonResetAt || 0);
-        if (playerTime > 0 && playerTime < localSeasonReset) return;
+        const pSeason = Number(p.seasonResetAt || 0);
+        const pTime = Number(p.updatedAt || 0);
+        if (pSeason > 0 && pSeason < localSeasonReset) return;
+        if (pTime > 0 && pTime < localSeasonReset) return;
       }
 
       const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
