@@ -176,7 +176,7 @@ function getUser(telegramId, defaultUserData = {}) {
   const memo = generateMemoCode(telegramId);
   const insertStmt = db.prepare(`
     INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, extra_bottles, shuffles, total_moves, ton_balance, ton_wallet, memo_code, all_colors_until)
-    VALUES (?, ?, ?, ?, 1, 1, 0, 100, 0, 0, 0, 0, 0, 0, 0.0, '', ?, 0)
+    VALUES (?, ?, ?, ?, 0, 1, 0, 100, 0, 0, 0, 0, 0, 0, 0.0, '', ?, 0)
   `);
   
   insertStmt.run(
@@ -322,7 +322,7 @@ function getLeaderboard(telegramId, limit = 50) {
   const topStmt = db.prepare(`
     SELECT telegram_id, first_name, username, photo_url, max_level, stars, total_moves
     FROM users
-    WHERE (max_level > 1 OR stars > 0)
+    WHERE max_level >= 1
       AND telegram_id NOT LIKE 'guest%' AND telegram_id NOT LIKE 'dev%'
     ORDER BY max_level DESC, stars DESC
     LIMIT ?
@@ -334,11 +334,11 @@ function getLeaderboard(telegramId, limit = 50) {
   const isRealUser = telegramId && !String(telegramId).startsWith('guest') && !String(telegramId).startsWith('dev');
   if (isRealUser) {
     const user = getUser(telegramId);
-    if (user && (user.max_level > 1 || user.stars > 0)) {
+    if (user && user.max_level >= 1) {
       const rankStmt = db.prepare(`
         SELECT COUNT(*) as rank
         FROM users
-        WHERE (max_level > 1 OR stars > 0)
+        WHERE max_level >= 1
           AND (telegram_id NOT LIKE 'guest%' AND telegram_id NOT LIKE 'dev%')
           AND (max_level > ? OR (max_level = ? AND stars > ?))
       `);
@@ -381,11 +381,11 @@ function getSeasonResetTimestamp() {
 
 function resetSeason(resetTimestamp = Date.now()) {
   try {
-    // Reset player scores, levels, boosters, and perks to 0/1, but PRESERVE user accounts, wallets, and referral records!
+    // Reset player scores, levels, boosters, and perks to 0/0, but PRESERVE user accounts, wallets, and referral records!
     db.exec(`
       UPDATE users 
       SET current_level = 1,
-          max_level = 1,
+          max_level = 0,
           stars = 0,
           coins = 0,
           hints = 0,
@@ -399,6 +399,7 @@ function resetSeason(resetTimestamp = Date.now()) {
           updated_at = datetime('now');
     `);
     db.exec('DELETE FROM ad_rewards_log;');
+    db.exec('DELETE FROM shop_purchases;');
 
     try {
       db.prepare(`

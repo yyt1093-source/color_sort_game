@@ -49,7 +49,7 @@ runTest('Create/Get User Account', () => {
   const user = db.getUser(testId, { first_name: 'ТестовыйИгрок', username: 'testplayer' });
   assert.ok(user, 'User object should be created');
   assert.strictEqual(user.first_name, 'ТестовыйИгрок');
-  assert.strictEqual(user.max_level, 1);
+  assert.strictEqual(user.max_level, 0);
   assert.strictEqual(user.current_level, 1);
   assert.ok(user.memo_code.startsWith('SORT-'), 'Memo code should be generated');
 });
@@ -158,7 +158,7 @@ runTest('Admin Season Reset (Zero Stats, Preserves Accounts, Empty Leaderboard)'
   assert.ok(db.getSeasonResetTimestamp() > 0, 'getSeasonResetTimestamp should be > 0');
   const user = db.getUser(testId);
   assert.strictEqual(user.current_level, 1);
-  assert.strictEqual(user.max_level, 1);
+  assert.strictEqual(user.max_level, 0);
   assert.strictEqual(user.stars, 0);
   assert.strictEqual(user.coins, 0);
   assert.strictEqual(user.hints, 0);

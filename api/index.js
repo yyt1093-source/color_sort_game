@@ -95,6 +95,7 @@ app.get('/api/leaderboard', async (req, res) => {
   try {
     const telegramId = req.query.telegramId || '';
     const leaderboard = db.getLeaderboard(telegramId, 50);
+    const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
 
     // Merge from global cloud KVDB so offline/online players are unified
     try {
@@ -127,7 +128,13 @@ app.get('/api/leaderboard', async (req, res) => {
         cloudPlayers.forEach(cp => {
           const id = String(cp.telegramId);
           const existing = playersMap.get(id);
-          const cpMaxLevel = Number(cp.maxLevel || cp.level || 1);
+          const cpSeason = Number(cp.seasonResetAt || 0);
+          const cpMaxLevel = Number(cp.maxLevel || cp.level || 0);
+
+          // Exclude cloud players from old season or players who haven't completed round 1 (maxLevel < 1)
+          if (seasonResetAt > 0 && cpSeason < seasonResetAt) return;
+          if (cpMaxLevel < 1) return;
+
           if (!existing || cpMaxLevel > existing.max_level) {
             playersMap.set(id, {
               telegram_id: id,
@@ -459,17 +466,45 @@ async function resetKvdbSeasonServer(resetTimestamp) {
   }
 
   try {
-    const listRes = await fetch(`${baseUrl}/?prefix=player_&format=json`);
+    const listRes = await fetch(`${baseUrl}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
     if (listRes.ok) {
-      const keys = await listRes.json();
-      if (Array.isArray(keys)) {
+      const pairs = await listRes.json();
+      if (Array.isArray(pairs)) {
         await Promise.allSettled(
-          keys.map(k => fetch(`${baseUrl}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
+          pairs.map(async ([key, val]) => {
+            let p = val;
+            if (typeof p === 'string') {
+              try { p = JSON.parse(p); } catch (e) { p = null; }
+            }
+            if (p && typeof p === 'object' && p.telegramId) {
+              p.currentLevel = 1;
+              p.maxLevel = 0;
+              p.level = 0;
+              p.stars = 0;
+              p.hints = 0;
+              p.undos = 0;
+              p.reveals = 0;
+              p.extraBottles = 0;
+              p.extra_bottles = 0;
+              p.shuffles = 0;
+              p.total_moves = 0;
+              p.all_colors_until = 0;
+              p.all_colors_purchased_at = 0;
+              p.seasonResetAt = resetTimestamp;
+              p.updatedAt = resetTimestamp;
+              // Preserves: telegramId, firstName, username, photoUrl, ton_balance, ton_wallet, memo_code!
+              return fetch(`${baseUrl}/${encodeURIComponent(key)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(p)
+              });
+            }
+          })
         );
       }
     }
   } catch (e) {
-    console.warn('[SERVER KVDB RESET] Player keys wipe error:', e.message);
+    console.warn('[SERVER KVDB RESET] Player keys reset error:', e.message);
   }
 }
 
