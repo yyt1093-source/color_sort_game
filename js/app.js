@@ -2495,14 +2495,18 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   async function checkLiveSeasonResetWatchdog() {
     if (isSeasonResetKicked) return;
     const now = Date.now();
-    if (now - lastWatchdogCheck < 2000) return;
+    if (now - lastWatchdogCheck < 25000) return;
     lastWatchdogCheck = now;
 
     try {
       const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at?_cb=${now}`, {
         cache: 'no-store',
-        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+        signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2500) : undefined
       });
+      if (res.status === 429) {
+        lastWatchdogCheck = now + 45000; // Back off on rate limit
+        return;
+      }
       if (res.ok) {
         const rawText = await res.text();
         let resetAt = 0;
@@ -2616,8 +2620,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     } catch (e) {}
   }
 
-  // Realtime active watchdog while playing (every 3 seconds)
-  setInterval(checkLiveSeasonResetWatchdog, 3000);
+  // Realtime active watchdog while playing (every 30 seconds, throttled)
+  setInterval(checkLiveSeasonResetWatchdog, 30000);
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
@@ -3065,7 +3069,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     } catch (e) {}
 
     // 3. Ensure current user is included in the unified leaderboard ONLY if maxLevel >= 1
-    let effectiveSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+    const SEASON_RESET_FLOOR = 1789324758606;
+    let effectiveSeasonReset = Math.max(Number(localStorage.getItem('color_sort_season_reset_at') || 0), SEASON_RESET_FLOOR);
     try {
       const metaRes = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at?_cb=${Date.now()}`, {
         cache: 'no-store',
@@ -3128,13 +3133,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       const pUpdated = Number(p.updatedAt || 0);
       const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
 
-      // Player belongs to current season if:
-      // 1) effectiveSeasonReset === 0, OR
-      // 2) pSeason >= effectiveSeasonReset, OR
-      // 3) pUpdated >= effectiveSeasonReset (played after the reset)
-      const isCurrentSeason = (effectiveSeasonReset === 0) ||
-        (pSeason >= effectiveSeasonReset) ||
-        (pUpdated >= effectiveSeasonReset);
+      // Player belongs to current season if pSeason >= effectiveSeasonReset OR pUpdated >= effectiveSeasonReset
+      const isCurrentSeason = (pSeason >= effectiveSeasonReset) || (pUpdated >= effectiveSeasonReset);
 
       if (!isCurrentSeason) {
         return;
@@ -4145,7 +4145,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         const pairs = await cloudRes.json();
         if (Array.isArray(pairs)) {
           pairs.forEach(([key, val]) => {
-            if (val && (val.referredId || key.split('_')[2])) {
+            if (typeof val === 'string') {
+              try { val = JSON.parse(val); } catch (e) {}
+            }
+            if (val && typeof val === 'object' && (val.referredId || key.split('_')[2])) {
               const refFriendId = String(val.referredId || key.split('_')[2]).trim();
               if (!isValidReferralId(refFriendId)) {
                 // Delete invalid guest key from KVDB
@@ -4159,8 +4162,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
                 referrals.push({
                   id: key,
                   referred_id: refFriendId,
-                  referred_name: val.referredName || 'Игрок',
-                  referred_username: val.referredUsername || '',
+                  referred_name: val.referredName || val.name || 'Игрок',
+                  referred_username: val.referredUsername || val.username || '',
                   reward_claimed: isClaimed ? 1 : 0,
                   created_at: val.createdAt ? new Date(val.createdAt).toLocaleDateString() : ''
                 });
