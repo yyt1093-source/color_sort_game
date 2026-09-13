@@ -109,6 +109,12 @@ function initDatabase() {
         referrer_id TEXT NOT NULL,
         bound_at TEXT DEFAULT (datetime('now'))
       );
+      CREATE TABLE IF NOT EXISTS referral_bindings_username (
+        username TEXT PRIMARY KEY,
+        referred_id TEXT NOT NULL,
+        referrer_id TEXT NOT NULL,
+        bound_at TEXT DEFAULT (datetime('now'))
+      );
     `);
   } catch (e) {}
   try {
@@ -312,7 +318,7 @@ function getAdRewardsCount(telegramId) {
  * Get global leaderboard + user's rank
  */
 function getLeaderboard(telegramId, limit = 50) {
-  // Only real Telegram human players who have completed at least 1 level in the current season (strictly NO bots or guests)
+  // Only real Telegram human players who completed at least 1 level (strictly NO bots or guests)
   const topStmt = db.prepare(`
     SELECT telegram_id, first_name, username, photo_url, max_level, stars, total_moves
     FROM users
@@ -635,20 +641,39 @@ function registerReferral(referrerId, referredId, referredName = '', referredUse
   const newId = String(referredId || '').trim();
   if (!refId || !newId || refId === newId) return null;
 
+  // Reject random guest IDs
+  if (newId.startsWith('tg_user_') || newId.startsWith('guest_')) {
+    return { success: false, error: 'invalid_telegram_id', message: 'Рефералом может быть только реальный пользователь Telegram' };
+  }
+
+  const cleanUsername = String(referredUsername || '').toLowerCase().replace(/^@/, '').trim();
+
   try {
-    // 1. Check permanent referral bindings table
+    // 1. Check permanent referral bindings table by ID
     const existingBinding = db.prepare('SELECT referred_id, referrer_id FROM referral_bindings WHERE referred_id = ?').get(newId);
     if (existingBinding) {
       return { success: false, error: 'already_referred', alreadyReferred: true, referrerId: existingBinding.referrer_id };
     }
 
-    // 2. Check referrals table
+    // 2. Check permanent referral bindings table by Username (if provided)
+    if (cleanUsername) {
+      const existingUname = db.prepare('SELECT username, referrer_id FROM referral_bindings_username WHERE username = ?').get(cleanUsername);
+      if (existingUname) {
+        return { success: false, error: 'already_referred', alreadyReferred: true, referrerId: existingUname.referrer_id };
+      }
+      const existingRefUname = db.prepare('SELECT referred_id, referrer_id FROM referrals WHERE LOWER(TRIM(referred_username)) = ? OR LOWER(TRIM(referred_username)) = ?').get(cleanUsername, '@' + cleanUsername);
+      if (existingRefUname) {
+        return { success: false, error: 'already_referred', alreadyReferred: true, referrerId: existingRefUname.referrer_id };
+      }
+    }
+
+    // 3. Check referrals table by ID
     const existing = db.prepare('SELECT id, referrer_id FROM referrals WHERE referred_id = ?').get(newId);
     if (existing) {
       return { success: false, error: 'already_referred', alreadyReferred: true, referrerId: existing.referrer_id };
     }
 
-    // 3. Check users table: existing players cannot be referred later
+    // 4. Check users table: existing players cannot be referred later
     const existingUser = db.prepare('SELECT telegram_id, referrer_id, max_level FROM users WHERE telegram_id = ?').get(newId);
     if (existingUser) {
       if (existingUser.referrer_id) {
@@ -659,17 +684,24 @@ function registerReferral(referrerId, referredId, referredName = '', referredUse
       }
     }
 
-    // 4. Save permanent binding
+    // 5. Save permanent binding by ID
     db.prepare('INSERT OR IGNORE INTO referral_bindings (referred_id, referrer_id) VALUES (?, ?)').run(newId, refId);
 
-    // 5. Insert referral record
+    // 6. Save permanent binding by Username
+    if (cleanUsername) {
+      try {
+        db.prepare('INSERT OR IGNORE INTO referral_bindings_username (username, referred_id, referrer_id) VALUES (?, ?, ?)').run(cleanUsername, newId, refId);
+      } catch (uErr) {}
+    }
+
+    // 7. Insert referral record
     const stmt = db.prepare(`
       INSERT INTO referrals (referrer_id, referred_id, referred_name, referred_username, reward_claimed)
       VALUES (?, ?, ?, ?, 0)
     `);
     const result = stmt.run(refId, newId, referredName || 'Игрок', referredUsername || '');
 
-    // 6. Update user's referrer_id if user already exists
+    // 8. Update user's referrer_id if user already exists
     try {
       db.prepare('UPDATE users SET referrer_id = ? WHERE telegram_id = ?').run(refId, newId);
     } catch (e) {}
@@ -703,13 +735,32 @@ function getReferrals(referrerId) {
       ORDER BY id DESC
     `).all(refId);
 
-    const totalCount = rows.length;
-    const unclaimedCount = rows.filter(r => r.reward_claimed === 0).length;
+    const seenIds = new Set();
+    const seenUsernames = new Set();
+    const cleanRows = [];
+
+    for (const r of rows) {
+      const rid = String(r.referred_id || '').trim();
+      const runame = String(r.referred_username || '').toLowerCase().replace(/^@/, '').trim();
+
+      if (rid.startsWith('tg_user_') || rid.startsWith('guest_')) {
+        continue;
+      }
+      if (seenIds.has(rid)) continue;
+      if (runame && seenUsernames.has(runame)) continue;
+
+      seenIds.add(rid);
+      if (runame) seenUsernames.add(runame);
+      cleanRows.push(r);
+    }
+
+    const totalCount = cleanRows.length;
+    const unclaimedCount = cleanRows.filter(r => r.reward_claimed === 0).length;
 
     return {
       totalCount,
       unclaimedCount,
-      referrals: rows
+      referrals: cleanRows
     };
   } catch (err) {
     console.error('[DB Get Referrals Error]', err);

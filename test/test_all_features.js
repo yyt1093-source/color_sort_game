@@ -180,10 +180,11 @@ console.log('\n--- SECTION 6: Referral Program (+5 to All Boosters) ---');
 
 const refOwnerId = 'ref_owner_' + Date.now();
 const refFriendId = 'ref_friend_' + Date.now();
+const refFriendUname = 'friend_uname_' + Date.now();
 
 runTest('Register Referral', () => {
   db.getUser(refOwnerId, { first_name: 'Пригласивший' });
-  const regRes = db.registerReferral(refOwnerId, refFriendId, 'ДругВступивший', 'friend_uname');
+  const regRes = db.registerReferral(refOwnerId, refFriendId, 'ДругВступивший', refFriendUname);
   assert.strictEqual(regRes.success, true);
 });
 
@@ -205,20 +206,21 @@ runTest('Claim Referral Rewards (+5 to All Boosters)', () => {
 
 runTest('Prevent Duplicate Referral Binding (Cannot re-refer same player)', () => {
   const otherOwnerId = 'ref_other_' + Date.now();
-  const dupRes = db.registerReferral(otherOwnerId, refFriendId, 'ДругВступивший', 'friend_uname');
+  const dupRes = db.registerReferral(otherOwnerId, refFriendId, 'ДругВступивший', refFriendUname);
   assert.strictEqual(dupRes.success, false);
   assert.strictEqual(dupRes.error, 'already_referred');
   // Re-referring with original owner also rejected
-  const dupRes2 = db.registerReferral(refOwnerId, refFriendId, 'ДругВступивший', 'friend_uname');
+  const dupRes2 = db.registerReferral(refOwnerId, refFriendId, 'ДругВступивший', refFriendUname);
   assert.strictEqual(dupRes2.success, false);
   assert.strictEqual(dupRes2.error, 'already_referred');
 });
 
 runTest('Reject Referral for Existing Active Player (max_level > 1)', () => {
   const veteranPlayerId = 'veteran_player_' + Date.now();
+  const vetUname = 'vet_' + Date.now();
   db.getUser(veteranPlayerId, { first_name: 'ОпытныйИгрок' });
   db.updateUserProgress(veteranPlayerId, { currentLevel: 5, maxLevel: 5, starsAdded: 15, coinsAdded: 50 });
-  const vetRes = db.registerReferral(refOwnerId, veteranPlayerId, 'ОпытныйИгрок', 'vet');
+  const vetRes = db.registerReferral(refOwnerId, veteranPlayerId, 'ОпытныйИгрок', vetUname);
   assert.strictEqual(vetRes.success, false);
   assert.strictEqual(vetRes.error, 'existing_player');
 });
@@ -230,7 +232,7 @@ runTest('Referral Progress and Binding IMMUNE to Season Reset', () => {
   assert.strictEqual(refListAfterSeasonReset.totalCount, 1);
   assert.strictEqual(refListAfterSeasonReset.referrals[0].referred_id, refFriendId);
   // Ensure the binding STILL prevents duplicate referral after season reset
-  const afterResetDup = db.registerReferral('someone_else', refFriendId, 'ДругВступивший', 'friend_uname');
+  const afterResetDup = db.registerReferral('someone_else', refFriendId, 'ДругВступивший', refFriendUname);
   assert.strictEqual(afterResetDup.success, false);
   assert.strictEqual(afterResetDup.error, 'already_referred');
 });

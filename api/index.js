@@ -91,10 +91,72 @@ app.post('/api/user/sync', (req, res) => {
 /**
  * Get Global Leaderboard
  */
-app.get('/api/leaderboard', (req, res) => {
+app.get('/api/leaderboard', async (req, res) => {
   try {
-    const telegramId = req.query.telegramId || 'guest_dev_123';
+    const telegramId = req.query.telegramId || '';
     const leaderboard = db.getLeaderboard(telegramId, 50);
+
+    // Merge from global cloud KVDB so offline/online players are unified
+    try {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      const cloudRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
+        signal: AbortSignal.timeout(2500)
+      });
+      if (cloudRes.ok) {
+        const pairs = await cloudRes.json();
+        const cloudPlayers = pairs
+          .map(([k, p]) => {
+            if (typeof p === 'string') {
+              try { return JSON.parse(p); } catch (e) { return null; }
+            }
+            return p;
+          })
+          .filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev'));
+        
+        const playersMap = new Map();
+        leaderboard.topPlayers.forEach(p => {
+          playersMap.set(String(p.telegram_id), {
+            telegram_id: String(p.telegram_id),
+            first_name: p.first_name,
+            username: p.username,
+            photo_url: p.photo_url,
+            max_level: p.max_level,
+            stars: p.stars || 0
+          });
+        });
+        cloudPlayers.forEach(cp => {
+          const id = String(cp.telegramId);
+          const existing = playersMap.get(id);
+          const cpMaxLevel = Number(cp.maxLevel || cp.level || 1);
+          if (!existing || cpMaxLevel > existing.max_level) {
+            playersMap.set(id, {
+              telegram_id: id,
+              first_name: cp.firstName || (existing ? existing.first_name : 'Игрок'),
+              username: cp.username || (existing ? existing.username : ''),
+              photo_url: cp.photoUrl || (existing ? existing.photo_url : ''),
+              max_level: cpMaxLevel,
+              stars: cp.stars || (existing ? existing.stars : 0)
+            });
+          }
+        });
+        
+        const mergedList = Array.from(playersMap.values())
+          .sort((a, b) => b.max_level - a.max_level || (b.stars || 0) - (a.stars || 0))
+          .slice(0, 50);
+
+        leaderboard.topPlayers = mergedList;
+        if (telegramId && !String(telegramId).startsWith('guest') && !String(telegramId).startsWith('dev')) {
+          const userIdx = mergedList.findIndex(p => p.telegram_id === String(telegramId));
+          if (userIdx !== -1) {
+            leaderboard.userRank = {
+              rank: userIdx + 1,
+              max_level: mergedList[userIdx].max_level,
+              first_name: mergedList[userIdx].first_name
+            };
+          }
+        }
+      }
+    } catch (kvErr) {}
 
     res.json({ success: true, ...leaderboard });
   } catch (err) {

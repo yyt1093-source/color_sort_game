@@ -226,12 +226,19 @@ app.get('/api/leaderboard', async (req, res) => {
     // Merge from global cloud KVDB so offline/online players are unified
     try {
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
-      const cloudRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json`, {
+      const cloudRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
         signal: AbortSignal.timeout(2500)
       });
       if (cloudRes.ok) {
         const pairs = await cloudRes.json();
-        const cloudPlayers = pairs.map(([k, p]) => p).filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev'));
+        const cloudPlayers = pairs
+          .map(([k, p]) => {
+            if (typeof p === 'string') {
+              try { return JSON.parse(p); } catch (e) { return null; }
+            }
+            return p;
+          })
+          .filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev'));
         
         const playersMap = new Map();
         leaderboard.topPlayers.forEach(p => {
