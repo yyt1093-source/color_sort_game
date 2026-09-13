@@ -279,8 +279,8 @@ async function initColorSortApp() {
       tonStepPlus: "Увеличить",
       refEmptyText: "Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!",
       refClaimSubtitle: "+5 ко всем бонусам",
-      rewardClaimed: "Забрать награду",
-      claimBonusBtn: "Забрать +5",
+      rewardClaimed: "Награда получена",
+      claimBonusBtn: "Забрать награду",
       adminPurchasesHeader: "💎 Управление покупками за TON (Только Admin)",
       adminResetSelfPurchasesBtn: "👑 Сбросить только мой аккаунт",
       resetPurchasesItem1: "🎨 Преимущество «Все краски открыты» будет выключено у всех игроков",
@@ -470,8 +470,8 @@ async function initColorSortApp() {
       tonStepPlus: "Збільшити",
       refEmptyText: "Поки ніхто не перейшов за вашим посиланням. Надішліть посилання друзям у Telegram!",
       refClaimSubtitle: "+5 до всіх бонусів",
-      rewardClaimed: "Забрати нагороду",
-      claimBonusBtn: "Забрати +5",
+      rewardClaimed: "Нагороду отримано",
+      claimBonusBtn: "Забрати нагороду",
       adminPurchasesHeader: "💎 Керування покупками за TON (Тільки Admin)",
       adminResetSelfPurchasesBtn: "👑 Скинути тільки мій акаунт",
       resetPurchasesItem1: "🎨 Перевага «Всі фарби відкриті» буде вимкнена у всіх гравців",
@@ -661,8 +661,8 @@ async function initColorSortApp() {
       tonStepPlus: "Increase",
       refEmptyText: "No friends joined via your link yet. Send the link to friends on Telegram!",
       refClaimSubtitle: "+5 to all bonuses",
-      rewardClaimed: "Claim reward",
-      claimBonusBtn: "Claim +5",
+      rewardClaimed: "Reward claimed",
+      claimBonusBtn: "Claim reward",
       adminPurchasesHeader: "💎 TON Purchases Management (Admin Only)",
       adminResetSelfPurchasesBtn: "👑 Reset only my account",
       resetPurchasesItem1: "🎨 \"All Colors Revealed\" perk will be deactivated for all players",
@@ -852,8 +852,8 @@ async function initColorSortApp() {
       tonStepPlus: "Erhöhen",
       refEmptyText: "Noch niemand über deinen Link beigetreten. Sende den Link an Freunde auf Telegram!",
       refClaimSubtitle: "+5 auf alle Boni",
-      rewardClaimed: "Belohnung abholen",
-      claimBonusBtn: "Abholen +5",
+      rewardClaimed: "Belohnung erhalten",
+      claimBonusBtn: "Belohnung abholen",
       adminPurchasesHeader: "💎 TON-Kaufverwaltung (Nur Admin)",
       adminResetSelfPurchasesBtn: "👑 Nur mein Konto zurücksetzen",
       resetPurchasesItem1: "🎨 Der Vorteil „Alle Farben aufgedeckt“ wird für alle Spieler deaktiviert",
@@ -1043,8 +1043,8 @@ async function initColorSortApp() {
       tonStepPlus: "Padidinti",
       refEmptyText: "Dar niekas neprisijungė per jūsų nuorodą. Nusiųskite nuorodą draugams Telegram!",
       refClaimSubtitle: "+5 prie visų premijų",
-      rewardClaimed: "Atsiimti apdovanojimą",
-      claimBonusBtn: "Atsiimti +5",
+      rewardClaimed: "Apdovanojimas gautas",
+      claimBonusBtn: "Atsiimti apdovanojimą",
       adminPurchasesHeader: "💎 TON pirkimų valdymas (Tik Admin)",
       adminResetSelfPurchasesBtn: "👑 Atstatyti tik mano paskyrą",
       resetPurchasesItem1: "🎨 Privalumas „Visos spalvos atskleistos“ bus išjungtas visiems žaidėjams",
@@ -1878,7 +1878,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     return /^\d{4,16}$/.test(s);
   }
 
-  function processIncomingReferral() {
+  async function processIncomingReferral() {
     const tg = window.Telegram && window.Telegram.WebApp;
     let refParam = null;
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
@@ -1900,126 +1900,202 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     // Referrals are strictly reserved for genuine Telegram users (numeric Telegram IDs)
     if (!isValidReferralId(myId)) return;
 
-    const inviterId = String(refParam || '').trim();
-    if (!isValidReferralId(inviterId) || inviterId === myId) return;
-
-    // 1. Check permanent local lock: if this user was already bound or locked, reject any new referral
+    // 1. FAST LOCAL CHECK: If already permanently locked or bound, reject any new referral
     const isLocked = localStorage.getItem('cs_ref_permanently_locked') === 'true';
     const boundReferrer = localStorage.getItem('cs_bound_referrer_id');
     if (isLocked || boundReferrer) {
       return;
     }
 
-    // 2. If user is an established player (maxLevel > 1 or stars > 0), they cannot be referred later
+    // 2. If user is an established player locally (maxLevel > 1 or stars > 0), lock permanently
     if ((Number(currentUser.maxLevel || 1) > 1) || (Number(currentUser.stars || 0) > 0)) {
       localStorage.setItem('cs_ref_permanently_locked', 'true');
       return;
     }
 
+    const inviterId = String(refParam || '').trim();
+    if (!isValidReferralId(inviterId) || inviterId === myId) return;
+
     const cleanUsername = String(currentUser.username || '').toLowerCase().replace(/^@/, '').trim();
 
-    // 3. Asynchronously verify against KVDB Cloud binding by ID and by Username before committing
     try {
-      fetch(`${GLOBAL_CLOUD_BASE}/binding_ref_${encodeURIComponent(myId)}`, {
-        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
-      }).then(async (res) => {
-        if (res.ok) {
-          const raw = await res.text();
-          let cloudBinding = null;
-          try { cloudBinding = JSON.parse(raw); } catch (e) {}
-          if (cloudBinding && cloudBinding.referrerId) {
-            // Already bound in cloud! Lock locally and do not create duplicate
-            localStorage.setItem('cs_bound_referrer_id', String(cloudBinding.referrerId));
+      // 3. CLOUD FOLDER REGISTRY CHECK: Query permanent binding by ID ("Кто чей пригласитель")
+      let existingCloudReferrer = null;
+
+      try {
+        const resBind = await fetch(`${GLOBAL_CLOUD_BASE}/ref_registry_binding_${encodeURIComponent(myId)}`, {
+          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(3000) : undefined
+        });
+        if (resBind.ok) {
+          const raw = await resBind.text();
+          let bData = null;
+          try { bData = JSON.parse(raw); } catch (e) {}
+          if (bData && (bData.referrerId || bData.locked)) {
+            existingCloudReferrer = bData.referrerId || 'locked';
+          }
+        }
+      } catch (e) {}
+
+      // Backwards-compatible check: legacy binding_ref_ key in KVDB
+      if (!existingCloudReferrer) {
+        try {
+          const resOld = await fetch(`${GLOBAL_CLOUD_BASE}/binding_ref_${encodeURIComponent(myId)}`, {
+            signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+          });
+          if (resOld.ok) {
+            const rawOld = await resOld.text();
+            let bDataOld = null;
+            try { bDataOld = JSON.parse(rawOld); } catch (e) {}
+            if (bDataOld && bDataOld.referrerId) {
+              existingCloudReferrer = bDataOld.referrerId;
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Check cloud binding by Username (if username exists)
+      if (!existingCloudReferrer && cleanUsername) {
+        try {
+          const resUname = await fetch(`${GLOBAL_CLOUD_BASE}/ref_registry_uname_${encodeURIComponent(cleanUsername)}`, {
+            signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+          });
+          if (resUname.ok) {
+            const rawU = await resUname.text();
+            let uData = null;
+            try { uData = JSON.parse(rawU); } catch (e) {}
+            if (uData && (uData.referrerId || uData.locked)) {
+              existingCloudReferrer = uData.referrerId || 'locked';
+            }
+          }
+        } catch (ue) {}
+
+        if (!existingCloudReferrer) {
+          try {
+            const resUold = await fetch(`${GLOBAL_CLOUD_BASE}/binding_uname_${encodeURIComponent(cleanUsername)}`, {
+              signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+            });
+            if (resUold.ok) {
+              const rawUold = await resUold.text();
+              let uoldData = null;
+              try { uoldData = JSON.parse(rawUold); } catch (e) {}
+              if (uoldData && uoldData.referrerId) {
+                existingCloudReferrer = uoldData.referrerId;
+              }
+            }
+          } catch (ue2) {}
+        }
+      }
+
+      // If user was already bound or locked in cloud, restore local state and ABORT immediately
+      if (existingCloudReferrer) {
+        if (existingCloudReferrer !== 'locked') {
+          localStorage.setItem('cs_bound_referrer_id', String(existingCloudReferrer));
+        }
+        localStorage.setItem('cs_ref_permanently_locked', 'true');
+        return;
+      }
+
+      // 4. CLOUD CHECK: Check if this user is already an existing active player in the cloud
+      try {
+        const pRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(myId)}`, {
+          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+        });
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          if (pData && (Number(pData.maxLevel || pData.level || 1) > 1 || Number(pData.stars || 0) > 0)) {
+            // Already started playing earlier! Lock permanently without an inviter
             localStorage.setItem('cs_ref_permanently_locked', 'true');
+            fetch(`${GLOBAL_CLOUD_BASE}/ref_registry_binding_${encodeURIComponent(myId)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                refereeId: myId,
+                referrerId: null,
+                locked: true,
+                isExistingPlayer: true,
+                boundAt: Date.now()
+              })
+            }).catch(() => {});
             return;
           }
         }
+      } catch (pe) {}
 
-        // Check cloud binding by Username (if username exists)
-        if (cleanUsername) {
-          try {
-            const ures = await fetch(`${GLOBAL_CLOUD_BASE}/binding_uname_${encodeURIComponent(cleanUsername)}`, {
-              signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
-            });
-            if (ures.ok) {
-              const uraw = await ures.text();
-              let unameBinding = null;
-              try { unameBinding = JSON.parse(uraw); } catch (e) {}
-              if (unameBinding && unameBinding.referrerId) {
-                localStorage.setItem('cs_bound_referrer_id', String(unameBinding.referrerId));
-                localStorage.setItem('cs_ref_permanently_locked', 'true');
-                return;
-              }
-            }
-          } catch (ue) {}
-        }
+      // 5. USER IS BRAND NEW! Bind permanently to inviterId across all cloud and local storage
+      localStorage.setItem('cs_bound_referrer_id', String(inviterId));
+      localStorage.setItem('cs_ref_permanently_locked', 'true');
 
-        // Lock permanently once and for all
-        localStorage.setItem('cs_bound_referrer_id', String(inviterId));
-        localStorage.setItem('cs_ref_permanently_locked', 'true');
+      const bindingPayload = {
+        refereeId: myId,
+        referrerId: inviterId,
+        refereeName: currentUser.firstName || 'Игрок',
+        refereeUsername: cleanUsername,
+        boundAt: Date.now(),
+        permanent: true
+      };
 
-        // A. Save binding by ID in KVDB Cloud
-        fetch(`${GLOBAL_CLOUD_BASE}/binding_ref_${encodeURIComponent(myId)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            referrerId: inviterId,
-            referredId: myId,
-            referredName: currentUser.firstName || 'Игрок',
-            referredUsername: cleanUsername,
-            boundAt: Date.now()
-          })
-        }).catch(() => {});
+      // A. Write permanent cloud registry binding by ID
+      fetch(`${GLOBAL_CLOUD_BASE}/ref_registry_binding_${encodeURIComponent(myId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bindingPayload)
+      }).catch(() => {});
 
-        // B. Save binding by Username in KVDB Cloud (if provided)
-        if (cleanUsername) {
-          fetch(`${GLOBAL_CLOUD_BASE}/binding_uname_${encodeURIComponent(cleanUsername)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              referrerId: inviterId,
-              referredId: myId,
-              referredUsername: cleanUsername,
-              boundAt: Date.now()
-            })
-          }).catch(() => {});
-        }
+      // Legacy key compatibility
+      fetch(`${GLOBAL_CLOUD_BASE}/binding_ref_${encodeURIComponent(myId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bindingPayload)
+      }).catch(() => {});
 
-        // C. Save referral item for inviter in KVDB Cloud
-        fetch(`${GLOBAL_CLOUD_BASE}/ref_${encodeURIComponent(inviterId)}_${encodeURIComponent(myId)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            referrerId: inviterId,
-            referredId: myId,
-            referredName: currentUser.firstName || 'Игрок',
-            referredUsername: cleanUsername,
-            rewardClaimed: 0,
-            createdAt: Date.now()
-          })
-        }).catch(() => {});
-
-        // D. Register on server database (SQLite)
-        apiCall('/api/referral/register', 'POST', {
+      // B. Write permanent cloud registry binding by Username (if provided)
+      if (cleanUsername) {
+        const unamePayload = {
+          username: cleanUsername,
+          refereeId: myId,
           referrerId: inviterId,
-          telegramId: myId,
-          firstName: currentUser.firstName || 'Игрок',
-          username: cleanUsername
+          boundAt: Date.now(),
+          permanent: true
+        };
+        fetch(`${GLOBAL_CLOUD_BASE}/ref_registry_uname_${encodeURIComponent(cleanUsername)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(unamePayload)
         }).catch(() => {});
-      }).catch(() => {
-        // Fallback if cloud request errors: lock locally and try server API
-        if (!localStorage.getItem('cs_ref_permanently_locked')) {
-          localStorage.setItem('cs_bound_referrer_id', String(inviterId));
-          localStorage.setItem('cs_ref_permanently_locked', 'true');
-          apiCall('/api/referral/register', 'POST', {
-            referrerId: inviterId,
-            telegramId: myId,
-            firstName: currentUser.firstName || 'Игрок',
-            username: cleanUsername
-          }).catch(() => {});
-        }
-      });
-    } catch (e) {}
+        fetch(`${GLOBAL_CLOUD_BASE}/binding_uname_${encodeURIComponent(cleanUsername)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(unamePayload)
+        }).catch(() => {});
+      }
+
+      // C. Save referral item in inviter's friends list in KVDB Cloud ("Кто у кого реферал")
+      const refItemPayload = {
+        id: `ref_${inviterId}_${myId}`,
+        referrerId: inviterId,
+        referredId: myId,
+        referredName: currentUser.firstName || 'Игрок',
+        referredUsername: cleanUsername,
+        rewardClaimed: 0,
+        createdAt: Date.now()
+      };
+      fetch(`${GLOBAL_CLOUD_BASE}/ref_${encodeURIComponent(inviterId)}_${encodeURIComponent(myId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(refItemPayload)
+      }).catch(() => {});
+
+      // D. Register in server database (SQLite)
+      apiCall('/api/referral/register', 'POST', {
+        referrerId: inviterId,
+        telegramId: myId,
+        firstName: currentUser.firstName || 'Игрок',
+        username: cleanUsername
+      }).catch(() => {});
+
+    } catch (err) {
+      console.warn('[Referral Processing Notice]', err);
+    }
   }
 
   // 5. Init renderer
@@ -4054,6 +4130,17 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
               rewardClaimed: 1,
               claimedAt: Date.now(),
               createdAt: item.created_at || Date.now()
+            })
+          }).catch(() => {});
+
+          fetch(`${GLOBAL_CLOUD_BASE}/ref_claim_${encodeURIComponent(myId)}_${encodeURIComponent(refFriendId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              referrerId: myId,
+              referredId: refFriendId,
+              claimedAt: Date.now(),
+              rewardClaimed: 1
             })
           }).catch(() => {});
         });

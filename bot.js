@@ -152,7 +152,26 @@ async function handleUpdate(update) {
     });
 
     if (referrerId) {
-      db.registerReferral(referrerId, userId, firstName, update.message.from.username || '');
+      const regRes = db.registerReferral(referrerId, userId, firstName, update.message.from.username || '');
+      if (regRes && regRes.success) {
+        const KVDB_BASE = 'https://kvdb.io/82kzJTUxZwwFNvg7kUSqgM';
+        const cleanUname = (update.message.from.username || '').toLowerCase().replace(/^@/, '').trim();
+        fetch(`${KVDB_BASE}/ref_registry_binding_${userId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refereeId: userId, referrerId: referrerId, refereeName: firstName, refereeUsername: cleanUname, boundAt: Date.now(), permanent: true })
+        }).catch(() => {});
+        fetch(`${KVDB_BASE}/binding_ref_${userId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refereeId: userId, referrerId: referrerId, refereeName: firstName, refereeUsername: cleanUname, boundAt: Date.now(), permanent: true })
+        }).catch(() => {});
+        fetch(`${KVDB_BASE}/ref_${referrerId}_${userId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: `ref_${referrerId}_${userId}`, referrerId: referrerId, referredId: userId, referredName: firstName, referredUsername: cleanUname, rewardClaimed: 0, createdAt: Date.now() })
+        }).catch(() => {});
+      }
     }
 
     const appLaunchUrl = referrerId ? `${getWebAppUrl()}?startapp=ref_${referrerId}` : getWebAppUrl();
