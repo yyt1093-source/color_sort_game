@@ -1433,7 +1433,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     // Profile Modal
     const profileCardLevel = document.getElementById('profileCardLevel');
     if (profileCardLevel && typeof currentUser !== 'undefined') {
-      profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
+      profileCardLevel.textContent = t('levelDisplayVal', Number(currentUser.maxLevel || 0));
     }
     const profileAdminBadge = document.getElementById('profileAdminBadge');
     if (profileAdminBadge) profileAdminBadge.title = t('adminBadge');
@@ -2145,6 +2145,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
               currentUser.stars = 0;
               saveLocalUser();
               syncPlayerToCloud(currentUser);
+              updateHeaderUI();
               return;
             }
             let changed = false;
@@ -2163,19 +2164,23 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
             if (cloudB !== undefined) {
               const b = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(cloudB || 0));
-              if (b !== currentUser.extraBottles) {
-                currentUser.extraBottles = b;
-                currentUser.extra_bottles = b;
-                changed = true;
-              }
+              if (b !== currentUser.extraBottles) { currentUser.extraBottles = b; currentUser.extra_bottles = b; changed = true; }
             }
             if (cloudData.ton_balance !== undefined) {
               const tb = Math.max(Number(currentUser.ton_balance || 0), Number(cloudData.ton_balance || 0));
               if (tb !== currentUser.ton_balance) { currentUser.ton_balance = tb; changed = true; }
             }
+            if (cloudData.ton_wallet && !currentUser.ton_wallet) {
+              currentUser.ton_wallet = cloudData.ton_wallet;
+              changed = true;
+            }
+            if (cloudData.memo_code && !currentUser.memo_code) {
+              currentUser.memo_code = cloudData.memo_code;
+              changed = true;
+            }
             if (cloudData.all_colors_until !== undefined) {
-              const ac = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
-              if (ac !== currentUser.all_colors_until) { currentUser.all_colors_until = ac; changed = true; }
+              const acu = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
+              if (acu !== currentUser.all_colors_until) { currentUser.all_colors_until = acu; changed = true; }
             }
             if (cloudData.all_colors_purchased_at !== undefined) {
               const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
@@ -2248,6 +2253,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     currentUser.seasonResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
     
     saveLocalUser();
+    updateHeaderUI();
 
     // Update win modal message
     const winTitle = document.getElementById('winModalTitle');
@@ -2275,7 +2281,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   const LG = (window.LevelGenerator && window.LevelGenerator.LevelGenerator) ? window.LevelGenerator.LevelGenerator : window.LevelGenerator;
 
   async function loadCurrentLevel() {
-    if (levelDisplay) levelDisplay.textContent = currentUser.currentLevel;
+    if (levelDisplay) levelDisplay.textContent = Number(currentUser.maxLevel || 0);
     if (LG && LG.generateLevel) {
       currentLevelData = LG.generateLevel(currentUser.currentLevel);
       engine.startLevel(currentLevelData);
@@ -2521,8 +2527,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
 
     if (levelBadgeLabel) setIfDiff(levelBadgeLabel, t('levelLabel'));
-    setIfDiff(levelDisplay, currentUser.currentLevel || 1);
-    setIfDiff(profileCardLevel, t('levelDisplayVal', currentUser.currentLevel || 1));
+    setIfDiff(levelDisplay, Number(currentUser.maxLevel || 0));
+    setIfDiff(profileCardLevel, t('levelDisplayVal', Number(currentUser.maxLevel || 0)));
     setIfDiff(coinsDisplay, currentUser.coins || 0);
     setIfDiff(hintsCountDisplay, currentUser.hints || 0);
     setIfDiff(undosCountDisplay, currentUser.undos || 0);
@@ -3867,7 +3873,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       profileCardName.textContent = currentUser.firstName || 'Игрок';
     }
     if (profileCardLevel) {
-      profileCardLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
+      profileCardLevel.textContent = t('levelDisplayVal', Number(currentUser.maxLevel || 0));
     }
     if (adminFeedbackMsg) {
       adminFeedbackMsg.classList.add('hidden');
@@ -4968,9 +4974,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           undoBadgeEl.classList.add('badge-zero');
         }
 
-        // Перезагрузка 1-го уровня на игровом поле
-        if (levelDisplay) levelDisplay.textContent = '1';
-        if (profileCardLevel) profileCardLevel.textContent = t('levelDisplayVal', 1);
+        // Перезагрузка 1-го уровня на игровом поле (игрок начинает с Уровня 0)
+        if (levelDisplay) levelDisplay.textContent = '0';
+        if (profileCardLevel) profileCardLevel.textContent = t('levelDisplayVal', 0);
         await loadCurrentLevel();
 
         // 6. КОНТРОЛЬНЫЙ ВХОД В ЛИДЕРБОРД ПОСЛЕ СБРОСА
