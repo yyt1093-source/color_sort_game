@@ -1915,17 +1915,50 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   async function processIncomingReferral() {
     const tg = window.Telegram && window.Telegram.WebApp;
     let refParam = null;
+
+    // Source 1: Telegram WebApp initDataUnsafe
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) {
       const m = String(tg.initDataUnsafe.start_param).match(/(?:ref_)?(\d+)/i);
       if (m) refParam = m[1];
     }
-    if (!refParam && typeof window !== 'undefined') {
+
+    // Source 2: Telegram WebApp raw initData string
+    if (!refParam && tg && tg.initData) {
+      try {
+        const initParams = new URLSearchParams(tg.initData);
+        const sp = initParams.get('start_param') || initParams.get('startapp') || initParams.get('ref');
+        if (sp) {
+          const m = String(sp).match(/(?:ref_)?(\d+)/i);
+          if (m) refParam = m[1];
+        }
+      } catch (e) {}
+    }
+
+    // Source 3: URL search params (?startapp=ref_123 or ?start=ref_123 or ?tgWebAppStartParam=ref_123 or ?ref=123)
+    if (!refParam && typeof window !== 'undefined' && window.location.search) {
       const urlParams = new URLSearchParams(window.location.search);
-      const val = urlParams.get('startapp') || urlParams.get('tgWebAppStartParam') || urlParams.get('ref');
+      const val = urlParams.get('startapp') || urlParams.get('start') || urlParams.get('tgWebAppStartParam') || urlParams.get('ref');
       if (val) {
         const m = String(val).match(/(?:ref_)?(\d+)/i);
         if (m) refParam = m[1];
       }
+    }
+
+    // Source 4: URL hash fragment (#tgWebAppData=...)
+    if (!refParam && typeof window !== 'undefined' && window.location.hash) {
+      try {
+        const hashStr = window.location.hash.replace(/^#/, '');
+        const hashParams = new URLSearchParams(hashStr);
+        const tgData = hashParams.get('tgWebAppData');
+        if (tgData) {
+          const innerParams = new URLSearchParams(tgData);
+          const sp = innerParams.get('start_param') || innerParams.get('startapp') || innerParams.get('ref');
+          if (sp) {
+            const m = String(sp).match(/(?:ref_)?(\d+)/i);
+            if (m) refParam = m[1];
+          }
+        }
+      } catch (e) {}
     }
 
     if (!currentUser || !currentUser.telegramId) return;
@@ -1934,16 +1967,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     // Referrals are strictly reserved for genuine Telegram users (numeric Telegram IDs)
     if (!isValidReferralId(myId)) return;
 
-    // 1. FAST LOCAL CHECK: If already permanently locked or bound, reject any new referral
-    const isLocked = localStorage.getItem('cs_ref_permanently_locked') === 'true';
+    // 1. FAST LOCAL CHECK: If already permanently bound, do not re-bind
     const boundReferrer = localStorage.getItem('cs_bound_referrer_id');
-    if (isLocked || boundReferrer) {
-      return;
-    }
-
-    // 2. If user is an established player locally (maxLevel >= 1 or stars > 0), lock permanently
-    if ((Number(currentUser.maxLevel !== undefined ? currentUser.maxLevel : 0) >= 1) || (Number(currentUser.stars || 0) > 0)) {
-      localStorage.setItem('cs_ref_permanently_locked', 'true');
+    if (boundReferrer) {
       return;
     }
 
@@ -1953,12 +1979,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     const cleanUsername = String(currentUser.username || '').toLowerCase().replace(/^@/, '').trim();
 
     try {
-      // 3. CLOUD FOLDER REGISTRY CHECK: Query permanent binding by ID ("Кто чей пригласитель")
+      // 2. CLOUD REGISTRY CHECK: Query permanent binding by ID ("Кто чей пригласитель")
       let existingCloudReferrer = null;
 
       try {
         const resBind = await fetch(`${GLOBAL_CLOUD_BASE}/ref_registry_binding_${encodeURIComponent(myId)}`, {
-          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(3000) : undefined
+          signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(3000) : undefined
         });
         if (resBind.ok) {
           const raw = await resBind.text();
@@ -1974,7 +2000,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (!existingCloudReferrer) {
         try {
           const resOld = await fetch(`${GLOBAL_CLOUD_BASE}/binding_ref_${encodeURIComponent(myId)}`, {
-            signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+            signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2500) : undefined
           });
           if (resOld.ok) {
             const rawOld = await resOld.text();
@@ -1987,75 +2013,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         } catch (e) {}
       }
 
-      // Check cloud binding by Username (if username exists)
-      if (!existingCloudReferrer && cleanUsername) {
-        try {
-          const resUname = await fetch(`${GLOBAL_CLOUD_BASE}/ref_registry_uname_${encodeURIComponent(cleanUsername)}`, {
-            signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
-          });
-          if (resUname.ok) {
-            const rawU = await resUname.text();
-            let uData = null;
-            try { uData = JSON.parse(rawU); } catch (e) {}
-            if (uData && (uData.referrerId || uData.locked)) {
-              existingCloudReferrer = uData.referrerId || 'locked';
-            }
-          }
-        } catch (ue) {}
-
-        if (!existingCloudReferrer) {
-          try {
-            const resUold = await fetch(`${GLOBAL_CLOUD_BASE}/binding_uname_${encodeURIComponent(cleanUsername)}`, {
-              signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
-            });
-            if (resUold.ok) {
-              const rawUold = await resUold.text();
-              let uoldData = null;
-              try { uoldData = JSON.parse(rawUold); } catch (e) {}
-              if (uoldData && uoldData.referrerId) {
-                existingCloudReferrer = uoldData.referrerId;
-              }
-            }
-          } catch (ue2) {}
-        }
-      }
-
-      // If user was already bound or locked in cloud, restore local state and ABORT immediately
-      if (existingCloudReferrer) {
-        if (existingCloudReferrer !== 'locked') {
-          localStorage.setItem('cs_bound_referrer_id', String(existingCloudReferrer));
-        }
+      // If user was already bound to a referrer in cloud, restore local state and return
+      if (existingCloudReferrer && existingCloudReferrer !== 'locked') {
+        localStorage.setItem('cs_bound_referrer_id', String(existingCloudReferrer));
         localStorage.setItem('cs_ref_permanently_locked', 'true');
         return;
       }
 
-      // 4. CLOUD CHECK: Check if this user is already an existing active player in the cloud
-      try {
-        const pRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(myId)}`, {
-          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
-        });
-        if (pRes.ok) {
-          const pData = await pRes.json();
-          if (pData && (Number(pData.maxLevel !== undefined ? pData.maxLevel : (pData.level !== undefined ? pData.level : 0)) >= 1 || Number(pData.stars || 0) > 0)) {
-            // Already started playing earlier! Lock permanently without an inviter
-            localStorage.setItem('cs_ref_permanently_locked', 'true');
-            fetch(`${GLOBAL_CLOUD_BASE}/ref_registry_binding_${encodeURIComponent(myId)}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                refereeId: myId,
-                referrerId: null,
-                locked: true,
-                isExistingPlayer: true,
-                boundAt: Date.now()
-              })
-            }).catch(() => {});
-            return;
-          }
-        }
-      } catch (pe) {}
-
-      // 5. USER IS BRAND NEW! Bind permanently to inviterId across all cloud and local storage
+      // 3. Bind permanently to inviterId across all cloud and local storage
       localStorage.setItem('cs_bound_referrer_id', String(inviterId));
       localStorage.setItem('cs_ref_permanently_locked', 'true');
 
@@ -3059,7 +3024,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     // 1. Fetch from single global 24/7 cloud database (never sleeps, works with PC off)
     try {
       const cloudRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
-        signal: AbortSignal.timeout(3500)
+        cache: 'no-store',
+        signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(3500) : undefined
       });
       if (cloudRes.ok) {
         const pairs = await cloudRes.json();
@@ -3098,12 +3064,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
     } catch (e) {}
 
-    // 3. Ensure current user is included in the unified leaderboard ONLY if maxLevel >= 1 and in current season!
+    // 3. Ensure current user is included in the unified leaderboard ONLY if maxLevel >= 1
     let effectiveSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
     try {
       const metaRes = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at?_cb=${Date.now()}`, {
         cache: 'no-store',
-        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+        signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2500) : undefined
       });
       if (metaRes.ok) {
         const metaText = await metaRes.text();
@@ -3116,11 +3082,18 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
     } catch (e) {}
 
-    const userSeasonReset = Number(currentUser.seasonResetAt || currentUser.season_reset_at || 0);
     const currentMaxLvl = Number(currentUser.maxLevel || 0);
     const currentStars = Number(currentUser.stars || 0);
 
-    if (isRealUser && currentMaxLvl >= 1 && (effectiveSeasonReset === 0 || userSeasonReset >= effectiveSeasonReset)) {
+    // If current user has won at least 1 round (maxLevel >= 1), they MUST be in the leaderboard!
+    if (isRealUser && currentMaxLvl >= 1) {
+      if (effectiveSeasonReset > 0 && (!currentUser.seasonResetAt || currentUser.seasonResetAt < effectiveSeasonReset)) {
+        currentUser.seasonResetAt = effectiveSeasonReset;
+        currentUser.season_reset_at = effectiveSeasonReset;
+        localStorage.setItem('color_sort_season_reset_at', String(effectiveSeasonReset));
+        saveLocalUser();
+      }
+
       const selfIndex = players.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
       if (selfIndex === -1) {
         players.push({
@@ -3131,13 +3104,17 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           maxLevel: currentMaxLvl,
           level: currentMaxLvl,
           stars: currentStars,
-          seasonResetAt: userSeasonReset,
+          seasonResetAt: effectiveSeasonReset,
           updatedAt: Date.now()
         });
-      } else if (currentMaxLvl > Number(players[selfIndex].maxLevel !== undefined ? players[selfIndex].maxLevel : (players[selfIndex].level || 0))) {
-        players[selfIndex].maxLevel = currentMaxLvl;
-        players[selfIndex].level = currentMaxLvl;
-        players[selfIndex].seasonResetAt = userSeasonReset;
+      } else {
+        const existingLvl = Number(players[selfIndex].maxLevel !== undefined ? players[selfIndex].maxLevel : (players[selfIndex].level || 0));
+        if (currentMaxLvl >= existingLvl) {
+          players[selfIndex].maxLevel = currentMaxLvl;
+          players[selfIndex].level = currentMaxLvl;
+          players[selfIndex].seasonResetAt = effectiveSeasonReset;
+          players[selfIndex].updatedAt = Date.now();
+        }
       }
     }
 
@@ -3148,30 +3125,26 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (!id || id.startsWith('guest') || id.startsWith('dev') || !/^\d+$/.test(id)) return;
 
       const pSeason = Number(p.seasonResetAt || 0);
+      const pUpdated = Number(p.updatedAt || 0);
       const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
 
-      // Ignore records from before current season reset and auto-heal
-      if (effectiveSeasonReset > 0 && pSeason < effectiveSeasonReset) {
-        if (lvl > 0 && /^\d+$/.test(id)) {
-          // Auto-heal old season record in cloud
-          p.maxLevel = 0;
-          p.level = 0;
-          p.currentLevel = 1;
-          p.stars = 0;
-          p.seasonResetAt = effectiveSeasonReset;
-          p.updatedAt = Date.now();
-          fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(p)
-          }).catch(() => {});
-        }
+      // Player belongs to current season if:
+      // 1) effectiveSeasonReset === 0, OR
+      // 2) pSeason >= effectiveSeasonReset, OR
+      // 3) pUpdated >= effectiveSeasonReset (played after the reset)
+      const isCurrentSeason = (effectiveSeasonReset === 0) ||
+        (pSeason >= effectiveSeasonReset) ||
+        (pUpdated >= effectiveSeasonReset);
+
+      if (!isCurrentSeason) {
         return;
       }
 
-      // STRICT RULE: Only players who have won at least 1 round (maxLevel >= 1) appear in leaderboard
+      // STRICT RULE: Only players who have won at least 1 round (maxLevel >= 1) appear in leaderboard!
+      // Players with Level 0 do NOT appear in the leaderboard!
       if (lvl < 1) return;
 
+      const stars = Number(p.stars || 0);
       const existing = uniqueMap.get(id);
       const existingLvl = existing ? Number(existing.maxLevel !== undefined ? existing.maxLevel : (existing.level !== undefined ? existing.level : 0)) : 0;
       if (!existing || lvl > existingLvl) {
@@ -3184,7 +3157,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           maxLevel: lvl,
           level: lvl,
           stars: stars,
-          updatedAt: Number(p.updatedAt || 0)
+          updatedAt: pUpdated
         });
       }
     });
@@ -4139,7 +4112,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // ==========================================
   function getReferralLink(telegramId) {
     const id = String(telegramId || '').trim();
-    return `https://yyt1093-source.github.io/color_sort_game/invite.html?startapp=ref_${id}`;
+    return `https://yyt1093-source.github.io/color_sort_game/invite.html?startapp=ref_${id}&start=ref_${id}`;
   }
 
   let cachedReferralsList = [];
@@ -4164,8 +4137,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
     // 2. Fetch/merge from global KVDB cloud
     try {
-      const cloudRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=ref_${encodeURIComponent(myId)}_&values=true&format=json`, {
-        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+      const cloudRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=ref_${encodeURIComponent(myId)}_&values=true&format=json&_cb=${Date.now()}`, {
+        cache: 'no-store',
+        signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(3000) : undefined
       });
       if (cloudRes.ok) {
         const pairs = await cloudRes.json();
