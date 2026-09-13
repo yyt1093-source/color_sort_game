@@ -368,8 +368,9 @@ async function sendLeaderboard(chatId) {
       });
 
       cloudPlayers.forEach(p => {
-        const id = String(p.telegramId);
-        const pTime = Number(p.updatedAt || p.seasonResetAt || 0);
+        const pSeason = Number(p.seasonResetAt || 0);
+        const pTime = Number(p.updatedAt || 0);
+        if (seasonResetAt > 0 && pSeason > 0 && pSeason < seasonResetAt) return;
         if (seasonResetAt > 0 && pTime > 0 && pTime < seasonResetAt) return;
 
         // STRICT RULE: Only players with maxLevel >= 1 appear in leaderboard
