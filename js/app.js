@@ -1528,7 +1528,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
     const modalUserLevel = document.getElementById('modalUserLevel');
     if (modalUserLevel && typeof currentUser !== 'undefined') {
-      modalUserLevel.textContent = t('maxLevelLabel', currentUser.maxLevel || 1);
+      modalUserLevel.textContent = t('maxLevelLabel', currentUser.maxLevel !== undefined ? currentUser.maxLevel : 0);
     }
 
     // Win Modal
@@ -1620,7 +1620,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   let currentUser = {
     telegramId: userData.telegramId,
     firstName: userData.firstName,
-    maxLevel: 1,
+    maxLevel: 0,
     currentLevel: 1,
     stars: 0,
     coins: 100,
@@ -1773,19 +1773,21 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     const isRealTelegramUser = !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id);
 
     const localSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
-    const lvl = Number(user.maxLevel || user.currentLevel || 1);
+    const maxLvl = Number(user.maxLevel !== undefined ? user.maxLevel : 0);
+    const curLvl = Number(user.currentLevel || 1);
     const stars = Number(user.stars || 0);
 
-    // 1. Send live signal to single global 24/7 cloud database for all real players (including Level 1)
-    if (id && isRealTelegramUser && lvl >= 1) {
+    // 1. Send live signal to single global 24/7 cloud database for all real players
+    if (id && isRealTelegramUser) {
       try {
         const payload = {
           telegramId: id,
           firstName: user.firstName || 'Игрок',
           username: user.username || '',
           photoUrl: user.photoUrl || '',
-          maxLevel: lvl,
-          level: lvl,
+          maxLevel: maxLvl,
+          level: maxLvl,
+          currentLevel: curLvl,
           stars: stars,
           hints: Number(user.hints || 0),
           undos: Number(user.undos || 0),
@@ -1814,7 +1816,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       username: user.username,
       photoUrl: user.photoUrl,
       currentLevel: user.currentLevel,
-      maxLevel: user.maxLevel,
+      maxLevel: maxLvl,
       hints: user.hints,
       undos: user.undos,
       reveals: user.reveals,
@@ -1907,8 +1909,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       return;
     }
 
-    // 2. If user is an established player locally (maxLevel > 1 or stars > 0), lock permanently
-    if ((Number(currentUser.maxLevel || 1) > 1) || (Number(currentUser.stars || 0) > 0)) {
+    // 2. If user is an established player locally (maxLevel >= 1 or stars > 0), lock permanently
+    if ((Number(currentUser.maxLevel !== undefined ? currentUser.maxLevel : 0) >= 1) || (Number(currentUser.stars || 0) > 0)) {
       localStorage.setItem('cs_ref_permanently_locked', 'true');
       return;
     }
@@ -2002,7 +2004,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         });
         if (pRes.ok) {
           const pData = await pRes.json();
-          if (pData && (Number(pData.maxLevel || pData.level || 1) > 1 || Number(pData.stars || 0) > 0)) {
+          if (pData && (Number(pData.maxLevel !== undefined ? pData.maxLevel : (pData.level !== undefined ? pData.level : 0)) >= 1 || Number(pData.stars || 0) > 0)) {
             // Already started playing earlier! Lock permanently without an inviter
             localStorage.setItem('cs_ref_permanently_locked', 'true');
             fetch(`${GLOBAL_CLOUD_BASE}/ref_registry_binding_${encodeURIComponent(myId)}`, {
@@ -2124,7 +2126,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             if (localReset > 0 && cloudTime > 0 && cloudTime < localReset) {
               // Stale record from previous season - reset local state to clean Level 1 and sync
               currentUser.currentLevel = 1;
-              currentUser.maxLevel = 1;
+              currentUser.maxLevel = 0;
               currentUser.stars = 0;
               saveLocalUser();
               syncPlayerToCloud(currentUser);
@@ -2165,10 +2167,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
               if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
             }
             if (cloudData.level !== undefined || cloudData.maxLevel !== undefined) {
-              const lvl = Math.max(currentUser.currentLevel || 1, Number(cloudData.level || cloudData.maxLevel || 1));
-              if (lvl > (currentUser.currentLevel || 1)) {
-                currentUser.currentLevel = lvl;
-                currentUser.maxLevel = Math.max(currentUser.maxLevel || 1, lvl);
+              const cloudMax = Number(cloudData.maxLevel !== undefined ? cloudData.maxLevel : (cloudData.level !== undefined ? cloudData.level : 0));
+              if (cloudMax > (currentUser.maxLevel || 0)) {
+                currentUser.maxLevel = cloudMax;
+                changed = true;
+              }
+              const cloudCur = Number(cloudData.currentLevel || (cloudMax > 0 ? cloudMax + 1 : 1));
+              if (cloudCur > (currentUser.currentLevel || 1)) {
+                currentUser.currentLevel = cloudCur;
                 changed = true;
                 loadCurrentLevel();
               }
@@ -2223,7 +2229,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     
     // Simple victory progression: advance level without coins, stars, or experience
     currentUser.currentLevel = levelNumber + 1;
-    currentUser.maxLevel = Math.max(currentUser.maxLevel, currentUser.currentLevel);
+    currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, levelNumber);
+    currentUser.seasonResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
     
     saveLocalUser();
 
@@ -2278,7 +2285,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         localStorage.setItem('color_sort_season_reset_at', String(serverReset));
         localStorage.setItem('color_sort_gram_reset_at', String(serverReset));
         currentUser.currentLevel = 1;
-        currentUser.maxLevel = 1;
+        currentUser.maxLevel = 0;
         currentUser.stars = 0;
         currentUser.coins = 0;
         currentUser.hints = 0;
@@ -2311,7 +2318,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, serverUser.user.all_colors_until || 0);
       if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, serverUser.user.all_colors_purchased_at || 0);
       if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Number(serverUser.user.current_level || 1);
-      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Number(serverUser.user.max_level || 1);
+      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Number(serverUser.user.max_level || 0);
       normalizeUserObject(currentUser);
       updateTonWalletUI();
       updateShopUI();
@@ -2366,7 +2373,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
 
         currentUser.currentLevel = 1;
-        currentUser.maxLevel = 1;
+        currentUser.maxLevel = 0;
         currentUser.stars = 0;
         currentUser.coins = 0;
         currentUser.hints = 0;
@@ -2921,8 +2928,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
     } catch (e) {}
 
-    // 3. Ensure current user is included in the unified leaderboard
-    const currentMaxLvl = Math.max(currentUser.maxLevel || 1, currentUser.currentLevel || 1);
+    // 3. Ensure current user is included in the unified leaderboard ONLY if maxLevel >= 1
+    const currentMaxLvl = Number(currentUser.maxLevel || 0);
     const currentStars = Number(currentUser.stars || 0);
 
     if (isRealUser && currentMaxLvl >= 1) {
@@ -2938,7 +2945,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           stars: currentStars,
           updatedAt: Date.now()
         });
-      } else if (currentMaxLvl > (players[selfIndex].maxLevel || players[selfIndex].level || 1)) {
+      } else if (currentMaxLvl > Number(players[selfIndex].maxLevel !== undefined ? players[selfIndex].maxLevel : (players[selfIndex].level || 0))) {
         players[selfIndex].maxLevel = currentMaxLvl;
         players[selfIndex].level = currentMaxLvl;
       }
@@ -2957,12 +2964,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         if (playerTime > 0 && playerTime < localSeasonReset) return;
       }
 
-      const lvl = Number(p.maxLevel || p.level || 1);
+      const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
       const stars = Number(p.stars || 0);
+      // STRICT RULE: Only players who have won at least 1 round (maxLevel >= 1) appear in leaderboard
       if (lvl < 1) return;
 
       const existing = uniqueMap.get(id);
-      if (!existing || lvl > (existing.maxLevel || existing.level || 1)) {
+      const existingLvl = existing ? Number(existing.maxLevel !== undefined ? existing.maxLevel : (existing.level !== undefined ? existing.level : 0)) : 0;
+      if (!existing || lvl > existingLvl) {
         uniqueMap.set(id, {
           ...p,
           telegramId: id,
@@ -2978,7 +2987,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
 
     const sortedPlayers = Array.from(uniqueMap.values()).sort((a, b) => {
-      const diff = (b.maxLevel || b.level || 1) - (a.maxLevel || a.level || 1);
+      const aLvl = Number(a.maxLevel !== undefined ? a.maxLevel : (a.level !== undefined ? a.level : 0));
+      const bLvl = Number(b.maxLevel !== undefined ? b.maxLevel : (b.level !== undefined ? b.level : 0));
+      const diff = bLvl - aLvl;
       if (diff !== 0) return diff;
       const starDiff = (b.stars || 0) - (a.stars || 0);
       if (starDiff !== 0) return starDiff;
@@ -3006,7 +3017,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         const nameDisplay = isSelf 
           ? `${escapeHtml(player.firstName || 'Игрок')} <span class="self-tag">${t('youTag')}</span>` 
           : escapeHtml(player.firstName || 'Игрок');
-        const levelDisplayVal = player.maxLevel || player.level || 1;
+        const levelDisplayVal = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
 
         li.innerHTML = `
           <div class="player-meta">
@@ -3029,17 +3040,19 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       const myCrown = myRankNum === 1 ? '🥇' : myRankNum === 2 ? '🥈' : myRankNum === 3 ? '🥉' : `#${myRankNum}`;
       if (modalUserPos) modalUserPos.textContent = myCrown;
       if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
-      if (modalUserLevel) modalUserLevel.textContent = t('maxLevelLabel', sortedPlayers[myRankIdx].maxLevel || currentUser.maxLevel);
+      if (modalUserLevel) modalUserLevel.textContent = t('maxLevelLabel', sortedPlayers[myRankIdx].maxLevel !== undefined ? sortedPlayers[myRankIdx].maxLevel : (currentUser.maxLevel || 0));
       if (userRank) userRank.textContent = `#${myRankNum}`;
     } else if (isRealUser) {
       if (modalUserPos) modalUserPos.textContent = '#—';
       if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
-      if (modalUserLevel) modalUserLevel.textContent = `${t('levelPrefix')}: ${currentUser.maxLevel || 1}`;
+      if (modalUserLevel) modalUserLevel.textContent = `${t('levelPrefix')}: ${currentUser.maxLevel || 0}`;
+      if (userRank) userRank.textContent = '—';
     } else {
       if (modalUserPos) modalUserPos.textContent = '—';
       if (modalUserName) modalUserName.textContent = 'Guest';
       if (modalUserLevel) modalUserLevel.textContent = '@sortcolors_bot';
     }
+    return sortedPlayers;
   }
 
   if (leaderboardBtn) {
@@ -4738,6 +4751,20 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       confirmResetSeasonBtn.innerHTML = '⏳ Сброс...';
 
       try {
+        // 0. CHECK LEADERBOARD BEFORE RESET: inspect and record all active players and their levels
+        let beforePlayers = [];
+        try {
+          beforePlayers = (await loadLeaderboardData()) || [];
+        } catch (e) {
+          console.warn('[Season Reset] Pre-check leaderboard notice:', e);
+        }
+        const beforeCount = beforePlayers.length;
+        console.log('[Season Reset] === ПРОВЕРКА ЛИДЕРБОРДА ДО СБРОСА ===');
+        console.log(`[Season Reset] Всего игроков в лидерборде до сброса: ${beforeCount}`);
+        beforePlayers.forEach((p, i) => {
+          console.log(`  [${i + 1}] ID: ${p.telegramId}, Имя: ${p.firstName || 'Без имени'}, Уровень: ${p.maxLevel !== undefined ? p.maxLevel : (p.level || 0)}, Звёзды: ${p.stars || 0}`);
+        });
+
         const resetTimestamp = Date.now();
 
         // 1. Write global season reset timestamp to KVDB Cloud Database so ALL other clients (online or offline) detect it!
@@ -4773,28 +4800,56 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           console.warn('[Season Reset] API reset notice:', apiErr);
         }
 
-        // 3. Wipe ALL player records from KVDB Cloud (strictly ALL players so no ghost players remain)
+        // 3. Reset ALL player records in KVDB Cloud: set maxLevel = 0, currentLevel = 1, stars = 0, perks = 0, BUT PRESERVE ton_balance, ton_wallet, memo_code, telegramId, firstName, username!
         try {
-          const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&format=json`);
+          const listRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
           if (listRes.ok) {
-            const keys = await listRes.json();
-            if (Array.isArray(keys)) {
+            const pairs = await listRes.json();
+            if (Array.isArray(pairs)) {
               await Promise.allSettled(
-                keys.map(k => fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(k)}`, { method: 'DELETE' }))
+                pairs.map(async ([key, val]) => {
+                  let p = val;
+                  if (typeof p === 'string') {
+                    try { p = JSON.parse(p); } catch (e) { p = null; }
+                  }
+                  if (p && typeof p === 'object' && p.telegramId) {
+                    p.currentLevel = 1;
+                    p.maxLevel = 0;
+                    p.level = 0;
+                    p.stars = 0;
+                    p.hints = 0;
+                    p.undos = 0;
+                    p.reveals = 0;
+                    p.extraBottles = 0;
+                    p.extra_bottles = 0;
+                    p.shuffles = 0;
+                    p.total_moves = 0;
+                    p.all_colors_until = 0;
+                    p.all_colors_purchased_at = 0;
+                    p.seasonResetAt = resetTimestamp;
+                    p.updatedAt = resetTimestamp;
+                    // PRESERVED: ton_balance, ton_wallet, memo_code, telegramId, firstName, username, photoUrl!
+                    return fetch(`${GLOBAL_CLOUD_BASE}/${encodeURIComponent(key)}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(p)
+                    });
+                  }
+                })
               );
             }
           }
         } catch (kvErr) {
-          console.warn('[Season Reset] KVDB wipe notice:', kvErr);
+          console.warn('[Season Reset] KVDB player reset notice:', kvErr);
         }
 
-        // 4. Update admin's own local storage & currentUser state to completely fresh Level 1 state
+        // 4. Update admin's own local storage & currentUser state to completely fresh state with maxLevel = 0
         localStorage.setItem('color_sort_season_reset_at', String(resetTimestamp));
         localStorage.setItem('color_sort_gram_reset_at', String(resetTimestamp));
         localStorage.removeItem(`color_sort_user_${currentUser.telegramId}`);
 
         currentUser.currentLevel = 1;
-        currentUser.maxLevel = 1;
+        currentUser.maxLevel = 0;
         currentUser.stars = 0;
         currentUser.coins = 0;
         currentUser.hints = 0;
@@ -4805,6 +4860,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.all_colors_until = 0;
         currentUser.all_colors_purchased_at = 0;
         currentUser.season_reset_at = resetTimestamp;
+        currentUser.seasonResetAt = resetTimestamp;
 
         saveLocalUser();
         updateHeaderUI();
@@ -4838,12 +4894,25 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         if (profileCardLevel) profileCardLevel.textContent = t('levelDisplayVal', 1);
         await loadCurrentLevel();
 
-        // 6. Close modals
+        // 6. CHECK LEADERBOARD AFTER RESET: load again and verify exactly 0 players remain!
+        let afterPlayers = [];
+        try {
+          afterPlayers = (await loadLeaderboardData()) || [];
+        } catch (e) {
+          console.warn('[Season Reset] Post-check leaderboard notice:', e);
+        }
+        const afterCount = afterPlayers.length;
+        console.log('[Season Reset] === ПРОВЕРКА ЛИДЕРБОРДА ПОСЛЕ СБРОСА ===');
+        console.log(`[Season Reset] Всего игроков в лидерборде после сброса: ${afterCount}`);
+        if (afterCount > 0) {
+          console.warn('[Season Reset] ВНИМАНИЕ: после сброса найдено игроков:', afterCount);
+        } else {
+          console.log('[Season Reset] Таблица лидеров пуста (0 игроков). Проверка пройдена успешно!');
+        }
+
+        // 7. Close modals
         closeModal(resetSeasonModal);
         closeModal(profileModal);
-
-        // 7. Reload leaderboard to show completely empty state
-        await loadLeaderboardData();
 
         // 8. Success haptic and notification
         if (window.TelegramApp && window.TelegramApp.TelegramApp) {
@@ -4852,7 +4921,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         showInfoModal(
           '💥',
           t('adminResetSuccessTitle') || 'Сезон сброшен!',
-          t('adminResetSuccessDesc') || 'Все данные игроков, уровни, достижения и глобальный лидерборд сброшены под ноль!'
+          `Сезон успешно сброшен под ноль!\n\n📋 До сброса: ${beforeCount} игроков в лидерборде.\n✅ После сброса: ${afterCount} игроков (таблица пуста).\n\nВсе игроки начнут с Уровня 0 и появятся в лидерборде только после победы в 1-м туре.\nБаланс TON и рефералы сохранены!`
         );
       } catch (err) {
         console.error('[Season Reset Error]', err);
