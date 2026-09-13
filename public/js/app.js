@@ -1528,7 +1528,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
     const modalUserLevel = document.getElementById('modalUserLevel');
     if (modalUserLevel && typeof currentUser !== 'undefined') {
-      modalUserLevel.textContent = t('maxLevelLabel', currentUser.maxLevel !== undefined ? currentUser.maxLevel : 0);
+      const displayLvl = Math.max(1, currentUser.currentLevel || 1);
+      modalUserLevel.textContent = t('levelDisplayVal', displayLvl);
     }
 
     // Win Modal
@@ -3040,12 +3041,13 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       const myCrown = myRankNum === 1 ? '🥇' : myRankNum === 2 ? '🥈' : myRankNum === 3 ? '🥉' : `#${myRankNum}`;
       if (modalUserPos) modalUserPos.textContent = myCrown;
       if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
-      if (modalUserLevel) modalUserLevel.textContent = t('maxLevelLabel', sortedPlayers[myRankIdx].maxLevel !== undefined ? sortedPlayers[myRankIdx].maxLevel : (currentUser.maxLevel || 0));
+      const playerLvl = sortedPlayers[myRankIdx].maxLevel !== undefined ? sortedPlayers[myRankIdx].maxLevel : (currentUser.maxLevel || currentUser.currentLevel || 1);
+      if (modalUserLevel) modalUserLevel.textContent = t('levelDisplayVal', playerLvl);
       if (userRank) userRank.textContent = `#${myRankNum}`;
     } else if (isRealUser) {
       if (modalUserPos) modalUserPos.textContent = '#—';
       if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
-      if (modalUserLevel) modalUserLevel.textContent = `${t('levelPrefix')}: ${currentUser.maxLevel || 0}`;
+      if (modalUserLevel) modalUserLevel.textContent = t('levelDisplayVal', currentUser.currentLevel || 1);
       if (userRank) userRank.textContent = '—';
     } else {
       if (modalUserPos) modalUserPos.textContent = '—';
