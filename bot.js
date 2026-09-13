@@ -18,7 +18,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 function getWebAppUrl() {
   return process.env.WEB_APP_URL || 'https://yyt1093-source.github.io/color_sort_game/';
 }
-
+let cachedStartPhotoFileId = null;
 if (!BOT_TOKEN) {
   console.log('----------------------------------------------------');
   console.log('⚠️  Telegram BOT_TOKEN не указан в формате .env');
@@ -176,15 +176,15 @@ async function handleUpdate(update) {
 
     const appLaunchUrl = referrerId ? `${getWebAppUrl()}?startapp=ref_${referrerId}` : getWebAppUrl();
 
-    // Ensure user's chat menu button is updated directly
-    await tgApi('setChatMenuButton', {
+    // Update user's chat menu button asynchronously without blocking photo delivery
+    tgApi('setChatMenuButton', {
       chat_id: chatId,
       menu_button: {
         type: 'web_app',
         text: '🎮 Играть в Color Sort',
         web_app: { url: appLaunchUrl }
       }
-    });
+    }).catch(() => {});
 
     const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_art_clean.jpg';
     const inlineKeyboard = {
@@ -198,13 +198,21 @@ async function handleUpdate(update) {
       ]
     };
 
-    // Try sending photo first without any captions or extra texts
+    // Use cached file_id when available for instant 50ms photo delivery
+    const photoPayload = (typeof cachedStartPhotoFileId !== 'undefined' && cachedStartPhotoFileId) ? cachedStartPhotoFileId : photoUrl;
     const photoRes = await tgApi('sendPhoto', {
       chat_id: chatId,
-      photo: photoUrl,
+      photo: photoPayload,
       caption: '',
       reply_markup: inlineKeyboard
     });
+
+    if (photoRes && photoRes.ok && photoRes.result && photoRes.result.photo && Array.isArray(photoRes.result.photo)) {
+      const pArr = photoRes.result.photo;
+      if (pArr.length > 0) {
+        cachedStartPhotoFileId = pArr[pArr.length - 1].file_id;
+      }
+    }
 
     // Fallback to text message if photo delivery failed
     if (!photoRes || !photoRes.ok) {

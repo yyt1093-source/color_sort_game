@@ -16,7 +16,9 @@
       particleCtx = particleCanvas.getContext('2d');
       resizeCanvas();
       window.addEventListener('resize', resizeCanvas);
-      startParticleLoop();
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) ensureParticleLoopRunning();
+      });
     }
   }
 
@@ -208,6 +210,7 @@
         type: 'circle'
       });
     }
+    ensureParticleLoopRunning();
   }
 
   function animatePour(fromIdx, toIdx, amount, colorIdx, onComplete) {
@@ -261,14 +264,14 @@
 
     // Elevate source bottle above everything on board
     fromEl.style.zIndex = '1000';
+    fromEl.style.willChange = 'transform';
 
     // ---------------------------------------------------------
-    // Phase 1: Smooth Flight to Target + Scale down to 0.88
-    // (баночка подлетает и становится немножко меньше)
+    // Phase 1: Snappy Flight to Target + Scale down to 0.88
     // ---------------------------------------------------------
-    fromEl.style.transition = 'transform 0.46s cubic-bezier(0.22, 1, 0.36, 1.15), box-shadow 0.35s ease';
+    fromEl.style.transition = 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1.15), box-shadow 0.20s ease';
     fromEl.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${tiltAngle}deg) scale(0.88)`;
-    fromEl.style.boxShadow = `0 18px 36px rgba(0, 0, 0, 0.48), 0 0 22px ${colorGlow}`;
+    fromEl.style.boxShadow = `0 14px 28px rgba(0, 0, 0, 0.45), 0 0 18px ${colorGlow}`;
 
     setTimeout(() => {
       // ---------------------------------------------------------
@@ -280,8 +283,6 @@
       const toMouthX = toRect.left + toRect.width / 2;
 
       // Function to calculate stream landing surface Y inside recipient jar:
-      // Empty jar (0 layers) -> stream plunges all the way to the bottom!
-      // L layers -> surface is innerBottomY - L * UNIT_HEIGHT
       const getLandingY = (layersCount) => Math.max(toNeckY + 2, innerBottomY - (layersCount * UNIT_HEIGHT));
 
       const totalPouredUnits = Math.max(1, amount || 1);
@@ -294,16 +295,16 @@
       const spoutX = isToRight ? (destPivotX + 7) : (destPivotX - 7);
       const spoutY = destPivotY + 9;
 
-      // Continuous pour duration (smooth, elegant, uninterrupted)
-      const totalPourDuration = 680 + (totalPouredUnits - 1) * 160;
+      // Snappy and dynamic pour duration
+      const totalPourDuration = 320 + (totalPouredUnits - 1) * 70;
 
       // Web Audio gurgling water sound synthesized for full pour duration
       const SE = window.SoundEngine && window.SoundEngine.SoundEngine ? window.SoundEngine.SoundEngine : window.SoundEngine;
       const initialFillRatio = initialTargetLayers / 4;
       if (SE && SE.playWaterPour) {
-        SE.playWaterPour((totalPourDuration / 1000) + 0.12, initialFillRatio);
+        SE.playWaterPour((totalPourDuration / 1000) + 0.08, initialFillRatio);
       } else if (SE && SE.playPour) {
-        SE.playPour((totalPourDuration / 1000) + 0.12, initialFillRatio);
+        SE.playPour((totalPourDuration / 1000) + 0.08, initialFillRatio);
       }
 
       const TG = window.TelegramApp && window.TelegramApp.TelegramApp ? window.TelegramApp.TelegramApp : window.TelegramApp;
@@ -321,7 +322,7 @@
       svgEl.style.pointerEvents = 'none';
       svgEl.style.zIndex = '999';
       svgEl.style.opacity = '0';
-      svgEl.style.transition = 'opacity 0.15s ease-out';
+      svgEl.style.transition = 'opacity 0.12s ease-out';
 
       const defs = document.createElementNS(svgNS, 'defs');
       const gradId = 'streamGrad_' + Date.now();
@@ -359,8 +360,7 @@
       defs.appendChild(grad);
       svgEl.appendChild(defs);
 
-      // Generator for SVG stream path: curves from spout into bottle mouth,
-      // then plunges vertically inside the jar to the liquid landing surface!
+      // Generator for SVG stream path
       const getStreamPathD = (yLanding) => {
         const cp1X = spoutX + (isToRight ? 12 : -12);
         const cp1Y = spoutY + 22;
@@ -371,15 +371,14 @@
 
       const initialD = getStreamPathD(currentLandingY);
 
-      // Outer liquid soft glow
+      // Outer liquid soft glow (Hardware-accelerated semi-transparent stroke without expensive blur filter)
       const glowPath = document.createElementNS(svgNS, 'path');
       glowPath.setAttribute('d', initialD);
       glowPath.setAttribute('fill', 'none');
       glowPath.setAttribute('stroke', colorHex);
-      glowPath.setAttribute('stroke-width', '14');
+      glowPath.setAttribute('stroke-width', '12');
       glowPath.setAttribute('stroke-linecap', 'round');
-      glowPath.setAttribute('opacity', '0.35');
-      glowPath.style.filter = 'blur(3px)';
+      glowPath.setAttribute('opacity', '0.28');
       svgEl.appendChild(glowPath);
 
       // Main vibrant stream path
@@ -416,11 +415,11 @@
       rippleEl.style.boxShadow = `0 0 10px ${colorHex}`;
       document.body.appendChild(rippleEl);
 
-      // Dynamic stream animation loop: tracks rising fluid surface in real-time smoothly
+      // Dynamic stream animation loop: tracks rising fluid surface
       let isStreamActive = true;
       const updateStream = () => {
         if (!isStreamActive) return;
-        currentLandingY += (finalLandingY - currentLandingY) * 0.08;
+        currentLandingY += (finalLandingY - currentLandingY) * 0.12;
         const dPath = getStreamPathD(currentLandingY);
         glowPath.setAttribute('d', dPath);
         streamPath.setAttribute('d', dPath);
@@ -447,7 +446,7 @@
         }
       }
 
-      // 2. Destination bottle filling: ONE continuous rising fluid element without division lines
+      // 2. Destination bottle filling: ONE continuous rising fluid element
       const toContainer = toEl.querySelector('.liquid-container');
       let incomingLiquid = null;
       if (toContainer) {
@@ -467,7 +466,7 @@
       // Splash droplets interval during pour at the exact landing surface
       const splashInterval = setInterval(() => {
         spawnPourSplash(toMouthX, currentLandingY, colorHex, 2);
-      }, 65);
+      }, 80);
 
       // When pour finishes
       setTimeout(() => {
@@ -482,18 +481,17 @@
         setTimeout(() => {
           if (svgEl.parentNode) svgEl.parentNode.removeChild(svgEl);
           if (rippleEl && rippleEl.parentNode) rippleEl.parentNode.removeChild(rippleEl);
-        }, 180);
+        }, 120);
 
         // ---------------------------------------------------------
-        // Phase 3: Return Flight & Scale back up to 1.0
-        // (баночка выпрямляется, восстанавливает размер и возвращается)
+        // Phase 3: Fast and Smooth Return Flight & Scale back up to 1.0
         // ---------------------------------------------------------
-        fromEl.style.transition = 'transform 0.42s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.42s ease';
+        fromEl.style.transition = 'transform 0.20s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.20s ease';
         fromEl.style.transform = 'translate(0, 0) rotate(0deg) scale(1)';
         fromEl.style.boxShadow = '';
 
         setTimeout(() => {
-          // Reset all temporary inline properties on source bottle
+          fromEl.style.willChange = '';
           fromEl.style.transition = '';
           fromEl.style.transform = '';
           fromEl.style.transformOrigin = '';
@@ -502,11 +500,11 @@
           fromEl.style.animation = '';
 
           onComplete();
-        }, 440);
+        }, 210);
 
-      }, totalPourDuration + 40);
+      }, totalPourDuration + 30);
 
-    }, 460);
+    }, 220);
   }
 
   function animateJarVanish(bottleIdx, onComplete) {
@@ -572,10 +570,23 @@
         type: Math.random() > 0.5 ? 'circle' : 'star'
       });
     }
+    ensureParticleLoopRunning();
+  }
+
+  function ensureParticleLoopRunning() {
+    if (!animFrameId && activeParticles.length > 0 && particleCtx && particleCanvas) {
+      startParticleLoop();
+    }
   }
 
   function startParticleLoop() {
+    if (animFrameId) return;
     function loop() {
+      if (document.hidden) {
+        animFrameId = null;
+        return;
+      }
+
       if (particleCtx && particleCanvas) {
         particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
 
@@ -594,7 +605,7 @@
           particleCtx.save();
           particleCtx.globalAlpha = p.alpha;
           particleCtx.fillStyle = p.color;
-          particleCtx.shadowBlur = 8;
+          particleCtx.shadowBlur = 4;
           particleCtx.shadowColor = p.color;
 
           if (p.type === 'star') {
@@ -621,9 +632,17 @@
           particleCtx.restore();
         }
       }
-      animFrameId = requestAnimationFrame(loop);
+
+      if (activeParticles.length > 0) {
+        animFrameId = requestAnimationFrame(loop);
+      } else {
+        if (particleCtx && particleCanvas) {
+          particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+        }
+        animFrameId = null;
+      }
     }
-    loop();
+    animFrameId = requestAnimationFrame(loop);
   }
 
   function triggerWinConfetti() {

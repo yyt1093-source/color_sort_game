@@ -5011,7 +5011,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       justStartedGame = true;
       setTimeout(() => {
         justStartedGame = false;
-      }, 300);
+      }, 250);
 
       // Immediately disable pointer events on start screen to prevent click delays
       if (startScreen) {
@@ -5022,7 +5022,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           if (startScreen.parentNode) {
             startScreen.parentNode.removeChild(startScreen);
           }
-        }, 350);
+        }, 180);
       }
 
       // Force-hide all modals so nothing pops up over the game
@@ -5046,6 +5046,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       updateHeaderUI();
     };
 
+    window.__triggerStartGame = handleStart;
+
     startGameBtn.addEventListener('pointerdown', handleStart);
     startGameBtn.addEventListener('click', handleStart);
     startGameBtn.addEventListener('touchend', handleStart, { passive: true });
@@ -5053,6 +5055,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       startScreen.addEventListener('click', (e) => {
         if (!isStarting && e.target === startScreen) handleStart(e);
       });
+    }
+
+    if (window.__startDismissed) {
+      handleStart();
     }
   }
 
@@ -5076,7 +5082,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
 }
 
-if (document.readyState === 'loading') {
+if (document.body && document.getElementById('gameBoard')) {
+  initColorSortApp();
+} else if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initColorSortApp);
 } else {
   initColorSortApp();
