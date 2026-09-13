@@ -21,18 +21,25 @@
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   
+  <!-- Preload critical game assets for instant boot -->
+  <link rel="preload" href="referral_share.jpg?v=4" as="image">
+  <link rel="preload" href="js/gameEngine.js?v=47451" as="script">
+  <link rel="preload" href="js/renderer.js?v=47451" as="script">
+  <link rel="preload" href="js/app.js?v=47451" as="script">
+
   <!-- Adsgram SDK (deferred to prevent render-blocking) -->
   <script defer src="https://sad.adsgram.ai/js/sad.min.js"></script>
   
   <!-- TonConnect UI SDK (deferred to prevent render-blocking) -->
   <script defer src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
   
-  <!-- Fonts -->
+  <!-- Non-blocking Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=47440">
+  <link rel="stylesheet" href="style.css?v=47451">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -67,30 +74,37 @@
     (function() {
       var btn = document.getElementById('startGameBtn');
       var scr = document.getElementById('startScreen');
-      var img = document.getElementById('splashImg');
-      var urlParams = new URLSearchParams(window.location.search);
-      var ref = urlParams.get('startapp') || urlParams.get('tgWebAppStartParam') || urlParams.get('ref');
-      if (img) {
-        img.src = 'referral_share.jpg?v=4';
-      }
-      if (scr) {
-        var dismiss = function(e) {
-          if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
+      window.__startDismissed = false;
+      var dismiss = function(e) {
+        if (e && e.cancelable) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (window.__startDismissed) return;
+        window.__startDismissed = true;
+        if (scr) {
           scr.style.pointerEvents = 'none';
           scr.classList.add('start-screen-hidden');
           setTimeout(function() {
             scr.style.display = 'none';
-          }, 350);
-        };
+            if (scr.parentNode) scr.parentNode.removeChild(scr);
+          }, 180);
+        }
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+          try { window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); } catch(e) {}
+        }
+        if (window.__triggerStartGame) {
+          try { window.__triggerStartGame(); } catch(e) {}
+        }
+      };
+      window.dismissStartScreen = dismiss;
+      if (scr) {
         scr.addEventListener('pointerdown', dismiss, { passive: false });
         scr.addEventListener('click', dismiss);
-        if (btn) {
-          btn.addEventListener('pointerdown', dismiss, { passive: false });
-          btn.addEventListener('click', dismiss);
-        }
+      }
+      if (btn) {
+        btn.addEventListener('pointerdown', dismiss, { passive: false });
+        btn.addEventListener('click', dismiss);
       }
     })();
   </script>
@@ -846,12 +860,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47440"></script>
-  <script src="js/audio.js?v=47440"></script>
-  <script src="js/solver.js?v=47440"></script>
-  <script src="js/levelGenerator.js?v=47440"></script>
-  <script src="js/gameEngine.js?v=47440"></script>
-  <script src="js/renderer.js?v=47440"></script>
-  <script src="js/app.js?v=47440"></script>
+  <script src="js/telegram.js?v=47451"></script>
+  <script src="js/audio.js?v=47451"></script>
+  <script src="js/solver.js?v=47451"></script>
+  <script src="js/levelGenerator.js?v=47451"></script>
+  <script src="js/gameEngine.js?v=47451"></script>
+  <script src="js/renderer.js?v=47451"></script>
+  <script src="js/app.js?v=47451"></script>
 </body>
 </html>

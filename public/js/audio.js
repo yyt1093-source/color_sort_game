@@ -76,7 +76,22 @@
     }
   }
 
-  function playWaterPour(duration = 0.7, fillRatio = 0.25) {
+  let cachedNoiseBuffer = null;
+  function getNoiseBuffer() {
+    if (!audioCtx) return null;
+    if (!cachedNoiseBuffer) {
+      const sampleRate = audioCtx.sampleRate || 44100;
+      const bufferLen = Math.floor(sampleRate * 1.5);
+      cachedNoiseBuffer = audioCtx.createBuffer(1, bufferLen, sampleRate);
+      const channelData = cachedNoiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferLen; i++) {
+        channelData[i] = (Math.random() * 2 - 1) * 0.45;
+      }
+    }
+    return cachedNoiseBuffer;
+  }
+
+  function playWaterPour(duration = 0.5, fillRatio = 0.25) {
     if (isMuted) return;
     initAudio();
     if (!audioCtx) return;
@@ -84,19 +99,15 @@
     stopWaterPour();
 
     const now = audioCtx.currentTime;
-    const dur = Math.max(0.4, Number(duration) || 0.7);
+    const dur = Math.max(0.3, Number(duration) || 0.5);
 
-    // 1. Fluid Turbulence: White noise through resonant formant filters
-    const sampleRate = audioCtx.sampleRate;
-    const bufferLen = Math.floor(sampleRate * (dur + 0.2));
-    const noiseBuffer = audioCtx.createBuffer(1, bufferLen, sampleRate);
-    const channelData = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferLen; i++) {
-      channelData[i] = (Math.random() * 2 - 1) * 0.45;
-    }
+    // 1. Fluid Turbulence: Cached white noise through resonant formant filters
+    const noiseBuffer = getNoiseBuffer();
+    if (!noiseBuffer) return;
 
     const noiseSource = audioCtx.createBufferSource();
     noiseSource.buffer = noiseBuffer;
+    noiseSource.loop = true;
     activePourSource = noiseSource;
 
     // Bandpass filter centered at fluid resonance (rises as bottle fills)
@@ -118,9 +129,9 @@
     const mainGain = audioCtx.createGain();
     activePourGain = mainGain;
     mainGain.gain.setValueAtTime(0.001, now);
-    mainGain.gain.linearRampToValueAtTime(0.18, now + 0.06);
-    mainGain.gain.setValueAtTime(0.18, now + dur - 0.08);
-    mainGain.gain.exponentialRampToValueAtTime(0.0001, now + dur + 0.08);
+    mainGain.gain.linearRampToValueAtTime(0.18, now + 0.05);
+    mainGain.gain.setValueAtTime(0.18, now + dur - 0.06);
+    mainGain.gain.exponentialRampToValueAtTime(0.0001, now + dur + 0.06);
 
     noiseSource.connect(bandpass);
     bandpass.connect(lowpass);
@@ -128,17 +139,17 @@
     mainGain.connect(audioCtx.destination);
 
     noiseSource.start(now);
-    noiseSource.stop(now + dur + 0.09);
+    noiseSource.stop(now + dur + 0.08);
 
-    // 2. Gurgling Micro-Bubbles (Minnaert acoustic frequency chirps)
-    const bubbleCount = Math.floor(dur * 24);
+    // 2. Gurgling Micro-Bubbles (Lightweight acoustic frequency chirps)
+    const bubbleCount = Math.min(8, Math.max(3, Math.floor(dur * 12)));
     for (let i = 0; i < bubbleCount; i++) {
       const bTime = now + (i / bubbleCount) * dur + (Math.random() - 0.5) * (dur / bubbleCount * 0.7);
       if (bTime < now || bTime > now + dur) continue;
 
-      const bDur = 0.025 + Math.random() * 0.035; // 25-60ms per bubble
+      const bDur = 0.025 + Math.random() * 0.035;
       const baseFreq = 620 + Math.random() * 850 + fillRatio * 320;
-      const targetFreq = baseFreq * (1.15 + Math.random() * 0.22); // upward bubble pitch chirp
+      const targetFreq = baseFreq * (1.15 + Math.random() * 0.22);
 
       const bOsc = audioCtx.createOscillator();
       const bGain = audioCtx.createGain();
