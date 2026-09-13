@@ -1783,6 +1783,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
   async function syncPlayerToCloud(user, options = {}) {
     if (!user || !user.telegramId) return;
+    if (window.__seasonResetKicking || (typeof isSeasonResetKicked !== 'undefined' && isSeasonResetKicked)) {
+      return;
+    }
     normalizeUserObject(user);
     const id = String(user.telegramId);
     const isRealTelegramUser = !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id);
@@ -2153,8 +2156,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             const localReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
             const cloudSeason = Number(cloudData.seasonResetAt || 0);
             const cloudTime = Number(cloudData.updatedAt || cloudData.seasonResetAt || 0);
-            if (localReset > 0 && cloudTime > 0 && cloudTime < localReset) {
-              // Stale record from previous season - reset local state to clean Level 1 and sync
+            if (localReset > 0 && (cloudSeason < localReset || (cloudTime > 0 && cloudTime < localReset))) {
+              // Stale record from previous season - reset local state to clean Level 0 and sync
               currentUser.currentLevel = 1;
               currentUser.maxLevel = 0;
               currentUser.level = 0;
@@ -2163,6 +2166,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
               saveLocalUser();
               syncPlayerToCloud(currentUser);
               updateHeaderUI();
+              loadCurrentLevel();
               return;
             }
             let changed = false;
@@ -2217,7 +2221,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
               localStorage.setItem('color_sort_season_reset_at', String(cloudSeason || localReset));
               changed = true;
               loadCurrentLevel();
-            } else if (cloudData.level !== undefined || cloudData.maxLevel !== undefined) {
+            } else if ((cloudData.level !== undefined || cloudData.maxLevel !== undefined) && (localReset === 0 || cloudSeason >= localReset)) {
               if (cloudMax > (currentUser.maxLevel || 0)) {
                 currentUser.maxLevel = cloudMax;
                 changed = true;
@@ -2275,6 +2279,18 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   }
 
   engine.onWin = ({ levelNumber, moves }) => {
+    if (window.__seasonResetKicking || (typeof isSeasonResetKicked !== 'undefined' && isSeasonResetKicked)) {
+      return;
+    }
+    const localReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+    const userReset = Number(currentUser.seasonResetAt || currentUser.season_reset_at || 0);
+    if (localReset > 0 && userReset < localReset) {
+      if (typeof triggerSeasonResetKick === 'function') {
+        triggerSeasonResetKick(localReset);
+      }
+      return;
+    }
+
     if (renderer && renderer.triggerWinConfetti) renderer.triggerWinConfetti();
     
     // Simple victory progression: advance level without coins, stars, or experience
@@ -2383,6 +2399,165 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     checkGlobalSeasonReset();
   });
 
+  let isSeasonResetKicked = false;
+
+  function triggerSeasonResetKick(resetTimestamp) {
+    if (isSeasonResetKicked) return;
+    isSeasonResetKicked = true;
+    window.__seasonResetKicking = true;
+    console.warn(`[Season Reset KICK] Admin season reset detected (${resetTimestamp})! Force kicking player to Level 0...`);
+
+    // 1. Immediately halt audio and game inputs
+    try {
+      if (typeof audio !== 'undefined' && audio.stopAll) audio.stopAll();
+      if (window.SoundEngine && window.SoundEngine.SoundEngine && window.SoundEngine.SoundEngine.stopAll) {
+        window.SoundEngine.SoundEngine.stopAll();
+      }
+    } catch (e) {}
+    if (engine) {
+      engine.isAnimating = true; // Freeze game actions
+    }
+
+    // 2. Wipe player state strictly to Level 0 in RAM & LocalStorage
+    currentUser.maxLevel = 0;
+    currentUser.level = 0;
+    currentUser.currentLevel = 1;
+    currentUser.stars = 0;
+    currentUser.coins = 0;
+    currentUser.hints = 0;
+    currentUser.undos = 0;
+    currentUser.reveals = 0;
+    currentUser.extraBottles = 0;
+    currentUser.extra_bottles = 0;
+    // NOTE: all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
+    currentUser.seasonResetAt = resetTimestamp;
+    currentUser.season_reset_at = resetTimestamp;
+
+    localStorage.setItem('color_sort_season_reset_at', String(resetTimestamp));
+    saveLocalUser();
+    updateHeaderUI();
+    updateShopUI();
+    updateTonWalletUI();
+
+    // Clear toolbar badges explicitly
+    const revealBadgeEl = document.getElementById('revealBadge');
+    if (revealBadgeEl) {
+      revealBadgeEl.textContent = '0';
+      revealBadgeEl.classList.add('badge-zero');
+    }
+    const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
+    if (extraBottleBadgeEl) {
+      extraBottleBadgeEl.textContent = '0';
+      extraBottleBadgeEl.classList.add('badge-zero');
+    }
+    const hintBadgeEl = document.getElementById('hintBadge');
+    if (hintBadgeEl) {
+      hintBadgeEl.textContent = '0';
+      hintBadgeEl.classList.add('badge-zero');
+    }
+    const undoBadgeEl = document.getElementById('undoBadge');
+    if (undoBadgeEl) {
+      undoBadgeEl.textContent = '0';
+      undoBadgeEl.classList.add('badge-zero');
+    }
+
+    // 3. Push Level 0 directly to Cloud DB immediately
+    if (currentUser.telegramId) {
+      const pid = String(currentUser.telegramId);
+      if (!pid.startsWith('guest') && !pid.startsWith('dev') && /^\d+$/.test(pid)) {
+        try {
+          const payload = {
+            telegramId: pid,
+            firstName: currentUser.firstName || 'Игрок',
+            username: currentUser.username || '',
+            photoUrl: currentUser.photoUrl || '',
+            maxLevel: 0,
+            level: 0,
+            currentLevel: 1,
+            stars: 0,
+            hints: 0,
+            undos: 0,
+            reveals: 0,
+            extraBottles: 0,
+            extra_bottles: 0,
+            ton_balance: Number(currentUser.ton_balance || 0),
+            ton_wallet: currentUser.ton_wallet || '',
+            memo_code: currentUser.memo_code || '',
+            all_colors_until: Number(currentUser.all_colors_until || 0),
+            all_colors_purchased_at: Number(currentUser.all_colors_purchased_at || 0),
+            seasonResetAt: resetTimestamp,
+            updatedAt: Date.now()
+          };
+          fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(pid)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true
+          }).catch(() => {});
+        } catch (e) {}
+      }
+    }
+
+    // 4. Display the kick modal
+    const kickModal = document.getElementById('seasonResetKickModal');
+    if (kickModal) {
+      kickModal.style.display = 'flex';
+    }
+
+    let timeLeft = 3;
+    const timerEl = document.getElementById('seasonResetTimer');
+    const kickOkBtn = document.getElementById('seasonResetKickOkBtn');
+
+    function doReload() {
+      window.location.reload(true);
+    }
+
+    if (kickOkBtn) {
+      kickOkBtn.onclick = () => doReload();
+    }
+
+    const countdownInterval = setInterval(() => {
+      timeLeft -= 1;
+      if (timerEl) timerEl.textContent = String(timeLeft);
+      if (timeLeft <= 0) {
+        clearInterval(countdownInterval);
+        doReload();
+      }
+    }, 1000);
+  }
+
+  let lastWatchdogCheck = 0;
+  async function checkLiveSeasonResetWatchdog() {
+    if (isSeasonResetKicked) return;
+    const now = Date.now();
+    if (now - lastWatchdogCheck < 2000) return;
+    lastWatchdogCheck = now;
+
+    try {
+      const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at?_cb=${now}`, {
+        cache: 'no-store',
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+      });
+      if (res.ok) {
+        const rawText = await res.text();
+        let resetAt = 0;
+        try {
+          const data = JSON.parse(rawText);
+          resetAt = Number(data.resetAt || data) || 0;
+        } catch (e) {
+          resetAt = Number(rawText) || 0;
+        }
+
+        const localResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+        const userSeasonReset = Number(currentUser.seasonResetAt || currentUser.season_reset_at || 0);
+
+        if (resetAt > 0 && (resetAt > localResetAt || userSeasonReset < resetAt)) {
+          triggerSeasonResetKick(resetAt);
+        }
+      }
+    } catch (e) {}
+  }
+
   async function checkGlobalSeasonReset() {
     let wasReset = false;
     try {
@@ -2420,58 +2595,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
       if (resetAt > 0 && (resetAt > localResetAt || userSeasonReset < resetAt)) {
         console.log(`[Season Reset] Global season reset detected (server: ${resetAt}, local: ${localResetAt}). Wiping all player progress!`);
-        localStorage.setItem('color_sort_season_reset_at', String(resetAt));
-
-        currentUser.currentLevel = 1;
-        currentUser.maxLevel = 0;
-        currentUser.level = 0;
-        currentUser.stars = 0;
-        currentUser.coins = 0;
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        currentUser.extra_bottles = 0;
-        // NOTE: all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
-        currentUser.season_reset_at = resetAt;
-
-        saveLocalUser();
-        updateHeaderUI();
-        updateShopUI();
-        updateTonWalletUI();
-
-        // Clear toolbar badges explicitly
-        const revealBadgeEl = document.getElementById('revealBadge');
-        if (revealBadgeEl) {
-          revealBadgeEl.textContent = '0';
-          revealBadgeEl.classList.add('badge-zero');
-        }
-        const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
-        if (extraBottleBadgeEl) {
-          extraBottleBadgeEl.textContent = '0';
-          extraBottleBadgeEl.classList.add('badge-zero');
-        }
-        const hintBadgeEl = document.getElementById('hintBadge');
-        if (hintBadgeEl) {
-          hintBadgeEl.textContent = '0';
-          hintBadgeEl.classList.add('badge-zero');
-        }
-        const undoBadgeEl = document.getElementById('undoBadge');
-        if (undoBadgeEl) {
-          undoBadgeEl.textContent = '0';
-          undoBadgeEl.classList.add('badge-zero');
-        }
-
-        // Reload Level 1 on board
-        if (typeof loadCurrentLevel === 'function') {
-          await loadCurrentLevel();
-        }
-
-        // Sync reset clean state to KVDB cloud immediately
-        if (currentUser.telegramId) {
-          syncPlayerToCloud(currentUser);
-        }
-
+        triggerSeasonResetKick(resetAt);
         wasReset = true;
       }
     } catch (err) {
@@ -2527,22 +2651,18 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     } catch (e) {}
   }
 
-  // Periodic season & purchases reset check (every 15 seconds)
-  setInterval(async () => {
-    const wasReset = await checkGlobalSeasonReset();
-    if (wasReset) {
-      showInfoModal(
-        '🌟',
-        'Начался новый сезон!',
-        'Все уровни, рейтинг и достижения игроков были сброшены под ноль.\nУдачи в покорении вершины таблицы лидеров!'
-      );
-    }
-  }, 15000);
+  // Realtime active watchdog while playing (every 3 seconds)
+  setInterval(checkLiveSeasonResetWatchdog, 3000);
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
+      checkLiveSeasonResetWatchdog();
       checkGlobalSeasonReset();
     }
+  });
+
+  window.addEventListener('focus', () => {
+    checkLiveSeasonResetWatchdog();
   });
 
   initAdsgram().catch(() => {});
@@ -2979,12 +3099,28 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     } catch (e) {}
 
     // 3. Ensure current user is included in the unified leaderboard ONLY if maxLevel >= 1 and in current season!
-    const localSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+    let effectiveSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+    try {
+      const metaRes = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at?_cb=${Date.now()}`, {
+        cache: 'no-store',
+        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(2500) : undefined
+      });
+      if (metaRes.ok) {
+        const metaText = await metaRes.text();
+        let sReset = 0;
+        try { const mJson = JSON.parse(metaText); sReset = Number(mJson.resetAt || mJson || 0); } catch(e) { sReset = Number(metaText || 0); }
+        if (sReset > effectiveSeasonReset) {
+          effectiveSeasonReset = sReset;
+          localStorage.setItem('color_sort_season_reset_at', String(sReset));
+        }
+      }
+    } catch (e) {}
+
     const userSeasonReset = Number(currentUser.seasonResetAt || currentUser.season_reset_at || 0);
     const currentMaxLvl = Number(currentUser.maxLevel || 0);
     const currentStars = Number(currentUser.stars || 0);
 
-    if (isRealUser && currentMaxLvl >= 1 && (localSeasonReset === 0 || userSeasonReset >= localSeasonReset)) {
+    if (isRealUser && currentMaxLvl >= 1 && (effectiveSeasonReset === 0 || userSeasonReset >= effectiveSeasonReset)) {
       const selfIndex = players.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
       if (selfIndex === -1) {
         players.push({
@@ -3011,16 +3147,28 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       const id = String(p.telegramId);
       if (!id || id.startsWith('guest') || id.startsWith('dev') || !/^\d+$/.test(id)) return;
 
-      // Ignore records from before current season reset
-      if (localSeasonReset > 0) {
-        const pSeason = Number(p.seasonResetAt || 0);
-        const pTime = Number(p.updatedAt || 0);
-        if (pSeason > 0 && pSeason < localSeasonReset) return;
-        if (pTime > 0 && pTime < localSeasonReset) return;
+      const pSeason = Number(p.seasonResetAt || 0);
+      const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
+
+      // Ignore records from before current season reset and auto-heal
+      if (effectiveSeasonReset > 0 && pSeason < effectiveSeasonReset) {
+        if (lvl > 0 && /^\d+$/.test(id)) {
+          // Auto-heal old season record in cloud
+          p.maxLevel = 0;
+          p.level = 0;
+          p.currentLevel = 1;
+          p.stars = 0;
+          p.seasonResetAt = effectiveSeasonReset;
+          p.updatedAt = Date.now();
+          fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(p)
+          }).catch(() => {});
+        }
+        return;
       }
 
-      const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
-      const stars = Number(p.stars || 0);
       // STRICT RULE: Only players who have won at least 1 round (maxLevel >= 1) appear in leaderboard
       if (lvl < 1) return;
 

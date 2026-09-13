@@ -2,6 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Color Sort — Telegram Mini App</title>
   
@@ -23,9 +26,9 @@
   
   <!-- Preload critical game assets for instant boot -->
   <link rel="preload" href="referral_share.jpg?v=4" as="image">
-  <link rel="preload" href="js/gameEngine.js?v=47900" as="script">
-  <link rel="preload" href="js/renderer.js?v=47900" as="script">
-  <link rel="preload" href="js/app.js?v=47900" as="script">
+  <link rel="preload" href="js/gameEngine.js?v=48100" as="script">
+  <link rel="preload" href="js/renderer.js?v=48100" as="script">
+  <link rel="preload" href="js/app.js?v=48100" as="script">
 
   <!-- Adsgram SDK (deferred to prevent render-blocking) -->
   <script defer src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -39,7 +42,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=47900">
+  <link rel="stylesheet" href="style.css?v=48100">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -859,13 +862,38 @@
     </div>
   </div>
 
+  <!-- Season Reset Realtime Kick Modal -->
+  <div id="seasonResetKickModal" class="modal-backdrop" style="display: none; z-index: 99999999; backdrop-filter: blur(10px); background: rgba(5, 7, 15, 0.92); align-items: center; justify-content: center; position: fixed; inset: 0;">
+    <div class="modal-card" style="text-align: center; max-width: 340px; margin: auto; padding: 24px 20px; border-radius: 20px; background: #0f172a; border: 2px solid #ef4444; box-shadow: 0 0 40px rgba(239, 68, 68, 0.5); color: #fff;">
+      <div style="font-size: 56px; margin-bottom: 12px; filter: drop-shadow(0 0 16px rgba(239,68,68,0.7));">🚨</div>
+      <h3 style="font-size: 22px; font-weight: 800; color: #f87171; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Сброс сезона!</h3>
+      <p id="seasonResetKickDesc" style="font-size: 14px; line-height: 1.5; color: #cbd5e1; margin-bottom: 16px;">
+        Администратор перезапустил сезон.<br>
+        Все игроки сброшены на <b>Уровень 0</b>.<br>
+        <span style="display:inline-block; margin-top: 8px; color: #34d399; font-weight: 600;">
+          🛡️ Ваши TON, купленный доступ «Все цвета» и рефералы сохранены!
+        </span>
+      </p>
+      <div style="background: rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; margin-bottom: 18px; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="font-size: 13px; color: #94a3b8;">Новый отсчёт начинается с 0 уровня:</div>
+        <div style="font-size: 20px; font-weight: 800; color: #38bdf8; margin-top: 4px;">Уровень 0</div>
+      </div>
+      <button id="seasonResetKickOkBtn" class="btn btn-primary" style="width: 100%; font-weight: 700; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; padding: 12px; border-radius: 12px; color: #fff; cursor: pointer; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
+        Начать заново (0 уровень)
+      </button>
+      <div id="seasonResetKickCountdown" style="font-size: 12px; color: #94a3b8; margin-top: 12px;">
+        Автоматический перезапуск через <span id="seasonResetTimer" style="font-weight: 700; color: #f87171;">3</span> сек...
+      </div>
+    </div>
+  </div>
+
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=47900"></script>
-  <script src="js/audio.js?v=47900"></script>
-  <script src="js/solver.js?v=47900"></script>
-  <script src="js/levelGenerator.js?v=47900"></script>
-  <script src="js/gameEngine.js?v=47900"></script>
-  <script src="js/renderer.js?v=47900"></script>
-  <script src="js/app.js?v=47900"></script>
+  <script src="js/telegram.js?v=48100"></script>
+  <script src="js/audio.js?v=48100"></script>
+  <script src="js/solver.js?v=48100"></script>
+  <script src="js/levelGenerator.js?v=48100"></script>
+  <script src="js/gameEngine.js?v=48100"></script>
+  <script src="js/renderer.js?v=48100"></script>
+  <script src="js/app.js?v=48100"></script>
 </body>
 </html>
