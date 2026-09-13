@@ -1788,9 +1788,23 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     const isRealTelegramUser = !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id);
 
     const localSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
-    const maxLvl = Number(user.maxLevel !== undefined ? user.maxLevel : 0);
-    const curLvl = Number(user.currentLevel || 1);
-    const stars = Number(user.stars || 0);
+    const userSeasonReset = Number(user.seasonResetAt || user.season_reset_at || 0);
+    let maxLvl = Number(user.maxLevel !== undefined ? user.maxLevel : 0);
+    let curLvl = Number(user.currentLevel || 1);
+    let stars = Number(user.stars || 0);
+
+    // If user's season timestamp is older than current season reset, force 0 progress!
+    if (localSeasonReset > 0 && userSeasonReset < localSeasonReset) {
+      maxLvl = 0;
+      curLvl = 1;
+      stars = 0;
+      user.maxLevel = 0;
+      user.level = 0;
+      user.currentLevel = 1;
+      user.stars = 0;
+      user.seasonResetAt = localSeasonReset;
+      user.season_reset_at = localSeasonReset;
+    }
 
     // 1. Send live signal to single global 24/7 cloud database for all real players
     if (id && isRealTelegramUser) {
@@ -2132,17 +2146,20 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
     // Also fetch live cloud inventory & stats from KVDB (works 24/7 on GitHub Pages)
     if (currentUser.telegramId) {
-      fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}`)
+      fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}?_cb=${Date.now()}`)
         .then(res => res.ok ? res.json() : null)
         .then(cloudData => {
           if (cloudData && typeof cloudData === 'object') {
             const localReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+            const cloudSeason = Number(cloudData.seasonResetAt || 0);
             const cloudTime = Number(cloudData.updatedAt || cloudData.seasonResetAt || 0);
             if (localReset > 0 && cloudTime > 0 && cloudTime < localReset) {
               // Stale record from previous season - reset local state to clean Level 1 and sync
               currentUser.currentLevel = 1;
               currentUser.maxLevel = 0;
+              currentUser.level = 0;
               currentUser.stars = 0;
+              currentUser.seasonResetAt = localReset;
               saveLocalUser();
               syncPlayerToCloud(currentUser);
               updateHeaderUI();
@@ -2186,8 +2203,21 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
               const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
               if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
             }
-            if (cloudData.level !== undefined || cloudData.maxLevel !== undefined) {
-              const cloudMax = Number(cloudData.maxLevel !== undefined ? cloudData.maxLevel : (cloudData.level !== undefined ? cloudData.level : 0));
+
+            const cloudMax = Number(cloudData.maxLevel !== undefined ? cloudData.maxLevel : (cloudData.level !== undefined ? cloudData.level : 0));
+            // If cloud has reset this account to Level 0, or cloud season is newer than user's season:
+            if ((cloudSeason > 0 && cloudSeason > Number(currentUser.seasonResetAt || 0)) ||
+                (cloudMax === 0 && (currentUser.maxLevel || 0) > 0 && cloudSeason >= localReset)) {
+              console.log('[Startup] Cloud forced season reset to Level 0');
+              currentUser.maxLevel = 0;
+              currentUser.level = 0;
+              currentUser.currentLevel = 1;
+              currentUser.stars = 0;
+              currentUser.seasonResetAt = cloudSeason || localReset;
+              localStorage.setItem('color_sort_season_reset_at', String(cloudSeason || localReset));
+              changed = true;
+              loadCurrentLevel();
+            } else if (cloudData.level !== undefined || cloudData.maxLevel !== undefined) {
               if (cloudMax > (currentUser.maxLevel || 0)) {
                 currentUser.maxLevel = cloudMax;
                 changed = true;
@@ -2358,9 +2388,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     try {
       let resetAt = 0;
 
-      // 1. Fetch from KVDB Cloud
+      // 1. Fetch from KVDB Cloud with cache buster!
       try {
-        const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at`, {
+        const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at?_cb=${Date.now()}`, {
+          cache: 'no-store',
           signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(3500) : undefined
         });
         if (res.ok) {
@@ -2385,13 +2416,15 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
 
       const localResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+      const userSeasonReset = Number(currentUser.seasonResetAt || currentUser.season_reset_at || 0);
 
-      if (resetAt > 0 && resetAt > localResetAt) {
+      if (resetAt > 0 && (resetAt > localResetAt || userSeasonReset < resetAt)) {
         console.log(`[Season Reset] Global season reset detected (server: ${resetAt}, local: ${localResetAt}). Wiping all player progress!`);
         localStorage.setItem('color_sort_season_reset_at', String(resetAt));
 
         currentUser.currentLevel = 1;
         currentUser.maxLevel = 0;
+        currentUser.level = 0;
         currentUser.stars = 0;
         currentUser.coins = 0;
         currentUser.hints = 0;
@@ -2945,11 +2978,13 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
     } catch (e) {}
 
-    // 3. Ensure current user is included in the unified leaderboard ONLY if maxLevel >= 1
+    // 3. Ensure current user is included in the unified leaderboard ONLY if maxLevel >= 1 and in current season!
+    const localSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+    const userSeasonReset = Number(currentUser.seasonResetAt || currentUser.season_reset_at || 0);
     const currentMaxLvl = Number(currentUser.maxLevel || 0);
     const currentStars = Number(currentUser.stars || 0);
 
-    if (isRealUser && currentMaxLvl >= 1) {
+    if (isRealUser && currentMaxLvl >= 1 && (localSeasonReset === 0 || userSeasonReset >= localSeasonReset)) {
       const selfIndex = players.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
       if (selfIndex === -1) {
         players.push({
@@ -2960,16 +2995,17 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           maxLevel: currentMaxLvl,
           level: currentMaxLvl,
           stars: currentStars,
+          seasonResetAt: userSeasonReset,
           updatedAt: Date.now()
         });
       } else if (currentMaxLvl > Number(players[selfIndex].maxLevel !== undefined ? players[selfIndex].maxLevel : (players[selfIndex].level || 0))) {
         players[selfIndex].maxLevel = currentMaxLvl;
         players[selfIndex].level = currentMaxLvl;
+        players[selfIndex].seasonResetAt = userSeasonReset;
       }
     }
 
     // 4. Strict filter: NO BOTS, ONLY REAL PLAYERS (ONLINE & OFFLINE), UNIQUE BY TELEGRAM ID
-    const localSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
     const uniqueMap = new Map();
     players.forEach(p => {
       const id = String(p.telegramId);
