@@ -142,14 +142,14 @@
   <script>
     (function() {
       var params = new URLSearchParams(window.location.search);
-      var ref = params.get('startapp') || params.get('ref') || params.get('tgWebAppStartParam') || '';
+      var ref = params.get('startapp') || params.get('start') || params.get('ref') || params.get('tgWebAppStartParam') || '';
       var startParam = '';
       if (ref) {
         var m = String(ref).match(/(?:ref_)?(\d+)/i);
         startParam = m ? ('ref_' + m[1]) : ref;
       }
-      var botUrl = 'https://t.me/sortcolors_bot' + (startParam ? ('?startapp=' + encodeURIComponent(startParam)) : '');
-      var webUrl = 'https://yyt1093-source.github.io/color_sort_game/' + (startParam ? ('?startapp=' + encodeURIComponent(startParam)) : '');
+      var botUrl = 'https://t.me/sortcolors_bot' + (startParam ? ('?start=' + encodeURIComponent(startParam) + '&startapp=' + encodeURIComponent(startParam)) : '');
+      var webUrl = 'https://yyt1093-source.github.io/color_sort_game/' + (startParam ? ('?startapp=' + encodeURIComponent(startParam) + '&ref=' + encodeURIComponent(startParam)) : '');
 
       var tgBtn = document.getElementById('tgBtn');
       var webBtn = document.getElementById('webBtn');
