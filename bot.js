@@ -403,7 +403,7 @@ async function sendLeaderboard(chatId) {
   topPlayers.forEach((p, idx) => {
     const medal = idx < 3 ? medals[idx] : `*#${idx + 1}*`;
     const name = p.name || p.first_name || 'Игрок';
-    const lvl = p.level || p.max_level || 1;
+    const lvl = p.max_level !== undefined ? p.max_level : (p.level !== undefined ? p.level : 1);
     msg += `${medal} **${name}** — Уровень ${lvl}\n`;
   });
 

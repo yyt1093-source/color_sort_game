@@ -192,7 +192,7 @@ app.post('/api/user/sync', (req, res) => {
           firstName: updatedUser.first_name || firstName || 'Игрок',
           username: updatedUser.username || username || '',
           photoUrl: updatedUser.photo_url || photoUrl || '',
-          maxLevel: updatedUser.max_level || maxLevel || currentLevel || 1,
+          maxLevel: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
           stars: updatedUser.stars || 0,
           hints: updatedUser.hints || 0,
           undos: updatedUser.undos || 0,
