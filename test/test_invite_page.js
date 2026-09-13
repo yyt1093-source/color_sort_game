@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const html = fs.readFileSync('public/invite.html', 'utf8');
 
 console.log('--- Testing public/invite.html ---');
@@ -8,6 +8,9 @@ const checks = [
   { name: 'twitter:image is referral_art_clean.jpg', pass: html.includes('name="twitter:image" content="https://yyt1093-source.github.io/color_sort_game/referral_art_clean.jpg"') },
   { name: 'og:width 1024', pass: html.includes('content="1024"') },
   { name: 'Inline banner image present', pass: html.includes('src="referral_art_clean.jpg"') },
+  { name: 'Clean title Color Sort without emoji or duplication', pass: html.includes('content="Color Sort"') && !html.includes('Color Sort 🧪') },
+  { name: 'No duplicate og:site_name', pass: !html.includes('og:site_name') },
+  { name: 'No description text Переливай цвета', pass: !html.includes('Переливай цвета') && !html.includes('og:description') },
   { name: 'Telegram bot redirection code present', pass: html.includes('window.location.replace(botUrl)') },
   { name: 'Sortcolors bot target URL present', pass: html.includes('https://t.me/sortcolors_bot') },
   { name: 'Direct play button present', pass: html.includes('id="tgBtn"') }

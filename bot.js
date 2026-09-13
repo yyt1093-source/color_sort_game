@@ -268,7 +268,7 @@ async function handleInlineQuery(inlineQuery) {
         id: 'ref_' + refId,
         photo_url: photoUrl,
         thumb_url: photoUrl,
-        title: 'Color Start',
+        title: 'Color Sort',
         caption: '',
         reply_markup: {
           inline_keyboard: [
