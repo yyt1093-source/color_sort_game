@@ -21,7 +21,7 @@ git checkout gh-pages
 git checkout main -- public
 
 # Copy all assets from public/ into root for GitHub Pages
-Get-ChildItem -Path public\* | Copy-Item -Destination . -Recurse -Force
+Copy-Item -Path "public\*" -Destination "." -Recurse -Force
 
 git add -A
 try {
@@ -33,6 +33,7 @@ git push origin gh-pages
 
 Write-Host "=== Step 3: Returning to 'main' branch ===" -ForegroundColor Cyan
 git checkout main
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue assets, banner_640x360.jpg, index.html, invite.html, js, referral_art_clean.jpg, referral_share.jpg, splash_cover.jpg, style.css, tonconnect-manifest.json
 git clean -fd
 
 Write-Host "`n Deployment to live server complete!" -ForegroundColor Green
