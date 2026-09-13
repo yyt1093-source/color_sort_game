@@ -1,4 +1,4 @@
-﻿# Automated deploy script for Color Sort Game
+# Automated deploy script for Color Sort Game
 # Pushes changes to both main and gh-pages (GitHub Pages live server)
 
 param (
@@ -23,7 +23,7 @@ git checkout main -- public
 # Copy all assets from public/ into root for GitHub Pages
 Copy-Item -Recurse -Force public/* .
 
-git add index.html js/ style.css public/
+git add -A
 try {
     git commit -m $CommitMessage
 } catch {

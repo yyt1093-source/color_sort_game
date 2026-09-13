@@ -167,7 +167,7 @@ async function handleUpdate(update) {
       }
     });
 
-    const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
+    const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_art_clean.jpg';
     const inlineKeyboard = {
       inline_keyboard: [
         [
@@ -211,9 +211,9 @@ async function handleUpdate(update) {
 }
 
 async function sendReferralInvite(chatId, userId, firstName) {
-  const botRefUrl = `https://t.me/sortcolors_bot?startapp=ref_${userId}`;
-  const webUrl = `${getWebAppUrl()}?v=7&startapp=ref_${userId}`;
-  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(botRefUrl)}`;
+  const inviteUrl = `https://yyt1093-source.github.io/color_sort_game/invite.html?startapp=ref_${userId}`;
+  const shareTgUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}`;
+  const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_art_clean.jpg';
 
   const inlineKeyboard = {
     inline_keyboard: [
@@ -255,7 +255,7 @@ async function handleInlineQuery(inlineQuery) {
   const m = query.match(/(?:ref_)?(\d+)/i);
   if (m && m[1]) refId = m[1];
 
-  const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_share.jpg';
+  const photoUrl = 'https://yyt1093-source.github.io/color_sort_game/referral_art_clean.jpg';
   const botRefUrl = `https://t.me/sortcolors_bot?startapp=ref_${refId}`;
 
   await tgApi('answerInlineQuery', {
