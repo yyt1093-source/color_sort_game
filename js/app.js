@@ -4084,10 +4084,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     shareReferralTelegramBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const id = currentUser.telegramId;
-      const webUrl = `https://yyt1093-source.github.io/color_sort_game/?v=7&startapp=ref_${id}`;
-      // Share only the web URL without extra text so Telegram displays only the card with Color Sort and START button
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(webUrl)}`;
+      const id = (currentUser && currentUser.telegramId) ? currentUser.telegramId : '';
+      if (!id) return;
+      const refUrl = getReferralLink(id);
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refUrl)}`;
       if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(shareUrl);
       } else {
