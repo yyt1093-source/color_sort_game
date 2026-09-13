@@ -1,0 +1,180 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Color Sort 🧪</title>
+  
+  <!-- Open Graph / Telegram Webpage Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Color Sort">
+  <meta property="og:title" content="Color Sort 🧪">
+  <meta property="og:description" content="Переливай цвета по баночкам и получай бонусы! 🎁">
+  <meta property="og:image" content="https://yyt1093-source.github.io/color_sort_game/referral_art_clean.jpg">
+  <meta property="og:image:secure_url" content="https://yyt1093-source.github.io/color_sort_game/referral_art_clean.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1024">
+  <meta property="og:image:height" content="1024">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="Color Sort">
+  <meta name="twitter:title" content="Color Sort 🧪">
+  <meta name="twitter:description" content="Переливай цвета по баночкам и получай бонусы! 🎁">
+  <meta name="twitter:image" content="https://yyt1093-source.github.io/color_sort_game/referral_art_clean.jpg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #0b0e14;
+      background-image: radial-gradient(circle at 50% 20%, #1c2333 0%, #0b0e14 70%);
+      color: #ffffff;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+    }
+    .invite-card {
+      background: rgba(22, 27, 38, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px);
+      border-radius: 24px;
+      max-width: 420px;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .invite-banner {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-height: 280px;
+      object-fit: cover;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      color: #94a3b8;
+      font-size: 15px;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      padding: 0 10px;
+    }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px 20px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      cursor: pointer;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #0088cc 0%, #00a2ff 100%);
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(0, 136, 204, 0.45);
+    }
+    .btn-primary:hover {
+      filter: brightness(1.1);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .redirect-hint {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="invite-card">
+    <img src="referral_art_clean.jpg" alt="Color Sort" class="invite-banner">
+    <h1>Color Sort 🧪</h1>
+    <p>Переливай цвета по баночкам и получай бонусы! 🎁</p>
+    <div class="btn-group">
+      <a id="tgBtn" href="https://t.me/sortcolors_bot" class="btn btn-primary">
+        <span>▶️ Играть в Telegram</span>
+      </a>
+      <a id="webBtn" href="https://yyt1093-source.github.io/color_sort_game/" class="btn btn-secondary">
+        <span>🌐 Открыть в браузере</span>
+      </a>
+    </div>
+    <div class="redirect-hint">
+      Перенаправление в Telegram...
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var ref = params.get('startapp') || params.get('ref') || params.get('tgWebAppStartParam') || '';
+      var startParam = '';
+      if (ref) {
+        var m = String(ref).match(/(?:ref_)?(\d+)/i);
+        startParam = m ? ('ref_' + m[1]) : ref;
+      }
+      var botUrl = 'https://t.me/sortcolors_bot' + (startParam ? ('?startapp=' + encodeURIComponent(startParam)) : '');
+      var webUrl = 'https://yyt1093-source.github.io/color_sort_game/' + (startParam ? ('?startapp=' + encodeURIComponent(startParam)) : '');
+
+      var tgBtn = document.getElementById('tgBtn');
+      var webBtn = document.getElementById('webBtn');
+      if (tgBtn) tgBtn.href = botUrl;
+      if (webBtn) webBtn.href = webUrl;
+
+      // Automatic instant redirect to Telegram
+      try {
+        window.location.replace(botUrl);
+      } catch (e) {
+        window.location.href = botUrl;
+      }
+    })();
+  </script>
+</body>
+</html>

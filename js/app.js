@@ -3846,7 +3846,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // ==========================================
   function getReferralLink(telegramId) {
     const id = String(telegramId || '').trim();
-    return `https://t.me/sortcolors_bot?startapp=ref_${id}`;
+    return `https://yyt1093-source.github.io/color_sort_game/invite.html?startapp=ref_${id}`;
   }
 
   let cachedReferralsList = [];
