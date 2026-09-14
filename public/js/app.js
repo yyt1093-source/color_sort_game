@@ -15,7 +15,7 @@ async function initColorSortApp() {
 
   // 2. Init Adsgram
   let AdController = null;
-  let adsgramBlockId = '47079';
+  let adsgramBlockId = '47788';
 
   async function initAdsgram() {
     try {
@@ -115,22 +115,34 @@ async function initColorSortApp() {
   }
 
   async function showRewardedAd() {
-    // 1. Попытка показа через официальный Adsgram SDK (Block ID: 47079)
+    // 1. Попытка показа через официальный Adsgram SDK (Block ID: 47788)
+    if (!AdController && window.Adsgram && adsgramBlockId) {
+      try {
+        AdController = window.Adsgram.init({
+          blockId: adsgramBlockId,
+          debug: false
+        });
+        console.log('[Adsgram] Поздняя инициализация перед показом с Block ID:', adsgramBlockId);
+      } catch (e) {
+        console.warn('[Adsgram] Ошибка инициализации перед показом:', e);
+      }
+    }
+
     if (AdController) {
       try {
-        console.log('[Adsgram] Запрос показа рекламы через SDK (Block ID: 47079)...');
+        console.log(`[Adsgram] Запрос показа рекламы через SDK (Block ID: ${adsgramBlockId})...`);
         const res = await AdController.show();
         console.log('[Adsgram] Ответ SDK:', res);
         if (res === undefined || res === null || res === true || res.done === true || !res.error) {
           return true;
         }
       } catch (err) {
-        console.warn('[Adsgram] SDK ошибка / нет рекламы (Pending review):', err);
+        console.warn('[Adsgram] SDK ошибка / нет рекламы (No Fill / Geo / Platform):', err);
       }
     }
 
     // 2. Полноэкранный плеер Rewarded Video с таймером 5 сек
-    console.log('[Ad Player] Показ полноэкранного рекламного видео...');
+    console.log('[Ad Player] Показ полноэкранного рекламного видео (fallback)...');
     return await playRewardedAdModal();
   }
 

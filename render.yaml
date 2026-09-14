@@ -15,6 +15,6 @@ services:
       - key: WEB_APP_URL
         value: https://yyt1093-source.github.io/color_sort_game/
       - key: ADSGRAM_BLOCK_ID
-        value: "47079"
+        value: "47788"
       - key: KVDB_BUCKET
         value: "82kzJTUxZwwFNvg7kUSqgM"
