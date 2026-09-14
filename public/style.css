@@ -1064,14 +1064,23 @@ body {
 .ad-video-overlay {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: 99999999 !important;
   background: rgba(8, 12, 24, 0.97);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
   animation: fadeIn 0.25s ease-out;
+}
+
+.ad-video-overlay:not(.hidden) {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 99999999 !important;
 }
 
 .ad-video-container {
