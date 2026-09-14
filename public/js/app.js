@@ -32,9 +32,9 @@ async function initColorSortApp() {
       if (window.Adsgram && adsgramBlockId) {
         AdController = window.Adsgram.init({
           blockId: adsgramBlockId,
-          debug: true
+          debug: false
         });
-        console.log('[Adsgram] Инициализирован с Block ID:', adsgramBlockId, '(debug: true)');
+        console.log('[Adsgram] Инициализирован в боевом режиме с Block ID:', adsgramBlockId);
       } else if (window.Adsgram) {
         console.log('[Adsgram] SDK загружен, ожидается настройка Block ID в .env');
       }
@@ -132,14 +132,14 @@ async function initColorSortApp() {
     }
 
     try {
-      // 1. Попытка показа через официальный Adsgram SDK (Block ID: 47788, debug: true для гарантированного показа плеера)
+      // 1. Показ через официальный Adsgram SDK (Block ID: 47788, боевой режим debug: false)
       if (!AdController && window.Adsgram && adsgramBlockId) {
         try {
           AdController = window.Adsgram.init({
             blockId: adsgramBlockId,
-            debug: true
+            debug: false
           });
-          console.log('[Adsgram] Инициализация перед показом с Block ID:', adsgramBlockId, 'debug: true');
+          console.log('[Adsgram] Инициализация перед показом с Block ID:', adsgramBlockId, 'debug: false');
         } catch (e) {
           console.warn('[Adsgram] Ошибка инициализации перед показом:', e);
         }
@@ -154,15 +154,25 @@ async function initColorSortApp() {
           if (res && (res.done === true || res === true)) {
             return true;
           }
-          console.warn('[Adsgram] Ролик завершён или нет рекламы в сети:', res);
+          console.warn('[Adsgram] Ролик закрыт пользователем до завершения:', res);
+          return false;
         } catch (err) {
-          console.warn('[Adsgram] SDK ошибка / переход на резервный плеер:', err);
+          console.warn('[Adsgram] SDK ошибка / нет рекламы:', err);
+          const errDesc = (err && err.description) ? err.description : '';
+          // Если запуск внутри Telegram, выводим реальное сообщение от Adsgram
+          if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+            showInfoModal('📢', 'Adsgram', errDesc || 'В данный момент реклама недоступна в вашем регионе. Попробуйте чуть позже!');
+            return false;
+          }
         }
       }
 
-      // 2. Гарантированный показ полноэкранного плеера Adsgram (с геймпадом и шкалой процентов)
-      console.log('[Ad Player] Запуск плеера видеорекламы Adsgram...');
-      return await playRewardedAdModal();
+      // 2. Резервный режим только для локальной разработки вне Telegram
+      if (!window.Telegram || !window.Telegram.WebApp || !window.Telegram.WebApp.initData) {
+        console.log('[Ad Player] Локальный режим разработки (вне Telegram)...');
+        return await playRewardedAdModal();
+      }
+      return false;
     } finally {
       // Восстанавливаем окно выбора бонусов, чтобы игрок видел свой результат
       if (wasAdModalOpen && adModal) {

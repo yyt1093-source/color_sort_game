@@ -25,7 +25,7 @@ app.use((req, res, next) => {
 app.get('/api/config', (req, res) => {
   res.json({
     success: true,
-    adsgramBlockId: process.env.ADSGRAM_BLOCK_ID || '',
+    adsgramBlockId: process.env.ADSGRAM_BLOCK_ID || '47788',
     tonDepositAddress: process.env.TON_DEPOSIT_ADDRESS || 'UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5'
   });
 });
