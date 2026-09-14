@@ -26,12 +26,12 @@
   
   <!-- Preload critical game assets for instant boot -->
   <link rel="preload" href="referral_share.jpg?v=4" as="image">
-  <link rel="preload" href="js/gameEngine.js?v=48500" as="script">
-  <link rel="preload" href="js/renderer.js?v=48500" as="script">
-  <link rel="preload" href="js/app.js?v=48500" as="script">
+  <link rel="preload" href="js/gameEngine.js?v=48600" as="script">
+  <link rel="preload" href="js/renderer.js?v=48600" as="script">
+  <link rel="preload" href="js/app.js?v=48600" as="script">
 
-  <!-- Adsgram SDK (deferred to prevent render-blocking) -->
-  <script defer src="https://sad.adsgram.ai/js/sad.min.js"></script>
+  <!-- Adsgram SDK -->
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
   
   <!-- TonConnect UI SDK (deferred to prevent render-blocking) -->
   <script defer src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -42,7 +42,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=48500">
+  <link rel="stylesheet" href="style.css?v=48600">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -828,36 +828,45 @@
       </div>
     </div>
   </div>
-  <!-- Fullscreen Rewarded Video Ad Modal (Adsgram UnitID: 47788) -->
+  <!-- Fullscreen Adsgram Rewarded Video Player Modal -->
   <div id="rewardedVideoModal" class="ad-video-overlay modal-overlay hidden">
-    <div class="ad-video-container">
-      <div class="ad-video-topbar">
-        <div class="ad-video-badge">
-          <span class="ad-video-icon">📢</span>
-          <span>Adsgram • ID: 47788</span>
+    <div class="adsgram-player-card">
+      <!-- Adsgram Top Header -->
+      <div class="adsgram-player-topbar">
+        <div class="adsgram-player-title">
+          <span>Video ad</span>
+          <span class="adsgram-dropdown-icon">▾</span>
         </div>
-        <div class="ad-video-timer-pill" id="adVideoTimer">⏳ 5 сек</div>
-        <button id="adVideoCloseBtn" class="ad-video-close" title="Закрыть">&times;</button>
+        <button id="adVideoCloseBtn" class="adsgram-player-close" title="Закрыть">&times;</button>
       </div>
 
-      <div class="ad-video-body">
-        <div class="ad-media-card">
-          <div class="ad-preview-screen">
-            <div class="ad-glow-orb"></div>
-            <div class="ad-sponsor-label" id="adVideoSponsor">РЕКЛАМНЫЙ СПОНСОР</div>
-            <div class="ad-sponsor-icon">🎮</div>
-            <h3 class="ad-sponsor-title" id="adVideoSponsorTitle">Новые игры в Telegram</h3>
-            <p class="ad-sponsor-desc" id="adVideoSponsorDesc">Играйте в топовые Mini Apps без установки!</p>
-            <button class="ad-cta-btn" id="adVideoCtaBtn" onclick="window.open('https://t.me/sortcolors_bot', '_blank')">Смотреть каталог</button>
+      <!-- Top Timeline Progress Bar -->
+      <div class="adsgram-timeline-track">
+        <div id="adVideoTimeline" class="adsgram-timeline-fill"></div>
+      </div>
+
+      <!-- Main Video Screen (exact Adsgram theme) -->
+      <div class="adsgram-video-screen">
+        <div class="adsgram-screen-header">
+          <div class="adsgram-sound-btn" id="adSoundToggle">🔊</div>
+          <div class="adsgram-channel-info">
+            <span class="adsgram-channel-name">@adsgram_ai – ads in Telegram</span>
+            <span class="adsgram-ad-badge">Ad • 18+</span>
           </div>
         </div>
-      </div>
 
-      <div class="ad-video-footer">
-        <div class="ad-progress-track">
-          <div id="adVideoProgress" class="ad-progress-fill"></div>
+        <div class="adsgram-center-media">
+          <div class="adsgram-gamepad-glow"></div>
+          <div class="adsgram-gamepad-icon">🎮</div>
         </div>
-        <p id="adVideoStatus" class="ad-status-msg">Пожалуйста, просмотрите рекламу до конца для получения бонуса</p>
+
+        <!-- Bottom Percentage Progress Pill -->
+        <div class="adsgram-bottom-pill-wrap">
+          <div class="adsgram-percentage-pill">
+            <div id="adVideoProgress" class="adsgram-pill-fill"></div>
+            <span id="adVideoTimer" class="adsgram-pill-text">0%</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -888,12 +897,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=48500"></script>
-  <script src="js/audio.js?v=48500"></script>
-  <script src="js/solver.js?v=48500"></script>
-  <script src="js/levelGenerator.js?v=48500"></script>
-  <script src="js/gameEngine.js?v=48500"></script>
-  <script src="js/renderer.js?v=48500"></script>
-  <script src="js/app.js?v=48500"></script>
+  <script src="js/telegram.js?v=48600"></script>
+  <script src="js/audio.js?v=48600"></script>
+  <script src="js/solver.js?v=48600"></script>
+  <script src="js/levelGenerator.js?v=48600"></script>
+  <script src="js/gameEngine.js?v=48600"></script>
+  <script src="js/renderer.js?v=48600"></script>
+  <script src="js/app.js?v=48600"></script>
 </body>
 </html>
