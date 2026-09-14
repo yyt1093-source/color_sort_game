@@ -16,7 +16,7 @@ assert(html.includes('src="referral_art_clean.jpg"'), 'referral_art_clean.jpg ja
 assert(html.includes('id="telegramChannelJoinBtn"'), 'telegramChannelJoinBtn must exist in index.html');
 assert(html.includes('id="telegramChannelLink"'), 'telegramChannelLink must exist in index.html');
 assert(html.includes('id="tgChannelThumb"'), 'tgChannelThumb must exist in index.html');
-assert(html.includes('app.js?v=48720'), 'app.js must be v=48720');
+assert(html.includes('app.js?v=48730'), 'app.js must be v=48730');
 console.log('  ✅ [PASS] index.html structure verified');
 
 // 2. Check style.css
@@ -24,6 +24,7 @@ const cssPath = path.join(__dirname, '../public/style.css');
 const css = fs.readFileSync(cssPath, 'utf8');
 assert(css.includes('.telegram-channel-box'), '.telegram-channel-box must be in style.css');
 assert(css.includes('cursor: pointer'), 'telegram-channel-box must have cursor: pointer');
+assert(css.includes('flex-shrink: 0'), 'telegram-channel-box must have flex-shrink: 0 to prevent squashing');
 assert(css.includes('.tg-channel-thumb'), '.tg-channel-thumb must be in style.css');
 assert(css.includes('.tg-channel-link-btn'), '.tg-channel-link-btn must be in style.css');
 assert(css.includes('.tg-join-channel-btn'), '.tg-join-channel-btn must be in style.css');
