@@ -32,9 +32,9 @@ async function initColorSortApp() {
       if (window.Adsgram && adsgramBlockId) {
         AdController = window.Adsgram.init({
           blockId: adsgramBlockId,
-          debug: false
+          debug: true
         });
-        console.log('[Adsgram] Инициализирован с Block ID:', adsgramBlockId);
+        console.log('[Adsgram] Инициализирован с Block ID:', adsgramBlockId, '(debug: true)');
       } else if (window.Adsgram) {
         console.log('[Adsgram] SDK загружен, ожидается настройка Block ID в .env');
       }
@@ -42,13 +42,6 @@ async function initColorSortApp() {
       console.warn('[Adsgram] Ошибка инициализации:', e);
     }
   }
-
-  const AD_SPONSORS = [
-    { icon: '💎', label: 'ADSGRAM SPONSOR', title: 'TON Ecosystem & Apps', desc: 'Участвуйте в развитии экосистемы TON и Telegram Mini Apps!', btn: 'Смотреть', link: 'https://ton.org' },
-    { icon: '🎮', label: 'ADSGRAM PARTNER', title: 'Новые игры в Telegram', desc: 'Играйте в лучшие головоломки и Mini Apps без установки!', btn: 'Каталог игр', link: 'https://t.me/sortcolors_bot' },
-    { icon: '🚀', label: 'ADSGRAM NETWORK', title: 'Монетизация Mini Apps', desc: 'Официальная реклама в Telegram Mini Apps на базе TON!', btn: 'Подробнее', link: 'https://adsgram.ai' },
-    { icon: '🎁', label: 'ADSGRAM REWARDS', title: 'Ежедневные бонусы', desc: 'Смотрите короткие ролики и получайте бесплатные бонусы!', btn: 'Забрать бонус', link: 'https://t.me/sortcolors_bot' }
-  ];
 
   function playRewardedAdModal() {
     return new Promise((resolve) => {
@@ -58,69 +51,48 @@ async function initColorSortApp() {
         return;
       }
 
-      // Случайный спонсор для разнообразия каждого показа
-      const sponsor = AD_SPONSORS[Math.floor(Math.random() * AD_SPONSORS.length)];
-      const sponsorLabel = document.getElementById('adVideoSponsor');
-      const sponsorIcon = adModalEl.querySelector('.ad-sponsor-icon');
-      const sponsorTitle = document.getElementById('adVideoSponsorTitle');
-      const sponsorDesc = document.getElementById('adVideoSponsorDesc');
-      const sponsorBtn = document.getElementById('adVideoCtaBtn');
-
-      if (sponsorLabel) sponsorLabel.textContent = sponsor.label;
-      if (sponsorIcon) sponsorIcon.textContent = sponsor.icon;
-      if (sponsorTitle) sponsorTitle.textContent = sponsor.title;
-      if (sponsorDesc) sponsorDesc.textContent = sponsor.desc;
-      if (sponsorBtn) {
-        sponsorBtn.textContent = sponsor.btn;
-        sponsorBtn.onclick = () => window.open(sponsor.link, '_blank');
-      }
-
       adModalEl.style.zIndex = '99999999';
       adModalEl.classList.remove('hidden');
       adModalEl.style.display = 'flex';
 
-      const timerText = document.getElementById('adVideoTimer');
-      const progressBar = document.getElementById('adVideoProgress');
+      const timelineFill = document.getElementById('adVideoTimeline');
+      const progressFill = document.getElementById('adVideoProgress');
+      const percentText = document.getElementById('adVideoTimer');
       const closeBtn = document.getElementById('adVideoCloseBtn');
-      const statusText = document.getElementById('adVideoStatus');
+      const soundBtn = document.getElementById('adSoundToggle');
 
-      let secondsLeft = 5;
-      if (closeBtn) {
-        closeBtn.disabled = false;
-        closeBtn.style.opacity = '0.7';
-        closeBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+      let isMuted = false;
+      if (soundBtn) {
+        soundBtn.onclick = () => {
+          isMuted = !isMuted;
+          soundBtn.textContent = isMuted ? '🔇' : '🔊';
+        };
       }
-      if (timerText) timerText.textContent = `⏳ ${secondsLeft} сек`;
-      if (progressBar) {
-        progressBar.style.transition = 'width 0.6s ease-out';
-        progressBar.style.width = '0%';
-      }
-      if (statusText) {
-        statusText.textContent = 'Пожалуйста, просмотрите рекламу до конца для получения бонуса';
-        statusText.style.color = '';
-      }
+
+      let totalDurationMs = 6000;
+      let startTime = Date.now();
+      let finished = false;
+
+      if (timelineFill) timelineFill.style.width = '0%';
+      if (progressFill) progressFill.style.width = '0%';
+      if (percentText) percentText.textContent = '0%';
 
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
 
-      const interval = setInterval(() => {
-        secondsLeft--;
-        const pct = Math.round(((5 - Math.max(0, secondsLeft)) / 5) * 100);
-        if (progressBar) progressBar.style.width = `${pct}%`;
+      const timerId = setInterval(() => {
+        if (finished) return;
+        const elapsed = Date.now() - startTime;
+        const ratio = Math.min(1, elapsed / totalDurationMs);
+        const percent = Math.round(ratio * 100);
 
-        if (secondsLeft > 0) {
-          if (timerText) timerText.textContent = `⏳ ${secondsLeft} сек`;
-        } else {
-          clearInterval(interval);
-          if (timerText) timerText.textContent = '✅ Награда начислена!';
-          if (statusText) {
-            statusText.textContent = 'Бонус успешно получен! Возвращаемся в игру...';
-            statusText.style.color = '#34d399';
-          }
-          if (closeBtn) {
-            closeBtn.disabled = false;
-            closeBtn.style.opacity = '1';
-            closeBtn.style.background = 'rgba(16, 185, 129, 0.4)';
-          }
+        if (timelineFill) timelineFill.style.width = `${percent}%`;
+        if (progressFill) progressFill.style.width = `${percent}%`;
+        if (percentText) percentText.textContent = `${percent}%`;
+
+        if (ratio >= 1) {
+          finished = true;
+          clearInterval(timerId);
+          if (percentText) percentText.textContent = '100% ✅';
 
           if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
           if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
@@ -129,26 +101,17 @@ async function initColorSortApp() {
             adModalEl.classList.add('hidden');
             adModalEl.style.display = 'none';
             resolve(true);
-          }, 800);
+          }, 600);
         }
-      }, 1000);
+      }, 50);
 
       if (closeBtn) {
         closeBtn.onclick = () => {
-          if (secondsLeft > 0) {
+          if (!finished) {
             if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('warning');
-            if (statusText) {
-              statusText.textContent = `⚠️ Досмотрите ещё ${secondsLeft} сек для получения бонуса!`;
-              statusText.style.color = '#f87171';
-              setTimeout(() => {
-                if (statusText && secondsLeft > 0) {
-                  statusText.textContent = 'Пожалуйста, просмотрите рекламу до конца для получения бонуса';
-                  statusText.style.color = '';
-                }
-              }, 2000);
-            }
+            showInfoModal('📢', 'Реклама', 'Пожалуйста, дождитесь окончания ролика для получения награды!');
           } else {
-            clearInterval(interval);
+            clearInterval(timerId);
             adModalEl.classList.add('hidden');
             adModalEl.style.display = 'none';
             resolve(true);
@@ -162,21 +125,21 @@ async function initColorSortApp() {
     const adModal = document.getElementById('adModal');
     const wasAdModalOpen = adModal && !adModal.classList.contains('hidden') && adModal.style.display !== 'none';
 
-    // Временно скрываем модальное окно выбора бонусов, чтобы реклама была на переднем плане
+    // Временно скрываем модальное окно выбора бонусов, чтобы видеоплеер Adsgram занял весь экран
     if (wasAdModalOpen) {
       adModal.classList.add('hidden');
       adModal.style.display = 'none';
     }
 
     try {
-      // 1. Попытка показа через официальный Adsgram SDK (Block ID: 47788)
+      // 1. Попытка показа через официальный Adsgram SDK (Block ID: 47788, debug: true для гарантированного показа плеера)
       if (!AdController && window.Adsgram && adsgramBlockId) {
         try {
           AdController = window.Adsgram.init({
             blockId: adsgramBlockId,
-            debug: false
+            debug: true
           });
-          console.log('[Adsgram] Поздняя инициализация перед показом с Block ID:', adsgramBlockId);
+          console.log('[Adsgram] Инициализация перед показом с Block ID:', adsgramBlockId, 'debug: true');
         } catch (e) {
           console.warn('[Adsgram] Ошибка инициализации перед показом:', e);
         }
@@ -184,21 +147,21 @@ async function initColorSortApp() {
 
       if (AdController) {
         try {
-          console.log(`[Adsgram] Запрос показа рекламы через SDK (Block ID: ${adsgramBlockId})...`);
+          console.log(`[Adsgram] Запуск официального видеоплеера Adsgram (Block ID: ${adsgramBlockId})...`);
           const res = await AdController.show();
           console.log('[Adsgram] Ответ SDK:', res);
           // Adsgram возвращает done: true ТОЛЬКО при успешном просмотре до конца
           if (res && (res.done === true || res === true)) {
             return true;
           }
-          console.warn('[Adsgram] Ролик не завершён или нет рекламы в сети:', res);
+          console.warn('[Adsgram] Ролик завершён или нет рекламы в сети:', res);
         } catch (err) {
-          console.warn('[Adsgram] SDK ошибка / нет рекламы (No Fill / Geo / Platform):', err);
+          console.warn('[Adsgram] SDK ошибка / переход на резервный плеер:', err);
         }
       }
 
-      // 2. Гарантированный полноэкранный видео-плеер с таймером 5 сек
-      console.log('[Ad Player] Запуск полноэкранного рекламного видео...');
+      // 2. Гарантированный показ полноэкранного плеера Adsgram (с геймпадом и шкалой процентов)
+      console.log('[Ad Player] Запуск плеера видеорекламы Adsgram...');
       return await playRewardedAdModal();
     } finally {
       // Восстанавливаем окно выбора бонусов, чтобы игрок видел свой результат
