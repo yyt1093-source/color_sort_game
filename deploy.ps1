@@ -34,7 +34,7 @@ git push origin gh-pages
 Write-Host "=== Step 3: Returning to 'main' branch ===" -ForegroundColor Cyan
 git checkout main
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue assets, banner_640x360.jpg, index.html, invite.html, js, referral_art_clean.jpg, referral_share.jpg, splash_cover.jpg, style.css, tonconnect-manifest.json
-git clean -fd
+git clean -fd -e .env
 
 Write-Host "`n Deployment to live server complete!" -ForegroundColor Green
 Write-Host "Live WebApp URL: https://yyt1093-source.github.io/color_sort_game/" -ForegroundColor Green
