@@ -16,7 +16,7 @@ assert(html.includes('src="referral_art_clean.jpg"'), 'referral_art_clean.jpg ja
 assert(html.includes('id="telegramChannelJoinBtn"'), 'telegramChannelJoinBtn must exist in index.html');
 assert(html.includes('id="telegramChannelLink"'), 'telegramChannelLink must exist in index.html');
 assert(html.includes('id="tgChannelThumb"'), 'tgChannelThumb must exist in index.html');
-assert(html.includes('app.js?v=48750'), 'app.js must be v=48750');
+assert(html.includes('app.js?v=48760'), 'app.js must be v=48760');
 console.log('  ✅ [PASS] index.html structure verified');
 
 // 2. Check style.css
