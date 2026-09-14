@@ -43,6 +43,13 @@ async function initColorSortApp() {
     }
   }
 
+  const AD_SPONSORS = [
+    { icon: '💎', label: 'ADSGRAM SPONSOR', title: 'TON Ecosystem & Apps', desc: 'Участвуйте в развитии экосистемы TON и Telegram Mini Apps!', btn: 'Смотреть', link: 'https://ton.org' },
+    { icon: '🎮', label: 'ADSGRAM PARTNER', title: 'Новые игры в Telegram', desc: 'Играйте в лучшие головоломки и Mini Apps без установки!', btn: 'Каталог игр', link: 'https://t.me/sortcolors_bot' },
+    { icon: '🚀', label: 'ADSGRAM NETWORK', title: 'Монетизация Mini Apps', desc: 'Официальная реклама в Telegram Mini Apps на базе TON!', btn: 'Подробнее', link: 'https://adsgram.ai' },
+    { icon: '🎁', label: 'ADSGRAM REWARDS', title: 'Ежедневные бонусы', desc: 'Смотрите короткие ролики и получайте бесплатные бонусы!', btn: 'Забрать бонус', link: 'https://t.me/sortcolors_bot' }
+  ];
+
   function playRewardedAdModal() {
     return new Promise((resolve) => {
       const adModalEl = document.getElementById('rewardedVideoModal');
@@ -51,8 +58,27 @@ async function initColorSortApp() {
         return;
       }
 
+      // Случайный спонсор для разнообразия каждого показа
+      const sponsor = AD_SPONSORS[Math.floor(Math.random() * AD_SPONSORS.length)];
+      const sponsorLabel = document.getElementById('adVideoSponsor');
+      const sponsorIcon = adModalEl.querySelector('.ad-sponsor-icon');
+      const sponsorTitle = document.getElementById('adVideoSponsorTitle');
+      const sponsorDesc = document.getElementById('adVideoSponsorDesc');
+      const sponsorBtn = document.getElementById('adVideoCtaBtn');
+
+      if (sponsorLabel) sponsorLabel.textContent = sponsor.label;
+      if (sponsorIcon) sponsorIcon.textContent = sponsor.icon;
+      if (sponsorTitle) sponsorTitle.textContent = sponsor.title;
+      if (sponsorDesc) sponsorDesc.textContent = sponsor.desc;
+      if (sponsorBtn) {
+        sponsorBtn.textContent = sponsor.btn;
+        sponsorBtn.onclick = () => window.open(sponsor.link, '_blank');
+      }
+
+      adModalEl.style.zIndex = '99999999';
       adModalEl.classList.remove('hidden');
       adModalEl.style.display = 'flex';
+
       const timerText = document.getElementById('adVideoTimer');
       const progressBar = document.getElementById('adVideoProgress');
       const closeBtn = document.getElementById('adVideoCloseBtn');
@@ -62,13 +88,19 @@ async function initColorSortApp() {
       if (closeBtn) {
         closeBtn.disabled = false;
         closeBtn.style.opacity = '0.7';
+        closeBtn.style.background = 'rgba(255, 255, 255, 0.1)';
       }
-      if (timerText) timerText.textContent = t('adVideoTimerSec', secondsLeft);
+      if (timerText) timerText.textContent = `⏳ ${secondsLeft} сек`;
       if (progressBar) {
         progressBar.style.transition = 'width 0.6s ease-out';
         progressBar.style.width = '0%';
       }
-      if (statusText) statusText.textContent = 'Пожалуйста, просмотрите рекламу до конца для получения бонуса';
+      if (statusText) {
+        statusText.textContent = 'Пожалуйста, просмотрите рекламу до конца для получения бонуса';
+        statusText.style.color = '';
+      }
+
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
 
       const interval = setInterval(() => {
         secondsLeft--;
@@ -79,8 +111,11 @@ async function initColorSortApp() {
           if (timerText) timerText.textContent = `⏳ ${secondsLeft} сек`;
         } else {
           clearInterval(interval);
-          if (timerText) timerText.textContent = t('adVideoTimerReward');
-          if (statusText) statusText.textContent = t('adVideoStatusSuccess');
+          if (timerText) timerText.textContent = '✅ Награда начислена!';
+          if (statusText) {
+            statusText.textContent = 'Бонус успешно получен! Возвращаемся в игру...';
+            statusText.style.color = '#34d399';
+          }
           if (closeBtn) {
             closeBtn.disabled = false;
             closeBtn.style.opacity = '1';
@@ -102,7 +137,16 @@ async function initColorSortApp() {
         closeBtn.onclick = () => {
           if (secondsLeft > 0) {
             if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('warning');
-            showInfoModal('📢', 'Реклама', 'Пожалуйста, досмотрите видео до конца, чтобы получить бонус!');
+            if (statusText) {
+              statusText.textContent = `⚠️ Досмотрите ещё ${secondsLeft} сек для получения бонуса!`;
+              statusText.style.color = '#f87171';
+              setTimeout(() => {
+                if (statusText && secondsLeft > 0) {
+                  statusText.textContent = 'Пожалуйста, просмотрите рекламу до конца для получения бонуса';
+                  statusText.style.color = '';
+                }
+              }, 2000);
+            }
           } else {
             clearInterval(interval);
             adModalEl.classList.add('hidden');
@@ -115,35 +159,54 @@ async function initColorSortApp() {
   }
 
   async function showRewardedAd() {
-    // 1. Попытка показа через официальный Adsgram SDK (Block ID: 47788)
-    if (!AdController && window.Adsgram && adsgramBlockId) {
-      try {
-        AdController = window.Adsgram.init({
-          blockId: adsgramBlockId,
-          debug: false
-        });
-        console.log('[Adsgram] Поздняя инициализация перед показом с Block ID:', adsgramBlockId);
-      } catch (e) {
-        console.warn('[Adsgram] Ошибка инициализации перед показом:', e);
-      }
+    const adModal = document.getElementById('adModal');
+    const wasAdModalOpen = adModal && !adModal.classList.contains('hidden') && adModal.style.display !== 'none';
+
+    // Временно скрываем модальное окно выбора бонусов, чтобы реклама была на переднем плане
+    if (wasAdModalOpen) {
+      adModal.classList.add('hidden');
+      adModal.style.display = 'none';
     }
 
-    if (AdController) {
-      try {
-        console.log(`[Adsgram] Запрос показа рекламы через SDK (Block ID: ${adsgramBlockId})...`);
-        const res = await AdController.show();
-        console.log('[Adsgram] Ответ SDK:', res);
-        if (res === undefined || res === null || res === true || res.done === true || !res.error) {
-          return true;
+    try {
+      // 1. Попытка показа через официальный Adsgram SDK (Block ID: 47788)
+      if (!AdController && window.Adsgram && adsgramBlockId) {
+        try {
+          AdController = window.Adsgram.init({
+            blockId: adsgramBlockId,
+            debug: false
+          });
+          console.log('[Adsgram] Поздняя инициализация перед показом с Block ID:', adsgramBlockId);
+        } catch (e) {
+          console.warn('[Adsgram] Ошибка инициализации перед показом:', e);
         }
-      } catch (err) {
-        console.warn('[Adsgram] SDK ошибка / нет рекламы (No Fill / Geo / Platform):', err);
+      }
+
+      if (AdController) {
+        try {
+          console.log(`[Adsgram] Запрос показа рекламы через SDK (Block ID: ${adsgramBlockId})...`);
+          const res = await AdController.show();
+          console.log('[Adsgram] Ответ SDK:', res);
+          // Adsgram возвращает done: true ТОЛЬКО при успешном просмотре до конца
+          if (res && (res.done === true || res === true)) {
+            return true;
+          }
+          console.warn('[Adsgram] Ролик не завершён или нет рекламы в сети:', res);
+        } catch (err) {
+          console.warn('[Adsgram] SDK ошибка / нет рекламы (No Fill / Geo / Platform):', err);
+        }
+      }
+
+      // 2. Гарантированный полноэкранный видео-плеер с таймером 5 сек
+      console.log('[Ad Player] Запуск полноэкранного рекламного видео...');
+      return await playRewardedAdModal();
+    } finally {
+      // Восстанавливаем окно выбора бонусов, чтобы игрок видел свой результат
+      if (wasAdModalOpen && adModal) {
+        adModal.classList.remove('hidden');
+        adModal.style.display = 'flex';
       }
     }
-
-    // 2. Полноэкранный плеер Rewarded Video с таймером 5 сек
-    console.log('[Ad Player] Показ полноэкранного рекламного видео (fallback)...');
-    return await playRewardedAdModal();
   }
 
   // --- Translations (i18n) for 5 Languages: RU, UK, EN, DE, LT ---
