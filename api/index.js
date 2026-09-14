@@ -616,7 +616,7 @@ app.post('/api/admin/add-boosters', (req, res) => {
       return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
     }
 
-    const { telegramId, hints = 0, undos = 0, reveals = 0, extraBottles = 0, tonBalance = 0 } = req.body || {};
+    const { telegramId, hints = 0, undos = 0, reveals = 0, extraBottles = 0, tonBalance = 0, levels = 0 } = req.body || {};
     const id = telegramId || 'guest_dev_123';
 
     const updatedUser = db.addBonus(id, {
@@ -624,7 +624,8 @@ app.post('/api/admin/add-boosters', (req, res) => {
       undos: Number(undos || 0),
       reveals: Number(reveals || 0),
       extraBottles: Number(extraBottles || 0),
-      ton_balance: Number(tonBalance || 0)
+      ton_balance: Number(tonBalance || 0),
+      levels: Number(levels || 0)
     });
 
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
@@ -639,6 +640,11 @@ app.post('/api/admin/add-boosters', (req, res) => {
             val.reveals = (val.reveals || 0) + Number(reveals || 0);
             val.extraBottles = (val.extraBottles || 0) + Number(extraBottles || 0);
             val.ton_balance = (val.ton_balance || 0) + Number(tonBalance || 0);
+            if (Number(levels || 0) > 0) {
+              val.currentLevel = (val.currentLevel || 1) + Number(levels || 0);
+              val.maxLevel = (val.maxLevel || 0) + Number(levels || 0);
+              val.level = val.maxLevel;
+            }
             val.updatedAt = Date.now();
             fetch(`${baseUrl}/${encodeURIComponent('player_' + id)}`, {
               method: 'POST',
