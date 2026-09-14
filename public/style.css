@@ -1933,19 +1933,26 @@ body {
 }
 
 .profile-modal-content {
-  max-height: min(88vh, calc(100dvh - 36px));
+  max-height: min(92vh, calc(100dvh - 20px));
   width: calc(100% - 16px);
-  max-width: 390px;
+  max-width: 440px;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   touch-action: pan-y;
-  gap: 14px;
-  padding: 12px 18px 28px 18px;
+  gap: 16px;
+  padding: 14px 18px 28px 18px;
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: rgba(56, 189, 248, 0.5) rgba(15, 23, 42, 0.4);
+}
+
+.profile-card,
+.telegram-channel-box,
+.referral-section-box,
+.lang-settings-group {
+  flex-shrink: 0 !important;
 }
 
 /* Pull Handle / Ribbon indicator at top */
@@ -2048,27 +2055,29 @@ body {
 
 /* Telegram Channel Card Styles */
 .telegram-channel-box {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.16) 0%, rgba(30, 41, 59, 0.86) 50%, rgba(15, 23, 42, 0.95) 100%);
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  border-radius: 16px;
-  padding: 14px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18) 0%, rgba(30, 41, 59, 0.88) 50%, rgba(15, 23, 42, 0.96) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 18px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28), 0 0 16px rgba(56, 189, 248, 0.12);
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.32), 0 0 18px rgba(56, 189, 248, 0.15);
   position: relative;
   overflow: hidden;
   cursor: pointer;
   -webkit-tap-highlight-color: rgba(56, 189, 248, 0.2);
   user-select: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, background 0.2s ease;
+  flex-shrink: 0 !important;
+  min-height: fit-content !important;
 }
 
 .telegram-channel-box:hover {
-  border-color: rgba(56, 189, 248, 0.75);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.38), 0 0 24px rgba(56, 189, 248, 0.3);
+  border-color: rgba(56, 189, 248, 0.85);
+  box-shadow: 0 6px 26px rgba(0, 0, 0, 0.4), 0 0 26px rgba(56, 189, 248, 0.35);
   transform: translateY(-2px);
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.24) 0%, rgba(30, 41, 59, 0.9) 50%, rgba(15, 23, 42, 0.98) 100%);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.26) 0%, rgba(30, 41, 59, 0.92) 50%, rgba(15, 23, 42, 0.98) 100%);
 }
 
 .telegram-channel-box:active {
@@ -2085,7 +2094,7 @@ body {
 .tg-channel-header {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .tg-channel-title-row {
@@ -2095,37 +2104,38 @@ body {
 }
 
 .tg-paper-plane-icon {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   line-height: 1;
   filter: drop-shadow(0 2px 6px rgba(56, 189, 248, 0.4));
 }
 
 .tg-channel-title-row strong {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: #f8fafc;
+  letter-spacing: 0.2px;
 }
 
 .tg-channel-badge {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(37, 99, 235, 0.25));
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(37, 99, 235, 0.3));
+  border: 1px solid rgba(56, 189, 248, 0.5);
   color: #38bdf8;
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 999px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   margin-left: auto;
 }
 
 .tg-channel-arrow {
   color: #38bdf8;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 800;
   line-height: 1;
-  margin-left: 2px;
-  opacity: 0.85;
+  margin-left: 4px;
+  opacity: 0.9;
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
@@ -2135,26 +2145,27 @@ body {
 }
 
 .tg-channel-sub {
-  font-size: 0.74rem;
-  color: #94a3b8;
-  line-height: 1.3;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+  font-weight: 500;
 }
 
 .tg-channel-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .tg-channel-thumb {
   position: relative;
-  width: 62px;
-  height: 62px;
-  min-width: 62px;
-  border-radius: 14px;
+  width: 70px;
+  height: 70px;
+  min-width: 70px;
+  border-radius: 16px;
   overflow: hidden;
-  border: 2px solid rgba(56, 189, 248, 0.45);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(56, 189, 248, 0.25);
+  border: 2px solid rgba(56, 189, 248, 0.55);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 14px rgba(56, 189, 248, 0.3);
   background: #0f172a;
   cursor: pointer;
   flex-shrink: 0;
@@ -2162,9 +2173,9 @@ body {
 }
 
 .tg-channel-thumb:hover {
-  transform: scale(1.06);
+  transform: scale(1.05);
   border-color: #38bdf8;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45), 0 0 18px rgba(56, 189, 248, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.5);
 }
 
 .tg-channel-thumb-img {
@@ -2178,15 +2189,15 @@ body {
 .tg-thumb-glow {
   position: absolute;
   inset: 0;
-  border-radius: 12px;
-  box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.35);
+  border-radius: 14px;
+  box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.4);
   pointer-events: none;
 }
 
 .tg-channel-details {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
   flex: 1;
   min-width: 0;
 }
@@ -2195,22 +2206,22 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(15, 23, 42, 0.65);
-  border: 1px dashed rgba(56, 189, 248, 0.45);
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px dashed rgba(56, 189, 248, 0.5);
   border-radius: 10px;
-  padding: 6px 10px;
+  padding: 7px 12px;
   color: #38bdf8;
   text-decoration: none;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .tg-channel-link-btn:hover {
-  background: rgba(56, 189, 248, 0.12);
+  background: rgba(56, 189, 248, 0.16);
   border-color: #38bdf8;
-  color: #7dd3fc;
+  color: #bae6fd;
 }
 
 .tg-link-domain {
@@ -2228,23 +2239,23 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 9px 14px;
+  gap: 7px;
+  padding: 10px 16px;
   background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #2563eb 100%);
-  border: 1px solid rgba(56, 189, 248, 0.5);
-  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 11px;
   color: #ffffff;
-  font-size: 0.84rem;
+  font-size: 0.88rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
   transition: all 0.2s ease;
 }
 
 .tg-join-channel-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
-  filter: brightness(1.08);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.5);
+  filter: brightness(1.1);
 }
 
 .tg-join-channel-btn:active {
@@ -2253,7 +2264,7 @@ body {
 }
 
 .tg-btn-icon {
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
