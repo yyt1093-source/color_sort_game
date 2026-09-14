@@ -1207,6 +1207,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   const profileSettingsHint = document.getElementById('profileSettingsHint');
   const langSectionTitle = document.getElementById('langSectionTitle');
   const levelBadgeLabel = document.getElementById('levelBadgeLabel');
+  const telegramChannelCard = document.getElementById('telegramChannelCard');
   const telegramChannelLink = document.getElementById('telegramChannelLink');
   const telegramChannelJoinBtn = document.getElementById('telegramChannelJoinBtn');
   const tgChannelThumb = document.getElementById('tgChannelThumb');
@@ -4451,16 +4452,53 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       e.stopPropagation();
     }
     const channelUrl = 'https://t.me/sortcolors';
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
-      window.Telegram.WebApp.openTelegramLink(channelUrl);
-    } else {
-      window.open(channelUrl, '_blank');
+
+    // Haptic vibration feedback for Telegram Mini App
+    try {
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+      }
+    } catch (_) {}
+
+    // Priority 1: Telegram WebApp openTelegramLink (native in-app navigation)
+    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
+      try {
+        window.Telegram.WebApp.openTelegramLink(channelUrl);
+        return;
+      } catch (err) {
+        console.warn('[Telegram] openTelegramLink failed, falling back:', err);
+      }
     }
-    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
-      window.TelegramApp.TelegramApp.haptic('medium');
+
+    // Priority 2: Telegram WebApp openLink
+    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openLink === 'function') {
+      try {
+        window.Telegram.WebApp.openLink(channelUrl);
+        return;
+      } catch (err) {
+        console.warn('[Telegram] openLink failed, falling back:', err);
+      }
+    }
+
+    // Priority 3: Standard window.open fallback for browser / desktop
+    try {
+      const opened = window.open(channelUrl, '_blank', 'noopener,noreferrer');
+      if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+        window.location.href = channelUrl;
+      }
+    } catch (err) {
+      window.location.href = channelUrl;
     }
   }
 
+  if (telegramChannelCard) {
+    telegramChannelCard.addEventListener('click', openSortColorsTelegramChannel);
+    telegramChannelCard.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        openSortColorsTelegramChannel(e);
+      }
+    });
+  }
   if (telegramChannelLink) {
     telegramChannelLink.addEventListener('click', openSortColorsTelegramChannel);
   }
