@@ -244,6 +244,7 @@ async function initColorSortApp() {
       adminAddUndos: "+5 Отмен хода",
       adminAddReveals: "+5 Открытий",
       adminAddCoins: "+5 TON",
+      adminAddLevels: "+5 Уровней",
       adminAddAll: "Пополнить ВСЁ сразу (+10 ко всем бонусам)",
       adminBottleAddedMsg: (count) => `🧪 +5 Пустых колб добавлено (Всего: ${count})`,
       adminBoardBottleAddedMsg: "🧪 Пустая колба добавлена на поле!",
@@ -251,6 +252,7 @@ async function initColorSortApp() {
       adminUndosAddedMsg: (count) => `↩️ +5 Отмен хода добавлено (Всего: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON добавлено (Баланс: ${Number(count || 0).toFixed(2)} TON)`,
+      adminLevelsAddedMsg: (lvl) => `🏆 +5 Уровней добавлено! (Текущий уровень: ${lvl})`,
       adminAllAddedMsg: "⚡ Все бонусы пополнены (+10 к каждому)!",
       adminResetPurchasesTitle: "💎 Управление покупками за TON (Только Admin)",
       adminResetPurchasesDesc: "Аннулировать действующие покупки преимуществ за TON (например, «Все краски открыты») без списания баланса с кошельков игроков.",
@@ -453,6 +455,7 @@ async function initColorSortApp() {
       adminAddUndos: "+5 Відмін ходу",
       adminAddReveals: "+5 Відкриттів",
       adminAddCoins: "+5 TON",
+      adminAddLevels: "+5 Рівнів",
       adminAddAll: "Поповнити ВСЕ одразу (+10 до всіх бонусів)",
       adminBottleAddedMsg: (count) => `🧪 +5 Порожніх колб додано (Всього: ${count})`,
       adminBoardBottleAddedMsg: "🧪 Порожня колба додана на полі!",
@@ -460,6 +463,7 @@ async function initColorSortApp() {
       adminUndosAddedMsg: (count) => `↩️ +5 Відмін ходу додано (Всього: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Відкриттів додано (Всього: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON додано (Баланс: ${Number(count || 0).toFixed(2)} TON)`,
+      adminLevelsAddedMsg: (lvl) => `🏆 +5 Рівнів додано! (Поточний рівень: ${lvl})`,
       adminAllAddedMsg: "⚡ Всі бонуси поповнено (+10 до кожного)!",
       adminResetPurchasesTitle: "💎 Управління покупками за TON (Тільки Admin)",
       adminResetPurchasesDesc: "Анулювати діючі покупки переваг за TON без списання балансу з гаманців гравців.",
@@ -648,6 +652,7 @@ async function initColorSortApp() {
       adminAddUndos: "+5 Undos",
       adminAddReveals: "+5 Color Reveals",
       adminAddCoins: "+5 TON",
+      adminAddLevels: "+5 Levels",
       adminAddAll: "Replenish ALL (+10 to all boosters)",
       adminBottleAddedMsg: (count) => `🧪 +5 Empty Bottles added (Total: ${count})`,
       adminBoardBottleAddedMsg: "🧪 Empty bottle added to the board!",
@@ -655,6 +660,7 @@ async function initColorSortApp() {
       adminUndosAddedMsg: (count) => `↩️ +5 Undos added (Total: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Reveals added (Total: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON added (Balance: ${Number(count || 0).toFixed(2)} TON)`,
+      adminLevelsAddedMsg: (lvl) => `🏆 +5 Levels added! (Current level: ${lvl})`,
       adminAllAddedMsg: "⚡ All boosters replenished (+10 to each)!",
       adminResetPurchasesTitle: "💎 Manage TON Purchases (Admin Only)",
       adminResetPurchasesDesc: "Annul active TON perks (e.g. All Colors Unlocked) without touching player wallet balances.",
@@ -843,6 +849,7 @@ async function initColorSortApp() {
       adminAddUndos: "+5 Züge zurück",
       adminAddReveals: "+5 Aufdeckungen",
       adminAddCoins: "+5 TON",
+      adminAddLevels: "+5 Stufen",
       adminAddAll: "ALLES auffüllen (+10 auf alle Boni)",
       adminBottleAddedMsg: (count) => `🧪 +5 Leere Flaschen hinzugefügt (Gesamt: ${count})`,
       adminBoardBottleAddedMsg: "🧪 Leere Flasche aufs Feld hinzugefügt!",
@@ -850,6 +857,7 @@ async function initColorSortApp() {
       adminUndosAddedMsg: (count) => `↩️ +5 Züge zurück hinzugefügt (Gesamt: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Aufdeckungen hinzugefügt (Gesamt: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON hinzugefügt (Guthaben: ${Number(count || 0).toFixed(2)} TON)`,
+      adminLevelsAddedMsg: (lvl) => `🏆 +5 Stufen hinzugefügt! (Aktuelle Stufe: ${lvl})`,
       adminAllAddedMsg: "⚡ Alle Boni aufgefüllt (+10 auf alle)!",
       adminResetPurchasesTitle: "💎 TON-Käufe verwalten (Nur Admin)",
       adminResetPurchasesDesc: "Aktive TON-Vorteile annullieren, ohne das Wallet-Guthaben der Spieler zu berühren.",
@@ -1038,6 +1046,7 @@ async function initColorSortApp() {
       adminAddUndos: "+5 Atšaukimai",
       adminAddReveals: "+5 Atskleidimai",
       adminAddCoins: "+5 TON",
+      adminAddLevels: "+5 Lygiai",
       adminAddAll: "Papildyti VISKĄ (+10 visiems)",
       adminBottleAddedMsg: (count) => `🧪 +5 Tušti buteliukai pridėti (Iš viso: ${count})`,
       adminBoardBottleAddedMsg: "🧪 Tuščias buteliukas pridėtas į lentą!",
@@ -1045,6 +1054,7 @@ async function initColorSortApp() {
       adminUndosAddedMsg: (count) => `↩️ +5 Atšaukimai pridėti (Iš viso: ${count})`,
       adminRevealsAddedMsg: (count) => `🔮 +5 Atskleidimai pridėti (Iš viso: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON pridėta (Likutis: ${Number(count || 0).toFixed(2)} TON)`,
+      adminLevelsAddedMsg: (lvl) => `🏆 +5 Lygiai pridėti! (Dabartinis lygis: ${lvl})`,
       adminAllAddedMsg: "⚡ Visi bonusai papildyti (+10 kiekvienam)!",
       adminResetPurchasesTitle: "💎 Valdyti TON pirkimus (Tik Admin)",
       adminResetPurchasesDesc: "Anuliuoti aktyvius TON pirkimus nepalietus žaidėjų piniginės balanso.",
@@ -1325,6 +1335,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   const adminAddRevealsLabel = document.getElementById('adminAddRevealsLabel');
   const adminAddCoinsBtn = document.getElementById('adminAddCoinsBtn');
   const adminAddCoinsLabel = document.getElementById('adminAddCoinsLabel');
+  const adminAddLevelsBtn = document.getElementById('adminAddLevelsBtn');
+  const adminAddLevelsLabel = document.getElementById('adminAddLevelsLabel');
   const adminAddAllBtn = document.getElementById('adminAddAllBtn');
   const adminAddAllLabel = document.getElementById('adminAddAllLabel');
   const adminFeedbackMsg = document.getElementById('adminFeedbackMsg');
@@ -1564,6 +1576,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (adminAddRevealsLabel) adminAddRevealsLabel.textContent = t('adminAddReveals');
     const adminAddCoinsLabel = document.getElementById('adminAddCoinsLabel');
     if (adminAddCoinsLabel) adminAddCoinsLabel.textContent = t('adminAddCoins');
+    const adminAddLevelsLabel = document.getElementById('adminAddLevelsLabel');
+    if (adminAddLevelsLabel) adminAddLevelsLabel.textContent = t('adminAddLevels');
     const adminAddAllLabel = document.getElementById('adminAddAllLabel');
     if (adminAddAllLabel) adminAddAllLabel.textContent = t('adminAddAll');
     const adminPurchasesHeader = document.getElementById('adminPurchasesHeader');
@@ -4761,6 +4775,41 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
       showAdminFeedback(t('adminCoinsAddedMsg', currentUser.ton_balance));
+    });
+  }
+
+  if (adminAddLevelsBtn) {
+    adminAddLevelsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+      const added = 5;
+      currentUser.currentLevel = (currentUser.currentLevel || 1) + added;
+      currentUser.maxLevel = (currentUser.maxLevel || 0) + added;
+      normalizeUserObject(currentUser);
+      saveLocalUser();
+      updateHeaderUI();
+      syncPlayerToCloud(currentUser);
+      loadCurrentLevel();
+      apiCall('/api/admin/add-boosters', 'POST', {
+        telegramId: currentUser.telegramId,
+        firstName: currentUser.firstName,
+        username: currentUser.username,
+        isAdmin: true,
+        levels: added
+      }).then(res => {
+        if (res && res.success && res.user) {
+          if (res.user.current_level !== undefined) {
+            currentUser.currentLevel = Math.max(currentUser.currentLevel || 1, Number(res.user.current_level));
+            currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, Number(res.user.max_level || 0));
+            normalizeUserObject(currentUser);
+            saveLocalUser();
+            updateHeaderUI();
+          }
+        }
+      }).catch(() => {});
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+      showAdminFeedback(t('adminLevelsAddedMsg', currentUser.maxLevel));
     });
   }
 
