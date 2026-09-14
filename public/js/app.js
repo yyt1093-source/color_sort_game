@@ -262,6 +262,10 @@ async function initColorSortApp() {
       adminResetPurchasesSuccessDesc: "Все действующие преимущества за GRAM из сундучка у всех игроков успешно аннулированы. Балансы кошельков не изменились.",
       adminResetSuccessTitle: "💥 Сезон сброшен!",
       adminResetSuccessDesc: "Все игроки сброшены на Уровень 0! Лидерборд пуст. Баланс TON, покупки и рефералы сохранены.",
+      tgChannelTitle: "Telegram-канал",
+      tgChannelBadge: "Официальный",
+      tgChannelSub: "Новости, обновления и промокоды",
+      tgChannelJoinBtn: "Перейти в канал",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "За каждого приглашённого — 5 отмен хода, 5 подсказок, 5 открытий цвета и 5 пустых баночек",
       shareReferralTelegramBtn: "📢 Пригласить в Telegram",
@@ -467,6 +471,10 @@ async function initColorSortApp() {
       adminResetPurchasesSuccessDesc: "Всі діючі переваги за GRAM із скриньки у всіх гравців успішно анульовані. Баланси гаманців не змінилися.",
       adminResetSuccessTitle: "💥 Сезон скинуто!",
       adminResetSuccessDesc: "Всі гравці скинуті на Рівень 0! Лідерборд порожній. Баланс TON, покупки та реферали збережені.",
+      tgChannelTitle: "Telegram-канал",
+      tgChannelBadge: "Офіційний",
+      tgChannelSub: "Новини, оновлення та промокоди",
+      tgChannelJoinBtn: "Перейти до каналу",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "За кожного запрошеного — 5 відмін ходу, 5 підказок, 5 відкриттів кольору та 5 порожніх баночок",
       shareReferralTelegramBtn: "📢 Запросити в Telegram",
@@ -658,6 +666,10 @@ async function initColorSortApp() {
       adminResetPurchasesSuccessDesc: "All active GRAM perks from the chest have been annulled for all players. Wallet balances remain untouched.",
       adminResetSuccessTitle: "💥 Season Reset!",
       adminResetSuccessDesc: "All players have been reset to Level 0! Leaderboard is empty. TON balance, purchases and referrals are preserved.",
+      tgChannelTitle: "Telegram Channel",
+      tgChannelBadge: "Official",
+      tgChannelSub: "News, updates and promo codes",
+      tgChannelJoinBtn: "Open Channel",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "For each invitee — 5 undos, 5 hints, 5 color reveals, and 5 empty jars",
       shareReferralTelegramBtn: "📢 Invite in Telegram",
@@ -849,6 +861,10 @@ async function initColorSortApp() {
       adminResetPurchasesSuccessDesc: "Alle aktiven GRAM-Vorteile aus der Truhe wurden für alle Spieler annulliert. Wallet-Guthaben bleiben unberührt.",
       adminResetSuccessTitle: "💥 Saison zurückgesetzt!",
       adminResetSuccessDesc: "Alle Spieler wurden auf Stufe 0 zurückgesetzt! Bestenliste ist leer. TON-Guthaben, Käufe und Empfehlungen bleiben erhalten.",
+      tgChannelTitle: "Telegram-Kanal",
+      tgChannelBadge: "Offiziell",
+      tgChannelSub: "Neuigkeiten, Updates & Codes",
+      tgChannelJoinBtn: "Kanal öffnen",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "Für jeden Eingeladenen — 5 Züge zurück, 5 Hinweise, 5 Farbaufdeckungen und 5 leere Gläser",
       shareReferralTelegramBtn: "📢 In Telegram einladen",
@@ -1040,6 +1056,10 @@ async function initColorSortApp() {
       adminResetPurchasesSuccessDesc: "Visi aktyvūs GRAM privalumai iš skrynios anuliuoti. Piniginės balansai nepakito.",
       adminResetSuccessTitle: "💥 Sezonas atstatytas!",
       adminResetSuccessDesc: "Visi žaidėjai atstatyti į 0 lygį! Lyderių lentelė tuščia. TON balansas, pirkiniai ir pakviesti draugai išsaugomi.",
+      tgChannelTitle: "Telegram kanalas",
+      tgChannelBadge: "Oficialus",
+      tgChannelSub: "Naujienos, atnaujinimai ir kodai",
+      tgChannelJoinBtn: "Atidaryti kanalą",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "Už kiekvieną pakviestąjį — 5 atšaukimai, 5 užuominos, 5 spalvų atskleidimai ir 5 tušti indai",
       shareReferralTelegramBtn: "📢 Pakviesti į Telegram",
@@ -1187,6 +1207,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   const profileSettingsHint = document.getElementById('profileSettingsHint');
   const langSectionTitle = document.getElementById('langSectionTitle');
   const levelBadgeLabel = document.getElementById('levelBadgeLabel');
+  const telegramChannelLink = document.getElementById('telegramChannelLink');
+  const telegramChannelJoinBtn = document.getElementById('telegramChannelJoinBtn');
+  const tgChannelThumb = document.getElementById('tgChannelThumb');
 
   // Toolbar Labels
   const restartBtnLabel = document.getElementById('restartBtnLabel');
@@ -1485,6 +1508,16 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
     const profileAdminBadge = document.getElementById('profileAdminBadge');
     if (profileAdminBadge) profileAdminBadge.title = t('adminBadge');
+
+    // Telegram Channel Section
+    const tgChannelTitle = document.getElementById('tgChannelTitle');
+    if (tgChannelTitle) tgChannelTitle.textContent = t('tgChannelTitle');
+    const tgChannelBadge = document.getElementById('tgChannelBadge');
+    if (tgChannelBadge) tgChannelBadge.textContent = t('tgChannelBadge');
+    const tgChannelSub = document.getElementById('tgChannelSub');
+    if (tgChannelSub) tgChannelSub.textContent = t('tgChannelSub');
+    const telegramChannelJoinBtnText = document.getElementById('telegramChannelJoinBtnText');
+    if (telegramChannelJoinBtnText) telegramChannelJoinBtnText.textContent = t('tgChannelJoinBtn');
 
     // Referral Section
     const referralSectionTitleEl = document.getElementById('referralSectionTitle');
@@ -4407,6 +4440,35 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (btnEl) btnEl.disabled = false;
       if (claimAllReferralsBtn) claimAllReferralsBtn.disabled = false;
     }
+  }
+
+  // Telegram Channel Link & Join Button Handlers
+  function openSortColorsTelegramChannel(e) {
+    if (e && e.cancelable) {
+      e.preventDefault();
+    }
+    if (e) {
+      e.stopPropagation();
+    }
+    const channelUrl = 'https://t.me/sortcolors';
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(channelUrl);
+    } else {
+      window.open(channelUrl, '_blank');
+    }
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('medium');
+    }
+  }
+
+  if (telegramChannelLink) {
+    telegramChannelLink.addEventListener('click', openSortColorsTelegramChannel);
+  }
+  if (telegramChannelJoinBtn) {
+    telegramChannelJoinBtn.addEventListener('click', openSortColorsTelegramChannel);
+  }
+  if (tgChannelThumb) {
+    tgChannelThumb.addEventListener('click', openSortColorsTelegramChannel);
   }
 
   if (shareReferralTelegramBtn) {

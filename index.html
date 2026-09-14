@@ -28,7 +28,7 @@
   <link rel="preload" href="referral_share.jpg?v=4" as="image">
   <link rel="preload" href="js/gameEngine.js?v=48700" as="script">
   <link rel="preload" href="js/renderer.js?v=48700" as="script">
-  <link rel="preload" href="js/app.js?v=48700" as="script">
+  <link rel="preload" href="js/app.js?v=48710" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -42,7 +42,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=48700">
+  <link rel="stylesheet" href="style.css?v=48710">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -529,6 +529,39 @@
             <span id="profileAdminBadge" class="admin-crown-badge hidden" title="Администратор">👑 Admin</span>
           </div>
           <span id="profileCardLevel">Уровень 0</span>
+        </div>
+      </div>
+
+      <!-- Telegram Channel Card -->
+      <div class="telegram-channel-box" id="telegramChannelCard">
+        <div class="tg-channel-header">
+          <div class="tg-channel-title-row">
+            <span class="tg-paper-plane-icon">✈️</span>
+            <strong id="tgChannelTitle">Telegram-канал</strong>
+            <span class="tg-channel-badge" id="tgChannelBadge">Официальный</span>
+          </div>
+          <span class="tg-channel-sub" id="tgChannelSub">Новости, обновления и промокоды</span>
+        </div>
+
+        <div class="tg-channel-main">
+          <div class="tg-channel-thumb" id="tgChannelThumb" title="Color Sort Telegram">
+            <img src="referral_art_clean.jpg" alt="Color Sort Channel" class="tg-channel-thumb-img">
+            <div class="tg-thumb-glow"></div>
+          </div>
+          <div class="tg-channel-details">
+            <a href="https://t.me/sortcolors" target="_blank" rel="noopener noreferrer" class="tg-channel-link-btn" id="telegramChannelLink" title="https://t.me/sortcolors">
+              <span class="tg-link-domain">https://t.me/sortcolors</span>
+              <svg class="tg-link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+            <button type="button" class="tg-join-channel-btn" id="telegramChannelJoinBtn">
+              <span class="tg-btn-icon">📢</span>
+              <span id="telegramChannelJoinBtnText">Перейти в канал</span>
+            </button>
+          </div>
         </div>
       </div>
 
