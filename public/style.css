@@ -237,32 +237,75 @@ body {
 .board-large { max-width: 370px; }
 .board-xlarge { max-width: 420px; gap: 9px 6px; }
 
-/* Large boards calibrated for strictly 10 bottles per row (10 * 25px + 9 * 5px = 295px) */
+/* Large boards calibrated for strictly 10 larger bottles per row (10 * 31px + 9 * 4px = 346px) */
 .board-xxlarge,
 .board-huge,
 .board-colossal {
-  width: 295px;
+  width: 346px;
   max-width: 100%;
-  gap: 7px 5px;
+  gap: 8px 4px;
   justify-content: center;
 }
 
 .board-xlarge .glass-bottle {
-  width: 31px;
+  width: 32px;
+  height: 96px;
 }
 
 .board-xxlarge .glass-bottle,
 .board-huge .glass-bottle,
 .board-colossal .glass-bottle {
-  width: 25px;
-  flex: 0 0 25px;
-  height: 88px;
+  width: 31px;
+  flex: 0 0 31px;
+  height: 96px;
 }
 
 .board-xxlarge .liquid-container,
 .board-huge .liquid-container,
 .board-colossal .liquid-container {
-  height: 82px;
+  height: 90px;
+}
+
+@media (max-width: 359px) {
+  .board-xxlarge,
+  .board-huge,
+  .board-colossal {
+    width: 302px;
+    gap: 7px 3.5px;
+  }
+  .board-xxlarge .glass-bottle,
+  .board-huge .glass-bottle,
+  .board-colossal .glass-bottle {
+    width: 27px;
+    flex: 0 0 27px;
+    height: 90px;
+  }
+  .board-xxlarge .liquid-container,
+  .board-huge .liquid-container,
+  .board-colossal .liquid-container {
+    height: 84px;
+  }
+}
+
+@media (min-width: 430px) {
+  .board-xxlarge,
+  .board-huge,
+  .board-colossal {
+    width: 376px;
+    gap: 8px 5px;
+  }
+  .board-xxlarge .glass-bottle,
+  .board-huge .glass-bottle,
+  .board-colossal .glass-bottle {
+    width: 33px;
+    flex: 0 0 33px;
+    height: 100px;
+  }
+  .board-xxlarge .liquid-container,
+  .board-huge .liquid-container,
+  .board-colossal .liquid-container {
+    height: 94px;
+  }
 }
 
 /* Glass Bottle (compact size, 5 units capacity full to rim) */
