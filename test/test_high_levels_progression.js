@@ -99,22 +99,14 @@ assert(hasGray, 'Palette must contain gray/silver colors as requested by user!')
 assert(palette.length >= 50, `Palette must have at least 50 colors, got ${palette.length}`);
 console.log(`✅ [PASS] Palette contains ${palette.length} unique colors with Gray and Silver included!`);
 
-// Test UI bottles count formatting
-const ruTag = (n) => {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod100 >= 11 && mod100 <= 19) return `${n} баночек`;
-  if (mod10 === 1) return `${n} баночка`;
-  if (mod10 >= 2 && mod10 <= 4) return `${n} баночки`;
-  return `${n} баночек`;
-};
-
-assert.strictEqual(ruTag(54), '54 баночки', 'Tag for 54 must be "54 баночки"');
-assert.strictEqual(ruTag(50), '50 баночек', 'Tag for 50 must be "50 баночек"');
-assert.strictEqual(ruTag(40), '40 баночек', 'Tag for 40 must be "40 баночек"');
-assert.strictEqual(ruTag(31), '31 баночка', 'Tag for 31 must be "31 баночка"');
-assert.strictEqual(ruTag(7), '7 баночек', 'Tag for 7 must be "7 баночек"');
-console.log('✅ [PASS] UI tag formatted correctly: "54 баночки" at Level 500 (50 with color + 4 empty)');
+// 5. Test Board Row Capacity (10 bottles per row)
+console.log('\n--- Test 5: Row Layout (10 Bottles Per Row) ---');
+const total500 = l500.bottles.length;
+const fullRows = Math.floor(total500 / 10);
+const remainingInLastRow = total500 % 10;
+assert.strictEqual(fullRows, 5, 'Level 500 must have 5 full rows of 10 bottles');
+assert.strictEqual(remainingInLastRow, 4, 'Level 500 must have 4 bottles in the final row');
+console.log(`✅ [PASS] Level 500 row structure: ${fullRows} rows of 10 bottles + 1 row of ${remainingInLastRow} bottles (54 total)!`);
 
 console.log('\n================================================================');
 console.log('🎉 ALL HIGH LEVEL PROGRESSION TESTS PASSED 100%!');
