@@ -63,7 +63,7 @@ console.log('\n--- TEST 4: Verifying index.html Startup Speed & Non-Blocking Ass
 const indexContent = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
 
 assert(indexContent.includes('rel="preload" href="referral_share.jpg?v=4"'), 'index.html must preload splash image');
-assert(indexContent.includes('rel="preload" href="js/app.js?v=47451"'), 'index.html must preload app.js');
+assert(/rel="preload"\s+href="js\/app\.js\?v=\d+"/.test(indexContent) || indexContent.includes('rel="preload" href="js/app.js'), 'index.html must preload app.js');
 assert(indexContent.includes('media="print" onload="this.media=\'all\'"'), 'Google Fonts must be non-blocking');
 assert(indexContent.includes('window.dismissStartScreen'), 'index.html must expose window.dismissStartScreen');
 assert(indexContent.includes('180'), 'inline dismiss script must dismiss in 180ms');

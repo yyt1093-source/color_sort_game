@@ -1,4 +1,4 @@
-const token = process.env.BOT_TOKEN || '8837816458:AAHcVqwLGUdz3TXq2Z1SN7Q4a2DVBkaagfE';
+const token = process.env.BOT_TOKEN || '8837816458:AAGeBFs-ZOF56yro_QhZ7b-Wr6v8RaR6x0c';
 const url = process.env.WEB_APP_URL || 'https://yyt1093-source.github.io/color_sort_game/';
 
 async function updateMenu() {
