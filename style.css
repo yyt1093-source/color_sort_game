@@ -252,7 +252,7 @@ body {
 .board-xlarge { max-width: 420px; gap: 9px 6px; }
 .board-xxlarge { max-width: 460px; gap: 8px 5px; }
 .board-huge { max-width: 470px; gap: 7px 4px; }
-.board-colossal { max-width: 480px; gap: 6px 3.5px; }
+.board-colossal { max-width: 480px; gap: 6px 3px; }
 
 .board-xlarge .glass-bottle {
   width: 31px;
@@ -272,7 +272,7 @@ body {
 }
 
 .board-colossal .glass-bottle {
-  width: 25px;
+  width: 24px;
   height: 86px;
 }
 
@@ -377,9 +377,10 @@ body {
 
 .liquid-revealed-layer,
 .liquid-top-layer {
-  /* Solid, smooth, steady liquid without flashing or jumping */
+  /* Solid, smooth, steady liquid with distinct depth and contrast */
   filter: none;
   transform: none;
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.28), inset 0 2px 2px rgba(255, 255, 255, 0.28), inset 2px 0 3px rgba(255, 255, 255, 0.15), inset -2px 0 3px rgba(0, 0, 0, 0.20);
 }
 
 .liquid-hidden-layer {

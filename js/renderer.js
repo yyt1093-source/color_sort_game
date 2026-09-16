@@ -75,7 +75,8 @@
         segEl.dataset.units = seg.unitsCount;
 
         if (!isTopSegment) {
-          segEl.style.borderTop = '1px solid rgba(0, 0, 0, 0.16)';
+          segEl.style.borderTop = '1.5px solid rgba(255, 255, 255, 0.38)';
+          segEl.style.boxShadow = 'inset 0 1.5px 2px rgba(0, 0, 0, 0.32), inset 0 -2px 3px rgba(0, 0, 0, 0.22)';
         }
 
         if (isTopSegment) {
