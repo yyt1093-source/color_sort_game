@@ -3,67 +3,79 @@
  */
 (function (exports) {
   const COLOR_PALETTE = [
+    // 1-5: High-contrast primary & classic core + SlateGray (Requested: 'Добавь ещё серый цвет')
     { name: 'Red',            hex: '#e60026', glow: 'rgba(230,0,38,0.5)' },
-    { name: 'Blue',           hex: '#2563eb', glow: 'rgba(37,99,235,0.5)' },
+    { name: 'Blue',           hex: '#1d4ed8', glow: 'rgba(29,78,216,0.5)' },
     { name: 'Green',          hex: '#16a34a', glow: 'rgba(22,163,74,0.5)' },
     { name: 'Yellow',         hex: '#ffea00', glow: 'rgba(255,234,0,0.5)' },
-    { name: 'Purple',         hex: '#4c1d95', glow: 'rgba(76,29,149,0.5)' },
-    { name: 'Pink',           hex: '#ec4899', glow: 'rgba(236,72,153,0.5)' },
-    { name: 'Cyan',           hex: '#06b6d4', glow: 'rgba(6,182,212,0.5)' },
+    { name: 'SlateGray',      hex: '#64748b', glow: 'rgba(100,116,139,0.5)' }, // Core Gray
+
+    // 6-10: Complementary vibrant spectrum
     { name: 'Orange',         hex: '#ea580c', glow: 'rgba(234,88,12,0.5)' },
-    { name: 'Lime',           hex: '#84cc16', glow: 'rgba(132,204,22,0.5)' },
-    { name: 'Indigo',         hex: '#4f46e5', glow: 'rgba(79,70,229,0.5)' },
-    { name: 'Teal',           hex: '#0f766e', glow: 'rgba(15,118,110,0.5)' },
-    { name: 'Rose',           hex: '#be185d', glow: 'rgba(190,24,93,0.5)' },
-    { name: 'Amber',          hex: '#b45309', glow: 'rgba(180,83,9,0.5)' },
-    { name: 'Violet',         hex: '#9333ea', glow: 'rgba(147,51,234,0.5)' },
-    { name: 'Emerald',        hex: '#064e3b', glow: 'rgba(6,78,59,0.5)' },
-    { name: 'Sky',            hex: '#7dd3fc', glow: 'rgba(125,211,252,0.5)' },
-    { name: 'Coral',          hex: '#ff9aa2', glow: 'rgba(255,154,162,0.5)' },
-    { name: 'Mint',           hex: '#5eead4', glow: 'rgba(94,234,212,0.5)' },
-    { name: 'Brown',          hex: '#451a03', glow: 'rgba(69,26,3,0.5)' },
-    { name: 'Fuchsia',        hex: '#c026d3', glow: 'rgba(192,38,211,0.5)' },
-    { name: 'Crimson',        hex: '#780016', glow: 'rgba(120,0,22,0.5)' },
-    { name: 'Gold',           hex: '#d97706', glow: 'rgba(217,119,6,0.5)' },
+    { name: 'Purple',         hex: '#6b21a8', glow: 'rgba(107,33,168,0.5)' },
+    { name: 'Cyan',           hex: '#06b6d4', glow: 'rgba(6,182,212,0.5)' },
+    { name: 'DarkWine',       hex: '#4c0519', glow: 'rgba(76,5,25,0.5)' },
+    { name: 'Peach',          hex: '#fdba74', glow: 'rgba(253,186,116,0.5)' },
+
+    // 11-15: Distinct soft tones & earthy neutrals (NO duplicate pinks)
+    { name: 'PastelPink',     hex: '#fbcfe8', glow: 'rgba(251,207,232,0.5)' }, // Only light soft baby pink
+    { name: 'Olive',          hex: '#4d5d14', glow: 'rgba(77,93,20,0.5)' },
     { name: 'Navy',           hex: '#0f2b66', glow: 'rgba(15,43,102,0.5)' },
-    { name: 'Lavender',       hex: '#e9d5ff', glow: 'rgba(233,213,255,0.5)' },
-    { name: 'Olive',          hex: '#3f6212', glow: 'rgba(63,98,18,0.5)' },
-    { name: 'Jade',           hex: '#059669', glow: 'rgba(5,150,105,0.5)' },
-    // Rich, distinct palette extensions for large boards up to 50 bottles
-    { name: 'Tangerine',      hex: '#f97316', glow: 'rgba(249,115,22,0.5)' },
-    { name: 'Magenta',        hex: '#9d174d', glow: 'rgba(157,23,77,0.5)' },
-    { name: 'Turquoise',      hex: '#14b8a6', glow: 'rgba(20,184,166,0.5)' },
-    { name: 'RoyalBlue',      hex: '#1d4ed8', glow: 'rgba(29,78,216,0.5)' },
-    { name: 'Peach',          hex: '#fb923c', glow: 'rgba(251,146,60,0.5)' },
-    { name: 'SeaGreen',       hex: '#10b981', glow: 'rgba(16,185,129,0.5)' },
-    { name: 'Maroon',         hex: '#881337', glow: 'rgba(136,19,55,0.5)' },
-    { name: 'ElectricPurple', hex: '#7c3aed', glow: 'rgba(124,58,237,0.5)' },
-    { name: 'BrightYellow',   hex: '#facc15', glow: 'rgba(250,204,21,0.5)' },
+    { name: 'Lime',           hex: '#84cc16', glow: 'rgba(132,204,22,0.5)' },
+    { name: 'DeepOnyx',       hex: '#090d16', glow: 'rgba(9,13,22,0.5)' },
+
+    // 16-20: Deep florals, warm golds & distinct waters
+    { name: 'SoftLavender',   hex: '#c084fc', glow: 'rgba(192,132,252,0.5)' },
+    { name: 'Caramel',        hex: '#9a3412', glow: 'rgba(154,52,18,0.5)' },
     { name: 'Aquamarine',     hex: '#2dd4bf', glow: 'rgba(45,212,191,0.5)' },
-    { name: 'Berry',          hex: '#a21caf', glow: 'rgba(162,28,175,0.5)' },
-    { name: 'SteelBlue',      hex: '#3b82f6', glow: 'rgba(59,130,246,0.5)' },
-    { name: 'Chartreuse',     hex: '#a3e635', glow: 'rgba(163,230,53,0.5)' },
-    { name: 'Ruby',           hex: '#dc2626', glow: 'rgba(220,38,38,0.5)' },
-    { name: 'Midnight',       hex: '#1e1b4b', glow: 'rgba(30,27,75,0.5)' },
-    { name: 'Flamingo',       hex: '#f43f5e', glow: 'rgba(244,63,94,0.5)' },
-    { name: 'ForestGreen',    hex: '#14532d', glow: 'rgba(20,83,45,0.5)' },
-    { name: 'Apricot',        hex: '#fdba74', glow: 'rgba(253,186,116,0.5)' },
+    { name: 'Teal',           hex: '#0f766e', glow: 'rgba(15,118,110,0.5)' },
+    { name: 'VanillaCream',   hex: '#fef08a', glow: 'rgba(254,240,138,0.5)' },
+
+    // 21-25: Rich tones & clear contrasts
+    { name: 'Gold',           hex: '#ca8a04', glow: 'rgba(202,138,4,0.5)' },
+    { name: 'DarkMoss',       hex: '#1c3d24', glow: 'rgba(28,61,36,0.5)' },
+    { name: 'IceBlue',        hex: '#a5f3fc', glow: 'rgba(165,243,252,0.5)' },
+    { name: 'Fuchsia',        hex: '#c026d3', glow: 'rgba(192,38,211,0.5)' },
+    { name: 'DeepAubergine',  hex: '#3b0764', glow: 'rgba(59,7,100,0.5)' },
+
+    // 26-30: Rose, Emerald, Ruby, Neon Cyan & Periwinkle
+    { name: 'Pink',           hex: '#f43f5e', glow: 'rgba(244,63,94,0.5)' }, // Single vibrant hot rose
+    { name: 'Emerald',        hex: '#059669', glow: 'rgba(5,150,105,0.5)' },
+    { name: 'Crimson',        hex: '#881337', glow: 'rgba(136,19,55,0.5)' },
+    { name: 'ElectricCyan',   hex: '#00f0ff', glow: 'rgba(0,240,255,0.5)' },
     { name: 'Periwinkle',     hex: '#818cf8', glow: 'rgba(129,140,248,0.5)' },
-    { name: 'DarkCyan',       hex: '#0e7490', glow: 'rgba(14,116,144,0.5)' },
-    { name: 'Bronze',         hex: '#78716c', glow: 'rgba(120,113,108,0.5)' },
-    { name: 'Salmon',         hex: '#f87171', glow: 'rgba(248,113,113,0.5)' },
-    { name: 'BrightMint',     hex: '#34d399', glow: 'rgba(52,211,153,0.5)' },
-    { name: 'Plum',           hex: '#581c87', glow: 'rgba(88,28,135,0.5)' },
-    { name: 'Ochre',          hex: '#ca8a04', glow: 'rgba(202,138,4,0.5)' },
-    { name: 'Cerulean',       hex: '#0284c7', glow: 'rgba(2,132,199,0.5)' },
-    { name: 'NeonLime',       hex: '#65a30d', glow: 'rgba(101,163,13,0.5)' },
-    { name: 'Wine',           hex: '#4c0519', glow: 'rgba(76,5,25,0.5)' },
-    { name: 'Lilac',          hex: '#c084fc', glow: 'rgba(192,132,252,0.5)' },
-    { name: 'DeepTeal',       hex: '#042f2e', glow: 'rgba(4,47,46,0.5)' },
-    { name: 'WarmAmber',      hex: '#d97706', glow: 'rgba(217,119,6,0.5)' },
-    { name: 'Cobalt',         hex: '#1e40af', glow: 'rgba(30,64,175,0.5)' },
-    { name: 'PastelPink',     hex: '#f472b6', glow: 'rgba(244,114,182,0.5)' },
-    { name: 'GrassGreen',     hex: '#22c55e', glow: 'rgba(34,197,94,0.5)' }
+
+    // 31-35: Silver, Mints, Chartreuse, Violets & Chocolate (More gray/silver tones)
+    { name: 'LightPlatinum',  hex: '#cbd5e1', glow: 'rgba(203,213,225,0.5)' }, // Light Silver
+    { name: 'Mint',           hex: '#34d399', glow: 'rgba(52,211,153,0.5)' },
+    { name: 'NeonChartreuse', hex: '#bef264', glow: 'rgba(190,242,100,0.5)' },
+    { name: 'ElectricViolet', hex: '#a855f7', glow: 'rgba(168,85,247,0.5)' },
+    { name: 'Chocolate',      hex: '#451a03', glow: 'rgba(69,26,3,0.5)' },
+
+    // 36-40: Mustard, Taupe, Silver, Sky & Plum
+    { name: 'Mustard',        hex: '#eab308', glow: 'rgba(234,179,8,0.5)' },
+    { name: 'WarmTaupe',      hex: '#78716c', glow: 'rgba(120,113,108,0.5)' }, // Warm Gray
+    { name: 'Silver',         hex: '#94a3b8', glow: 'rgba(148,163,184,0.5)' }, // Medium Silver
+    { name: 'Sky',            hex: '#38bdf8', glow: 'rgba(56,189,248,0.5)' },
+    { name: 'DeepPlum',       hex: '#701a75', glow: 'rgba(112,26,117,0.5)' },
+
+    // 41-45: Dark Teals, Khaki, Bronze, Charcoal & Neon Amber
+    { name: 'DarkTeal',       hex: '#042f2e', glow: 'rgba(4,47,46,0.5)' },
+    { name: 'Khaki',          hex: '#b45309', glow: 'rgba(180,83,9,0.5)' },
+    { name: 'Bronze',         hex: '#78350f', glow: 'rgba(120,53,15,0.5)' },
+    { name: 'Charcoal',       hex: '#1e293b', glow: 'rgba(30,41,59,0.5)' }, // Dark Charcoal Gray
+    { name: 'NeonAmber',      hex: '#ff7800', glow: 'rgba(255,120,0,0.5)' },
+
+    // 46-50: Pine Forest, Denim, Indigo, Pale Lilac & Rust
+    { name: 'ForestGreen',    hex: '#14532d', glow: 'rgba(20,83,45,0.5)' },
+    { name: 'DarkDenim',      hex: '#1e3a8a', glow: 'rgba(30,58,138,0.5)' },
+    { name: 'Indigo',         hex: '#4338ca', glow: 'rgba(67,56,202,0.5)' },
+    { name: 'PaleLilac',      hex: '#e9d5ff', glow: 'rgba(233,213,255,0.5)' },
+    { name: 'Rust',           hex: '#991b1b', glow: 'rgba(153,27,27,0.5)' },
+
+    // 51-52: Bonus extra distinct colors
+    { name: 'CoolAshGray',    hex: '#475569', glow: 'rgba(71,85,105,0.5)' },
+    { name: 'BrightGold',     hex: '#f59e0b', glow: 'rgba(245,158,11,0.5)' }
   ];
 
   function getColor(index) {
@@ -82,83 +94,83 @@
   }
 
   function getLevelConfig(level) {
-    let totalJars;
+    let colorCount;
     let emptyJars = 2;
     let openSlotsCount = 0;
     let isChallenge = (level % 5 === 0);
     let isIntro = (level === 1);
 
-    // Progression: start with 5 colors (7 jars) and ramp up smoothly
+    // Progression: start with 5 colors (7 jars) and ramp up smoothly to 50 colored jars (+4 empty = 54 total jars)
     if (level === 1) {
-      totalJars = 7;
+      colorCount = 5;
       emptyJars = 2;
     } else if (level === 2) {
-      totalJars = 8;
+      colorCount = 6;
       emptyJars = 2;
     } else if (level === 3) {
-      totalJars = 9;
+      colorCount = 7;
       emptyJars = 2;
     } else if (level === 4) {
-      totalJars = 10;
+      colorCount = 8;
       emptyJars = 2;
     } else if (level === 5) {
-      totalJars = 11;
+      colorCount = 9;
       emptyJars = 2;
     } else if (level <= 7) {
-      totalJars = 12;
+      colorCount = 10;
       emptyJars = 2;
     } else if (level <= 9) {
-      totalJars = 13;
+      colorCount = 11;
       emptyJars = 2;
     } else if (level === 10) {
-      totalJars = 14;
+      colorCount = 12;
       emptyJars = 2;
     } else if (level <= 12) {
-      totalJars = 15;
+      colorCount = 13;
       emptyJars = 2;
     } else if (level <= 15) {
-      totalJars = 16;
+      colorCount = 14;
       emptyJars = 2;
     } else if (level <= 18) {
-      totalJars = 17;
+      colorCount = 15;
       emptyJars = 2;
     } else if (level <= 22) {
-      totalJars = 18;
+      colorCount = 16;
       emptyJars = 2;
     } else if (level <= 26) {
-      totalJars = 19;
+      colorCount = 17;
       emptyJars = 2;
     } else if (level <= 30) {
-      totalJars = 20;
+      colorCount = 18;
       emptyJars = 2;
     } else if (level <= 35) {
-      totalJars = 22;
+      colorCount = 19;
       emptyJars = 3;
     } else if (level <= 40) {
-      totalJars = 23;
+      colorCount = 20;
       emptyJars = 3;
     } else if (level <= 50) {
-      totalJars = 24;
+      colorCount = 21;
       emptyJars = 3;
     } else if (level <= 300) {
-      // Scale smoothly from 24 jars (level 50) to 31 jars (level 300 - 30+ jars)
-      totalJars = 24 + Math.floor(((level - 50) * 7) / 250);
+      // Scale smoothly from 21 colors (level 50) to 30 colors (level 300)
+      colorCount = 21 + Math.floor(((level - 50) * 9) / 250);
       emptyJars = 3;
     } else if (level <= 400) {
-      // Scale smoothly from 31 jars (level 300) to 40 jars (level 400 - ~40 jars)
-      totalJars = 31 + Math.floor(((level - 300) * 9) / 100);
-      emptyJars = (totalJars >= 36) ? 4 : 3;
+      // Scale smoothly from 30 colors (level 300) to 40 colors (level 400)
+      colorCount = 30 + Math.floor(((level - 300) * 10) / 100);
+      emptyJars = 4;
     } else if (level <= 500) {
-      // Scale smoothly from 40 jars (level 400) to 50 jars (level 500 - max 50 jars)
-      totalJars = 40 + Math.floor(((level - 400) * 10) / 100);
+      // Scale smoothly from 40 colors (level 400) to 50 colors (level 500)
+      colorCount = 40 + Math.floor(((level - 400) * 10) / 100);
       emptyJars = 4;
     } else {
-      // Level > 500: strictly capped at 50 jars max
-      totalJars = 50;
+      // Level > 500: strictly capped at exactly 50 colored jars (+ 4 empty = 54 total jars)
+      colorCount = 50;
       emptyJars = 4;
     }
 
-    const colorCount = totalJars - emptyJars;
+    const totalJars = colorCount + emptyJars;
     const minRequiredMoves = Math.max(14, Math.round(colorCount * 2.7));
 
     return {
