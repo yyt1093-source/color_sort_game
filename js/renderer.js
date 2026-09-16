@@ -152,7 +152,9 @@
     else if (bottles.length <= 10) boardContainer.classList.add('board-medium');
     else if (bottles.length <= 14) boardContainer.classList.add('board-large');
     else if (bottles.length <= 18) boardContainer.classList.add('board-xlarge');
-    else boardContainer.classList.add('board-xxlarge');
+    else if (bottles.length <= 30) boardContainer.classList.add('board-xxlarge');
+    else if (bottles.length <= 40) boardContainer.classList.add('board-huge');
+    else boardContainer.classList.add('board-colossal');
 
     bottles.forEach((layers, idx) => {
       const bottleEl = document.createElement('div');

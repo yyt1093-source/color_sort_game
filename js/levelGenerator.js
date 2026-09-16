@@ -3,33 +3,74 @@
  */
 (function (exports) {
   const COLOR_PALETTE = [
-    { name: 'Red',       hex: '#e60026', glow: 'rgba(230,0,38,0.5)' },
-    { name: 'Blue',      hex: '#2563eb', glow: 'rgba(37,99,235,0.5)' },
-    { name: 'Green',     hex: '#16a34a', glow: 'rgba(22,163,74,0.5)' },
-    { name: 'Yellow',    hex: '#ffea00', glow: 'rgba(255,234,0,0.5)' },
-    { name: 'Purple',    hex: '#4c1d95', glow: 'rgba(76,29,149,0.5)' },
-    { name: 'Pink',      hex: '#ec4899', glow: 'rgba(236,72,153,0.5)' },
-    { name: 'Cyan',      hex: '#06b6d4', glow: 'rgba(6,182,212,0.5)' },
-    { name: 'Orange',    hex: '#ea580c', glow: 'rgba(234,88,12,0.5)' },
-    { name: 'Lime',      hex: '#84cc16', glow: 'rgba(132,204,22,0.5)' },
-    { name: 'Indigo',    hex: '#4f46e5', glow: 'rgba(79,70,229,0.5)' },
-    { name: 'Teal',      hex: '#0f766e', glow: 'rgba(15,118,110,0.5)' },
-    { name: 'Rose',      hex: '#be185d', glow: 'rgba(190,24,93,0.5)' },
-    { name: 'Amber',     hex: '#b45309', glow: 'rgba(180,83,9,0.5)' },
-    { name: 'Violet',    hex: '#9333ea', glow: 'rgba(147,51,234,0.5)' },
-    { name: 'Emerald',   hex: '#064e3b', glow: 'rgba(6,78,59,0.5)' },
-    { name: 'Sky',       hex: '#7dd3fc', glow: 'rgba(125,211,252,0.5)' },
-    { name: 'Coral',     hex: '#ff9aa2', glow: 'rgba(255,154,162,0.5)' },
-    { name: 'Mint',      hex: '#5eead4', glow: 'rgba(94,234,212,0.5)' },
-    { name: 'Brown',     hex: '#451a03', glow: 'rgba(69,26,3,0.5)' },
-    { name: 'Fuchsia',   hex: '#c026d3', glow: 'rgba(192,38,211,0.5)' },
-    { name: 'Crimson',   hex: '#780016', glow: 'rgba(120,0,22,0.5)' },
-    { name: 'Gold',      hex: '#d97706', glow: 'rgba(217,119,6,0.5)' },
-    { name: 'Navy',      hex: '#0f2b66', glow: 'rgba(15,43,102,0.5)' },
-    { name: 'Lavender',  hex: '#e9d5ff', glow: 'rgba(233,213,255,0.5)' },
-    { name: 'Olive',     hex: '#3f6212', glow: 'rgba(63,98,18,0.5)' },
-    { name: 'Jade',      hex: '#059669', glow: 'rgba(5,150,105,0.5)' }
+    { name: 'Red',            hex: '#e60026', glow: 'rgba(230,0,38,0.5)' },
+    { name: 'Blue',           hex: '#2563eb', glow: 'rgba(37,99,235,0.5)' },
+    { name: 'Green',          hex: '#16a34a', glow: 'rgba(22,163,74,0.5)' },
+    { name: 'Yellow',         hex: '#ffea00', glow: 'rgba(255,234,0,0.5)' },
+    { name: 'Purple',         hex: '#4c1d95', glow: 'rgba(76,29,149,0.5)' },
+    { name: 'Pink',           hex: '#ec4899', glow: 'rgba(236,72,153,0.5)' },
+    { name: 'Cyan',           hex: '#06b6d4', glow: 'rgba(6,182,212,0.5)' },
+    { name: 'Orange',         hex: '#ea580c', glow: 'rgba(234,88,12,0.5)' },
+    { name: 'Lime',           hex: '#84cc16', glow: 'rgba(132,204,22,0.5)' },
+    { name: 'Indigo',         hex: '#4f46e5', glow: 'rgba(79,70,229,0.5)' },
+    { name: 'Teal',           hex: '#0f766e', glow: 'rgba(15,118,110,0.5)' },
+    { name: 'Rose',           hex: '#be185d', glow: 'rgba(190,24,93,0.5)' },
+    { name: 'Amber',          hex: '#b45309', glow: 'rgba(180,83,9,0.5)' },
+    { name: 'Violet',         hex: '#9333ea', glow: 'rgba(147,51,234,0.5)' },
+    { name: 'Emerald',        hex: '#064e3b', glow: 'rgba(6,78,59,0.5)' },
+    { name: 'Sky',            hex: '#7dd3fc', glow: 'rgba(125,211,252,0.5)' },
+    { name: 'Coral',          hex: '#ff9aa2', glow: 'rgba(255,154,162,0.5)' },
+    { name: 'Mint',           hex: '#5eead4', glow: 'rgba(94,234,212,0.5)' },
+    { name: 'Brown',          hex: '#451a03', glow: 'rgba(69,26,3,0.5)' },
+    { name: 'Fuchsia',        hex: '#c026d3', glow: 'rgba(192,38,211,0.5)' },
+    { name: 'Crimson',        hex: '#780016', glow: 'rgba(120,0,22,0.5)' },
+    { name: 'Gold',           hex: '#d97706', glow: 'rgba(217,119,6,0.5)' },
+    { name: 'Navy',           hex: '#0f2b66', glow: 'rgba(15,43,102,0.5)' },
+    { name: 'Lavender',       hex: '#e9d5ff', glow: 'rgba(233,213,255,0.5)' },
+    { name: 'Olive',          hex: '#3f6212', glow: 'rgba(63,98,18,0.5)' },
+    { name: 'Jade',           hex: '#059669', glow: 'rgba(5,150,105,0.5)' },
+    // Rich, distinct palette extensions for large boards up to 50 bottles
+    { name: 'Tangerine',      hex: '#f97316', glow: 'rgba(249,115,22,0.5)' },
+    { name: 'Magenta',        hex: '#9d174d', glow: 'rgba(157,23,77,0.5)' },
+    { name: 'Turquoise',      hex: '#14b8a6', glow: 'rgba(20,184,166,0.5)' },
+    { name: 'RoyalBlue',      hex: '#1d4ed8', glow: 'rgba(29,78,216,0.5)' },
+    { name: 'Peach',          hex: '#fb923c', glow: 'rgba(251,146,60,0.5)' },
+    { name: 'SeaGreen',       hex: '#10b981', glow: 'rgba(16,185,129,0.5)' },
+    { name: 'Maroon',         hex: '#881337', glow: 'rgba(136,19,55,0.5)' },
+    { name: 'ElectricPurple', hex: '#7c3aed', glow: 'rgba(124,58,237,0.5)' },
+    { name: 'BrightYellow',   hex: '#facc15', glow: 'rgba(250,204,21,0.5)' },
+    { name: 'Aquamarine',     hex: '#2dd4bf', glow: 'rgba(45,212,191,0.5)' },
+    { name: 'Berry',          hex: '#a21caf', glow: 'rgba(162,28,175,0.5)' },
+    { name: 'SteelBlue',      hex: '#3b82f6', glow: 'rgba(59,130,246,0.5)' },
+    { name: 'Chartreuse',     hex: '#a3e635', glow: 'rgba(163,230,53,0.5)' },
+    { name: 'Ruby',           hex: '#dc2626', glow: 'rgba(220,38,38,0.5)' },
+    { name: 'Midnight',       hex: '#1e1b4b', glow: 'rgba(30,27,75,0.5)' },
+    { name: 'Flamingo',       hex: '#f43f5e', glow: 'rgba(244,63,94,0.5)' },
+    { name: 'ForestGreen',    hex: '#14532d', glow: 'rgba(20,83,45,0.5)' },
+    { name: 'Apricot',        hex: '#fdba74', glow: 'rgba(253,186,116,0.5)' },
+    { name: 'Periwinkle',     hex: '#818cf8', glow: 'rgba(129,140,248,0.5)' },
+    { name: 'DarkCyan',       hex: '#0e7490', glow: 'rgba(14,116,144,0.5)' },
+    { name: 'Bronze',         hex: '#78716c', glow: 'rgba(120,113,108,0.5)' },
+    { name: 'Salmon',         hex: '#f87171', glow: 'rgba(248,113,113,0.5)' },
+    { name: 'BrightMint',     hex: '#34d399', glow: 'rgba(52,211,153,0.5)' },
+    { name: 'Plum',           hex: '#581c87', glow: 'rgba(88,28,135,0.5)' },
+    { name: 'Ochre',          hex: '#ca8a04', glow: 'rgba(202,138,4,0.5)' },
+    { name: 'Cerulean',       hex: '#0284c7', glow: 'rgba(2,132,199,0.5)' },
+    { name: 'NeonLime',       hex: '#65a30d', glow: 'rgba(101,163,13,0.5)' },
+    { name: 'Wine',           hex: '#4c0519', glow: 'rgba(76,5,25,0.5)' },
+    { name: 'Lilac',          hex: '#c084fc', glow: 'rgba(192,132,252,0.5)' },
+    { name: 'DeepTeal',       hex: '#042f2e', glow: 'rgba(4,47,46,0.5)' },
+    { name: 'WarmAmber',      hex: '#d97706', glow: 'rgba(217,119,6,0.5)' },
+    { name: 'Cobalt',         hex: '#1e40af', glow: 'rgba(30,64,175,0.5)' },
+    { name: 'PastelPink',     hex: '#f472b6', glow: 'rgba(244,114,182,0.5)' },
+    { name: 'GrassGreen',     hex: '#22c55e', glow: 'rgba(34,197,94,0.5)' }
   ];
+
+  function getColor(index) {
+    if (index < COLOR_PALETTE.length) return COLOR_PALETTE[index];
+    const hue = Math.round((index * 137.508) % 360);
+    return { name: `Color_${index + 1}`, hex: `hsl(${hue}, 85%, 55%)`, glow: `hsla(${hue}, 85%, 55%, 0.5)` };
+  }
 
   function mulberry32(seed) {
     return function() {
@@ -41,59 +82,88 @@
   }
 
   function getLevelConfig(level) {
-    let colorCount;
+    let totalJars;
     let emptyJars = 2;
     let openSlotsCount = 0;
     let isChallenge = (level % 5 === 0);
     let isIntro = (level === 1);
 
-    // Progression: start with 5 colors (7 jars) and ramp up quickly
+    // Progression: start with 5 colors (7 jars) and ramp up smoothly
     if (level === 1) {
-      colorCount = 5; // 5 colors + 2 empty = 7 jars (all colored jars full 4/4)
+      totalJars = 7;
+      emptyJars = 2;
     } else if (level === 2) {
-      colorCount = 6; // 6 colors + 2 empty = 8 jars
+      totalJars = 8;
+      emptyJars = 2;
     } else if (level === 3) {
-      colorCount = 7; // 7 colors + 2 empty = 9 jars
+      totalJars = 9;
+      emptyJars = 2;
     } else if (level === 4) {
-      colorCount = 8; // 8 colors + 2 empty = 10 jars
+      totalJars = 10;
+      emptyJars = 2;
     } else if (level === 5) {
-      colorCount = 9; // 9 colors + 2 empty = 11 jars (🔥 Challenge Level)
+      totalJars = 11;
+      emptyJars = 2;
     } else if (level <= 7) {
-      colorCount = 10; // 10 colors + 2 empty = 12 jars
+      totalJars = 12;
+      emptyJars = 2;
     } else if (level <= 9) {
-      colorCount = 11; // 11 colors + 2 empty = 13 jars
+      totalJars = 13;
+      emptyJars = 2;
     } else if (level === 10) {
-      colorCount = 12; // 12 colors + 2 empty = 14 jars (🔥 Challenge Level)
+      totalJars = 14;
+      emptyJars = 2;
     } else if (level <= 12) {
-      colorCount = 13; // 13 colors + 2 empty = 15 jars
+      totalJars = 15;
+      emptyJars = 2;
     } else if (level <= 15) {
-      colorCount = 14; // 14 colors + 2 empty = 16 jars
+      totalJars = 16;
+      emptyJars = 2;
     } else if (level <= 18) {
-      colorCount = 15; // 15 colors + 2 empty = 17 jars
+      totalJars = 17;
+      emptyJars = 2;
     } else if (level <= 22) {
-      colorCount = 16; // 16 colors + 2 empty = 18 jars
+      totalJars = 18;
+      emptyJars = 2;
     } else if (level <= 26) {
-      colorCount = 17; // 17 colors + 2 empty = 19 jars
+      totalJars = 19;
+      emptyJars = 2;
     } else if (level <= 30) {
-      colorCount = 18; // 18 colors + 2 empty = 20 jars
+      totalJars = 20;
+      emptyJars = 2;
     } else if (level <= 35) {
-      colorCount = 19; // 19 colors + 3 empty = 22 jars
+      totalJars = 22;
       emptyJars = 3;
     } else if (level <= 40) {
-      colorCount = 20; // 20 colors + 3 empty = 23 jars
+      totalJars = 23;
       emptyJars = 3;
     } else if (level <= 50) {
-      colorCount = 21; // 21 colors + 3 empty = 24 jars
+      totalJars = 24;
       emptyJars = 3;
+    } else if (level <= 300) {
+      // Scale smoothly from 24 jars (level 50) to 31 jars (level 300 - 30+ jars)
+      totalJars = 24 + Math.floor(((level - 50) * 7) / 250);
+      emptyJars = 3;
+    } else if (level <= 400) {
+      // Scale smoothly from 31 jars (level 300) to 40 jars (level 400 - ~40 jars)
+      totalJars = 31 + Math.floor(((level - 300) * 9) / 100);
+      emptyJars = (totalJars >= 36) ? 4 : 3;
+    } else if (level <= 500) {
+      // Scale smoothly from 40 jars (level 400) to 50 jars (level 500 - max 50 jars)
+      totalJars = 40 + Math.floor(((level - 400) * 10) / 100);
+      emptyJars = 4;
     } else {
-      colorCount = 22; // 22 colors + 3 empty = 25 jars
-      emptyJars = 3;
+      // Level > 500: strictly capped at 50 jars max
+      totalJars = 50;
+      emptyJars = 4;
     }
 
+    const colorCount = totalJars - emptyJars;
     const minRequiredMoves = Math.max(14, Math.round(colorCount * 2.7));
 
     return {
       levelNumber: level,
+      totalJars,
       colorCount,
       emptyJars,
       openSlotsCount,
@@ -108,6 +178,12 @@
     const config = getLevelConfig(levelNumber);
     const { capacity, colorCount, emptyJars, openSlotsCount, minRequiredMoves } = config;
     const rng = mulberry32(levelNumber * 7919 + 42);
+
+    // For larger levels (colorCount > 21, levels > 50), random shuffle + exhaustive A* search
+    // is computationally exponential. We use the guaranteed-solvable reverse-scramble generator.
+    if (colorCount > 21) {
+      return generateFallbackLevel(config, rng);
+    }
 
     const maxAttempts = 50;
     let attempts = 0;
@@ -219,7 +295,7 @@
             bottles,
             capacity,
             colorCount,
-            colors: COLOR_PALETTE.slice(0, colorCount),
+            colors: Array.from({ length: colorCount }, (_, i) => getColor(i)),
             minMoves: solution.length,
             config
           };
@@ -230,7 +306,7 @@
           bottles,
           capacity,
           colorCount,
-          colors: COLOR_PALETTE.slice(0, colorCount),
+          colors: Array.from({ length: colorCount }, (_, i) => getColor(i)),
           minMoves: colorCount * 3,
           config
         };
@@ -254,36 +330,38 @@
       } catch (e) {}
     }
 
-    // Standard format with safeEmpty jars
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const pool = [];
-      for (let c = 0; c < colorCount; c++) {
-        for (let unit = 0; unit < capacity; unit++) pool.push(c);
-      }
-      for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-      }
-      const bottles = [];
-      for (let i = 0; i < colorCount; i++) {
-        bottles.push(pool.slice(i * capacity, (i + 1) * capacity));
-      }
-      for (let e = 0; e < safeEmpty; e++) {
-        bottles.push([]);
-      }
+    // For levels with <= 21 colors, try standard random shuffle first
+    if (colorCount <= 21) {
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const pool = [];
+        for (let c = 0; c < colorCount; c++) {
+          for (let unit = 0; unit < capacity; unit++) pool.push(c);
+        }
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(rng() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        const bottles = [];
+        for (let i = 0; i < colorCount; i++) {
+          bottles.push(pool.slice(i * capacity, (i + 1) * capacity));
+        }
+        for (let e = 0; e < safeEmpty; e++) {
+          bottles.push([]);
+        }
 
-      if (solverObj && typeof solverObj.solve === 'function') {
-        const sol = solverObj.solve(bottles, capacity);
-        if (sol && sol.length >= Math.max(12, colorCount * 2)) {
-          return {
-            levelNumber: config.levelNumber,
-            bottles,
-            capacity,
-            colorCount,
-            colors: COLOR_PALETTE.slice(0, colorCount),
-            minMoves: sol.length,
-            config
-          };
+        if (solverObj && typeof solverObj.solve === 'function') {
+          const sol = solverObj.solve(bottles, capacity);
+          if (sol && sol.length >= Math.max(12, colorCount * 2)) {
+            return {
+              levelNumber: config.levelNumber,
+              bottles,
+              capacity,
+              colorCount,
+              colors: Array.from({ length: colorCount }, (_, i) => getColor(i)),
+              minMoves: sol.length,
+              config
+            };
+          }
         }
       }
     }
@@ -325,13 +403,13 @@
       bottles,
       capacity,
       colorCount,
-      colors: COLOR_PALETTE.slice(0, colorCount),
+      colors: Array.from({ length: colorCount }, (_, i) => getColor(i)),
       minMoves: colorCount * 3,
       config
     };
   }
 
-  const levelGenAPI = { generateLevel, getLevelConfig, COLOR_PALETTE };
+  const levelGenAPI = { generateLevel, getLevelConfig, COLOR_PALETTE, getColor };
   Object.assign(exports, levelGenAPI);
   exports.LevelGenerator = levelGenAPI;
 })(typeof exports !== 'undefined' ? exports : (window.LevelGenerator = {}));

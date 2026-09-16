@@ -220,9 +220,37 @@
   }
 
   function getHint(bottles, capacity = CAPACITY) {
-    const solution = solve(bottles, capacity);
+    const stepLimit = (bottles && bottles.length > 25) ? Math.min(3500, bottles.length * 80) : null;
+    const solution = solve(bottles, capacity, stepLimit);
     if (solution && solution.length > 0) return solution[0];
-    return null;
+
+    // Fallback intelligent heuristic hint for large or deep state-space boards
+    const moves = getValidMoves(bottles, capacity);
+    if (!moves || moves.length === 0) return null;
+
+    let bestMove = null;
+    let bestScore = -Infinity;
+
+    for (const m of moves) {
+      let score = 0;
+      if (m.completes) score += 100;
+
+      const nextBottles = applyMove(bottles, m, capacity);
+      const curH = calculateHeuristic(bottles);
+      const nextH = calculateHeuristic(nextBottles);
+      const hDiff = curH - nextH;
+      score += hDiff * 20;
+
+      if (bottles[m.to] && bottles[m.to].length > 0) score += 10;
+      score += (m.amount || 1) * 5;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = m;
+      }
+    }
+
+    return bestMove || moves[0];
   }
 
   const solverAPI = {
