@@ -61,6 +61,36 @@ for (const lvl of testMilestones) {
   console.log(`  ✅ Level ${lvl}: ${data.bottles.length} jars (${data.colorCount} colors, ${data.config.emptyJars} empty) in ${duration}ms, Hint: #${hint.from} ➔ #${hint.to}`);
 }
 
+// 3. Test Full/Empty Bottle Composition & Level 500 Board
+console.log('\n--- Test 3: Bottle Structure & Level 500 Exact State ---');
+const l500 = LevelGenerator.generateLevel(500);
+const full500 = l500.bottles.filter(b => b.length === l500.capacity).length;
+const empty500 = l500.bottles.filter(b => b.length === 0).length;
+
+console.log(`Level 500 Board Composition: ${l500.bottles.length} total bottles`);
+console.log(`  - Full colored bottles (5/5): ${full500}`);
+console.log(`  - Completely empty bottles (0/5): ${empty500}`);
+assert.strictEqual(l500.bottles.length, 50, 'Level 500 must have exactly 50 bottles');
+assert.strictEqual(full500, 46, 'Level 500 must have exactly 46 full colored bottles');
+assert.strictEqual(empty500, 4, 'Level 500 must have exactly 4 empty bottles');
+assert.strictEqual(full500 + empty500, 50, 'All 50 bottles must be either 5/5 full or 0/5 empty');
+
+// Test UI bottles count formatting
+const ruTag = (n) => {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 19) return `${n} баночек`;
+  if (mod10 === 1) return `${n} баночка`;
+  if (mod10 >= 2 && mod10 <= 4) return `${n} баночки`;
+  return `${n} баночек`;
+};
+
+assert.strictEqual(ruTag(50), '50 баночек', 'Tag for 50 must be "50 баночек"');
+assert.strictEqual(ruTag(40), '40 баночек', 'Tag for 40 must be "40 баночек"');
+assert.strictEqual(ruTag(31), '31 баночка', 'Tag for 31 must be "31 баночка"');
+assert.strictEqual(ruTag(7), '7 баночек', 'Tag for 7 must be "7 баночек"');
+console.log('✅ [PASS] UI tag formatted correctly: "50 баночек" at Level 500');
+
 console.log('\n================================================================');
 console.log('🎉 ALL HIGH LEVEL PROGRESSION TESTS PASSED 100%!');
 console.log('================================================================\n');

@@ -205,6 +205,14 @@ async function initColorSortApp() {
       youTag: "(Вы)",
       maxLevelLabel: (lvl) => `Макс. уровень: ${lvl}`,
       levelPrefix: "Уровень",
+      bottlesCountTag: (n) => {
+        const mod10 = n % 10;
+        const mod100 = n % 100;
+        if (mod100 >= 11 && mod100 <= 19) return `${n} баночек`;
+        if (mod10 === 1) return `${n} баночка`;
+        if (mod10 >= 2 && mod10 <= 4) return `${n} баночки`;
+        return `${n} баночек`;
+      },
       winTitle: (lvl) => `Уровень ${lvl} пройден! 🎉`,
       winSubtext: (lvl) => `Все цвета успешно собраны! Переходим к уровню ${lvl}...`,
       nextLevelBtn: "Следующий уровень 🚀",
@@ -416,6 +424,14 @@ async function initColorSortApp() {
       youTag: "(Ви)",
       maxLevelLabel: (lvl) => `Макс. рівень: ${lvl}`,
       levelPrefix: "Рівень",
+      bottlesCountTag: (n) => {
+        const mod10 = n % 10;
+        const mod100 = n % 100;
+        if (mod100 >= 11 && mod100 <= 19) return `${n} баночок`;
+        if (mod10 === 1) return `${n} баночка`;
+        if (mod10 >= 2 && mod10 <= 4) return `${n} баночки`;
+        return `${n} баночок`;
+      },
       winTitle: (lvl) => `Рівень ${lvl} пройдено! 🎉`,
       winSubtext: (lvl) => `Всі кольори успішно зібрані! Переходимо до рівня ${lvl}...`,
       nextLevelBtn: "Наступний рівень 🚀",
@@ -613,6 +629,7 @@ async function initColorSortApp() {
       youTag: "(You)",
       maxLevelLabel: (lvl) => `Max Level: ${lvl}`,
       levelPrefix: "Level",
+      bottlesCountTag: (n) => `${n} bottles`,
       winTitle: (lvl) => `Level ${lvl} Completed! 🎉`,
       winSubtext: (lvl) => `All colors sorted! Advancing to Level ${lvl}...`,
       nextLevelBtn: "Next Level 🚀",
@@ -810,6 +827,7 @@ async function initColorSortApp() {
       youTag: "(Du)",
       maxLevelLabel: (lvl) => `Max. Stufe: ${lvl}`,
       levelPrefix: "Stufe",
+      bottlesCountTag: (n) => `${n} Flaschen`,
       winTitle: (lvl) => `Stufe ${lvl} geschafft! 🎉`,
       winSubtext: (lvl) => `Alle Farben sortiert! Weiter zu Stufe ${lvl}...`,
       nextLevelBtn: "Nächste Stufe 🚀",
@@ -1007,6 +1025,7 @@ async function initColorSortApp() {
       youTag: "(Jūs)",
       maxLevelLabel: (lvl) => `Maks. lygis: ${lvl}`,
       levelPrefix: "Lygis",
+      bottlesCountTag: (n) => `${n} buteliukai`,
       winTitle: (lvl) => `Lygis ${lvl} įveiktas! 🎉`,
       winSubtext: (lvl) => `Visos spalvos surūšiuotos! Pereinama į lygį ${lvl}...`,
       nextLevelBtn: "Kitas lygis 🚀",
@@ -2747,6 +2766,20 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (levelBadgeLabel) setIfDiff(levelBadgeLabel, t('levelLabel'));
     setIfDiff(levelDisplay, Number(currentUser.maxLevel || 0));
     setIfDiff(profileCardLevel, t('levelDisplayVal', Number(currentUser.maxLevel || 0)));
+
+    const levelBottlesCountDisplay = document.getElementById('levelBottlesCountDisplay');
+    if (levelBottlesCountDisplay) {
+      const bottleCount = (currentLevelData && currentLevelData.bottles)
+        ? currentLevelData.bottles.length
+        : ((engine && engine.bottles && engine.bottles.length > 0)
+            ? engine.bottles.length
+            : (LG && LG.getLevelConfig ? LG.getLevelConfig(currentUser.currentLevel || 1).totalJars : 7));
+      if (bottleCount > 0 && typeof t === 'function') {
+        setIfDiff(levelBottlesCountDisplay, `(${t('bottlesCountTag', bottleCount)})`);
+      } else {
+        setIfDiff(levelBottlesCountDisplay, '');
+      }
+    }
     setIfDiff(coinsDisplay, currentUser.coins || 0);
     setIfDiff(hintsCountDisplay, currentUser.hints || 0);
     setIfDiff(undosCountDisplay, currentUser.undos || 0);

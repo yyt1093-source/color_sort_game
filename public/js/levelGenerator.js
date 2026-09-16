@@ -179,10 +179,57 @@
     const { capacity, colorCount, emptyJars, openSlotsCount, minRequiredMoves } = config;
     const rng = mulberry32(levelNumber * 7919 + 42);
 
-    // For larger levels (colorCount > 21, levels > 50), random shuffle + exhaustive A* search
-    // is computationally exponential. We use the guaranteed-solvable reverse-scramble generator.
+    // For larger levels (colorCount > 21, levels > 50), generate instantly with
+    // anti-clustering: all colorCount bottles full (5/5) and exact emptyJars (0/5)
     if (colorCount > 21) {
-      return generateFallbackLevel(config, rng);
+      const pool = [];
+      for (let c = 0; c < colorCount; c++) {
+        for (let unit = 0; unit < capacity; unit++) pool.push(c);
+      }
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      for (let pass = 0; pass < 50; pass++) {
+        let fixed = false;
+        for (let i = 0; i < pool.length - 1; i++) {
+          if (pool[i] === pool[i + 1]) {
+            for (let k = 0; k < pool.length; k++) {
+              if (k === i || k === i + 1) continue;
+              const prevK = k > 0 ? pool[k - 1] : -1;
+              const nextK = k < pool.length - 1 ? pool[k + 1] : -1;
+              const prevI = i > 0 ? pool[i - 1] : -1;
+              const nextI = i + 2 < pool.length ? pool[i + 2] : -1;
+              if (pool[k] !== pool[i] && pool[k] !== prevI && pool[k] !== nextI && pool[i] !== prevK && pool[i] !== nextK) {
+                const tmp = pool[i + 1];
+                pool[i + 1] = pool[k];
+                pool[k] = tmp;
+                fixed = true;
+                break;
+              }
+            }
+          }
+        }
+        if (!fixed) break;
+      }
+
+      const bottles = [];
+      for (let i = 0; i < colorCount; i++) {
+        bottles.push(pool.slice(i * capacity, (i + 1) * capacity));
+      }
+      for (let e = 0; e < emptyJars; e++) {
+        bottles.push([]);
+      }
+
+      return {
+        levelNumber,
+        bottles,
+        capacity,
+        colorCount,
+        colors: Array.from({ length: colorCount }, (_, i) => getColor(i)),
+        minMoves: Math.round(colorCount * 2.7),
+        config
+      };
     }
 
     const maxAttempts = 50;
