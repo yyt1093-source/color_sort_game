@@ -2767,19 +2767,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     setIfDiff(levelDisplay, Number(currentUser.maxLevel || 0));
     setIfDiff(profileCardLevel, t('levelDisplayVal', Number(currentUser.maxLevel || 0)));
 
-    const levelBottlesCountDisplay = document.getElementById('levelBottlesCountDisplay');
-    if (levelBottlesCountDisplay) {
-      const bottleCount = (currentLevelData && currentLevelData.bottles)
-        ? currentLevelData.bottles.length
-        : ((engine && engine.bottles && engine.bottles.length > 0)
-            ? engine.bottles.length
-            : (LG && LG.getLevelConfig ? LG.getLevelConfig(currentUser.currentLevel || 1).totalJars : 7));
-      if (bottleCount > 0 && typeof t === 'function') {
-        setIfDiff(levelBottlesCountDisplay, `(${t('bottlesCountTag', bottleCount)})`);
-      } else {
-        setIfDiff(levelBottlesCountDisplay, '');
-      }
-    }
     setIfDiff(coinsDisplay, currentUser.coins || 0);
     setIfDiff(hintsCountDisplay, currentUser.hints || 0);
     setIfDiff(undosCountDisplay, currentUser.undos || 0);
