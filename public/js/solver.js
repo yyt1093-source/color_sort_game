@@ -219,7 +219,56 @@
     return null;
   }
 
-  function getHint(bottles, capacity = CAPACITY) {
+  function getHint(bottles, capacity = CAPACITY, revealed = null) {
+    // If revealed matrix is passed, strictly filter for moves that reveal a hidden cell ('?')
+    if (revealed && Array.isArray(revealed)) {
+      const candidates = [];
+      const n = bottles.length;
+
+      for (let from = 0; from < n; from++) {
+        const bFrom = bottles[from];
+        if (!bFrom || bFrom.length === 0 || bFrom.vanished || isBottleCompleted(bFrom, capacity)) continue;
+
+        const topColor = bFrom[bFrom.length - 1];
+        let count = 0;
+        for (let i = bFrom.length - 1; i >= 0; i--) {
+          const isKnown = !revealed[from] || revealed[from][i] !== false;
+          if (bFrom[i] === topColor && isKnown) count++;
+          else break;
+        }
+
+        for (let to = 0; to < n; to++) {
+          if (from === to) continue;
+          const bTo = bottles[to];
+          if (!bTo || bTo.vanished || bTo.length >= capacity || isBottleCompleted(bTo, capacity)) continue;
+
+          if (bTo.length > 0 && bTo[bTo.length - 1] !== topColor) continue;
+
+          const amount = Math.min(count, capacity - bTo.length);
+          if (amount <= 0) continue;
+
+          const newTopIdx = bFrom.length - 1 - amount;
+          if (newTopIdx >= 0 && revealed[from] && revealed[from][newTopIdx] === false) {
+            const completes = (bTo.length + amount === capacity) && (bTo.length === 0 || bTo.every(c => c === topColor));
+            const toNonEmpty = bTo.length > 0;
+            const hiddenCountInFrom = revealed[from].filter(x => x === false).length;
+
+            let score = 0;
+            if (completes) score += 1000;
+            if (toNonEmpty) score += 100;
+            score += hiddenCountInFrom * 20;
+            score += amount * 5;
+
+            candidates.push({ from, to, amount, color: topColor, completes, score });
+          }
+        }
+      }
+
+      if (candidates.length === 0) return null;
+      candidates.sort((a, b) => b.score - a.score);
+      return candidates[0];
+    }
+
     const stepLimit = (bottles && bottles.length > 25) ? Math.min(3500, bottles.length * 80) : null;
     const solution = solve(bottles, capacity, stepLimit);
     if (solution && solution.length > 0) return solution[0];
