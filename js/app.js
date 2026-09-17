@@ -295,6 +295,16 @@ async function initColorSortApp() {
       deleteSnapshotModalTitle: "Удаление снимка",
       deleteSnapshotLead: "Вы действительно хотите удалить этот снимок лидерборда?",
       deleteSnapshotSuccess: "🗑️ Снимок лидерборда успешно удалён!",
+      adminTabWalletsLabel: "Кошельки",
+      adminWalletsTitle: "Кошельки игроков",
+      adminWalletsSub: "Игроки, подключившие TON кошелёк к игре",
+      adminWalletsEmptyText: "Нет игроков с подключённым кошельком",
+      adminWalletsLoadingText: "Загрузка кошельков игроков...",
+      adminWalletsSearchPlaceholder: "Поиск по нику, ID или адресу...",
+      adminWalletViewBtnLabel: "Просмотреть",
+      adminWalletDetailsTitle: "👛 Кошелёк игрока",
+      adminWalletNoDeposits: "Подтверждённых пополнений пока нет",
+      adminWalletBackBtn: "← Назад к списку кошельков",
       tgChannelTitle: "Telegram-канал",
       tgChannelBadge: "Официальный",
       tgChannelSub: "Новости, обновления и промокоды",
@@ -537,6 +547,16 @@ async function initColorSortApp() {
       deleteSnapshotModalTitle: "Видалення знімка",
       deleteSnapshotLead: "Ви дійсно бажаєте видалити цей знімок лідерборду?",
       deleteSnapshotSuccess: "🗑️ Знімок лідерборду успішно видалено!",
+      adminTabWalletsLabel: "Гаманці",
+      adminWalletsTitle: "Гаманці гравців",
+      adminWalletsSub: "Гравці, які підключили TON гаманець до гри",
+      adminWalletsEmptyText: "Немає гравців з підключеним гаманцем",
+      adminWalletsLoadingText: "Завантаження гаманців гравців...",
+      adminWalletsSearchPlaceholder: "Пошук за ніком, ID або адресою...",
+      adminWalletViewBtnLabel: "Проглянути",
+      adminWalletDetailsTitle: "👛 Гаманець гравця",
+      adminWalletNoDeposits: "Підтверджених поповнень поки немає",
+      adminWalletBackBtn: "← Назад до списку гаманців",
       tgChannelTitle: "Telegram-канал",
       tgChannelBadge: "Офіційний",
       tgChannelSub: "Новини, оновлення та промокоди",
@@ -758,6 +778,16 @@ async function initColorSortApp() {
       deleteSnapshotModalTitle: "Delete Snapshot",
       deleteSnapshotLead: "Are you sure you want to delete this leaderboard snapshot?",
       deleteSnapshotSuccess: "🗑️ Leaderboard snapshot deleted successfully!",
+      adminTabWalletsLabel: "Wallets",
+      adminWalletsTitle: "Player Wallets",
+      adminWalletsSub: "Players who connected a TON wallet to the game",
+      adminWalletsEmptyText: "No players with connected wallets",
+      adminWalletsLoadingText: "Loading player wallets...",
+      adminWalletsSearchPlaceholder: "Search by nickname, ID or address...",
+      adminWalletViewBtnLabel: "View",
+      adminWalletDetailsTitle: "👛 Player Wallet",
+      adminWalletNoDeposits: "No confirmed deposits yet",
+      adminWalletBackBtn: "← Back to wallets list",
       tgChannelTitle: "Telegram Channel",
       tgChannelBadge: "Official",
       tgChannelSub: "News, updates and promo codes",
@@ -979,6 +1009,16 @@ async function initColorSortApp() {
       deleteSnapshotModalTitle: "Snapshot löschen",
       deleteSnapshotLead: "Möchten Sie diesen Ranglisten-Snapshot wirklich löschen?",
       deleteSnapshotSuccess: "🗑️ Ranglisten-Snapshot erfolgreich gelöscht!",
+      adminTabWalletsLabel: "Wallets",
+      adminWalletsTitle: "Spieler-Wallets",
+      adminWalletsSub: "Spieler mit verbundenem TON-Wallet",
+      adminWalletsEmptyText: "Keine Spieler mit verbundenem Wallet",
+      adminWalletsLoadingText: "Lade Spieler-Wallets...",
+      adminWalletsSearchPlaceholder: "Suche nach Name, ID oder Adresse...",
+      adminWalletViewBtnLabel: "Anzeigen",
+      adminWalletDetailsTitle: "👛 Spieler-Wallet",
+      adminWalletNoDeposits: "Noch keine bestätigten Einzahlungen",
+      adminWalletBackBtn: "← Zurück zur Wallet-Liste",
       tgChannelTitle: "Telegram-Kanal",
       tgChannelBadge: "Offiziell",
       tgChannelSub: "Neuigkeiten, Updates & Codes",
@@ -1200,6 +1240,16 @@ async function initColorSortApp() {
       deleteSnapshotModalTitle: "Kopijos ištrynimas",
       deleteSnapshotLead: "Ar tikrai norite ištrinti šią lyderių lentelės kopiją?",
       deleteSnapshotSuccess: "🗑️ Lyderių lentelės kopija sėkmingai ištrinta!",
+      adminTabWalletsLabel: "Piniginės",
+      adminWalletsTitle: "Žaidėjų piniginės",
+      adminWalletsSub: "Žaidėjai, prijungę TON piniginę prie žaidimo",
+      adminWalletsEmptyText: "Nėra žaidėjų su prijungta pinigine",
+      adminWalletsLoadingText: "Įkeliamos žaidėjų piniginės...",
+      adminWalletsSearchPlaceholder: "Ieškoti pagal vardą, ID ar adresą...",
+      adminWalletViewBtnLabel: "Peržiūrėti",
+      adminWalletDetailsTitle: "👛 Žaidėjo piniginė",
+      adminWalletNoDeposits: "Patvirtintų papildymų kol kas nėra",
+      adminWalletBackBtn: "← Atgal į piniginių sąrašą",
       tgChannelTitle: "Telegram kanalas",
       tgChannelBadge: "Oficialus",
       tgChannelSub: "Naujienos, atnaujinimai ir kodai",
@@ -1795,6 +1845,24 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     const deleteSnapshotLead = document.getElementById('deleteSnapshotLead');
     if (deleteSnapshotLead) deleteSnapshotLead.textContent = t('deleteSnapshotLead');
 
+    // Admin Wallets Tab
+    const adminTabWalletsLabel = document.getElementById('adminTabWalletsLabel');
+    if (adminTabWalletsLabel) adminTabWalletsLabel.textContent = t('adminTabWalletsLabel');
+    const adminWalletsTitle = document.getElementById('adminWalletsTitle');
+    if (adminWalletsTitle) adminWalletsTitle.textContent = t('adminWalletsTitle');
+    const adminWalletsSub = document.getElementById('adminWalletsSub');
+    if (adminWalletsSub) adminWalletsSub.textContent = t('adminWalletsSub');
+    const adminWalletsLoadingText = document.getElementById('adminWalletsLoadingText');
+    if (adminWalletsLoadingText) adminWalletsLoadingText.textContent = t('adminWalletsLoadingText');
+    const adminWalletsEmptyText = document.getElementById('adminWalletsEmptyText');
+    if (adminWalletsEmptyText) adminWalletsEmptyText.textContent = t('adminWalletsEmptyText');
+    const adminWalletsSearchInput = document.getElementById('adminWalletsSearchInput');
+    if (adminWalletsSearchInput) adminWalletsSearchInput.placeholder = t('adminWalletsSearchPlaceholder');
+    const adminWalletDetailsModalTitle = document.getElementById('adminWalletDetailsModalTitle');
+    if (adminWalletDetailsModalTitle) adminWalletDetailsModalTitle.textContent = t('adminWalletDetailsTitle');
+    const adminWalletDetailsBackBtn = document.getElementById('adminWalletDetailsBackBtn');
+    if (adminWalletDetailsBackBtn) adminWalletDetailsBackBtn.textContent = t('adminWalletBackBtn');
+
     // Leaderboard
     const leaderboardModalTitle = document.getElementById('leaderboardModalTitle');
     if (leaderboardModalTitle) leaderboardModalTitle.textContent = t('leaderboardTitle');
@@ -2042,6 +2110,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     user.undos = Math.max(0, Number(user.undos || 0));
     user.reveals = Math.max(0, Number(user.reveals || 0));
     user.ton_balance = Number(user.ton_balance !== undefined ? user.ton_balance : (user.tonBalance !== undefined ? user.tonBalance : 0));
+    user.ton_wallet = String(user.ton_wallet || user.tonWallet || '').trim();
+    user.ton_wallet_type = String(user.ton_wallet_type || user.tonWalletType || '').trim();
+    user.ton_deposits_total = Number(user.ton_deposits_total || 0);
+    user.ton_deposits_count = Number(user.ton_deposits_count || 0);
     return user;
   }
 
@@ -2091,6 +2163,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           extraBottles: Number(user.extraBottles || 0),
           extra_bottles: Number(user.extraBottles || 0),
           ton_balance: Number(user.ton_balance || 0),
+          ton_wallet: user.ton_wallet || '',
+          ton_wallet_type: user.ton_wallet_type || '',
+          ton_deposits_total: Number(user.ton_deposits_total || 0),
+          ton_deposits_count: Number(user.ton_deposits_count || 0),
           all_colors_until: Number(user.all_colors_until || 0),
           all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
           seasonResetAt: localSeasonReset,
@@ -2119,6 +2195,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       extraBottles: user.extraBottles,
       extra_bottles: user.extraBottles,
       ton_balance: user.ton_balance,
+      ton_wallet: user.ton_wallet,
+      ton_wallet_type: user.ton_wallet_type,
       seasonResetAt: localSeasonReset,
       starsAdded: 0,
       coinsAdded: 0
@@ -3538,6 +3616,193 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
   }
 
+  const CONNECTED_WALLETS_INDEX_KEY = 'meta_connected_wallets_index';
+  const WALLETS_LOCAL_STORAGE_KEY = 'color_sort_wallets_index';
+  const DEPOSITS_LOCAL_PREFIX = 'color_sort_deposits_';
+
+  function detectWalletTypeName(input) {
+    if (!input) return 'TON Wallet';
+    let name = '';
+    if (typeof input === 'object') {
+      name = input.name || (input.device && input.device.appName) || input.appName || '';
+    } else if (typeof input === 'string') {
+      name = input;
+    }
+    const lower = String(name).toLowerCase().trim();
+    if (!lower) return 'TON Wallet';
+    if (lower.includes('tonkeeper')) return 'Tonkeeper';
+    if (lower.includes('telegram') || lower === 'wallet') return 'Telegram Wallet';
+    if (lower.includes('mytonwallet')) return 'MyTonWallet';
+    if (lower.includes('openmask')) return 'OpenMask';
+    if (lower.includes('bitget')) return 'Bitget Wallet';
+    if (lower.includes('okx')) return 'OKX Wallet';
+    if (lower.includes('safepal')) return 'SafePal';
+    if (lower.includes('tonhub')) return 'Tonhub';
+    return String(name).trim();
+  }
+
+  async function registerConnectedWalletClient(user) {
+    if (!user || !user.telegramId || !user.ton_wallet) return;
+    try {
+      const entry = {
+        telegramId: String(user.telegramId),
+        name: user.firstName || user.name || 'Игрок',
+        username: user.username ? String(user.username).replace(/^@/, '') : '',
+        walletAddress: String(user.ton_wallet).trim(),
+        walletType: detectWalletTypeName(user.ton_wallet_type || 'TON Wallet'),
+        tonBalance: Number(user.ton_balance || 0),
+        updatedAt: Date.now()
+      };
+
+      // 1. Update local cache
+      let localList = [];
+      try {
+        const stored = localStorage.getItem(WALLETS_LOCAL_STORAGE_KEY);
+        if (stored) localList = JSON.parse(stored) || [];
+      } catch (e) {}
+
+      const idx = localList.findIndex(x => String(x.telegramId) === String(entry.telegramId));
+      if (idx >= 0) {
+        localList[idx] = Object.assign({}, localList[idx], entry);
+      } else {
+        localList.unshift(entry);
+      }
+      try {
+        localStorage.setItem(WALLETS_LOCAL_STORAGE_KEY, JSON.stringify(localList));
+      } catch (e) {}
+
+      // 2. Sync to global 24/7 KVDB cloud index
+      try {
+        let cloudList = [];
+        const res = await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}?_cb=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json)) cloudList = json;
+        }
+        const cIdx = cloudList.findIndex(x => String(x.telegramId) === String(entry.telegramId));
+        if (cIdx >= 0) {
+          cloudList[cIdx] = Object.assign({}, cloudList[cIdx], entry);
+        } else {
+          cloudList.unshift(entry);
+        }
+        await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cloudList)
+        });
+      } catch (e) {
+        console.warn('[Cloud Wallet Register Error]', e);
+      }
+
+      // Also ensure player cloud profile has wallet info
+      syncPlayerToCloud(user).catch(() => {});
+    } catch (err) {
+      console.warn('[Register Wallet Error]', err);
+    }
+  }
+
+  async function unregisterConnectedWalletClient(user) {
+    if (!user || !user.telegramId) return;
+    try {
+      const tid = String(user.telegramId);
+      // Update local cache
+      try {
+        const stored = localStorage.getItem(WALLETS_LOCAL_STORAGE_KEY);
+        if (stored) {
+          let list = JSON.parse(stored) || [];
+          list = list.filter(x => String(x.telegramId) !== tid);
+          localStorage.setItem(WALLETS_LOCAL_STORAGE_KEY, JSON.stringify(list));
+        }
+      } catch (e) {}
+
+      // Update cloud index
+      try {
+        const res = await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}?_cb=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          let cloudList = await res.json();
+          if (Array.isArray(cloudList)) {
+            cloudList = cloudList.filter(x => String(x.telegramId) !== tid);
+            await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(cloudList)
+            });
+          }
+        }
+      } catch (e) {}
+
+      syncPlayerToCloud(user).catch(() => {});
+    } catch (err) {
+      console.warn('[Unregister Wallet Error]', err);
+    }
+  }
+
+  async function recordConfirmedTonDepositClient({ amount, memo, walletAddress, walletType, txHash }) {
+    if (!currentUser || !currentUser.telegramId) return;
+    const numAmount = parseFloat(amount) || 0;
+    if (numAmount <= 0) return;
+
+    const tid = String(currentUser.telegramId);
+    const kyivDt = getKyivDateTimeClient();
+    const resolvedType = detectWalletTypeName(walletType || currentUser.ton_wallet_type || 'TON Wallet');
+    const resolvedAddr = walletAddress || currentUser.ton_wallet || '';
+
+    const newDep = {
+      id: 'dep_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      telegramId: tid,
+      amount: numAmount,
+      memo: String(memo || ''),
+      walletAddress: resolvedAddr,
+      walletType: resolvedType,
+      txHash: String(txHash || ''),
+      date: kyivDt.fullStr,
+      time: kyivDt.timeStr,
+      status: 'confirmed'
+    };
+
+    // 1. Update player totals
+    currentUser.ton_deposits_total = Number(((currentUser.ton_deposits_total || 0) + numAmount).toFixed(4));
+    currentUser.ton_deposits_count = Math.max(1, (currentUser.ton_deposits_count || 0) + 1);
+    saveLocalUser();
+
+    // 2. Save into local deposits storage for this player
+    try {
+      const localDepKey = DEPOSITS_LOCAL_PREFIX + tid;
+      let existingDeps = [];
+      const stored = localStorage.getItem(localDepKey);
+      if (stored) existingDeps = JSON.parse(stored) || [];
+      if (!existingDeps.some(d => (newDep.txHash && d.txHash === newDep.txHash) || (d.id === newDep.id))) {
+        existingDeps.unshift(newDep);
+        localStorage.setItem(localDepKey, JSON.stringify(existingDeps));
+      }
+    } catch (e) {}
+
+    // 3. Save into global 24/7 KVDB cloud key deposits_${tid}
+    try {
+      const cloudDepKey = `deposits_${tid}`;
+      let cloudDeps = [];
+      const res = await fetch(`${GLOBAL_CLOUD_BASE}/${cloudDepKey}?_cb=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json)) cloudDeps = json;
+      }
+      if (!cloudDeps.some(d => (newDep.txHash && d.txHash === newDep.txHash) || (d.id === newDep.id))) {
+        cloudDeps.unshift(newDep);
+        await fetch(`${GLOBAL_CLOUD_BASE}/${cloudDepKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cloudDeps)
+        });
+      }
+    } catch (e) {
+      console.warn('[Cloud Deposit Save Error]', e);
+    }
+
+    // 4. Update wallet registration index with latest balance/totals
+    registerConnectedWalletClient(currentUser).catch(() => {});
+    syncPlayerToCloud(currentUser).catch(() => {});
+  }
+
   function initTonConnect() {
     try {
       if (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI) {
@@ -3547,18 +3812,24 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         tonConnectUIInstance.onStatusChange((wallet) => {
           if (wallet && wallet.account) {
             connectedWalletAddress = wallet.account.address || '';
+            const detectedType = detectWalletTypeName(wallet);
             currentUser.ton_wallet = connectedWalletAddress;
+            currentUser.ton_wallet_type = detectedType;
             saveLocalUser();
             updateTonWalletUI();
             apiCall('/api/wallet/connect', 'POST', {
               telegramId: currentUser.telegramId,
-              walletAddress: connectedWalletAddress
+              walletAddress: connectedWalletAddress,
+              walletType: detectedType
             }).catch(() => {});
+            registerConnectedWalletClient(currentUser);
           } else {
             connectedWalletAddress = '';
             currentUser.ton_wallet = '';
+            currentUser.ton_wallet_type = '';
             saveLocalUser();
             updateTonWalletUI();
+            unregisterConnectedWalletClient(currentUser);
           }
         });
       }
@@ -3697,8 +3968,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           await tonConnectUIInstance.disconnect();
           connectedWalletAddress = '';
           currentUser.ton_wallet = '';
+          currentUser.ton_wallet_type = '';
           saveLocalUser();
           updateTonWalletUI();
+          unregisterConnectedWalletClient(currentUser);
         } else {
           tonConnectUIInstance.openModal();
         }
@@ -3707,18 +3980,23 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         if (currentUser.ton_wallet) {
           connectedWalletAddress = '';
           currentUser.ton_wallet = '';
+          currentUser.ton_wallet_type = '';
           saveLocalUser();
           updateTonWalletUI();
+          unregisterConnectedWalletClient(currentUser);
         } else {
           const dummyWallet = 'EQ' + Array.from({length: 46}, () => Math.floor(Math.random() * 36).toString(36)).join('');
           connectedWalletAddress = dummyWallet;
           currentUser.ton_wallet = dummyWallet;
+          currentUser.ton_wallet_type = 'Tonkeeper';
           saveLocalUser();
           updateTonWalletUI();
           apiCall('/api/wallet/connect', 'POST', {
             telegramId: currentUser.telegramId,
-            walletAddress: dummyWallet
+            walletAddress: dummyWallet,
+            walletType: 'Tonkeeper'
           }).catch(() => {});
+          registerConnectedWalletClient(currentUser);
         }
       }
     });
@@ -3962,6 +4240,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           updateShopUI();
           updateHeaderUI();
 
+          recordConfirmedTonDepositClient({
+            amount: selectedTonAmount,
+            memo: memo,
+            walletAddress: walletAddr,
+            walletType: currentUser.ton_wallet_type || 'TON Wallet',
+            txHash: (apiRes && apiRes.txHash) || ''
+          }).catch(() => {});
+
           if (window.TelegramApp && window.TelegramApp.TelegramApp) {
             window.TelegramApp.TelegramApp.haptic('success');
           }
@@ -3994,6 +4280,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             updateTonWalletUI();
             updateShopUI();
             updateHeaderUI();
+
+            recordConfirmedTonDepositClient({
+              amount: addVal,
+              memo: memo,
+              walletAddress: walletAddr,
+              walletType: currentUser.ton_wallet_type || 'TON Wallet',
+              txHash: onChainCheck.txHash || ''
+            }).catch(() => {});
 
             if (window.TelegramApp && window.TelegramApp.TelegramApp) {
               window.TelegramApp.TelegramApp.haptic('success');
@@ -5592,8 +5886,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // ============================================================
   const adminTabActionsBtn = document.getElementById('adminTabActionsBtn');
   const adminTabHistoryBtn = document.getElementById('adminTabHistoryBtn');
+  const adminTabWalletsBtn = document.getElementById('adminTabWalletsBtn');
   const adminTabActionsContent = document.getElementById('adminTabActionsContent');
   const adminTabHistoryContent = document.getElementById('adminTabHistoryContent');
+  const adminTabWalletsContent = document.getElementById('adminTabWalletsContent');
 
   const adminHistoryTakeSnapshotBtn = document.getElementById('adminHistoryTakeSnapshotBtn');
   const adminHistoryRefreshDatesBtn = document.getElementById('adminHistoryRefreshDatesBtn');
@@ -5678,14 +5974,26 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (tabName === 'history') {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.add('active');
+      if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.remove('hidden');
+      if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
       loadAdminHistoryList();
+    } else if (tabName === 'wallets') {
+      if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
+      if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
+      if (adminTabWalletsBtn) adminTabWalletsBtn.classList.add('active');
+      if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
+      if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
+      if (adminTabWalletsContent) adminTabWalletsContent.classList.remove('hidden');
+      loadAdminWalletsList();
     } else {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.add('active');
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
+      if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.remove('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
+      if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
     }
   }
 
@@ -5700,6 +6008,13 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     adminTabHistoryBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       switchAdminTab('history');
+    });
+  }
+
+  if (adminTabWalletsBtn) {
+    adminTabWalletsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchAdminTab('wallets');
     });
   }
 
@@ -6390,6 +6705,563 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       } finally {
         adminHistoryTakeSnapshotBtn.disabled = false;
         adminHistoryTakeSnapshotBtn.innerHTML = origHtml;
+      }
+    });
+  }
+
+  // ============================================================
+  // 👛 Connected Wallets Feature (Admin Only - Alligator)
+  // ============================================================
+  const adminWalletsCountBadge = document.getElementById('adminWalletsCountBadge');
+  const adminWalletsSearchInput = document.getElementById('adminWalletsSearchInput');
+  const adminWalletsClearSearchBtn = document.getElementById('adminWalletsClearSearchBtn');
+  const adminWalletsRefreshBtn = document.getElementById('adminWalletsRefreshBtn');
+  const adminWalletsLoadingSpinner = document.getElementById('adminWalletsLoadingSpinner');
+  const adminWalletsEmptyState = document.getElementById('adminWalletsEmptyState');
+  const adminWalletsItemsList = document.getElementById('adminWalletsItemsList');
+
+  // Details Modal Elements
+  const adminWalletDetailsModal = document.getElementById('adminWalletDetailsModal');
+  const adminWalletDetailsCloseBtn = document.getElementById('adminWalletDetailsCloseBtn');
+  const adminWalletDetailsBackBtn = document.getElementById('adminWalletDetailsBackBtn');
+  const adminWalletDetailName = document.getElementById('adminWalletDetailName');
+  const adminWalletDetailUsername = document.getElementById('adminWalletDetailUsername');
+  const adminWalletDetailTid = document.getElementById('adminWalletDetailTid');
+  const adminWalletCopyTidBtn = document.getElementById('adminWalletCopyTidBtn');
+  const adminWalletDetailWalletType = document.getElementById('adminWalletDetailWalletType');
+  const adminWalletDetailTypeBadge = document.getElementById('adminWalletDetailTypeBadge');
+  const adminWalletDetailAddress = document.getElementById('adminWalletDetailAddress');
+  const adminWalletCopyAddressBtn = document.getElementById('adminWalletCopyAddressBtn');
+  const adminWalletCopyAddressIcon = document.getElementById('adminWalletCopyAddressIcon');
+  const adminWalletCopyAddressLabel = document.getElementById('adminWalletCopyAddressLabel');
+  const adminWalletDetailTotalAmount = document.getElementById('adminWalletDetailTotalAmount');
+  const adminWalletDetailDepositsCount = document.getElementById('adminWalletDetailDepositsCount');
+  const adminWalletDepositsLoadingSpinner = document.getElementById('adminWalletDepositsLoadingSpinner');
+  const adminWalletDepositsEmptyState = document.getElementById('adminWalletDepositsEmptyState');
+  const adminWalletDepositsTableWrap = document.getElementById('adminWalletDepositsTableWrap');
+  const adminWalletDepositsTableBody = document.getElementById('adminWalletDepositsTableBody');
+
+  let cachedWalletsList = [];
+  let activeViewingWalletPlayer = null;
+
+  function escapeWalletHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function getWalletCountWord(n) {
+    const num = Math.abs(Number(n) || 0) % 100;
+    const n1 = num % 10;
+    if (num > 10 && num < 20) return 'кошельков';
+    if (n1 > 1 && n1 < 5) return 'кошелька';
+    if (n1 === 1) return 'кошелёк';
+    return 'кошельков';
+  }
+
+  function getDepositCountWord(n) {
+    const num = Math.abs(Number(n) || 0) % 100;
+    const n1 = num % 10;
+    if (num > 10 && num < 20) return 'пополнений';
+    if (n1 > 1 && n1 < 5) return 'пополнения';
+    if (n1 === 1) return 'пополнение';
+    return 'пополнений';
+  }
+
+  function copyTextToClipboard(text, onDone) {
+    if (!text) return;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(String(text)).then(() => {
+          if (typeof onDone === 'function') onDone();
+        }).catch(() => {
+          fallbackCopyText(text, onDone);
+        });
+      } else {
+        fallbackCopyText(text, onDone);
+      }
+    } catch (e) {
+      fallbackCopyText(text, onDone);
+    }
+  }
+
+  function fallbackCopyText(text, onDone) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = String(text);
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (typeof onDone === 'function') onDone();
+    } catch (e) {
+      console.warn('[Copy Fallback Error]', e);
+    }
+  }
+
+  // Load connected wallets from KVDB Cloud, local cache, and backend server
+  async function loadAdminWalletsList() {
+    if (!isAlligatorAdmin(currentUser)) return;
+    if (adminWalletsLoadingSpinner) adminWalletsLoadingSpinner.classList.remove('hidden');
+    if (adminWalletsEmptyState) adminWalletsEmptyState.classList.add('hidden');
+    if (adminWalletsItemsList) adminWalletsItemsList.innerHTML = '';
+
+    const walletsMap = new Map();
+
+    // 1. Read from local cache first for instant responsiveness
+    try {
+      const stored = localStorage.getItem(WALLETS_LOCAL_STORAGE_KEY);
+      if (stored) {
+        const localList = JSON.parse(stored);
+        if (Array.isArray(localList)) {
+          localList.forEach(w => {
+            if (w && w.telegramId && (w.walletAddress || w.ton_wallet)) {
+              walletsMap.set(String(w.telegramId), {
+                telegramId: String(w.telegramId),
+                name: w.name || w.firstName || 'Игрок',
+                username: w.username || '',
+                walletAddress: String(w.walletAddress || w.ton_wallet).trim(),
+                walletType: detectWalletTypeName(w.walletType || w.ton_wallet_type),
+                tonBalance: Number(w.tonBalance || w.ton_balance || 0),
+                updatedAt: w.updatedAt || 0
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch global 24/7 KVDB cloud index
+    try {
+      const res = await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}?_cb=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const cloudList = await res.json();
+        if (Array.isArray(cloudList)) {
+          cloudList.forEach(w => {
+            if (w && w.telegramId && (w.walletAddress || w.ton_wallet)) {
+              const tid = String(w.telegramId);
+              walletsMap.set(tid, Object.assign({}, walletsMap.get(tid) || {}, {
+                telegramId: tid,
+                name: w.name || w.firstName || 'Игрок',
+                username: w.username || '',
+                walletAddress: String(w.walletAddress || w.ton_wallet).trim(),
+                walletType: detectWalletTypeName(w.walletType || w.ton_wallet_type),
+                tonBalance: Number(w.tonBalance || w.ton_balance || 0),
+                updatedAt: w.updatedAt || Date.now()
+              }));
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[Admin Wallets Cloud Fetch]', e);
+    }
+
+    // 3. Scan KVDB cloud for any player profiles with connected wallets
+    try {
+      const res = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const entries = await res.json();
+        if (Array.isArray(entries)) {
+          entries.forEach(item => {
+            const p = item && (item.value || item);
+            if (p && p.telegramId && (p.ton_wallet || p.tonWallet)) {
+              const tid = String(p.telegramId);
+              const existing = walletsMap.get(tid) || {};
+              walletsMap.set(tid, Object.assign({}, existing, {
+                telegramId: tid,
+                name: p.firstName || p.name || existing.name || 'Игрок',
+                username: p.username || existing.username || '',
+                walletAddress: String(p.ton_wallet || p.tonWallet).trim(),
+                walletType: detectWalletTypeName(p.ton_wallet_type || p.tonWalletType || existing.walletType),
+                tonBalance: Number(p.ton_balance !== undefined ? p.ton_balance : (existing.tonBalance || 0)),
+                updatedAt: Date.now()
+              }));
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    // 4. Try backend API if running
+    try {
+      const apiRes = await apiCall(`/api/admin/connected-wallets?${getAdminAuthQuery()}`, 'GET');
+      if (apiRes && apiRes.success && Array.isArray(apiRes.wallets)) {
+        apiRes.wallets.forEach(w => {
+          if (w && w.telegram_id && w.ton_wallet) {
+            const tid = String(w.telegram_id);
+            const existing = walletsMap.get(tid) || {};
+            walletsMap.set(tid, Object.assign({}, existing, {
+              telegramId: tid,
+              name: w.first_name || existing.name || 'Игрок',
+              username: w.username || existing.username || '',
+              walletAddress: String(w.ton_wallet).trim(),
+              walletType: detectWalletTypeName(w.ton_wallet_type || existing.walletType),
+              tonBalance: Number(w.ton_balance !== undefined ? w.ton_balance : (existing.tonBalance || 0)),
+              updatedAt: Date.now()
+            }));
+          }
+        });
+      }
+    } catch (e) {}
+
+    // 5. Ensure currentUser is included if wallet connected
+    if (currentUser && currentUser.telegramId && currentUser.ton_wallet) {
+      const tid = String(currentUser.telegramId);
+      const existing = walletsMap.get(tid) || {};
+      walletsMap.set(tid, Object.assign({}, existing, {
+        telegramId: tid,
+        name: currentUser.firstName || 'Игрок',
+        username: currentUser.username || '',
+        walletAddress: String(currentUser.ton_wallet).trim(),
+        walletType: detectWalletTypeName(currentUser.ton_wallet_type || existing.walletType),
+        tonBalance: Number(currentUser.ton_balance || 0),
+        updatedAt: Date.now()
+      }));
+    }
+
+    cachedWalletsList = Array.from(walletsMap.values());
+    try {
+      localStorage.setItem(WALLETS_LOCAL_STORAGE_KEY, JSON.stringify(cachedWalletsList));
+    } catch (e) {}
+
+    if (adminWalletsLoadingSpinner) adminWalletsLoadingSpinner.classList.add('hidden');
+    renderAdminWalletsList(cachedWalletsList);
+  }
+
+  // Render the uncluttered main list: Nickname, TID, Wallet Address, and "Просмотреть" button
+  function renderAdminWalletsList(list) {
+    if (!adminWalletsItemsList) return;
+    adminWalletsItemsList.innerHTML = '';
+
+    const query = (adminWalletsSearchInput ? adminWalletsSearchInput.value : '').trim().toLowerCase();
+    const filtered = (list || []).filter(item => {
+      if (!query) return true;
+      const n = (item.name || '').toLowerCase();
+      const u = (item.username || '').toLowerCase();
+      const tid = String(item.telegramId || '').toLowerCase();
+      const a = (item.walletAddress || '').toLowerCase();
+      return n.includes(query) || u.includes(query) || tid.includes(query) || a.includes(query);
+    });
+
+    const totalCount = filtered.length;
+    if (adminWalletsCountBadge) {
+      adminWalletsCountBadge.textContent = `👛 ${totalCount} ${getWalletCountWord(totalCount)}`;
+    }
+
+    if (totalCount === 0) {
+      if (adminWalletsEmptyState) adminWalletsEmptyState.classList.remove('hidden');
+      return;
+    }
+
+    if (adminWalletsEmptyState) adminWalletsEmptyState.classList.add('hidden');
+
+    const viewBtnLabel = typeof t === 'function' ? t('adminWalletViewBtnLabel') : 'Просмотреть';
+
+    filtered.forEach(player => {
+      const card = document.createElement('div');
+      card.className = 'admin-wallet-card';
+
+      const displayName = escapeWalletHtml(player.name || 'Игрок');
+      const displayUsername = player.username ? `@${escapeWalletHtml(player.username.replace(/^@/, ''))}` : '';
+      const tidStr = String(player.telegramId || '—');
+      const fullAddr = String(player.walletAddress || '').trim();
+      const shortAddr = formatShortTonAddress(fullAddr);
+
+      card.innerHTML = `
+        <div class="admin-wallet-info">
+          <div class="admin-wallet-name-row">
+            <span class="admin-wallet-name">👤 ${displayName}</span>
+            ${displayUsername ? `<span class="admin-wallet-username">${displayUsername}</span>` : ''}
+          </div>
+          <div class="admin-wallet-meta-row">
+            <span class="admin-wallet-tid">ID: ${tidStr}</span>
+            <span class="admin-wallet-address-pill" title="${escapeWalletHtml(fullAddr)}">👛 ${shortAddr}</span>
+          </div>
+        </div>
+        <div class="admin-wallet-actions">
+          <button type="button" class="admin-wallet-view-btn btn-wallet-view" data-tid="${tidStr}" title="${viewBtnLabel}">
+            <span>👁️</span>
+            <span>${viewBtnLabel}</span>
+          </button>
+        </div>
+      `;
+
+      adminWalletsItemsList.appendChild(card);
+    });
+  }
+
+  // Delegated click handler on main list: "Просмотреть"
+  if (adminWalletsItemsList) {
+    adminWalletsItemsList.addEventListener('click', (e) => {
+      const viewBtn = e.target.closest('.btn-wallet-view');
+      if (!viewBtn) return;
+      e.stopPropagation();
+      const tid = viewBtn.dataset.tid;
+      const player = cachedWalletsList.find(p => String(p.telegramId) === String(tid));
+      if (player) {
+        openAdminWalletDetails(player);
+      } else if (tid) {
+        openAdminWalletDetails({
+          telegramId: tid,
+          name: 'Игрок',
+          username: '',
+          walletAddress: '',
+          walletType: 'TON Wallet'
+        });
+      }
+    });
+  }
+
+  // Search input and clear button for wallets list
+  if (adminWalletsSearchInput) {
+    adminWalletsSearchInput.addEventListener('input', () => {
+      const val = adminWalletsSearchInput.value.trim();
+      if (adminWalletsClearSearchBtn) {
+        adminWalletsClearSearchBtn.classList.toggle('hidden', val.length === 0);
+      }
+      renderAdminWalletsList(cachedWalletsList);
+    });
+  }
+
+  if (adminWalletsClearSearchBtn) {
+    adminWalletsClearSearchBtn.addEventListener('click', () => {
+      if (adminWalletsSearchInput) adminWalletsSearchInput.value = '';
+      adminWalletsClearSearchBtn.classList.add('hidden');
+      renderAdminWalletsList(cachedWalletsList);
+    });
+  }
+
+  // Refresh button
+  if (adminWalletsRefreshBtn) {
+    adminWalletsRefreshBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadAdminWalletsList();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  // Open detailed modal for selected player (LAZY LOADING DEPOSITS)
+  async function openAdminWalletDetails(player) {
+    if (!adminWalletDetailsModal || !player) return;
+    activeViewingWalletPlayer = player;
+
+    openModal(adminWalletDetailsModal);
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('light');
+    }
+
+    // 1. Populate player header & card info immediately
+    const dispName = player.name || player.firstName || 'Игрок';
+    const dispUsername = player.username ? `@${player.username.replace(/^@/, '')}` : '';
+    const tidStr = String(player.telegramId || '—');
+    const fullAddr = String(player.walletAddress || player.ton_wallet || '—').trim();
+    const resolvedType = detectWalletTypeName(player.walletType || player.ton_wallet_type);
+
+    if (adminWalletDetailName) adminWalletDetailName.textContent = dispName;
+    if (adminWalletDetailUsername) adminWalletDetailUsername.textContent = dispUsername;
+    if (adminWalletDetailTid) adminWalletDetailTid.textContent = tidStr;
+    if (adminWalletDetailWalletType) adminWalletDetailWalletType.textContent = resolvedType;
+    if (adminWalletDetailTypeBadge) adminWalletDetailTypeBadge.textContent = `💎 ${resolvedType}`;
+    if (adminWalletDetailAddress) adminWalletDetailAddress.textContent = fullAddr;
+
+    // Reset copy button states
+    if (adminWalletCopyAddressLabel) adminWalletCopyAddressLabel.textContent = 'Копировать';
+    if (adminWalletCopyAddressIcon) adminWalletCopyAddressIcon.textContent = '📋';
+
+    // 2. Set financial metrics to loading
+    if (adminWalletDetailTotalAmount) adminWalletDetailTotalAmount.textContent = '⏳...';
+    if (adminWalletDetailDepositsCount) adminWalletDetailDepositsCount.textContent = '⏳...';
+
+    // 3. Set deposits table to loading state
+    if (adminWalletDepositsLoadingSpinner) adminWalletDepositsLoadingSpinner.classList.remove('hidden');
+    if (adminWalletDepositsEmptyState) adminWalletDepositsEmptyState.classList.add('hidden');
+    if (adminWalletDepositsTableWrap) adminWalletDepositsTableWrap.classList.add('hidden');
+    if (adminWalletDepositsTableBody) adminWalletDepositsTableBody.innerHTML = '';
+
+    // 4. Lazy-load confirmed deposits for this player on demand
+    const depositsMap = new Map();
+
+    // A. Read local deposits for this player
+    try {
+      const localDepKey = DEPOSITS_LOCAL_PREFIX + tidStr;
+      const stored = localStorage.getItem(localDepKey);
+      if (stored) {
+        const arr = JSON.parse(stored);
+        if (Array.isArray(arr)) {
+          arr.forEach(d => {
+            const key = d.txHash || d.id || `${d.date}_${d.amount}`;
+            depositsMap.set(key, d);
+          });
+        }
+      }
+    } catch (e) {}
+
+    // B. Fetch 24/7 KVDB cloud deposits key deposits_${tid}
+    try {
+      const cloudDepKey = `deposits_${tidStr}`;
+      const res = await fetch(`${GLOBAL_CLOUD_BASE}/${cloudDepKey}?_cb=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const cloudArr = await res.json();
+        if (Array.isArray(cloudArr)) {
+          cloudArr.forEach(d => {
+            const key = d.txHash || d.id || `${d.date}_${d.amount}`;
+            depositsMap.set(key, d);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[Lazy Load Cloud Deposits Error]', e);
+    }
+
+    // C. Fetch from backend API if available
+    try {
+      const apiRes = await apiCall(`/api/admin/player-deposits?telegramId=${encodeURIComponent(tidStr)}&${getAdminAuthQuery()}`, 'GET');
+      if (apiRes && apiRes.success && Array.isArray(apiRes.deposits)) {
+        apiRes.deposits.forEach(d => {
+          const key = d.tx_hash || d.id || `${d.created_at}_${d.amount}`;
+          depositsMap.set(key, {
+            id: d.id,
+            telegramId: tidStr,
+            amount: parseFloat(d.amount) || 0,
+            memo: d.memo || '',
+            walletAddress: d.wallet_address || '',
+            walletType: detectWalletTypeName(d.wallet_type || resolvedType),
+            txHash: d.tx_hash || '',
+            date: d.created_at || d.date || '—',
+            status: d.status || 'confirmed'
+          });
+        });
+      }
+    } catch (e) {}
+
+    const allDeposits = Array.from(depositsMap.values());
+    const confirmedDeposits = allDeposits.filter(d => !d.status || d.status === 'confirmed');
+
+    // Calculate sum and count
+    const totalDeposited = confirmedDeposits.reduce((acc, d) => acc + (parseFloat(d.amount) || 0), 0);
+    const depositsCount = confirmedDeposits.length;
+
+    if (adminWalletDetailTotalAmount) {
+      adminWalletDetailTotalAmount.textContent = `${totalDeposited.toFixed(2)} TON`;
+    }
+    if (adminWalletDetailDepositsCount) {
+      adminWalletDetailDepositsCount.textContent = `${depositsCount} ${getDepositCountWord(depositsCount)}`;
+    }
+
+    if (adminWalletDepositsLoadingSpinner) adminWalletDepositsLoadingSpinner.classList.add('hidden');
+
+    if (confirmedDeposits.length === 0) {
+      if (adminWalletDepositsEmptyState) adminWalletDepositsEmptyState.classList.remove('hidden');
+      if (adminWalletDepositsTableWrap) adminWalletDepositsTableWrap.classList.add('hidden');
+      return;
+    }
+
+    if (adminWalletDepositsEmptyState) adminWalletDepositsEmptyState.classList.add('hidden');
+    if (adminWalletDepositsTableWrap) adminWalletDepositsTableWrap.classList.remove('hidden');
+
+    // Sort newest deposits first
+    confirmedDeposits.sort((a, b) => {
+      const tA = new Date(a.date || a.created_at || 0).getTime();
+      const tB = new Date(b.date || b.created_at || 0).getTime();
+      return tB - tA;
+    });
+
+    confirmedDeposits.forEach(dep => {
+      const tr = document.createElement('tr');
+      const dt = dep.date || dep.created_at || '—';
+      const amt = (parseFloat(dep.amount) || 0).toFixed(2);
+      const memoText = dep.memo ? escapeWalletHtml(dep.memo) : '—';
+      const hashText = dep.txHash ? ` (${formatShortTonAddress(dep.txHash)})` : '';
+
+      tr.innerHTML = `
+        <td>
+          <div style="font-size: 0.78rem; font-weight: 600; color: #f1f5f9;">📅 ${dt}</div>
+        </td>
+        <td style="text-align: right;">
+          <span style="font-weight: 800; color: #38bdf8; font-family: monospace;">+${amt} TON</span>
+        </td>
+        <td style="text-align: center;">
+          <span class="admin-deposit-status-confirmed">✅ Подтверждено</span>
+        </td>
+        <td>
+          <span style="font-size: 0.72rem; color: #94a3b8; word-break: break-all;">${memoText}${hashText}</span>
+        </td>
+      `;
+      adminWalletDepositsTableBody.appendChild(tr);
+    });
+  }
+
+  // Copy Telegram ID
+  if (adminWalletCopyTidBtn) {
+    adminWalletCopyTidBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!activeViewingWalletPlayer) return;
+      const tid = String(activeViewingWalletPlayer.telegramId || '');
+      copyTextToClipboard(tid, () => {
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('success');
+        }
+        adminWalletCopyTidBtn.textContent = '✓';
+        setTimeout(() => { adminWalletCopyTidBtn.textContent = '📋'; }, 1500);
+      });
+    });
+  }
+
+  // Copy Full Wallet Address
+  if (adminWalletCopyAddressBtn) {
+    adminWalletCopyAddressBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!activeViewingWalletPlayer) return;
+      const addr = String(activeViewingWalletPlayer.walletAddress || activeViewingWalletPlayer.ton_wallet || '');
+      copyTextToClipboard(addr, () => {
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('success');
+        }
+        if (adminWalletCopyAddressLabel) adminWalletCopyAddressLabel.textContent = '✓ Скопировано!';
+        if (adminWalletCopyAddressIcon) adminWalletCopyAddressIcon.textContent = '✓';
+        setTimeout(() => {
+          if (adminWalletCopyAddressLabel) adminWalletCopyAddressLabel.textContent = 'Копировать';
+          if (adminWalletCopyAddressIcon) adminWalletCopyAddressIcon.textContent = '📋';
+        }, 2000);
+      });
+    });
+  }
+
+  // Close / Back buttons on Details Modal
+  if (adminWalletDetailsCloseBtn) {
+    adminWalletDetailsCloseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (adminWalletDetailsModal) closeModal(adminWalletDetailsModal);
+      activeViewingWalletPlayer = null;
+    });
+  }
+
+  if (adminWalletDetailsBackBtn) {
+    adminWalletDetailsBackBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (adminWalletDetailsModal) closeModal(adminWalletDetailsModal);
+      activeViewingWalletPlayer = null;
+    });
+  }
+
+  if (adminWalletDetailsModal) {
+    adminWalletDetailsModal.addEventListener('click', (e) => {
+      if (e.target === adminWalletDetailsModal) {
+        closeModal(adminWalletDetailsModal);
+        activeViewingWalletPlayer = null;
       }
     });
   }

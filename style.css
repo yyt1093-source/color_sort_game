@@ -3402,6 +3402,430 @@ body {
   font-size: 0.82rem;
 }
 
+/* ============================================================
+   Admin Connected Wallets & Details Modal Styles
+   ============================================================ */
+.admin-wallets-header-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.admin-wallets-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-wallets-title-row strong {
+  font-size: 0.95rem;
+  color: #38bdf8;
+  display: block;
+}
+
+.admin-wallets-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.admin-wallets-count-pill {
+  background: rgba(14, 165, 233, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.admin-wallets-list-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.admin-wallets-search-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.admin-wallets-search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 0.8rem;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.admin-wallets-search-input {
+  width: 100%;
+  padding: 7px 28px 7px 30px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+  color: #f8fafc;
+  font-size: 0.78rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.admin-wallets-search-input:focus {
+  border-color: #38bdf8;
+}
+
+.admin-wallets-clear-search {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.admin-wallets-list-container {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 12px;
+  padding: 8px;
+  min-height: 140px;
+}
+
+.admin-wallets-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+/* Individual Connected Wallet Item Card */
+.admin-wallet-card {
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.admin-wallet-card:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(56, 189, 248, 0.45);
+  transform: translateY(-1px);
+}
+
+.admin-wallet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-wallet-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-wallet-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #f8fafc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-wallet-username {
+  font-size: 0.72rem;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.admin-wallet-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-wallet-tid {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.admin-wallet-address-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #cbd5e1;
+}
+
+.admin-wallet-copy-mini-btn {
+  background: transparent;
+  border: none;
+  color: #38bdf8;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.7rem;
+  transition: transform 0.15s;
+}
+
+.admin-wallet-copy-mini-btn:hover {
+  transform: scale(1.15);
+}
+
+.admin-wallet-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.admin-wallet-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+  white-space: nowrap;
+}
+
+.admin-wallet-view-btn:hover {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.4);
+}
+
+/* ============================================================
+   Player Wallet Details Modal Styles
+   ============================================================ */
+.admin-wallet-details-modal {
+  width: 95%;
+  max-width: 480px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 16px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.75), 0 0 30px rgba(14, 165, 233, 0.15);
+  overflow: hidden;
+}
+
+.admin-wallet-detail-card {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.admin-wallet-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.admin-wallet-detail-label {
+  color: #94a3b8;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.admin-wallet-detail-val {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f1f5f9;
+}
+
+.admin-wallet-detail-handle {
+  color: #38bdf8;
+  font-size: 0.74rem;
+}
+
+.monospace-tag {
+  font-family: monospace;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}
+
+.copy-small-btn {
+  background: transparent;
+  border: none;
+  color: #38bdf8;
+  cursor: pointer;
+  padding: 2px;
+  font-size: 0.8rem;
+  transition: transform 0.15s;
+}
+
+.copy-small-btn:hover {
+  transform: scale(1.2);
+}
+
+.admin-wallet-address-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.admin-wallet-full-address {
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #38bdf8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.admin-wallet-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: #38bdf8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.admin-wallet-copy-btn:hover {
+  background: rgba(56, 189, 248, 0.3);
+  color: #fff;
+}
+
+/* 2-Column Metrics Grid */
+.admin-wallet-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.admin-wallet-metric-card {
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+
+.admin-wallet-metric-label {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.admin-wallet-metric-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #34d399;
+  letter-spacing: 0.3px;
+}
+
+/* Deposits History Section */
+.admin-wallet-deposits-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  flex: 1;
+  min-height: 140px;
+}
+
+.admin-wallet-deposits-header strong {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  display: block;
+}
+
+.admin-wallet-deposits-sub {
+  font-size: 0.68rem;
+  color: #64748b;
+  display: block;
+  margin-top: 1px;
+}
+
+.admin-wallet-deposits-container {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 10px;
+  padding: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  min-height: 90px;
+}
+
+.admin-deposit-status-confirmed {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
 .admin-boosters-container {
   display: flex;
   flex-direction: column;
