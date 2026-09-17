@@ -275,21 +275,23 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Управление",
       adminTabHistoryLabel: "История лидерборда",
       adminHistoryTitle: "История лидерборда",
-      adminHistorySub: "Ежедневные снимки в 23:55 (Киев)",
-      adminHistoryDateSelectLabel: "Выберите дату снимка:",
+      adminHistorySub: "Ежедневные снимки в 23:55 (Киев). Ручные снимки сохраняются отдельно.",
+      adminHistoryListTitle: "История сохранённых снимков:",
+      adminHistoryTakeSnapshotLabel: "Сделать снимок сейчас",
       adminHistoryViewBtnLabel: "Просмотреть",
       adminHistoryDeleteBtnLabel: "Удалить",
-      adminHistoryLoadBtnLabel: "Найти",
-      adminHistoryTakeSnapshotLabel: "Снимок сейчас",
-      adminHistoryEmptyText: "Нет сохранённых снимков за эту дату",
-      adminHistoryLoadingText: "Загрузка снимка...",
+      adminSnapshotAutoBadge: "🤖 Авто (23:55)",
+      adminSnapshotManualBadge: "✋ Ручной",
+      adminViewerBackBtn: "← Назад к списку снимков",
+      adminHistoryEmptyText: "Нет сохранённых снимков",
+      adminHistoryLoadingText: "Загрузка списка снимков...",
       adminHistoryColRank: "#",
       adminHistoryColPlayer: "Игрок",
       adminHistoryColTid: "Telegram ID",
       adminHistoryColLevel: "Уровень",
       adminHistoryTotalBadge: (count) => `👥 ${count} игроков`,
       adminHistorySearchPlaceholder: "Поиск по имени, username или ID...",
-      adminHistorySnapshotSuccess: "📸 Снимок текущего лидерборда успешно сохранён!",
+      adminHistorySnapshotSuccess: "📸 Ручной снимок текущего лидерборда успешно сохранён!",
       deleteSnapshotModalTitle: "Удаление снимка",
       deleteSnapshotLead: "Вы действительно хотите удалить этот снимок лидерборда?",
       deleteSnapshotSuccess: "🗑️ Снимок лидерборда успешно удалён!",
@@ -515,21 +517,23 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Керування",
       adminTabHistoryLabel: "Історія лідерборду",
       adminHistoryTitle: "Історія лідерборду",
-      adminHistorySub: "Щоденні знімки о 23:55 (Київ)",
-      adminHistoryDateSelectLabel: "Оберіть дату знімка:",
+      adminHistorySub: "Щоденні знімки о 23:55 (Київ). Ручні знімки зберігаються окремо.",
+      adminHistoryListTitle: "Історія збережених знімків:",
+      adminHistoryTakeSnapshotLabel: "Зробити знімок зараз",
       adminHistoryViewBtnLabel: "Переглянути",
       adminHistoryDeleteBtnLabel: "Видалити",
-      adminHistoryLoadBtnLabel: "Знайти",
-      adminHistoryTakeSnapshotLabel: "Знімок зараз",
-      adminHistoryEmptyText: "Немає збережених знімків за цю дату",
-      adminHistoryLoadingText: "Завантаження знімка...",
+      adminSnapshotAutoBadge: "🤖 Авто (23:55)",
+      adminSnapshotManualBadge: "✋ Ручний",
+      adminViewerBackBtn: "← Назад до списку знімків",
+      adminHistoryEmptyText: "Немає збережених знімків",
+      adminHistoryLoadingText: "Завантаження списку знімків...",
       adminHistoryColRank: "#",
       adminHistoryColPlayer: "Гравець",
       adminHistoryColTid: "Telegram ID",
       adminHistoryColLevel: "Рівень",
       adminHistoryTotalBadge: (count) => `👥 ${count} гравців`,
       adminHistorySearchPlaceholder: "Пошук за ім'ям, username або ID...",
-      adminHistorySnapshotSuccess: "📸 Знімок поточного лідерборду успішно збережено!",
+      adminHistorySnapshotSuccess: "📸 Ручний знімок поточного лідерборду успішно збережено!",
       deleteSnapshotModalTitle: "Видалення знімка",
       deleteSnapshotLead: "Ви дійсно бажаєте видалити цей знімок лідерборду?",
       deleteSnapshotSuccess: "🗑️ Знімок лідерборду успішно видалено!",
@@ -734,21 +738,23 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Management",
       adminTabHistoryLabel: "Leaderboard History",
       adminHistoryTitle: "Leaderboard History",
-      adminHistorySub: "Daily snapshots at 23:55 (Kyiv)",
-      adminHistoryDateSelectLabel: "Select snapshot date:",
+      adminHistorySub: "Daily snapshots at 23:55 (Kyiv). Manual snapshots are saved separately.",
+      adminHistoryListTitle: "Saved snapshots history:",
+      adminHistoryTakeSnapshotLabel: "Take snapshot now",
       adminHistoryViewBtnLabel: "View",
       adminHistoryDeleteBtnLabel: "Delete",
-      adminHistoryLoadBtnLabel: "Search",
-      adminHistoryTakeSnapshotLabel: "Take Snapshot Now",
-      adminHistoryEmptyText: "No saved snapshots for this date",
-      adminHistoryLoadingText: "Loading snapshot...",
+      adminSnapshotAutoBadge: "🤖 Auto (23:55)",
+      adminSnapshotManualBadge: "✋ Manual",
+      adminViewerBackBtn: "← Back to snapshots list",
+      adminHistoryEmptyText: "No saved snapshots",
+      adminHistoryLoadingText: "Loading snapshots list...",
       adminHistoryColRank: "#",
       adminHistoryColPlayer: "Player",
       adminHistoryColTid: "Telegram ID",
       adminHistoryColLevel: "Level",
       adminHistoryTotalBadge: (count) => `👥 ${count} players`,
       adminHistorySearchPlaceholder: "Search by name, username or ID...",
-      adminHistorySnapshotSuccess: "📸 Current leaderboard snapshot saved successfully!",
+      adminHistorySnapshotSuccess: "📸 Manual snapshot of current leaderboard saved successfully!",
       deleteSnapshotModalTitle: "Delete Snapshot",
       deleteSnapshotLead: "Are you sure you want to delete this leaderboard snapshot?",
       deleteSnapshotSuccess: "🗑️ Leaderboard snapshot deleted successfully!",
@@ -953,21 +959,23 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Verwaltung",
       adminTabHistoryLabel: "Ranglisten-Verlauf",
       adminHistoryTitle: "Ranglisten-Verlauf",
-      adminHistorySub: "Tägliche Snapshots um 23:55 (Kiew)",
-      adminHistoryDateSelectLabel: "Snapshot-Datum wählen:",
+      adminHistorySub: "Tägliche Snapshots um 23:55 (Kiew). Manuelle Snapshots werden separat gespeichert.",
+      adminHistoryListTitle: "Verlauf gespeicherter Snapshots:",
+      adminHistoryTakeSnapshotLabel: "Snapshot jetzt erstellen",
       adminHistoryViewBtnLabel: "Anzeigen",
       adminHistoryDeleteBtnLabel: "Löschen",
-      adminHistoryLoadBtnLabel: "Suchen",
-      adminHistoryTakeSnapshotLabel: "Jetzt Snapshot",
-      adminHistoryEmptyText: "Keine Snapshots für dieses Datum",
-      adminHistoryLoadingText: "Lade Snapshot...",
+      adminSnapshotAutoBadge: "🤖 Auto (23:55)",
+      adminSnapshotManualBadge: "✋ Manuell",
+      adminViewerBackBtn: "← Zurück zur Snapshot-Liste",
+      adminHistoryEmptyText: "Keine gespeicherten Snapshots",
+      adminHistoryLoadingText: "Lade Snapshot-Liste...",
       adminHistoryColRank: "#",
       adminHistoryColPlayer: "Spieler",
       adminHistoryColTid: "Telegram ID",
       adminHistoryColLevel: "Stufe",
       adminHistoryTotalBadge: (count) => `👥 ${count} Spieler`,
       adminHistorySearchPlaceholder: "Suche nach Name, Username oder ID...",
-      adminHistorySnapshotSuccess: "📸 Snapshot der aktuellen Rangliste erfolgreich gespeichert!",
+      adminHistorySnapshotSuccess: "📸 Manueller Snapshot der aktuellen Rangliste erfolgreich gespeichert!",
       deleteSnapshotModalTitle: "Snapshot löschen",
       deleteSnapshotLead: "Möchten Sie diesen Ranglisten-Snapshot wirklich löschen?",
       deleteSnapshotSuccess: "🗑️ Ranglisten-Snapshot erfolgreich gelöscht!",
@@ -1172,21 +1180,23 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Valdymas",
       adminTabHistoryLabel: "Lyderių istorija",
       adminHistoryTitle: "Lyderių istorija",
-      adminHistorySub: "Kasdieniai kadrai 23:55 (Kijevas)",
-      adminHistoryDateSelectLabel: "Pasirinkite kopijos datą:",
+      adminHistorySub: "Kasdieniai kadrai 23:55 (Kijevas). Rankiniai kadrai išsaugomi atskirai.",
+      adminHistoryListTitle: "Išsaugotų kopijų istorija:",
+      adminHistoryTakeSnapshotLabel: "Daryti kopiją dabar",
       adminHistoryViewBtnLabel: "Peržiūrėti",
       adminHistoryDeleteBtnLabel: "Ištrinti",
-      adminHistoryLoadBtnLabel: "Ieškoti",
-      adminHistoryTakeSnapshotLabel: "Daryti kopiją dabar",
-      adminHistoryEmptyText: "Šiai datai išsaugotų kopijų nėra",
-      adminHistoryLoadingText: "Įkeliama kopija...",
+      adminSnapshotAutoBadge: "🤖 Auto (23:55)",
+      adminSnapshotManualBadge: "✋ Rankinis",
+      adminViewerBackBtn: "← Atgal į kopijų sąrašą",
+      adminHistoryEmptyText: "Išsaugotų kopijų nėra",
+      adminHistoryLoadingText: "Įkeliamas kopijų sąrašas...",
       adminHistoryColRank: "#",
       adminHistoryColPlayer: "Žaidėjas",
       adminHistoryColTid: "Telegram ID",
       adminHistoryColLevel: "Lygis",
       adminHistoryTotalBadge: (count) => `👥 ${count} žaidėjai`,
       adminHistorySearchPlaceholder: "Ieškoti pagal vardą, username ar ID...",
-      adminHistorySnapshotSuccess: "📸 Dabartinės lyderių lentelės kopija sėkmingai išsaugota!",
+      adminHistorySnapshotSuccess: "📸 Rankinė dabartinės lyderių lentelės kopija sėkmingai išsaugota!",
       deleteSnapshotModalTitle: "Kopijos ištrynimas",
       deleteSnapshotLead: "Ar tikrai norite ištrinti šią lyderių lentelės kopiją?",
       deleteSnapshotSuccess: "🗑️ Lyderių lentelės kopija sėkmingai ištrinta!",
@@ -1760,20 +1770,16 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (adminHistoryTitle) adminHistoryTitle.textContent = t('adminHistoryTitle');
     const adminHistorySub = document.getElementById('adminHistorySub');
     if (adminHistorySub) adminHistorySub.textContent = t('adminHistorySub');
-    const adminHistoryDateSelectLabel = document.getElementById('adminHistoryDateSelectLabel');
-    if (adminHistoryDateSelectLabel) adminHistoryDateSelectLabel.textContent = t('adminHistoryDateSelectLabel');
-    const adminHistoryLoadBtnLabel = document.getElementById('adminHistoryLoadBtnLabel');
-    if (adminHistoryLoadBtnLabel) adminHistoryLoadBtnLabel.textContent = t('adminHistoryLoadBtnLabel');
     const adminHistoryTakeSnapshotLabel = document.getElementById('adminHistoryTakeSnapshotLabel');
     if (adminHistoryTakeSnapshotLabel) adminHistoryTakeSnapshotLabel.textContent = t('adminHistoryTakeSnapshotLabel');
+    const adminHistoryListTitle = document.getElementById('adminHistoryListTitle');
+    if (adminHistoryListTitle) adminHistoryListTitle.textContent = t('adminHistoryListTitle');
     const adminHistoryEmptyText = document.getElementById('adminHistoryEmptyText');
     if (adminHistoryEmptyText) adminHistoryEmptyText.textContent = t('adminHistoryEmptyText');
     const adminHistoryLoadingText = document.getElementById('adminHistoryLoadingText');
     if (adminHistoryLoadingText) adminHistoryLoadingText.textContent = t('adminHistoryLoadingText');
-    const adminHistoryViewBtnLabel = document.getElementById('adminHistoryViewBtnLabel');
-    if (adminHistoryViewBtnLabel) adminHistoryViewBtnLabel.textContent = t('adminHistoryViewBtnLabel');
-    const adminHistoryDeleteBtnLabel = document.getElementById('adminHistoryDeleteBtnLabel');
-    if (adminHistoryDeleteBtnLabel) adminHistoryDeleteBtnLabel.textContent = t('adminHistoryDeleteBtnLabel');
+    const adminViewerBackBtn = document.getElementById('adminViewerBackBtn');
+    if (adminViewerBackBtn) adminViewerBackBtn.textContent = t('adminViewerBackBtn');
     const adminHistoryColRank = document.getElementById('adminHistoryColRank');
     if (adminHistoryColRank) adminHistoryColRank.textContent = t('adminHistoryColRank');
     const adminHistoryColPlayer = document.getElementById('adminHistoryColPlayer');
@@ -5589,33 +5595,54 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   const adminTabActionsContent = document.getElementById('adminTabActionsContent');
   const adminTabHistoryContent = document.getElementById('adminTabHistoryContent');
 
-  const adminHistoryDateSelect = document.getElementById('adminHistoryDateSelect');
-  const adminHistoryRefreshDatesBtn = document.getElementById('adminHistoryRefreshDatesBtn');
-  const adminHistoryViewBtn = document.getElementById('adminHistoryViewBtn');
-  const adminHistoryDeleteBtn = document.getElementById('adminHistoryDeleteBtn');
-  const adminHistoryDatePicker = document.getElementById('adminHistoryDatePicker');
-  const adminHistoryLoadDateBtn = document.getElementById('adminHistoryLoadDateBtn');
   const adminHistoryTakeSnapshotBtn = document.getElementById('adminHistoryTakeSnapshotBtn');
+  const adminHistoryRefreshDatesBtn = document.getElementById('adminHistoryRefreshDatesBtn');
+  const adminHistoryLoadingSpinner = document.getElementById('adminHistoryLoadingSpinner');
+  const adminHistoryEmptyState = document.getElementById('adminHistoryEmptyState');
+  const adminHistoryItemsList = document.getElementById('adminHistoryItemsList');
 
+  // Viewer Modal Elements
+  const adminHistoryViewerModal = document.getElementById('adminHistoryViewerModal');
+  const adminViewerDateTitle = document.getElementById('adminViewerDateTitle');
+  const adminViewerTotalBadge = document.getElementById('adminViewerTotalBadge');
+  const adminViewerTypeBadge = document.getElementById('adminViewerTypeBadge');
+  const adminViewerCloseBtn = document.getElementById('adminViewerCloseBtn');
+  const adminViewerBackBtn = document.getElementById('adminViewerBackBtn');
+  const adminViewerLoadingSpinner = document.getElementById('adminViewerLoadingSpinner');
+  const adminViewerEmptyState = document.getElementById('adminViewerEmptyState');
+  const adminHistorySearchInput = document.getElementById('adminHistorySearchInput');
+  const adminHistoryClearSearchBtn = document.getElementById('adminHistoryClearSearchBtn');
+  const adminHistoryTableWrap = document.getElementById('adminHistoryTableWrap');
+  const adminHistoryTableBody = document.getElementById('adminHistoryTableBody');
+
+  // Delete Confirmation Modal Elements
   const deleteSnapshotModal = document.getElementById('deleteSnapshotModal');
   const deleteSnapshotInfo = document.getElementById('deleteSnapshotInfo');
   const cancelDeleteSnapshotBtn = document.getElementById('cancelDeleteSnapshotBtn');
   const confirmDeleteSnapshotBtn = document.getElementById('confirmDeleteSnapshotBtn');
 
-  const adminHistorySummaryCard = document.getElementById('adminHistorySummaryCard');
-  const adminHistorySelectedDate = document.getElementById('adminHistorySelectedDate');
-  const adminHistorySelectedTime = document.getElementById('adminHistorySelectedTime');
-  const adminHistoryTotalBadge = document.getElementById('adminHistoryTotalBadge');
-
-  const adminHistorySearchInput = document.getElementById('adminHistorySearchInput');
-  const adminHistoryClearSearchBtn = document.getElementById('adminHistoryClearSearchBtn');
-  const adminHistoryLoadingSpinner = document.getElementById('adminHistoryLoadingSpinner');
-  const adminHistoryEmptyState = document.getElementById('adminHistoryEmptyState');
-  const adminHistoryTableWrap = document.getElementById('adminHistoryTableWrap');
-  const adminHistoryTableBody = document.getElementById('adminHistoryTableBody');
-
   let activeSnapshotData = null;
   let activeSnapshotPlayers = [];
+  let pendingDeleteSnapshot = null;
+  let cachedSnapshotsList = [];
+
+  function getAdminAuthQuery() {
+    const params = new URLSearchParams();
+    if (currentUser) {
+      if (currentUser.telegramId) params.append('telegramId', currentUser.telegramId);
+      if (currentUser.firstName) params.append('firstName', currentUser.firstName);
+      if (currentUser.username) params.append('username', currentUser.username);
+    }
+    return params.toString();
+  }
+
+  function formatSnapshotDisplay(dateStr, timeStr) {
+    if (!dateStr) return '';
+    const parts = String(dateStr).split('-');
+    const formattedDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dateStr;
+    const formattedTime = timeStr ? String(timeStr).substring(0, 5) : '23:55';
+    return `${formattedDate} — ${formattedTime}`;
+  }
 
   function switchAdminTab(tabName) {
     if (tabName === 'history') {
@@ -5623,7 +5650,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.add('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.remove('hidden');
-      loadAdminHistoryDates();
+      loadAdminHistoryList();
     } else {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.add('active');
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
@@ -5646,110 +5673,156 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
-  function getAdminAuthQuery() {
-    const params = new URLSearchParams();
-    if (currentUser) {
-      if (currentUser.telegramId) params.append('telegramId', currentUser.telegramId);
-      if (currentUser.firstName) params.append('firstName', currentUser.firstName);
-      if (currentUser.username) params.append('username', currentUser.username);
-    }
-    return params.toString();
-  }
-
-  async function loadAdminHistoryDates(selectSpecificDate = null) {
-    if (!adminHistoryDateSelect) return;
+  async function loadAdminHistoryList() {
+    if (!adminHistoryItemsList) return;
     try {
       if (adminHistoryLoadingSpinner) adminHistoryLoadingSpinner.classList.remove('hidden');
       if (adminHistoryEmptyState) adminHistoryEmptyState.classList.add('hidden');
-      if (adminHistoryTableWrap) adminHistoryTableWrap.classList.add('hidden');
+      adminHistoryItemsList.innerHTML = '';
 
       const authQuery = getAdminAuthQuery();
       const res = await fetch(`/api/admin/leaderboard-history/dates?${authQuery}`);
-      if (!res.ok) throw new Error('Не удалось получить список дат');
+      if (!res.ok) throw new Error('Не удалось получить список снимков');
       const data = await res.json();
       if (!data.success || !Array.isArray(data.dates)) {
-        throw new Error(data.error || 'Ошибка загрузки дат');
+        throw new Error(data.error || 'Ошибка загрузки снимков');
       }
 
-      const dates = data.dates;
-      adminHistoryDateSelect.innerHTML = '';
+      cachedSnapshotsList = data.dates;
+      if (adminHistoryLoadingSpinner) adminHistoryLoadingSpinner.classList.add('hidden');
 
-      if (dates.length === 0) {
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = t('adminHistoryEmptyText');
-        adminHistoryDateSelect.appendChild(opt);
-        if (adminHistoryLoadingSpinner) adminHistoryLoadingSpinner.classList.add('hidden');
+      if (cachedSnapshotsList.length === 0) {
         if (adminHistoryEmptyState) adminHistoryEmptyState.classList.remove('hidden');
-        if (adminHistorySummaryCard) adminHistorySummaryCard.classList.add('hidden');
         return;
       }
 
-      dates.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.snapshot_date;
-        opt.dataset.id = d.id;
-        opt.textContent = `${d.snapshot_date} (${d.snapshot_time}) — ${d.total_players} игр.`;
-        adminHistoryDateSelect.appendChild(opt);
-      });
+      if (adminHistoryEmptyState) adminHistoryEmptyState.classList.add('hidden');
 
-      let targetDate = selectSpecificDate || (dates[0] ? dates[0].snapshot_date : null);
-      if (targetDate) {
-        adminHistoryDateSelect.value = targetDate;
-        if (adminHistoryDatePicker) adminHistoryDatePicker.value = targetDate;
-        await loadAdminSnapshot(targetDate);
-      }
+      cachedSnapshotsList.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'admin-snapshot-card';
+        card.dataset.id = s.id;
+
+        const dtFormatted = formatSnapshotDisplay(s.snapshot_date, s.snapshot_time);
+        const isManual = s.snapshot_type === 'manual';
+        const badgeTypeClass = isManual ? 'manual' : 'auto';
+        const badgeTypeLabel = isManual
+          ? (typeof t === 'function' ? t('adminSnapshotManualBadge') : '✋ Ручной')
+          : (typeof t === 'function' ? t('adminSnapshotAutoBadge') : '🤖 Авто (23:55)');
+        const count = s.total_players !== undefined ? s.total_players : 0;
+        const countLabel = typeof t === 'function' ? t('adminHistoryTotalBadge', count) : `👥 ${count} игроков`;
+        const viewLabel = typeof t === 'function' ? t('adminHistoryViewBtnLabel') : 'Просмотреть';
+        const deleteLabel = typeof t === 'function' ? t('adminHistoryDeleteBtnLabel') : 'Удалить';
+
+        card.innerHTML = `
+          <div class="admin-snapshot-info">
+            <div class="admin-snapshot-datetime">📅 ${dtFormatted}</div>
+            <div class="admin-snapshot-meta">
+              <span class="admin-snapshot-badge players">${countLabel}</span>
+              <span class="admin-snapshot-badge ${badgeTypeClass}">${badgeTypeLabel}</span>
+            </div>
+          </div>
+          <div class="admin-snapshot-actions">
+            <button type="button" class="btn-snapshot-action btn-snapshot-view" data-id="${s.id}" title="${viewLabel}">
+              <span>👁️</span>
+              <span>${viewLabel}</span>
+            </button>
+            <button type="button" class="btn-snapshot-action btn-snapshot-delete" data-id="${s.id}" title="${deleteLabel}">
+              <span>🗑️</span>
+              <span>${deleteLabel}</span>
+            </button>
+          </div>
+        `;
+
+        adminHistoryItemsList.appendChild(card);
+      });
     } catch (err) {
-      console.error('[Admin History Dates Error]', err);
+      console.error('[Admin History List Error]', err);
       if (adminHistoryLoadingSpinner) adminHistoryLoadingSpinner.classList.add('hidden');
       if (adminHistoryEmptyState) adminHistoryEmptyState.classList.remove('hidden');
     }
   }
 
-  async function loadAdminSnapshot(dateOrId, isById = false) {
-    try {
-      if (adminHistoryLoadingSpinner) adminHistoryLoadingSpinner.classList.remove('hidden');
-      if (adminHistoryEmptyState) adminHistoryEmptyState.classList.add('hidden');
-      if (adminHistoryTableWrap) adminHistoryTableWrap.classList.add('hidden');
+  // Delegated click handling on list buttons (View / Delete)
+  if (adminHistoryItemsList) {
+    adminHistoryItemsList.addEventListener('click', (e) => {
+      const viewBtn = e.target.closest('.btn-snapshot-view');
+      const deleteBtn = e.target.closest('.btn-snapshot-delete');
 
+      if (viewBtn) {
+        e.stopPropagation();
+        const id = viewBtn.dataset.id;
+        if (id) openSnapshotViewer(id);
+        return;
+      }
+
+      if (deleteBtn) {
+        e.stopPropagation();
+        const id = deleteBtn.dataset.id;
+        const snapshot = cachedSnapshotsList.find(s => String(s.id) === String(id));
+        if (snapshot) {
+          openDeleteSnapshotDialog(snapshot);
+        } else if (id) {
+          openDeleteSnapshotDialog({ id, snapshot_date: '—', snapshot_time: '—', total_players: '?' });
+        }
+        return;
+      }
+    });
+  }
+
+  async function openSnapshotViewer(snapshotId) {
+    if (!adminHistoryViewerModal) return;
+    openModal(adminHistoryViewerModal);
+
+    if (adminViewerLoadingSpinner) adminViewerLoadingSpinner.classList.remove('hidden');
+    if (adminViewerEmptyState) adminViewerEmptyState.classList.add('hidden');
+    if (adminHistoryTableWrap) adminHistoryTableWrap.classList.add('hidden');
+    if (adminHistorySearchInput) adminHistorySearchInput.value = '';
+    if (adminHistoryClearSearchBtn) adminHistoryClearSearchBtn.classList.add('hidden');
+
+    try {
       const authQuery = getAdminAuthQuery();
-      const queryKey = isById ? `id=${encodeURIComponent(dateOrId)}` : `date=${encodeURIComponent(dateOrId)}`;
-      const res = await fetch(`/api/admin/leaderboard-history?${queryKey}&${authQuery}`);
-      if (adminHistoryLoadingSpinner) adminHistoryLoadingSpinner.classList.add('hidden');
+      const res = await fetch(`/api/admin/leaderboard-history?id=${encodeURIComponent(snapshotId)}&${authQuery}`);
+      if (adminViewerLoadingSpinner) adminViewerLoadingSpinner.classList.add('hidden');
 
       if (!res.ok) {
-        if (adminHistoryEmptyState) adminHistoryEmptyState.classList.remove('hidden');
-        if (adminHistorySummaryCard) adminHistorySummaryCard.classList.add('hidden');
+        if (adminViewerEmptyState) adminViewerEmptyState.classList.remove('hidden');
         return;
       }
 
       const data = await res.json();
       if (!data.success || !data.snapshot) {
-        if (adminHistoryEmptyState) adminHistoryEmptyState.classList.remove('hidden');
-        if (adminHistorySummaryCard) adminHistorySummaryCard.classList.add('hidden');
+        if (adminViewerEmptyState) adminViewerEmptyState.classList.remove('hidden');
         return;
       }
 
       activeSnapshotData = data.snapshot;
       activeSnapshotPlayers = Array.isArray(activeSnapshotData.players) ? activeSnapshotData.players : [];
 
-      if (adminHistorySummaryCard) adminHistorySummaryCard.classList.remove('hidden');
-      if (adminHistorySelectedDate) adminHistorySelectedDate.textContent = `📅 ${activeSnapshotData.snapshot_date}`;
-      if (adminHistorySelectedTime) adminHistorySelectedTime.textContent = `⏰ ${activeSnapshotData.snapshot_time} (Киев)`;
-      if (adminHistoryTotalBadge) {
-        adminHistoryTotalBadge.textContent = t('adminHistoryTotalBadge', activeSnapshotData.total_players !== undefined ? activeSnapshotData.total_players : activeSnapshotPlayers.length);
+      const dtFormatted = formatSnapshotDisplay(activeSnapshotData.snapshot_date, activeSnapshotData.snapshot_time);
+      if (adminViewerDateTitle) {
+        adminViewerDateTitle.textContent = `📅 ${dtFormatted}`;
       }
 
-      if (adminHistoryDatePicker) {
-        adminHistoryDatePicker.value = activeSnapshotData.snapshot_date;
+      const totalCount = activeSnapshotData.total_players !== undefined ? activeSnapshotData.total_players : activeSnapshotPlayers.length;
+      if (adminViewerTotalBadge) {
+        adminViewerTotalBadge.textContent = typeof t === 'function' ? t('adminHistoryTotalBadge', totalCount) : `👥 ${totalCount} игроков`;
+      }
+
+      const isManual = activeSnapshotData.snapshot_type === 'manual';
+      if (adminViewerTypeBadge) {
+        adminViewerTypeBadge.textContent = isManual
+          ? (typeof t === 'function' ? t('adminSnapshotManualBadge') : '✋ Ручной')
+          : (typeof t === 'function' ? t('adminSnapshotAutoBadge') : '🤖 Авто (23:55)');
+        adminViewerTypeBadge.className = `admin-viewer-badge-type ${isManual ? 'manual' : 'auto'}`;
       }
 
       renderAdminHistoryPlayers(activeSnapshotPlayers);
       if (adminHistoryTableWrap) adminHistoryTableWrap.classList.remove('hidden');
     } catch (err) {
-      console.error('[Admin History Snapshot Error]', err);
-      if (adminHistoryLoadingSpinner) adminHistoryLoadingSpinner.classList.add('hidden');
-      if (adminHistoryEmptyState) adminHistoryEmptyState.classList.remove('hidden');
+      console.error('[Admin Viewer Error]', err);
+      if (adminViewerLoadingSpinner) adminViewerLoadingSpinner.classList.add('hidden');
+      if (adminViewerEmptyState) adminViewerEmptyState.classList.remove('hidden');
     }
   }
 
@@ -5816,7 +5889,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
-  // Filter search
+  // Filter search inside snapshot viewer
   if (adminHistorySearchInput) {
     adminHistorySearchInput.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
@@ -5846,65 +5919,39 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
-  if (adminHistoryDateSelect) {
-    adminHistoryDateSelect.addEventListener('change', (e) => {
-      const val = e.target.value;
-      if (val) {
-        loadAdminSnapshot(val);
-      }
-    });
-  }
-
-  // 👁️ View snapshot button (explicit action for mobile & desktop)
-  if (adminHistoryViewBtn) {
-    adminHistoryViewBtn.addEventListener('click', (e) => {
+  // Viewer Modal Close & Back buttons
+  if (adminViewerCloseBtn) {
+    adminViewerCloseBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
-        window.TelegramApp.TelegramApp.haptic('light');
-      }
-      let selectedVal = adminHistoryDateSelect ? adminHistoryDateSelect.value : null;
-      if (!selectedVal && adminHistoryDatePicker) {
-        selectedVal = adminHistoryDatePicker.value;
-      }
-      if (selectedVal) {
-        loadAdminSnapshot(selectedVal);
-      } else {
-        alert('Выберите дату снимка из списка или в календаре');
-      }
+      if (adminHistoryViewerModal) closeModal(adminHistoryViewerModal);
     });
   }
 
-  // 🗑️ Delete snapshot button
-  if (adminHistoryDeleteBtn) {
-    adminHistoryDeleteBtn.addEventListener('click', (e) => {
+  if (adminViewerBackBtn) {
+    adminViewerBackBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
-
-      // If activeSnapshotData is not set, try to get from select
-      if (!activeSnapshotData || !activeSnapshotData.id) {
-        const opt = adminHistoryDateSelect ? adminHistoryDateSelect.selectedOptions[0] : null;
-        if (opt && opt.value) {
-          loadAdminSnapshot(opt.value).then(() => {
-            if (activeSnapshotData && activeSnapshotData.id) {
-              openDeleteSnapshotDialog();
-            } else {
-              alert('Сначала выберите снимок для удаления');
-            }
-          });
-          return;
-        }
-        alert('Сначала выберите снимок для удаления');
-        return;
-      }
-
-      openDeleteSnapshotDialog();
+      if (adminHistoryViewerModal) closeModal(adminHistoryViewerModal);
     });
   }
 
-  function openDeleteSnapshotDialog() {
-    if (!activeSnapshotData) return;
+  if (adminHistoryViewerModal) {
+    adminHistoryViewerModal.addEventListener('click', (e) => {
+      if (e.target === adminHistoryViewerModal) {
+        closeModal(adminHistoryViewerModal);
+      }
+    });
+  }
+
+  // Delete snapshot dialog
+  function openDeleteSnapshotDialog(snapshot) {
+    if (!snapshot) return;
+    pendingDeleteSnapshot = snapshot;
     if (deleteSnapshotInfo) {
-      deleteSnapshotInfo.textContent = `📅 ${activeSnapshotData.snapshot_date} (${activeSnapshotData.snapshot_time} Киев) — ${activeSnapshotData.total_players !== undefined ? activeSnapshotData.total_players : activeSnapshotPlayers.length} игроков`;
+      const dt = formatSnapshotDisplay(snapshot.snapshot_date, snapshot.snapshot_time);
+      const isManual = snapshot.snapshot_type === 'manual';
+      const typeLabel = isManual ? 'Ручной' : 'Авто 23:55';
+      const count = snapshot.total_players !== undefined ? snapshot.total_players : '?';
+      deleteSnapshotInfo.textContent = `📅 ${dt} (${typeLabel}) — ${count} игроков`;
     }
     if (deleteSnapshotModal) {
       openModal(deleteSnapshotModal);
@@ -5917,9 +5964,16 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (cancelDeleteSnapshotBtn) {
     cancelDeleteSnapshotBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      pendingDeleteSnapshot = null;
       if (deleteSnapshotModal) closeModal(deleteSnapshotModal);
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
-        window.TelegramApp.TelegramApp.haptic('light');
+    });
+  }
+
+  if (deleteSnapshotModal) {
+    deleteSnapshotModal.addEventListener('click', (e) => {
+      if (e.target === deleteSnapshotModal) {
+        pendingDeleteSnapshot = null;
+        closeModal(deleteSnapshotModal);
       }
     });
   }
@@ -5928,13 +5982,13 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     confirmDeleteSnapshotBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      if (!activeSnapshotData || !activeSnapshotData.id) {
+      if (!pendingDeleteSnapshot || !pendingDeleteSnapshot.id) {
         if (deleteSnapshotModal) closeModal(deleteSnapshotModal);
         return;
       }
 
-      const snapshotIdToDelete = activeSnapshotData.id;
-      const snapshotDateDeleted = activeSnapshotData.snapshot_date;
+      const snapshotIdToDelete = pendingDeleteSnapshot.id;
+      const snapshotFormatted = formatSnapshotDisplay(pendingDeleteSnapshot.snapshot_date, pendingDeleteSnapshot.snapshot_time);
 
       confirmDeleteSnapshotBtn.disabled = true;
       const origHtml = confirmDeleteSnapshotBtn.innerHTML;
@@ -5959,6 +6013,13 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
         if (deleteSnapshotModal) closeModal(deleteSnapshotModal);
 
+        // If viewer modal was viewing this exact deleted snapshot, close it
+        if (activeSnapshotData && String(activeSnapshotData.id) === String(snapshotIdToDelete)) {
+          if (adminHistoryViewerModal) closeModal(adminHistoryViewerModal);
+          activeSnapshotData = null;
+          activeSnapshotPlayers = [];
+        }
+
         if (window.TelegramApp && window.TelegramApp.TelegramApp) {
           window.TelegramApp.TelegramApp.haptic('success');
         }
@@ -5966,15 +6027,11 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         showInfoModal(
           '🗑️',
           'Снимок удалён',
-          `Снимок за ${snapshotDateDeleted} успешно удалён из архива!\nДанные и уровни игроков в игре сохранены.`
+          `Снимок за ${snapshotFormatted} успешно удалён из архива!\nДанные и уровни игроков в игре сохранены.`
         );
 
-        activeSnapshotData = null;
-        activeSnapshotPlayers = [];
-        if (adminHistorySummaryCard) adminHistorySummaryCard.classList.add('hidden');
-        if (adminHistoryTableWrap) adminHistoryTableWrap.classList.add('hidden');
-
-        await loadAdminHistoryDates();
+        pendingDeleteSnapshot = null;
+        await loadAdminHistoryList();
       } catch (err) {
         console.error('[Delete Snapshot Error]', err);
         alert('Ошибка удаления снимка: ' + err.message);
@@ -5988,24 +6045,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminHistoryRefreshDatesBtn) {
     adminHistoryRefreshDatesBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      loadAdminHistoryDates();
+      loadAdminHistoryList();
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('light');
       }
     });
   }
 
-  if (adminHistoryLoadDateBtn) {
-    adminHistoryLoadDateBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!adminHistoryDatePicker) return;
-      const dateVal = adminHistoryDatePicker.value;
-      if (dateVal) {
-        loadAdminSnapshot(dateVal);
-      }
-    });
-  }
-
+  // 📸 Top Button: "Сделать снимок сейчас" (Ручной/тестовый снимок)
   if (adminHistoryTakeSnapshotBtn) {
     adminHistoryTakeSnapshotBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -6013,13 +6060,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
       adminHistoryTakeSnapshotBtn.disabled = true;
       const origHtml = adminHistoryTakeSnapshotBtn.innerHTML;
-      adminHistoryTakeSnapshotBtn.innerHTML = '⏳ Фиксация...';
+      adminHistoryTakeSnapshotBtn.innerHTML = '⏳ Сохранение...';
 
       try {
         const res = await fetch('/api/admin/leaderboard-history/snapshot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            snapshotType: 'manual',
             telegramId: currentUser ? currentUser.telegramId : '',
             firstName: currentUser ? currentUser.firstName : '',
             username: currentUser ? currentUser.username : ''
@@ -6034,13 +6082,16 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           window.TelegramApp.TelegramApp.haptic('success');
         }
 
+        const snap = data.snapshot;
+        const dtFormatted = formatSnapshotDisplay(snap.snapshot_date, snap.snapshot_time);
+
         showInfoModal(
           '📸',
-          'Снимок лидерборда сохранён!',
-          `Снимок за ${data.snapshot.snapshot_date} (${data.snapshot.snapshot_time} Киев) успешно сохранён!\nВсего игроков в снимке: ${data.snapshot.total_players}\nДанные и уровни игроков не затронуты.`
+          'Ручной снимок сохранён!',
+          `Снимок за ${dtFormatted} успешно сохранён!\nВсего игроков в снимке: ${snap.total_players}\n\n🤖 Автоматический снимок в 23:55 (Киев) будет сохранён по расписанию отдельно.`
         );
 
-        await loadAdminHistoryDates(data.snapshot.snapshot_date);
+        await loadAdminHistoryList();
       } catch (err) {
         alert('Ошибка создания снимка: ' + err.message);
       } finally {
