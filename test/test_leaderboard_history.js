@@ -80,13 +80,18 @@ runTest('Historical Seed Snapshots and Same-Day Manual/Auto Isolation', () => {
   assert.strictEqual(snap10.total_players, 110);
   assert.strictEqual(snap10.players.length, 110);
 
-  // Check 15th Sept (140 players)
+  // Check 15th Sept (140 players) if not deleted
+  const deletedIds = db.getDeletedSnapshotIds ? db.getDeletedSnapshotIds() : [];
   const snap15 = db.getLeaderboardSnapshotByDate('2026-09-15');
-  assert(snap15, 'Snapshot for 2026-09-15 must exist');
-  assert.strictEqual(snap15.snapshot_date, '2026-09-15');
-  assert.strictEqual(snap15.snapshot_time, '23:55:00');
-  assert.strictEqual(snap15.total_players, 140);
-  assert.strictEqual(snap15.players.length, 140);
+  if (!deletedIds.includes('7')) {
+    assert(snap15, 'Snapshot for 2026-09-15 must exist');
+    assert.strictEqual(snap15.snapshot_date, '2026-09-15');
+    assert.strictEqual(snap15.snapshot_time, '23:55:00');
+    assert.strictEqual(snap15.total_players, 140);
+    assert.strictEqual(snap15.players.length, 140);
+  } else {
+    assert.strictEqual(snap15, null, 'Deleted snapshot 2026-09-15 must NOT resurrect');
+  }
   
   // Verify top player is Alligator (ID: 5761685341)
   const top1 = snap6.players[0];

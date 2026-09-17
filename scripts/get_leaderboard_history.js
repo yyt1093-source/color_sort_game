@@ -208,6 +208,29 @@ async function syncFromCloud() {
   try {
     const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
     const baseUrl = 'https://kvdb.io/' + bucket;
+
+    // 1. Fetch cloud tombstones and local SQLite tombstones
+    let cloudDeleted = [];
+    try {
+      const delRes = await fetch(`${baseUrl}/meta_leaderboard_deleted_snapshots?_cb=${Date.now()}`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if (delRes.ok) cloudDeleted = await delRes.json();
+    } catch (e) {}
+    if (!Array.isArray(cloudDeleted)) cloudDeleted = [];
+
+    const localDeleted = db.getDeletedSnapshotIds ? db.getDeletedSnapshotIds() : [];
+    const deletedSet = new Set([...cloudDeleted.map(String), ...localDeleted.map(String)]);
+
+    // 2. Clean up any deleted snapshots still residing in SQLite
+    for (const delId of deletedSet) {
+      const existsLocally = db.getLeaderboardSnapshotById(delId);
+      if (existsLocally) {
+        db.deleteLeaderboardSnapshot(delId);
+      }
+    }
+
+    // 3. Fetch cloud index
     const res = await fetch(`${baseUrl}/meta_leaderboard_snapshots_index?_cb=${Date.now()}`, {
       signal: AbortSignal.timeout(3000)
     });
@@ -215,8 +238,10 @@ async function syncFromCloud() {
     const cloudIndex = await res.json();
     if (!Array.isArray(cloudIndex)) return;
 
+    // 4. Download any missing snapshots that are NOT deleted
     const localDates = db.getLeaderboardSnapshotDates();
     for (const c of cloudIndex) {
+      if (!c || !c.id || deletedSet.has(String(c.id))) continue;
       if (!localDates.some(l => String(l.id) === String(c.id))) {
         const snapRes = await fetch(`${baseUrl}/leaderboard_snapshot_${c.id}`, {
           signal: AbortSignal.timeout(3000)
@@ -256,12 +281,53 @@ async function main() {
       console.log(`⚠️ Укажите ID снимка для удаления: node scripts/get_leaderboard_history.js delete <ID>`);
       process.exit(1);
     }
+    const sId = String(idToDelete);
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    const baseUrl = 'https://kvdb.io/' + bucket;
+
+    // 1. Delete from SQLite & record local tombstone
     const deleted = db.deleteLeaderboardSnapshot(idToDelete);
-    if (deleted) {
-      console.log(`🗑️ Снимок с ID ${idToDelete} успешно удалён из архива.`);
-    } else {
-      console.log(`❌ Снимок с ID ${idToDelete} не найден.`);
-    }
+
+    // 2. Explicitly await DELETE in KVDB Cloud to free storage immediately
+    try {
+      await fetch(`${baseUrl}/leaderboard_snapshot_${sId}`, { method: 'DELETE' });
+    } catch (e) {}
+
+    // 3. Update meta_leaderboard_snapshots_index in KVDB Cloud
+    try {
+      const idxRes = await fetch(`${baseUrl}/meta_leaderboard_snapshots_index?_cb=${Date.now()}`);
+      if (idxRes.ok) {
+        const idx = await idxRes.json();
+        if (Array.isArray(idx)) {
+          const filtered = idx.filter(x => String(x.id) !== sId);
+          await fetch(`${baseUrl}/meta_leaderboard_snapshots_index`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(filtered)
+          });
+        }
+      }
+    } catch (e) {}
+
+    // 4. Register in meta_leaderboard_deleted_snapshots tombstone list
+    try {
+      const delRes = await fetch(`${baseUrl}/meta_leaderboard_deleted_snapshots?_cb=${Date.now()}`);
+      let delList = [];
+      if (delRes.ok) {
+        try { delList = await delRes.json(); } catch (e) {}
+      }
+      if (!Array.isArray(delList)) delList = [];
+      if (!delList.includes(sId)) {
+        delList.push(sId);
+        await fetch(`${baseUrl}/meta_leaderboard_deleted_snapshots`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(delList)
+        });
+      }
+    } catch (e) {}
+
+    console.log(`🗑️ Снимок с ID ${idToDelete} успешно удалён везде (SQLite, KVDB Cloud, tombstones).`);
     return;
   }
 

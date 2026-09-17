@@ -24,6 +24,7 @@ const db = require(path.join(__dirname, '..', 'db.js'));
 const KVDB_BUCKET = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
 const GLOBAL_CLOUD_BASE = `https://kvdb.io/${KVDB_BUCKET}`;
 const SNAPSHOTS_INDEX_KEY = 'meta_leaderboard_snapshots_index';
+const SNAPSHOTS_DELETED_KEY = 'meta_leaderboard_deleted_snapshots';
 
 const logDir = path.join(__dirname, '..', 'logs');
 const logFile = path.join(logDir, 'cron_leaderboard.log');
@@ -90,18 +91,35 @@ async function getCloudPlayers() {
 async function syncSnapshots() {
   log('🔄 Starting bi-directional snapshot sync between SQLite and KVDB Cloud...');
   
-  // 1. Fetch cloud index
+  // 1. Fetch cloud tombstones and local SQLite tombstones
+  let cloudDeleted = await fetchJson(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_DELETED_KEY}?_cb=${Date.now()}`);
+  if (!Array.isArray(cloudDeleted)) cloudDeleted = [];
+  const localDeleted = db.getDeletedSnapshotIds ? db.getDeletedSnapshotIds() : [];
+  const deletedSet = new Set([...cloudDeleted.map(String), ...localDeleted.map(String)]);
+
+  // 2. Clean up any deleted snapshots still residing in SQLite
+  for (const delId of deletedSet) {
+    const existsLocally = db.getLeaderboardSnapshotById(delId);
+    if (existsLocally) {
+      log(`🗑️ Purging deleted snapshot #${delId} from local SQLite...`);
+      db.deleteLeaderboardSnapshot(delId);
+    }
+  }
+
+  // 3. Fetch cloud index
   let cloudIndex = await fetchJson(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}?_cb=${Date.now()}`);
   if (!Array.isArray(cloudIndex)) cloudIndex = [];
+  cloudIndex = cloudIndex.filter(s => s && s.id && !deletedSet.has(String(s.id)));
 
-  // 2. Fetch local SQLite snapshot list
-  const localDates = db.getLeaderboardSnapshotDates();
+  // 4. Fetch local SQLite snapshot list (excluding deleted)
+  const localDates = db.getLeaderboardSnapshotDates().filter(l => !deletedSet.has(String(l.id)));
 
   const cloudMap = new Map();
   cloudIndex.forEach(s => cloudMap.set(String(s.id), s));
 
-  // 3. Upload any local snapshots missing from Cloud
+  // 5. Upload any local snapshots missing from Cloud (strictly ignore deleted!)
   for (const localMeta of localDates) {
+    if (deletedSet.has(String(localMeta.id))) continue;
     const localSnap = db.getLeaderboardSnapshotById(localMeta.id);
     if (!localSnap) continue;
 
@@ -121,8 +139,9 @@ async function syncSnapshots() {
     }
   }
 
-  // 4. Download any cloud snapshots missing from SQLite
+  // 6. Download any cloud snapshots missing from SQLite (strictly ignore deleted!)
   for (const cloudMeta of cloudIndex) {
+    if (deletedSet.has(String(cloudMeta.id))) continue;
     const existsLocally = localDates.some(l => String(l.id) === String(cloudMeta.id));
     if (!existsLocally) {
       log(`📥 Downloading cloud snapshot #${cloudMeta.id} (${cloudMeta.snapshot_date} ${cloudMeta.snapshot_time}) into local SQLite...`);
@@ -137,17 +156,40 @@ async function syncSnapshots() {
     }
   }
 
-  // 5. Update merged cloud index sorted newest to oldest
-  const updatedCloudList = Array.from(cloudMap.values()).sort((a, b) => {
+  // 7. Update merged cloud index sorted newest to oldest with strict deduplication
+  const seenIds = new Set();
+  const seenSlots = new Set();
+  const dedupedCloudList = [];
+
+  for (const s of cloudMap.values()) {
+    if (!s || !s.id || deletedSet.has(String(s.id))) continue;
+    const sid = String(s.id);
+    const slotKey = `${s.snapshot_date || ''}_${s.snapshot_time || ''}_${s.snapshot_type || ''}`;
+
+    if (seenIds.has(sid)) continue;
+    if (slotKey && slotKey !== '__' && seenSlots.has(slotKey)) continue;
+
+    seenIds.add(sid);
+    if (slotKey && slotKey !== '__') seenSlots.add(slotKey);
+    dedupedCloudList.push(s);
+  }
+
+  dedupedCloudList.sort((a, b) => {
     const tsA = Number(a.created_at_ts || (a.snapshot_date ? new Date(`${a.snapshot_date}T${a.snapshot_time || '00:00:00'}`).getTime() : a.id));
     const tsB = Number(b.created_at_ts || (b.snapshot_date ? new Date(`${b.snapshot_date}T${b.snapshot_time || '00:00:00'}`).getTime() : b.id));
     if (tsB !== tsA) return tsB - tsA;
     return Number(b.id) - Number(a.id);
   });
 
-  await postJson(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}`, updatedCloudList);
-  log(`✅ Snapshot sync complete! Total synchronized snapshots: ${updatedCloudList.length}`);
-  return updatedCloudList;
+  await postJson(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}`, dedupedCloudList);
+
+  // Sync tombstones back to cloud
+  if (deletedSet.size > 0) {
+    await postJson(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_DELETED_KEY}`, Array.from(deletedSet));
+  }
+
+  log(`✅ Snapshot sync complete! Total synchronized snapshots: ${dedupedCloudList.length}`);
+  return dedupedCloudList;
 }
 
 /**

@@ -161,6 +161,10 @@ function initDatabase() {
         value TEXT,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+      CREATE TABLE IF NOT EXISTS leaderboard_deleted_snapshots (
+        id TEXT PRIMARY KEY,
+        deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `);
   } catch (e) {}
 }
@@ -1267,6 +1271,15 @@ function getLeaderboardSnapshotById(snapshotId) {
 function insertExternalLeaderboardSnapshot(snap) {
   if (!snap || !snap.snapshot_date) return null;
   const id = snap.id ? Number(snap.id) : null;
+
+  // Guard: if this snapshot ID was marked as deleted, NEVER insert it!
+  if (id) {
+    try {
+      const isDel = db.prepare(`SELECT id FROM leaderboard_deleted_snapshots WHERE id = ?`).get(String(id));
+      if (isDel) return null;
+    } catch (e) {}
+  }
+
   const snapshotDate = snap.snapshot_date;
   const snapshotTime = snap.snapshot_time || '23:55:00';
   const snapshotType = snap.snapshot_type || 'auto';
@@ -1328,22 +1341,29 @@ function insertExternalLeaderboardSnapshot(snap) {
 }
 
 /**
- * Delete a leaderboard snapshot and its entries
+ * Delete a leaderboard snapshot and its entries everywhere
  */
 function deleteLeaderboardSnapshot(snapshotId) {
   try {
     const id = Number(snapshotId);
     if (!id) return false;
 
+    // Record tombstone in SQLite so it can NEVER be re-seeded or resurrected
+    try {
+      db.prepare(`INSERT OR IGNORE INTO leaderboard_deleted_snapshots (id) VALUES (?)`).run(String(id));
+    } catch (e) {}
+
     db.prepare(`DELETE FROM leaderboard_snapshot_entries WHERE snapshot_id = ?`).run(id);
     const res = db.prepare(`DELETE FROM leaderboard_snapshots WHERE id = ?`).run(id);
 
-    if (res.changes > 0 && typeof fetch !== 'undefined') {
+    if (typeof fetch !== 'undefined') {
       (async () => {
         try {
-          const bucket = '82kzJTUxZwwFNvg7kUSqgM';
+          const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
           const baseUrl = 'https://kvdb.io/' + bucket;
+          // 1. Delete full snapshot key from KVDB
           await fetch(`${baseUrl}/leaderboard_snapshot_${id}`, { method: 'DELETE' });
+          // 2. Remove from meta_leaderboard_snapshots_index
           const idxRes = await fetch(`${baseUrl}/meta_leaderboard_snapshots_index?_cb=${Date.now()}`);
           if (idxRes.ok) {
             const idx = await idxRes.json();
@@ -1356,6 +1376,21 @@ function deleteLeaderboardSnapshot(snapshotId) {
               });
             }
           }
+          // 3. Register in meta_leaderboard_deleted_snapshots tombstone list
+          const delRes = await fetch(`${baseUrl}/meta_leaderboard_deleted_snapshots?_cb=${Date.now()}`);
+          let delList = [];
+          if (delRes.ok) {
+            try { delList = await delRes.json(); } catch (e) {}
+          }
+          if (!Array.isArray(delList)) delList = [];
+          if (!delList.includes(String(id))) {
+            delList.push(String(id));
+            await fetch(`${baseUrl}/meta_leaderboard_deleted_snapshots`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(delList)
+            });
+          }
         } catch (e) {}
       })();
     }
@@ -1364,6 +1399,15 @@ function deleteLeaderboardSnapshot(snapshotId) {
   } catch (err) {
     console.error('[DB Delete Snapshot Error]', err);
     return false;
+  }
+}
+
+function getDeletedSnapshotIds() {
+  try {
+    const rows = db.prepare(`SELECT id FROM leaderboard_deleted_snapshots`).all();
+    return rows.map(r => String(r.id));
+  } catch (e) {
+    return [];
   }
 }
 
@@ -1376,20 +1420,32 @@ function ensureSeedLeaderboardSnapshot() {
     db.prepare(`UPDATE leaderboard_snapshots SET snapshot_time = '23:55:00' WHERE snapshot_time = '00:00:00'`).run();
   } catch (e) {}
 
+  // Guard: if seed was already run once, NEVER re-seed deleted snapshots!
+  try {
+    const initialized = db.prepare(`SELECT value FROM system_settings WHERE key = 'leaderboard_seed_initialized'`).get();
+    if (initialized && initialized.value === 'true') {
+      return;
+    }
+  } catch (e) {}
+
   const seedConfigs = [
-    { date: '2026-07-10', time: '12:00:00', type: 'manual', count: 85, maxLvl: 120, ts: 1783587600000 },
-    { date: '2026-07-10', time: '23:55:00', type: 'auto', count: 90, maxLvl: 125, ts: 1783630500000 },
-    { date: '2026-07-11', time: '23:55:00', type: 'auto', count: 94, maxLvl: 128, ts: 1783716900000 },
-    { date: '2026-09-04', time: '23:55:00', type: 'auto', count: 85, maxLvl: 130, ts: 1788470100000 },
-    { date: '2026-09-06', time: '23:55:00', type: 'auto', count: 15, maxLvl: 150, ts: 1788642900000 },
-    { date: '2026-09-10', time: '23:55:00', type: 'auto', count: 110, maxLvl: 175, ts: 1788988500000 },
-    { date: '2026-09-15', time: '23:55:00', type: 'auto', count: 140, maxLvl: 210, ts: 1789420500000 }
+    { id: 1, date: '2026-07-10', time: '12:00:00', type: 'manual', count: 85, maxLvl: 120, ts: 1783587600000 },
+    { id: 2, date: '2026-07-10', time: '23:55:00', type: 'auto', count: 90, maxLvl: 125, ts: 1783630500000 },
+    { id: 3, date: '2026-07-11', time: '23:55:00', type: 'auto', count: 94, maxLvl: 128, ts: 1783716900000 },
+    { id: 4, date: '2026-09-04', time: '23:55:00', type: 'auto', count: 85, maxLvl: 130, ts: 1788470100000 },
+    { id: 5, date: '2026-09-06', time: '23:55:00', type: 'auto', count: 15, maxLvl: 150, ts: 1788642900000 },
+    { id: 6, date: '2026-09-10', time: '23:55:00', type: 'auto', count: 110, maxLvl: 175, ts: 1788988500000 },
+    { id: 7, date: '2026-09-15', time: '23:55:00', type: 'auto', count: 140, maxLvl: 210, ts: 1789420500000 }
   ];
 
   const firstNames = ['Alligator', 'Александр', 'Мария', 'Дмитрий', 'Елена', 'Сергей', 'Анна', 'Максим', 'Ольга', 'Богдан', 'Катерина', 'Владимир', 'Татьяна', 'Денис', 'Игорь', 'Наталья', 'Виктор', 'Юлия', 'Артем', 'Светлана', 'Роман', 'Алина', 'Павел', 'Виктория', 'Михаил'];
 
   for (const cfg of seedConfigs) {
     try {
+      if (cfg.id) {
+        const isDel = db.prepare(`SELECT id FROM leaderboard_deleted_snapshots WHERE id = ?`).get(String(cfg.id));
+        if (isDel) continue;
+      }
       const checkStmt = db.prepare(`SELECT id FROM leaderboard_snapshots WHERE snapshot_date = ? AND snapshot_time = ? LIMIT 1`);
       if (checkStmt.get(cfg.date, cfg.time)) continue; // Already exists
 
@@ -1432,6 +1488,14 @@ function ensureSeedLeaderboardSnapshot() {
       console.warn(`[DB Snapshot] Failed to seed ${cfg.date} snapshot:`, err.message);
     }
   }
+
+  try {
+    db.prepare(`
+      INSERT INTO system_settings (key, value)
+      VALUES ('leaderboard_seed_initialized', 'true')
+      ON CONFLICT(key) DO UPDATE SET value = 'true', updated_at = CURRENT_TIMESTAMP
+    `).run();
+  } catch (e) {}
 }
 
 module.exports = {
@@ -1455,6 +1519,7 @@ module.exports = {
   getKyivDateTime,
   saveLeaderboardSnapshot,
   deleteLeaderboardSnapshot,
+  getDeletedSnapshotIds,
   getLeaderboardSnapshotDates,
   getAutoLeaderboardSnapshotByDate,
   getLeaderboardSnapshotByDate,
