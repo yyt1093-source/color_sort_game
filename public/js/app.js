@@ -6210,7 +6210,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     // 4. Fallback seeds ONLY if list is still empty AND seeds were not explicitly deleted
     if (!Array.isArray(list) || list.length === 0) {
       const defaultSeeds = [
-        { id: 7, snapshot_date: '2026-09-15', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 140, created_at_ts: 1789420500000 },
         { id: 6, snapshot_date: '2026-09-10', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 110, created_at_ts: 1788988500000 },
         { id: 5, snapshot_date: '2026-09-06', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 15, created_at_ts: 1788642900000 },
         { id: 4, snapshot_date: '2026-09-04', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 85, created_at_ts: 1788470100000 },
