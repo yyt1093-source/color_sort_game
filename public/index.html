@@ -26,10 +26,10 @@
   
   <!-- Preload critical game assets for instant boot -->
   <link rel="preload" href="referral_share.jpg?v=4" as="image">
-  <link rel="preload" href="js/gameEngine.js?v=48800" as="script">
-  <link rel="preload" href="js/renderer.js?v=48800" as="script">
-  <link rel="preload" href="js/levelGenerator.js?v=48800" as="script">
-  <link rel="preload" href="js/app.js?v=48800" as="script">
+  <link rel="preload" href="js/gameEngine.js?v=48810" as="script">
+  <link rel="preload" href="js/renderer.js?v=48810" as="script">
+  <link rel="preload" href="js/levelGenerator.js?v=48810" as="script">
+  <link rel="preload" href="js/app.js?v=48810" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -43,7 +43,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=48800">
+  <link rel="stylesheet" href="style.css?v=48810">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -608,7 +608,7 @@
           <span class="admin-shield-icon">🛡️</span>
           <div>
             <strong id="adminPanelTitle">Панель Администратора</strong>
-            <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48800)</span>
+            <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48810)</span>
           </div>
         </div>
 
@@ -620,7 +620,11 @@
           </button>
           <button type="button" class="admin-nav-tab" id="adminTabHistoryBtn" data-tab="history">
             <span>📜</span>
-            <span id="adminTabHistoryLabel">История лидерборда</span>
+            <span id="adminTabHistoryLabel">История</span>
+          </button>
+          <button type="button" class="admin-nav-tab" id="adminTabWalletsBtn" data-tab="wallets">
+            <span>👛</span>
+            <span id="adminTabWalletsLabel">Кошельки</span>
           </button>
         </div>
 
@@ -740,6 +744,50 @@
             </div>
           </div>
         </div>
+
+        <!-- Tab 3: Connected Wallets (List of players who connected wallet) -->
+        <div id="adminTabWalletsContent" class="admin-tab-content hidden">
+          <!-- Header & Info Box -->
+          <div class="admin-wallets-header-box">
+            <div class="admin-wallets-title-row">
+              <span style="font-size: 1.3rem;">👛</span>
+              <div>
+                <strong id="adminWalletsTitle">Кошельки игроков</strong>
+                <div class="admin-wallets-sub" id="adminWalletsSub">Игроки, подключившие TON кошелёк к игре</div>
+              </div>
+            </div>
+            <div class="admin-wallets-count-pill" id="adminWalletsCountBadge">👛 0 кошельков</div>
+          </div>
+
+          <!-- Section search bar and Refresh button -->
+          <div class="admin-wallets-list-bar">
+            <div class="admin-wallets-search-wrap">
+              <span class="admin-wallets-search-icon">🔍</span>
+              <input type="text" id="adminWalletsSearchInput" class="admin-wallets-search-input" placeholder="Поиск по нику, ID или адресу...">
+              <button type="button" id="adminWalletsClearSearchBtn" class="admin-wallets-clear-search hidden">✕</button>
+            </div>
+            <button type="button" id="adminWalletsRefreshBtn" class="admin-history-icon-btn" title="Обновить список кошельков">🔄</button>
+          </div>
+
+          <!-- List Container -->
+          <div class="admin-wallets-list-container">
+            <div id="adminWalletsLoadingSpinner" class="admin-history-loading hidden">
+              <div class="spinner"></div>
+              <span id="adminWalletsLoadingText">Загрузка кошельков игроков...</span>
+            </div>
+            <div id="adminWalletsEmptyState" class="admin-history-empty hidden">
+              <span style="font-size: 2rem;">📭</span>
+              <span id="adminWalletsEmptyText">Нет игроков с подключённым кошельком</span>
+            </div>
+
+            <!-- Dynamic list of connected wallets -->
+            <div id="adminWalletsItemsList" class="admin-wallets-items-list">
+              <!-- Rendered dynamically as cards:
+                   [ 👤 Никнейм | ID: 12345 | 👛 UQ...1234 ]  [ 👁️ Просмотреть ]
+              -->
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -835,6 +883,106 @@
 
       <div style="margin-top: 14px; text-align: center;">
         <button type="button" id="adminViewerBackBtn" class="admin-viewer-back-btn">← Назад к списку снимков</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player Wallet Details Modal (Detailed view with lazy-loaded deposits) -->
+  <div id="adminWalletDetailsModal" class="modal-overlay hidden">
+    <div class="glass-modal admin-wallet-details-modal">
+      <div class="admin-viewer-header">
+        <div class="admin-viewer-title-box">
+          <div class="admin-viewer-date" id="adminWalletDetailsModalTitle">👛 Кошелёк игрока</div>
+          <div class="admin-viewer-sub-row">
+            <span class="admin-viewer-badge" id="adminWalletDetailTypeBadge">💎 TON Wallet</span>
+            <span class="admin-viewer-badge-type" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border-color: rgba(52, 211, 153, 0.4);">🟢 Подключён</span>
+          </div>
+        </div>
+        <button type="button" id="adminWalletDetailsCloseBtn" class="modal-close-btn" title="Закрыть">✕</button>
+      </div>
+
+      <!-- Player Info Card -->
+      <div class="admin-wallet-detail-card">
+        <div class="admin-wallet-detail-row">
+          <span class="admin-wallet-detail-label">Игрок:</span>
+          <div class="admin-wallet-detail-val">
+            <strong id="adminWalletDetailName">—</strong>
+            <span id="adminWalletDetailUsername" class="admin-wallet-detail-handle"></span>
+          </div>
+        </div>
+        <div class="admin-wallet-detail-row">
+          <span class="admin-wallet-detail-label">Telegram ID:</span>
+          <div class="admin-wallet-detail-val">
+            <span id="adminWalletDetailTid" class="monospace-tag">—</span>
+            <button type="button" id="adminWalletCopyTidBtn" class="copy-small-btn" title="Скопировать ID">📋</button>
+          </div>
+        </div>
+        <div class="admin-wallet-detail-row">
+          <span class="admin-wallet-detail-label">Тип кошелька:</span>
+          <div class="admin-wallet-detail-val">
+            <span id="adminWalletDetailWalletType" style="font-weight: 700; color: #38bdf8;">—</span>
+          </div>
+        </div>
+        <div class="admin-wallet-detail-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="admin-wallet-detail-label">Адрес кошелька:</span>
+          <div class="admin-wallet-address-box">
+            <span id="adminWalletDetailAddress" class="admin-wallet-full-address">—</span>
+            <button type="button" id="adminWalletCopyAddressBtn" class="admin-wallet-copy-btn" title="Скопировать адрес">
+              <span id="adminWalletCopyAddressIcon">📋</span>
+              <span id="adminWalletCopyAddressLabel">Копировать</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Metrics (2 Columns) -->
+      <div class="admin-wallet-metrics-grid">
+        <div class="admin-wallet-metric-card">
+          <div class="admin-wallet-metric-label">Общая сумма пополнений</div>
+          <div class="admin-wallet-metric-value" id="adminWalletDetailTotalAmount">0.00 TON</div>
+        </div>
+        <div class="admin-wallet-metric-card">
+          <div class="admin-wallet-metric-label">Количество пополнений</div>
+          <div class="admin-wallet-metric-value" id="adminWalletDetailDepositsCount">0</div>
+        </div>
+      </div>
+
+      <!-- History of Confirmed Deposits (Lazy-loaded) -->
+      <div class="admin-wallet-deposits-section">
+        <div class="admin-wallet-deposits-header">
+          <strong id="adminWalletDepositsHeaderTitle">📜 История подтверждённых пополнений</strong>
+          <span class="admin-wallet-deposits-sub">Фиксируются только после подтверждённого реального платежа</span>
+        </div>
+
+        <div class="admin-wallet-deposits-container">
+          <div id="adminWalletDepositsLoadingSpinner" class="admin-history-loading hidden">
+            <div class="spinner"></div>
+            <span>Загрузка истории пополнений...</span>
+          </div>
+          <div id="adminWalletDepositsEmptyState" class="admin-history-empty hidden">
+            <span style="font-size: 1.8rem;">🪙</span>
+            <span>Подтверждённых пополнений пока нет</span>
+          </div>
+          <div id="adminWalletDepositsTableWrap" class="admin-history-table-wrap">
+            <table class="admin-history-table">
+              <thead>
+                <tr>
+                  <th>Дата и время</th>
+                  <th style="text-align: right;">Сумма</th>
+                  <th style="text-align: center;">Статус</th>
+                  <th>Детали / Memo</th>
+                </tr>
+              </thead>
+              <tbody id="adminWalletDepositsTableBody">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; text-align: center;">
+        <button type="button" id="adminWalletDetailsBackBtn" class="admin-viewer-back-btn">← Назад к списку кошельков</button>
       </div>
     </div>
   </div>
@@ -1025,12 +1173,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=48800"></script>
-  <script src="js/audio.js?v=48800"></script>
-  <script src="js/solver.js?v=48800"></script>
-  <script src="js/levelGenerator.js?v=48800"></script>
-  <script src="js/gameEngine.js?v=48800"></script>
-  <script src="js/renderer.js?v=48800"></script>
-  <script src="js/app.js?v=48800"></script>
+  <script src="js/telegram.js?v=48810"></script>
+  <script src="js/audio.js?v=48810"></script>
+  <script src="js/solver.js?v=48810"></script>
+  <script src="js/levelGenerator.js?v=48810"></script>
+  <script src="js/gameEngine.js?v=48810"></script>
+  <script src="js/renderer.js?v=48810"></script>
+  <script src="js/app.js?v=48810"></script>
 </body>
 </html>

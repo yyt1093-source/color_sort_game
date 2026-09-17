@@ -351,9 +351,9 @@ app.post('/api/ad-reward', (req, res) => {
  */
 app.post('/api/wallet/connect', (req, res) => {
   try {
-    const { telegramId, walletAddress } = req.body;
+    const { telegramId, walletAddress, walletType } = req.body;
     const id = telegramId || 'guest_dev_123';
-    const updatedUser = db.updateTonWallet(id, walletAddress);
+    const updatedUser = db.updateTonWallet(id, walletAddress, walletType);
     res.json({ success: true, user: updatedUser });
   } catch (err) {
     console.error('[API ERROR] /api/wallet/connect:', err);
@@ -476,7 +476,7 @@ async function verifyTonDepositOnChain(memo, expectedAmount, walletAddress) {
  */
 app.post('/api/wallet/verify-deposit', async (req, res) => {
   try {
-    const { telegramId, amount, memo, walletAddress } = req.body;
+    const { telegramId, amount, memo, walletAddress, walletType } = req.body;
     const id = telegramId || 'guest_dev_123';
     const depositAmount = parseFloat(amount) || 0;
     if (depositAmount <= 0) {
@@ -489,7 +489,7 @@ app.post('/api/wallet/verify-deposit', async (req, res) => {
     }
 
     const creditedAmount = check.amount || depositAmount;
-    const result = db.recordTonDeposit(id, creditedAmount, memo, walletAddress);
+    const result = db.recordTonDeposit(id, creditedAmount, memo, walletAddress, walletType);
     if (!result) {
       return res.status(500).json({ success: false, error: 'Ошибка обработки пополнения' });
     }
@@ -536,11 +536,11 @@ app.post('/api/shop/buy', (req, res) => {
 
 function checkIsAdmin(reqBody) {
   if (!reqBody) return false;
-  const { telegramId, firstName, username } = reqBody;
+  const { telegramId, adminTelegramId, adminTid, adminId, firstName, adminFirstName, username, adminUsername } = reqBody;
 
-  const tid = String(telegramId || '').trim();
-  const fname = String(firstName || '').toLowerCase().trim();
-  const uname = String(username || '').toLowerCase().replace(/^@/, '').trim();
+  const tid = String(adminTelegramId || adminTid || adminId || telegramId || '').trim();
+  const fname = String(adminFirstName || firstName || '').toLowerCase().trim();
+  const uname = String(adminUsername || username || '').toLowerCase().replace(/^@/, '').trim();
 
   // The admin panel is strictly reserved for one administrator: Alligator
   // Telegram ID: 5761685341 or exact username/nickname "alligator" / "аллигатор"
@@ -972,6 +972,44 @@ app.post('/api/admin/leaderboard-history/delete', (req, res) => {
     res.json({ success: true, message: `Снимок #${id} успешно удалён!` });
   } catch (err) {
     console.error('[API ERROR] POST /api/admin/leaderboard-history/delete:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: Get all players who connected a TON wallet
+ */
+app.get('/api/admin/connected-wallets', (req, res) => {
+  try {
+    if (!checkIsAdmin(req.query)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+    const wallets = db.getConnectedWallets();
+    res.json({ success: true, wallets });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/connected-wallets:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: Get confirmed deposits for a specific player (Lazy-loaded)
+ */
+app.get('/api/admin/player-deposits', (req, res) => {
+  try {
+    if (!checkIsAdmin(req.query)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+    const targetTelegramId = req.query.telegramId || req.query.playerTid || req.query.playerTelegramId;
+    if (!targetTelegramId) {
+      return res.status(400).json({ success: false, error: 'Параметр telegramId обязателен' });
+    }
+    const deposits = db.getPlayerDeposits(targetTelegramId);
+    const totalAmount = Number(deposits.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0).toFixed(4));
+    const totalCount = deposits.length;
+    res.json({ success: true, deposits, totalAmount, totalCount });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/player-deposits:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

@@ -122,6 +122,12 @@ function initDatabase() {
     db.exec(`ALTER TABLE users ADD COLUMN ton_wallet TEXT DEFAULT '';`);
   } catch (e) {}
   try {
+    db.exec(`ALTER TABLE users ADD COLUMN ton_wallet_type TEXT DEFAULT '';`);
+  } catch (e) {}
+  try {
+    db.exec(`ALTER TABLE ton_deposits ADD COLUMN wallet_type TEXT DEFAULT '';`);
+  } catch (e) {}
+  try {
     db.exec(`ALTER TABLE users ADD COLUMN memo_code TEXT DEFAULT '';`);
   } catch (e) {}
   try {
@@ -450,43 +456,127 @@ function resetSeason(resetTimestamp = Date.now()) {
   }
 }
 
-function updateTonWallet(telegramId, walletAddress) {
+function updateTonWallet(telegramId, walletAddress, walletType = '') {
   const stmt = db.prepare(`
     UPDATE users
     SET ton_wallet = ?,
+        ton_wallet_type = CASE WHEN ? != '' THEN ? ELSE ton_wallet_type END,
         updated_at = datetime('now')
     WHERE telegram_id = ?
   `);
-  stmt.run(walletAddress || '', String(telegramId));
+  stmt.run(walletAddress || '', walletType || '', walletType || '', String(telegramId));
   return getUser(telegramId);
 }
 
-function recordTonDeposit(telegramId, amount, memo, walletAddress) {
+function recordTonDeposit(telegramId, amount, memo, walletAddress, walletType = '') {
   const depositAmount = parseFloat(amount) || 0;
   if (depositAmount <= 0) return null;
 
   const insertStmt = db.prepare(`
-    INSERT INTO ton_deposits (telegram_id, amount, memo, wallet_address, coins_bonus, status)
-    VALUES (?, ?, ?, ?, 0, 'completed')
+    INSERT INTO ton_deposits (telegram_id, amount, memo, wallet_address, wallet_type, coins_bonus, status)
+    VALUES (?, ?, ?, ?, ?, 0, 'completed')
   `);
-  insertStmt.run(String(telegramId), depositAmount, memo || '', walletAddress || '');
+  const info = insertStmt.run(String(telegramId), depositAmount, memo || '', walletAddress || '', walletType || '');
 
   const updateStmt = db.prepare(`
     UPDATE users
     SET ton_balance = COALESCE(ton_balance, 0) + ?,
         ton_wallet = CASE WHEN ? != '' THEN ? ELSE ton_wallet END,
+        ton_wallet_type = CASE WHEN ? != '' THEN ? ELSE ton_wallet_type END,
         updated_at = datetime('now')
     WHERE telegram_id = ?
   `);
-  updateStmt.run(depositAmount, walletAddress || '', walletAddress || '', String(telegramId));
+  updateStmt.run(depositAmount, walletAddress || '', walletAddress || '', walletType || '', walletType || '', String(telegramId));
+
+  // Sync deposit to KVDB Cloud asynchronously
+  if (typeof fetch !== 'undefined') {
+    (async () => {
+      try {
+        const bucket = '82kzJTUxZwwFNvg7kUSqgM';
+        const baseUrl = 'https://kvdb.io/' + bucket;
+        const key = `deposits_${encodeURIComponent(telegramId)}`;
+        const curRes = await fetch(`${baseUrl}/${key}?_cb=${Date.now()}`);
+        let list = [];
+        if (curRes.ok) {
+          try { list = await curRes.json(); } catch (e) {}
+        }
+        if (!Array.isArray(list)) list = [];
+        const depObj = {
+          id: 'dep_' + Date.now(),
+          telegramId: String(telegramId),
+          amount: depositAmount,
+          memo: memo || '',
+          walletAddress: walletAddress || '',
+          walletType: walletType || 'TON Wallet',
+          date: new Date().toISOString().replace('T', ' ').substring(0, 19),
+          timestamp: Date.now(),
+          status: 'confirmed'
+        };
+        list.unshift(depObj);
+        await fetch(`${baseUrl}/${key}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(list)
+        });
+      } catch (e) {
+        console.warn('[DB] Sync deposit to cloud error:', e.message);
+      }
+    })();
+  }
 
   return {
     user: getUser(telegramId),
     deposit: {
+      id: info.lastInsertRowid,
       amount: depositAmount,
-      memo
+      memo,
+      walletType
     }
   };
+}
+
+/**
+ * Get all players with a connected TON wallet (Admin only)
+ */
+function getConnectedWallets() {
+  const stmt = db.prepare(`
+    SELECT telegram_id, first_name, username, ton_wallet, ton_wallet_type, ton_balance, updated_at
+    FROM users
+    WHERE ton_wallet IS NOT NULL AND trim(ton_wallet) != ''
+    ORDER BY updated_at DESC
+  `);
+  return stmt.all().map(u => ({
+    telegramId: String(u.telegram_id),
+    name: u.first_name || 'Игрок',
+    username: u.username ? String(u.username).replace(/^@/, '') : '',
+    walletAddress: u.ton_wallet,
+    walletType: u.ton_wallet_type || 'TON Wallet',
+    tonBalance: Number(u.ton_balance || 0),
+    updatedAt: u.updated_at
+  }));
+}
+
+/**
+ * Get all confirmed deposits for a specific player (Admin only)
+ */
+function getPlayerDeposits(telegramId) {
+  const stmt = db.prepare(`
+    SELECT id, telegram_id, amount, memo, wallet_address, wallet_type, status, created_at
+    FROM ton_deposits
+    WHERE telegram_id = ?
+    ORDER BY id DESC
+  `);
+  return stmt.all(String(telegramId)).map(d => ({
+    id: d.id,
+    telegramId: String(d.telegram_id),
+    amount: Number(d.amount),
+    memo: d.memo || '',
+    walletAddress: d.wallet_address || '',
+    walletType: d.wallet_type || 'TON Wallet',
+    status: d.status || 'confirmed',
+    date: d.created_at,
+    dateDisplay: d.created_at
+  }));
 }
 
 /**
@@ -1303,5 +1393,7 @@ module.exports = {
   getAutoLeaderboardSnapshotByDate,
   getLeaderboardSnapshotByDate,
   getLeaderboardSnapshotById,
-  ensureSeedLeaderboardSnapshot
+  ensureSeedLeaderboardSnapshot,
+  getConnectedWallets,
+  getPlayerDeposits
 };
