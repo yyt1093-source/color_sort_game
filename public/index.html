@@ -26,12 +26,13 @@
   
   <!-- Preload critical game assets for instant boot -->
   <link rel="preload" href="referral_share.jpg?v=4" as="image">
-  <link rel="preload" href="ton_icon.png?v=48840" as="image">
-  <link rel="preload" href="js/gameEngine.js?v=48840" as="script">
-  <link rel="preload" href="js/renderer.js?v=48840" as="script">
-  <link rel="preload" href="js/levelGenerator.js?v=48840" as="script">
-  <link rel="preload" href="js/tonconnect-ui.min.js?v=48840" as="script">
-  <link rel="preload" href="js/app.js?v=48840" as="script">
+  <link rel="preload" href="game_icon.png?v=48850" as="image">
+  <link rel="preload" href="ton_icon.png?v=48850" as="image">
+  <link rel="preload" href="js/gameEngine.js?v=48850" as="script">
+  <link rel="preload" href="js/renderer.js?v=48850" as="script">
+  <link rel="preload" href="js/levelGenerator.js?v=48850" as="script">
+  <link rel="preload" href="js/tonconnect-ui.min.js?v=48850" as="script">
+  <link rel="preload" href="js/app.js?v=48850" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -42,7 +43,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=48840">
+  <link rel="stylesheet" href="style.css?v=48850">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -214,7 +215,7 @@
       <div class="ton-status-card">
         <div class="ton-status-left">
           <div class="ton-gem-avatar">
-            <img src="ton_icon.png?v=48840" class="ton-gem-avatar-img" alt="Color Sort">
+            <span class="ton-gem-icon">💎</span>
           </div>
           <div class="ton-status-texts">
             <span class="ton-sub-label" id="tonBalanceSub">Ваш текущий баланс TON:</span>
@@ -231,18 +232,12 @@
 
       <!-- Connect Wallet Card -->
       <div class="ton-card ton-connect-card">
-        <div class="ton-connect-card-top">
-          <img src="ton_icon.png?v=48840" class="ton-connect-paints-img" alt="Color Sort Paints">
-          <div class="ton-connect-info">
-            <div class="ton-card-title-row">
-              <span class="wallet-icon-pink">👛</span>
-              <strong class="ton-card-heading" id="tonConnectHeading">Подключение кошелька</strong>
-            </div>
-            <span class="ton-connect-subtext" id="tonConnectSubtext">Привяжите кошелёк для наград и баланса</span>
-          </div>
+        <div class="ton-card-title-row">
+          <span class="wallet-icon-pink">👛</span>
+          <strong class="ton-card-heading" id="tonConnectHeading">Подключение кошелька</strong>
         </div>
         <button type="button" id="tonConnectBtn" class="ton-btn-connect">
-          <img src="ton_icon.png?v=48840" class="ton-btn-art-icon" alt="Paints">
+          <span class="btn-gem-icon">💎</span>
           <span id="tonConnectBtnLabel">Подключить TON Кошелёк</span>
         </button>
       </div>
@@ -613,7 +608,7 @@
           <span class="admin-shield-icon">🛡️</span>
           <div>
             <strong id="adminPanelTitle">Панель Администратора</strong>
-            <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48840)</span>
+            <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48850)</span>
           </div>
         </div>
 
@@ -1202,13 +1197,13 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=48840"></script>
-  <script src="js/audio.js?v=48840"></script>
-  <script src="js/solver.js?v=48840"></script>
-  <script src="js/levelGenerator.js?v=48840"></script>
-  <script src="js/gameEngine.js?v=48840"></script>
-  <script src="js/renderer.js?v=48840"></script>
-  <script src="js/tonconnect-ui.min.js?v=48840"></script>
-  <script src="js/app.js?v=48840"></script>
+  <script src="js/telegram.js?v=48850"></script>
+  <script src="js/audio.js?v=48850"></script>
+  <script src="js/solver.js?v=48850"></script>
+  <script src="js/levelGenerator.js?v=48850"></script>
+  <script src="js/gameEngine.js?v=48850"></script>
+  <script src="js/renderer.js?v=48850"></script>
+  <script src="js/tonconnect-ui.min.js?v=48850"></script>
+  <script src="js/app.js?v=48850"></script>
 </body>
 </html>
