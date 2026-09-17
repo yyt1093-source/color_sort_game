@@ -386,6 +386,7 @@ async function initColorSortApp() {
       tonCopyMemoTitle: "Скопировать Memo",
       tonConnecting: "Подключение...",
       tonConnectedPrefix: "Подключён:",
+      tonConnectError: "Не удалось подключить кошелёк. Проверьте соединение или приложение кошелька.",
       tonVerifyingBtn: "Проверка платежа...",
       tonStepMinus: "Уменьшить",
       tonStepPlus: "Увеличить",
@@ -627,6 +628,7 @@ async function initColorSortApp() {
       tonCopyMemoTitle: "Скопіювати Memo",
       tonConnecting: "Підключення...",
       tonConnectedPrefix: "Підключено:",
+      tonConnectError: "Не вдалося підключити гаманець. Перевірте з'єднання або застосунок гаманця.",
       tonVerifyingBtn: "Перевірка платежу...",
       tonStepMinus: "Зменшити",
       tonStepPlus: "Збільшити",
@@ -861,6 +863,7 @@ async function initColorSortApp() {
       tonCopyMemoTitle: "Copy Memo",
       tonConnecting: "Connecting...",
       tonConnectedPrefix: "Connected:",
+      tonConnectError: "Failed to connect wallet. Please check connection or wallet app.",
       tonVerifyingBtn: "Checking payment...",
       tonStepMinus: "Decrease",
       tonStepPlus: "Increase",
@@ -1095,6 +1098,7 @@ async function initColorSortApp() {
       tonCopyMemoTitle: "Memo kopieren",
       tonConnecting: "Verbinden...",
       tonConnectedPrefix: "Verbunden:",
+      tonConnectError: "Fehler beim Verbinden der Wallet. Bitte Verbindung oder Wallet-App prüfen.",
       tonVerifyingBtn: "Zahlung prüfen...",
       tonStepMinus: "Verringern",
       tonStepPlus: "Erhöhen",
@@ -1329,6 +1333,7 @@ async function initColorSortApp() {
       tonCopyMemoTitle: "Kopijuoti Memo",
       tonConnecting: "Jungiamasi...",
       tonConnectedPrefix: "Prijungta:",
+      tonConnectError: "Nepavyko prijungti piniginės. Patikrinkite ryšį arba piniginės programėlę.",
       tonVerifyingBtn: "Tikrinamas mokėjimas...",
       tonStepMinus: "Sumažinti",
       tonStepPlus: "Padidinti",
@@ -3824,38 +3829,112 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     syncPlayerToCloud(currentUser).catch(() => {});
   }
 
-  function initTonConnect() {
+  // Dynamic manifest URL matching current domain & subdirectory path
+  function getTonManifestUrl() {
     try {
-      if (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI) {
-        tonConnectUIInstance = new window.TON_CONNECT_UI.TonConnectUI({
-          manifestUrl: window.location.origin + '/tonconnect-manifest.json'
-        });
-        tonConnectUIInstance.onStatusChange((wallet) => {
-          if (wallet && wallet.account) {
-            connectedWalletAddress = wallet.account.address || '';
-            const detectedType = detectWalletTypeName(wallet);
-            currentUser.ton_wallet = connectedWalletAddress;
-            currentUser.ton_wallet_type = detectedType;
-            saveLocalUser();
-            updateTonWalletUI();
-            apiCall('/api/wallet/connect', 'POST', {
-              telegramId: currentUser.telegramId,
-              walletAddress: connectedWalletAddress,
-              walletType: detectedType
-            }).catch(() => {});
-            registerConnectedWalletClient(currentUser);
-          } else {
-            connectedWalletAddress = '';
-            currentUser.ton_wallet = '';
-            currentUser.ton_wallet_type = '';
-            saveLocalUser();
-            updateTonWalletUI();
-            unregisterConnectedWalletClient(currentUser);
-          }
-        });
+      const origin = window.location.origin;
+      let path = window.location.pathname;
+      if (!path.endsWith('/')) {
+        path = path.substring(0, path.lastIndexOf('/') + 1);
       }
+      return `${origin}${path}tonconnect-manifest.json`;
     } catch (e) {
-      console.warn('[TonConnect] Notice:', e.message);
+      return 'https://yyt1093-source.github.io/color_sort_game/tonconnect-manifest.json';
+    }
+  }
+
+  let isTonConnectInitializing = false;
+
+  async function ensureTonConnectLoaded(timeoutMs = 4000) {
+    if (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI) {
+      return true;
+    }
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI) {
+        return true;
+      }
+      await new Promise(r => setTimeout(r, 50));
+    }
+    return !!(window.TON_CONNECT_UI && window.TON_CONNECT_UI.TonConnectUI);
+  }
+
+  function initTonConnect() {
+    if (tonConnectUIInstance) return tonConnectUIInstance;
+    if (!window.TON_CONNECT_UI || !window.TON_CONNECT_UI.TonConnectUI) {
+      return null;
+    }
+    if (isTonConnectInitializing) return null;
+    isTonConnectInitializing = true;
+
+    try {
+      const manifest = getTonManifestUrl();
+      tonConnectUIInstance = new window.TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: manifest,
+        actionsConfiguration: {
+          twaReturnUrl: 'https://t.me/sortcolors_bot'
+        },
+        uiPreferences: {
+          theme: 'DARK'
+        }
+      });
+
+      tonConnectUIInstance.onStatusChange((wallet) => {
+        if (wallet && wallet.account) {
+          let rawAddr = wallet.account.address || '';
+          let displayAddr = rawAddr;
+          if (window.TON_CONNECT_UI && typeof window.TON_CONNECT_UI.toUserFriendlyAddress === 'function') {
+            try {
+              displayAddr = window.TON_CONNECT_UI.toUserFriendlyAddress(rawAddr);
+            } catch (e) {
+              displayAddr = rawAddr;
+            }
+          }
+          connectedWalletAddress = displayAddr;
+          const detectedType = detectWalletTypeName(wallet);
+          currentUser.ton_wallet = displayAddr;
+          currentUser.ton_wallet_type = detectedType;
+          saveLocalUser();
+          updateTonWalletUI();
+          apiCall('/api/wallet/connect', 'POST', {
+            telegramId: currentUser.telegramId,
+            walletAddress: displayAddr,
+            walletType: detectedType
+          }).catch(() => {});
+          registerConnectedWalletClient(currentUser);
+        } else {
+          connectedWalletAddress = '';
+          currentUser.ton_wallet = '';
+          currentUser.ton_wallet_type = '';
+          saveLocalUser();
+          updateTonWalletUI();
+          unregisterConnectedWalletClient(currentUser);
+        }
+      });
+
+      // Restore session if already connected
+      if (tonConnectUIInstance.wallet && tonConnectUIInstance.wallet.account) {
+        let rawAddr = tonConnectUIInstance.wallet.account.address || '';
+        let displayAddr = rawAddr;
+        if (window.TON_CONNECT_UI && typeof window.TON_CONNECT_UI.toUserFriendlyAddress === 'function') {
+          try {
+            displayAddr = window.TON_CONNECT_UI.toUserFriendlyAddress(rawAddr);
+          } catch (e) {
+            displayAddr = rawAddr;
+          }
+        }
+        connectedWalletAddress = displayAddr;
+        currentUser.ton_wallet = displayAddr;
+        currentUser.ton_wallet_type = detectWalletTypeName(tonConnectUIInstance.wallet);
+        updateTonWalletUI();
+      }
+
+      return tonConnectUIInstance;
+    } catch (e) {
+      console.warn('[TonConnect] Notice:', e.message || e);
+      return null;
+    } finally {
+      isTonConnectInitializing = false;
     }
   }
 
@@ -3984,41 +4063,53 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('medium');
       }
-      if (tonConnectUIInstance) {
-        if (tonConnectUIInstance.connected) {
+
+      // If already connected via TonConnect UI, disconnect on tap
+      if (tonConnectUIInstance && tonConnectUIInstance.connected) {
+        try {
           await tonConnectUIInstance.disconnect();
-          connectedWalletAddress = '';
-          currentUser.ton_wallet = '';
-          currentUser.ton_wallet_type = '';
-          saveLocalUser();
-          updateTonWalletUI();
-          unregisterConnectedWalletClient(currentUser);
-        } else {
-          tonConnectUIInstance.openModal();
+        } catch (e) {
+          console.warn('[TonConnect] Disconnect error:', e);
         }
-      } else {
-        // Direct / fallback wallet connection toggle
-        if (currentUser.ton_wallet) {
-          connectedWalletAddress = '';
-          currentUser.ton_wallet = '';
-          currentUser.ton_wallet_type = '';
-          saveLocalUser();
-          updateTonWalletUI();
-          unregisterConnectedWalletClient(currentUser);
-        } else {
-          const dummyWallet = 'EQ' + Array.from({length: 46}, () => Math.floor(Math.random() * 36).toString(36)).join('');
-          connectedWalletAddress = dummyWallet;
-          currentUser.ton_wallet = dummyWallet;
-          currentUser.ton_wallet_type = 'Tonkeeper';
-          saveLocalUser();
-          updateTonWalletUI();
-          apiCall('/api/wallet/connect', 'POST', {
-            telegramId: currentUser.telegramId,
-            walletAddress: dummyWallet,
-            walletType: 'Tonkeeper'
-          }).catch(() => {});
-          registerConnectedWalletClient(currentUser);
+        connectedWalletAddress = '';
+        currentUser.ton_wallet = '';
+        currentUser.ton_wallet_type = '';
+        saveLocalUser();
+        updateTonWalletUI();
+        unregisterConnectedWalletClient(currentUser);
+        return;
+      }
+
+      // If user has a previously stored wallet without active instance, disconnect it
+      if (currentUser.ton_wallet && (!tonConnectUIInstance || !tonConnectUIInstance.connected)) {
+        connectedWalletAddress = '';
+        currentUser.ton_wallet = '';
+        currentUser.ton_wallet_type = '';
+        saveLocalUser();
+        updateTonWalletUI();
+        unregisterConnectedWalletClient(currentUser);
+        return;
+      }
+
+      // Visual feedback: show connecting state on button
+      if (tonConnectBtnLabel) {
+        tonConnectBtnLabel.textContent = t('tonConnecting') || 'Подключение...';
+      }
+      if (tonConnectBtn) tonConnectBtn.disabled = true;
+
+      try {
+        await ensureTonConnectLoaded(3500);
+        let tc = initTonConnect();
+        if (!tc) {
+          throw new Error('Модуль TON Connect не отвечает. Проверьте интернет-соединение.');
         }
+        await tc.openModal();
+      } catch (err) {
+        console.error('[TonConnect] Open modal error:', err);
+        alert((t('tonConnectError') || 'Ошибка подключения кошелька:') + '\n' + (err.message || err));
+      } finally {
+        if (tonConnectBtn) tonConnectBtn.disabled = false;
+        updateTonWalletUI();
       }
     });
   }
