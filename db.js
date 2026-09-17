@@ -1262,6 +1262,72 @@ function getLeaderboardSnapshotById(snapshotId) {
 }
 
 /**
+ * Insert an external snapshot (from KVDB Cloud or backup) directly into SQLite
+ */
+function insertExternalLeaderboardSnapshot(snap) {
+  if (!snap || !snap.snapshot_date) return null;
+  const id = snap.id ? Number(snap.id) : null;
+  const snapshotDate = snap.snapshot_date;
+  const snapshotTime = snap.snapshot_time || '23:55:00';
+  const snapshotType = snap.snapshot_type || 'auto';
+  const createdAt = snap.created_at || `${snapshotDate} ${snapshotTime}`;
+  const createdAtTs = Number(snap.created_at_ts || (new Date(`${snapshotDate}T${snapshotTime}`).getTime()));
+  const players = Array.isArray(snap.players) ? snap.players : [];
+  const playersJson = JSON.stringify(players);
+
+  if (id) {
+    const existing = db.prepare(`SELECT id FROM leaderboard_snapshots WHERE id = ?`).get(id);
+    if (existing) return existing;
+  }
+
+  let finalId;
+  if (id) {
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO leaderboard_snapshots (id, snapshot_date, snapshot_time, snapshot_type, created_at, created_at_ts, total_players, players_data)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(id, snapshotDate, snapshotTime, snapshotType, createdAt, createdAtTs, players.length, playersJson);
+    finalId = id;
+  } else {
+    const stmt = db.prepare(`
+      INSERT INTO leaderboard_snapshots (snapshot_date, snapshot_time, snapshot_type, created_at, created_at_ts, total_players, players_data)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    const res = stmt.run(snapshotDate, snapshotTime, snapshotType, createdAt, createdAtTs, players.length, playersJson);
+    finalId = Number(res.lastInsertRowid);
+  }
+
+  if (players.length > 0) {
+    const insertEntry = db.prepare(`
+      INSERT INTO leaderboard_snapshot_entries (snapshot_id, rank, telegram_id, first_name, username, max_level, stars)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const p of players) {
+      insertEntry.run(
+        finalId,
+        p.rank || 1,
+        String(p.telegram_id || p.telegramId || ''),
+        p.name || p.first_name || p.firstName || 'Игрок',
+        p.username || '',
+        Number(p.level !== undefined ? p.level : (p.max_level || p.maxLevel || 0)),
+        Number(p.stars || 0)
+      );
+    }
+  }
+
+  return {
+    id: finalId,
+    snapshot_date: snapshotDate,
+    snapshot_time: snapshotTime,
+    snapshot_type: snapshotType,
+    created_at: createdAt,
+    created_at_ts: createdAtTs,
+    total_players: players.length,
+    players
+  };
+}
+
+/**
  * Delete a leaderboard snapshot and its entries
  */
 function deleteLeaderboardSnapshot(snapshotId) {
@@ -1393,6 +1459,7 @@ module.exports = {
   getAutoLeaderboardSnapshotByDate,
   getLeaderboardSnapshotByDate,
   getLeaderboardSnapshotById,
+  insertExternalLeaderboardSnapshot,
   ensureSeedLeaderboardSnapshot,
   getConnectedWallets,
   getPlayerDeposits

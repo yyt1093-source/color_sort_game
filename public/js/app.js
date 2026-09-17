@@ -6348,7 +6348,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   }
 
   // Take current leaderboard snapshot
-  async function createCurrentLeaderboardSnapshot(snapshotType = 'manual') {
+  async function createCurrentLeaderboardSnapshot(snapshotType = 'manual', overrideDate = null, overrideTime = null) {
     const playersMap = new Map();
 
     // 1. Load all registered players directly from KVDB Cloud
@@ -6426,14 +6426,16 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       .map((p, idx) => ({ rank: idx + 1, ...p }));
 
     const kyivNow = getKyivDateTimeClient();
+    const snapDate = overrideDate || kyivNow.dateStr;
+    const snapTime = overrideTime || kyivNow.timeStr;
     const newId = Date.now();
     const snapshot = {
       id: newId,
-      snapshot_date: kyivNow.dateStr,
-      snapshot_time: kyivNow.timeStr,
+      snapshot_date: snapDate,
+      snapshot_time: snapTime,
       snapshot_type: snapshotType,
       total_players: sortedPlayers.length,
-      created_at: kyivNow.fullStr,
+      created_at: `${snapDate} ${snapTime}`,
       created_at_ts: kyivNow.ts,
       players: sortedPlayers
     };
@@ -6441,6 +6443,55 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     await saveSnapshot(snapshot);
     return snapshot;
   }
+
+  // 🕒 23:55 Kyiv Daily Auto-Snapshot Catch-up Guard (Client / Cloud)
+  async function checkAndTriggerAutoSnapshotCatchup() {
+    try {
+      const kyiv = getKyivDateTimeClient();
+      let targetDate = kyiv.dateStr;
+      
+      const isPost2355Today = (kyiv.timeStr >= '23:55:00');
+      const isEarlyMorning = (kyiv.timeStr < '06:00:00');
+      
+      if (!isPost2355Today && !isEarlyMorning) {
+        return; // Target time (23:55) not yet reached today
+      }
+
+      if (isEarlyMorning) {
+        const yesterday = new Date(Date.now() - 24 * 3600 * 1000);
+        try {
+          const yParts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Europe/Kyiv',
+            year: 'numeric', month: '2-digit', day: '2-digit'
+          }).formatToParts(yesterday);
+          const yP = (type) => (yParts.find(x => x.type === type) || {}).value || '00';
+          targetDate = `${yP('year')}-${yP('month')}-${yP('day')}`;
+        } catch (e) {
+          targetDate = yesterday.toISOString().split('T')[0];
+        }
+      }
+
+      // Check if 23:55 auto snapshot already exists for targetDate
+      const index = await fetchSnapshotsIndex();
+      const hasAuto = Array.isArray(index) && index.some(
+        s => s.snapshot_date === targetDate && (s.snapshot_type === 'auto' || s.snapshot_time === '23:55:00')
+      );
+
+      if (hasAuto) {
+        return; // Already recorded
+      }
+
+      console.log(`[Auto-Cron Guard] ⏰ Auto 23:55 snapshot for ${targetDate} missing. Creating auto snapshot...`);
+      await createCurrentLeaderboardSnapshot('auto', targetDate, '23:55:00');
+      console.log(`[Auto-Cron Guard] ✅ Auto 23:55 snapshot for ${targetDate} saved to KVDB Cloud!`);
+    } catch (err) {
+      console.warn('[Auto-Cron Guard Notice]', err.message);
+    }
+  }
+
+  // Start catch-up monitor
+  setTimeout(checkAndTriggerAutoSnapshotCatchup, 3500);
+  setInterval(checkAndTriggerAutoSnapshotCatchup, 45000);
 
   async function loadAdminHistoryList() {
     if (!adminHistoryItemsList) return;

@@ -1,0 +1,29 @@
+﻿name: Daily 23:55 Kyiv Leaderboard Snapshot
+
+on:
+  schedule:
+    # 20:55 UTC = 23:55 Kyiv (EEST summer time UTC+3)
+    - cron: '55 20 * * *'
+    # 21:55 UTC = 23:55 Kyiv (EET winter time UTC+2)
+    - cron: '55 21 * * *'
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Daily Leaderboard Snapshot
+        run: node scripts/cron_leaderboard_snapshot.js --catchup
+        env:
+          KVDB_BUCKET: ${{ secrets.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM' }}

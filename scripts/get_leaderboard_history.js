@@ -204,9 +204,40 @@ function printAvailableDates() {
   });
 }
 
+async function syncFromCloud() {
+  try {
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    const baseUrl = 'https://kvdb.io/' + bucket;
+    const res = await fetch(`${baseUrl}/meta_leaderboard_snapshots_index?_cb=${Date.now()}`, {
+      signal: AbortSignal.timeout(3000)
+    });
+    if (!res.ok) return;
+    const cloudIndex = await res.json();
+    if (!Array.isArray(cloudIndex)) return;
+
+    const localDates = db.getLeaderboardSnapshotDates();
+    for (const c of cloudIndex) {
+      if (!localDates.some(l => String(l.id) === String(c.id))) {
+        const snapRes = await fetch(`${baseUrl}/leaderboard_snapshot_${c.id}`, {
+          signal: AbortSignal.timeout(3000)
+        });
+        if (snapRes.ok) {
+          const snapData = await snapRes.json();
+          if (snapData && snapData.players) {
+            db.insertExternalLeaderboardSnapshot(snapData);
+          }
+        }
+      }
+    }
+  } catch (e) {}
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const inputArg = args.join(' ').trim();
+
+  // Ensure cloud snapshots are synchronized locally
+  await syncFromCloud();
 
   // Flag: take snapshot immediately
   if (args.includes('--snapshot') || args.includes('-s') || inputArg === 'сохранить' || inputArg === 'сделать снимок') {

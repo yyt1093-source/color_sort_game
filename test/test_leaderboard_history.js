@@ -179,6 +179,11 @@ runTest('Save Snapshot Preserves User Levels (Zero Mutation)', () => {
   assert.strictEqual(savedP3.level, 10);
   assert(savedP2.rank < savedP1.rank, 'Player with level 55 must rank higher than level 25');
   assert(savedP1.rank < savedP3.rank, 'Player with level 25 must rank higher than level 10');
+
+  // Clean up test records
+  db.deleteLeaderboardSnapshot(snap.id);
+  const rawDb = new (require('node:sqlite').DatabaseSync)(path.join(__dirname, '..', 'game_database.sqlite'));
+  rawDb.exec(`DELETE FROM users WHERE telegram_id IN ('${testP1}', '${testP2}', '${testP3}')`);
 });
 
 // 4. Query Snapshot Dates and ID
