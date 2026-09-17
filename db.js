@@ -1015,7 +1015,7 @@ function saveLeaderboardSnapshot(options = {}) {
 
   console.log(`[DB Snapshot] Saved snapshot #${snapshotId} for ${snapshotDate} (${snapshotTime}) [${snapshotType}]: ${snapshotPlayers.length} players.`);
 
-  return {
+  const snapshotObj = {
     id: snapshotId,
     snapshot_date: snapshotDate,
     snapshot_time: snapshotTime,
@@ -1025,6 +1025,44 @@ function saveLeaderboardSnapshot(options = {}) {
     total_players: snapshotPlayers.length,
     players: snapshotPlayers
   };
+
+  // Sync to KVDB Cloud asynchronously
+  if (typeof fetch !== 'undefined') {
+    (async () => {
+      try {
+        const bucket = '82kzJTUxZwwFNvg7kUSqgM';
+        const baseUrl = 'https://kvdb.io/' + bucket;
+        await fetch(`${baseUrl}/leaderboard_snapshot_${snapshotId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(snapshotObj)
+        });
+        const idxRes = await fetch(`${baseUrl}/meta_leaderboard_snapshots_index?_cb=${Date.now()}`);
+        let idx = [];
+        if (idxRes.ok) {
+          try { idx = await idxRes.json(); } catch(e) {}
+        }
+        if (!Array.isArray(idx)) idx = [];
+        const meta = {
+          id: snapshotId,
+          snapshot_date: snapshotDate,
+          snapshot_time: snapshotTime,
+          snapshot_type: snapshotType,
+          total_players: snapshotPlayers.length,
+          created_at: createdAt,
+          created_at_ts: createdAtTs
+        };
+        idx = [meta, ...idx.filter(x => String(x.id) !== String(snapshotId))];
+        await fetch(`${baseUrl}/meta_leaderboard_snapshots_index`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(idx)
+        });
+      } catch (e) {}
+    })();
+  }
+
+  return snapshotObj;
 }
 
 /**
@@ -1143,6 +1181,29 @@ function deleteLeaderboardSnapshot(snapshotId) {
 
     db.prepare(`DELETE FROM leaderboard_snapshot_entries WHERE snapshot_id = ?`).run(id);
     const res = db.prepare(`DELETE FROM leaderboard_snapshots WHERE id = ?`).run(id);
+
+    if (res.changes > 0 && typeof fetch !== 'undefined') {
+      (async () => {
+        try {
+          const bucket = '82kzJTUxZwwFNvg7kUSqgM';
+          const baseUrl = 'https://kvdb.io/' + bucket;
+          await fetch(`${baseUrl}/leaderboard_snapshot_${id}`, { method: 'DELETE' });
+          const idxRes = await fetch(`${baseUrl}/meta_leaderboard_snapshots_index?_cb=${Date.now()}`);
+          if (idxRes.ok) {
+            const idx = await idxRes.json();
+            if (Array.isArray(idx)) {
+              const filtered = idx.filter(x => String(x.id) !== String(id));
+              await fetch(`${baseUrl}/meta_leaderboard_snapshots_index`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(filtered)
+              });
+            }
+          }
+        } catch (e) {}
+      })();
+    }
+
     return res.changes > 0;
   } catch (err) {
     console.error('[DB Delete Snapshot Error]', err);
