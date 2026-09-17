@@ -232,7 +232,7 @@ async function initColorSortApp() {
       adModalRevealDesc: "Открыть 1 баночку со всеми цветами",
       noMovesTitle: "Нет ходов",
       noMovesDesc: "Вы ещё не сделали ни одного хода на этом уровне для отмены.",
-      noHintDesc: "Подсказка не найдена на текущем этапе.",
+      noHintDesc: "Нет доступных ходов, которые открывают новую краску. Попробуйте перелить другие цвета или добавьте пустую колбу!",
       allColorsVisibleTitle: "Все цвета видны",
       allColorsVisibleDesc: "В баночках на этом этапе уже открыты все цвета!",
       extraBottleTitle: "🎉 Успех",
@@ -451,7 +451,7 @@ async function initColorSortApp() {
       adModalRevealDesc: "Відкрити 1 баночку з усіма кольорами",
       noMovesTitle: "Немає ходів",
       noMovesDesc: "Ви ще не зробили жодного ходу на цьому рівні для скасування.",
-      noHintDesc: "Підказку не знайдено на поточному етапі.",
+      noHintDesc: "Немає доступних ходів, які відкривають новий колір. Спробуйте перелити інші кольори або додайте порожню колбу!",
       allColorsVisibleTitle: "Всі кольори видно",
       allColorsVisibleDesc: "У баночках на цьому етапі вже відкриті всі кольори!",
       extraBottleTitle: "🎉 Успіх",
@@ -649,7 +649,7 @@ async function initColorSortApp() {
       adModalRevealDesc: "Reveal all colors in 1 jar",
       noMovesTitle: "No moves",
       noMovesDesc: "You have not made any moves on this level to undo yet.",
-      noHintDesc: "No moves found at this stage.",
+      noHintDesc: "No moves available that reveal a new hidden color. Try rearranging colors or adding an empty bottle!",
       allColorsVisibleTitle: "All colors revealed",
       allColorsVisibleDesc: "All bottle colors are already revealed on this stage!",
       extraBottleTitle: "🎉 Success",
@@ -847,7 +847,7 @@ async function initColorSortApp() {
       adModalRevealDesc: "Alle Farben in 1 Flasche aufdecken",
       noMovesTitle: "Keine Züge",
       noMovesDesc: "Du hast in diesem Level noch keine Züge gemacht.",
-      noHintDesc: "Keine Züge im aktuellen Zustand gefunden.",
+      noHintDesc: "Keine Züge verfügbar, die eine neue Farbe aufdecken. Versuchen Sie umzufüllen oder ein leeres Glas hinzuzufügen!",
       allColorsVisibleTitle: "Alle Farben sichtbar",
       allColorsVisibleDesc: "Alle Farben in den Flaschen sind bereits aufgedeckt!",
       extraBottleTitle: "🎉 Erfolg",
@@ -1045,7 +1045,7 @@ async function initColorSortApp() {
       adModalRevealDesc: "Atskleisti 1 buteliuko spalvas",
       noMovesTitle: "Nėra ėjimų",
       noMovesDesc: "Šiame lygyje dar neatlikote nė vieno ėjimo.",
-      noHintDesc: "Šiame etape ėjimų nerasta.",
+      noHintDesc: "Nėra pasiekiamų ėjimų, kurie atvertų naują paslėptą spalvą. Pabandykite perpilti spalvas arba pridėti tuščią kolbą!",
       allColorsVisibleTitle: "Visos spalvos matomos",
       allColorsVisibleDesc: "Visi buteliukų sluoksniai jau atidengti!",
       extraBottleTitle: "🎉 Pavyko",
@@ -2971,7 +2971,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           hints: currentUser.hints
         });
       } else {
-        showInfoModal('🤷', t('noMovesTitle'), t('noMovesDesc'));
+        const desc = engine.hasHiddenColors() ? t('noHintDesc') : t('allColorsVisibleDesc');
+        showInfoModal('🤷', t('noMovesTitle'), desc || t('noHintDesc'));
       }
     });
   }

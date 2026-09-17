@@ -101,6 +101,57 @@
     });
   }
 
+  function updateBoardSizeClass(container, count) {
+    container.classList.remove(
+      'board-small', 'board-medium', 'board-large', 
+      'board-xlarge', 'board-xxlarge', 'board-huge', 'board-colossal'
+    );
+    if (count <= 6) container.classList.add('board-small');
+    else if (count <= 10) container.classList.add('board-medium');
+    else if (count <= 14) container.classList.add('board-large');
+    else if (count <= 18) container.classList.add('board-xlarge');
+    else if (count <= 30) container.classList.add('board-xxlarge');
+    else if (count <= 40) container.classList.add('board-huge');
+    else container.classList.add('board-colossal');
+  }
+
+  function createBottleElement(idx, layers, selectedIdx, hint, engine) {
+    const bottleEl = document.createElement('div');
+    bottleEl.className = 'glass-bottle';
+    bottleEl.dataset.index = idx;
+
+    if (selectedIdx === idx) bottleEl.classList.add('selected');
+    if (hint && (hint.from === idx || hint.to === idx)) {
+      bottleEl.classList.add(hint.from === idx ? 'hint-from' : 'hint-to');
+    }
+
+    if (layers && layers.vanished) {
+      bottleEl.classList.add('bottle-vanished');
+      bottleEl.style.visibility = 'hidden';
+      bottleEl.style.pointerEvents = 'none';
+      bottleEl.style.opacity = '0';
+    }
+
+    const rimEl = document.createElement('div');
+    rimEl.className = 'bottle-rim';
+    bottleEl.appendChild(rimEl);
+
+    const liquidContainer = document.createElement('div');
+    liquidContainer.className = 'liquid-container';
+    bottleEl.appendChild(liquidContainer);
+
+    const allActive = (typeof window !== 'undefined' && window.isAllColorsActive && window.isAllColorsActive());
+    const currentLayerSig = layers.join(',') + '_' + (allActive ? 'all' : (engine.revealed && engine.revealed[idx] ? engine.revealed[idx].join(',') : ''));
+    bottleEl.dataset.layerSig = currentLayerSig;
+    updateBottleLiquid(bottleEl, layers, idx, engine);
+
+    bottleEl.addEventListener('click', () => {
+      engine.selectBottle(idx);
+    });
+
+    return bottleEl;
+  }
+
   function renderBoard(engine) {
     if (!boardContainer) return;
 
@@ -108,6 +159,7 @@
     const selectedIdx = engine.selectedBottleIndex;
     const hint = engine.hintHighlight;
     const colors = engine.colors;
+    const wrapper = boardContainer.closest('.game-board-wrapper');
 
     const existingBottles = boardContainer.querySelectorAll('.glass-bottle');
 
@@ -146,53 +198,70 @@
       return;
     }
 
+    // Incremental addition (e.g. player bought an extra empty bottle on the current board)
+    // Preserves existing bottle DOM elements so top rows stay in place and bottles are appended downwards!
+    if (existingBottles.length > 0 && existingBottles.length < bottles.length) {
+      existingBottles.forEach((bottleEl, idx) => {
+        const layers = bottles[idx];
+        const isVanished = !!(layers && layers.vanished);
+
+        bottleEl.classList.toggle('selected', selectedIdx === idx);
+        bottleEl.classList.remove('hint-from', 'hint-to');
+        if (hint && (hint.from === idx || hint.to === idx)) {
+          bottleEl.classList.add(hint.from === idx ? 'hint-from' : 'hint-to');
+        }
+
+        if (isVanished) {
+          bottleEl.classList.add('bottle-vanished');
+          bottleEl.style.visibility = 'hidden';
+          bottleEl.style.pointerEvents = 'none';
+          bottleEl.style.opacity = '0';
+        } else {
+          bottleEl.classList.remove('bottle-vanished');
+          bottleEl.style.visibility = 'visible';
+          bottleEl.style.pointerEvents = 'auto';
+          bottleEl.style.opacity = '1';
+        }
+
+        const allActive = (typeof window !== 'undefined' && window.isAllColorsActive && window.isAllColorsActive());
+        const currentLayerSig = layers.join(',') + '_' + (allActive ? 'all' : (engine.revealed && engine.revealed[idx] ? engine.revealed[idx].join(',') : ''));
+        if (bottleEl.dataset.layerSig !== currentLayerSig) {
+          bottleEl.dataset.layerSig = currentLayerSig;
+          updateBottleLiquid(bottleEl, layers, idx, engine);
+        }
+      });
+
+      updateBoardSizeClass(boardContainer, bottles.length);
+
+      let firstNewBottle = null;
+      for (let idx = existingBottles.length; idx < bottles.length; idx++) {
+        const layers = bottles[idx];
+        const bottleEl = createBottleElement(idx, layers, selectedIdx, hint, engine);
+        boardContainer.appendChild(bottleEl);
+        if (!firstNewBottle) firstNewBottle = bottleEl;
+      }
+
+      if (firstNewBottle) {
+        setTimeout(() => {
+          firstNewBottle.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      }
+      return;
+    }
+
     // Full build (only upon new level loading or count change)
     boardContainer.innerHTML = '';
     boardContainer.className = 'game-board';
-    if (bottles.length <= 6) boardContainer.classList.add('board-small');
-    else if (bottles.length <= 10) boardContainer.classList.add('board-medium');
-    else if (bottles.length <= 14) boardContainer.classList.add('board-large');
-    else if (bottles.length <= 18) boardContainer.classList.add('board-xlarge');
-    else if (bottles.length <= 30) boardContainer.classList.add('board-xxlarge');
-    else if (bottles.length <= 40) boardContainer.classList.add('board-huge');
-    else boardContainer.classList.add('board-colossal');
+    updateBoardSizeClass(boardContainer, bottles.length);
 
     bottles.forEach((layers, idx) => {
-      const bottleEl = document.createElement('div');
-      bottleEl.className = 'glass-bottle';
-      bottleEl.dataset.index = idx;
-
-      if (selectedIdx === idx) bottleEl.classList.add('selected');
-      if (hint && (hint.from === idx || hint.to === idx)) {
-        bottleEl.classList.add(hint.from === idx ? 'hint-from' : 'hint-to');
-      }
-
-      if (layers && layers.vanished) {
-        bottleEl.classList.add('bottle-vanished');
-        bottleEl.style.visibility = 'hidden';
-        bottleEl.style.pointerEvents = 'none';
-        bottleEl.style.opacity = '0';
-      }
-
-      const rimEl = document.createElement('div');
-      rimEl.className = 'bottle-rim';
-      bottleEl.appendChild(rimEl);
-
-      const liquidContainer = document.createElement('div');
-      liquidContainer.className = 'liquid-container';
-      bottleEl.appendChild(liquidContainer);
-
-      const allActive = (typeof window !== 'undefined' && window.isAllColorsActive && window.isAllColorsActive());
-      const currentLayerSig = layers.join(',') + '_' + (allActive ? 'all' : (engine.revealed && engine.revealed[idx] ? engine.revealed[idx].join(',') : ''));
-      bottleEl.dataset.layerSig = currentLayerSig;
-      updateBottleLiquid(bottleEl, layers, idx, engine);
-
-      bottleEl.addEventListener('click', () => {
-        engine.selectBottle(idx);
-      });
-
+      const bottleEl = createBottleElement(idx, layers, selectedIdx, hint, engine);
       boardContainer.appendChild(bottleEl);
     });
+
+    if (wrapper) {
+      wrapper.scrollTop = 0;
+    }
   }
 
   function spawnPourSplash(x, y, colorHex, count = 2) {
