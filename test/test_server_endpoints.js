@@ -1,8 +1,7 @@
 const assert = require('assert');
 const http = require('http');
-const express = require('express');
+const url = require('url');
 
-// We can test express routing directly
 const db = require('../db');
 
 console.log('================================================================');
@@ -41,62 +40,85 @@ runTest('Admin Authorization Check', () => {
   assert.strictEqual(checkIsAdmin({ username: 'guest' }), false);
 });
 
-// 2. Test Endpoints on a live test express instance
-const app = express();
-app.use(express.json());
+// 2. Test Endpoints using native Node.js http server
+const server = http.createServer(async (req, res) => {
+  const parsed = url.parse(req.url, true);
+  const pathname = parsed.pathname;
+  const query = parsed.query;
 
-app.get('/api/admin/leaderboard-history/dates', (req, res) => {
-  if (!checkIsAdmin(req.query)) {
-    return res.status(403).json({ success: false, error: 'Доступ запрещён' });
-  }
-  const dates = db.getLeaderboardSnapshotDates();
-  res.json({ success: true, dates });
-});
+  const readBody = () => new Promise(resolve => {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try { resolve(JSON.parse(body || '{}')); }
+      catch (e) { resolve({}); }
+    });
+  });
 
-app.get('/api/admin/leaderboard-history', (req, res) => {
-  if (!checkIsAdmin(req.query)) {
-    return res.status(403).json({ success: false, error: 'Доступ запрещён' });
-  }
-  const { date, id } = req.query;
-  let snapshot = null;
-  if (id) snapshot = db.getLeaderboardSnapshotById(id);
-  else if (date) snapshot = db.getLeaderboardSnapshotByDate(date);
-  else {
+  const sendJson = (status, data) => {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+  };
+
+  // GET /api/admin/leaderboard-history/dates
+  if (req.method === 'GET' && pathname === '/api/admin/leaderboard-history/dates') {
+    if (!checkIsAdmin(query)) {
+      return sendJson(403, { success: false, error: 'Доступ запрещён' });
+    }
     const dates = db.getLeaderboardSnapshotDates();
-    if (dates && dates.length > 0) snapshot = db.getLeaderboardSnapshotById(dates[0].id);
+    return sendJson(200, { success: true, dates });
   }
-  if (!snapshot) return res.status(404).json({ success: false, error: 'Снимок не найден' });
-  res.json({ success: true, snapshot });
+
+  // GET /api/admin/leaderboard-history
+  if (req.method === 'GET' && pathname === '/api/admin/leaderboard-history') {
+    if (!checkIsAdmin(query)) {
+      return sendJson(403, { success: false, error: 'Доступ запрещён' });
+    }
+    const { date, id } = query;
+    let snapshot = null;
+    if (id) snapshot = db.getLeaderboardSnapshotById(id);
+    else if (date) snapshot = db.getLeaderboardSnapshotByDate(date);
+    else {
+      const dates = db.getLeaderboardSnapshotDates();
+      if (dates && dates.length > 0) snapshot = db.getLeaderboardSnapshotById(dates[0].id);
+    }
+    if (!snapshot) return sendJson(404, { success: false, error: 'Снимок не найден' });
+    return sendJson(200, { success: true, snapshot });
+  }
+
+  // POST /api/admin/leaderboard-history/snapshot
+  if (req.method === 'POST' && pathname === '/api/admin/leaderboard-history/snapshot') {
+    const body = await readBody();
+    if (!checkIsAdmin(body)) {
+      return sendJson(403, { success: false, error: 'Доступ запрещён' });
+    }
+    const snapshot = db.saveLeaderboardSnapshot({ snapshotType: body.snapshotType || 'manual' });
+    return sendJson(200, { success: true, snapshot, message: 'Снимок сохранён' });
+  }
+
+  // POST or DELETE /api/admin/leaderboard-history/delete
+  if ((req.method === 'POST' && pathname === '/api/admin/leaderboard-history/delete') ||
+      (req.method === 'DELETE' && pathname === '/api/admin/leaderboard-history')) {
+    const body = await readBody();
+    const authData = req.method === 'DELETE' ? query : body;
+    if (!checkIsAdmin(authData)) {
+      return sendJson(403, { success: false, error: 'Доступ запрещён' });
+    }
+    const snapshotId = (body && body.id) || (query && query.id);
+    if (!snapshotId) {
+      return sendJson(400, { success: false, error: 'Укажите ID снимка' });
+    }
+    const ok = db.deleteLeaderboardSnapshot(snapshotId);
+    if (!ok) {
+      return sendJson(404, { success: false, error: 'Снимок не найден' });
+    }
+    return sendJson(200, { success: true, message: `Снимок #${snapshotId} удалён` });
+  }
+
+  sendJson(404, { error: 'Not Found' });
 });
 
-app.post('/api/admin/leaderboard-history/snapshot', (req, res) => {
-  if (!checkIsAdmin(req.body)) {
-    return res.status(403).json({ success: false, error: 'Доступ запрещён' });
-  }
-  const snapshot = db.saveLeaderboardSnapshot();
-  res.json({ success: true, snapshot, message: 'Снимок сохранён' });
-});
-
-const deleteHandler = (req, res) => {
-  const authData = req.method === 'DELETE' ? req.query : req.body;
-  if (!checkIsAdmin(authData)) {
-    return res.status(403).json({ success: false, error: 'Доступ запрещён' });
-  }
-  const snapshotId = (req.body && req.body.id) || (req.query && req.query.id);
-  if (!snapshotId) {
-    return res.status(400).json({ success: false, error: 'Укажите ID снимка' });
-  }
-  const ok = db.deleteLeaderboardSnapshot(snapshotId);
-  if (!ok) {
-    return res.status(404).json({ success: false, error: 'Снимок не найден' });
-  }
-  res.json({ success: true, message: `Снимок #${snapshotId} удалён` });
-};
-
-app.delete('/api/admin/leaderboard-history', deleteHandler);
-app.post('/api/admin/leaderboard-history/delete', deleteHandler);
-
-const server = app.listen(0, async () => {
+server.listen(0, async () => {
   const port = server.address().port;
   const baseUrl = `http://127.0.0.1:${port}`;
 

@@ -30,9 +30,33 @@ runTest('Kyiv Timezone Formatting and DST Calculation', () => {
   assert.strictEqual(typeof kyiv.hour, 'number');
 });
 
-// 2. Historical Seed Snapshots (4, 6, 10, 15 September)
-runTest('Historical Seed Snapshots at 23:55 Kyiv Time', () => {
-  // Check 4th (85 players)
+// 2. Historical Seed Snapshots (10.07 12:00 manual, 10.07 23:55 auto, 11.07, 4, 6, 10, 15 September)
+runTest('Historical Seed Snapshots and Same-Day Manual/Auto Isolation', () => {
+  // Check 10.07.2026 - 12:00:00 (manual, 85 players)
+  const allDates = db.getLeaderboardSnapshotDates();
+  const snapJuly10Manual = allDates.find(d => d.snapshot_date === '2026-07-10' && d.snapshot_time === '12:00:00');
+  assert(snapJuly10Manual, 'Snapshot for 2026-07-10 12:00:00 (manual) must exist');
+  assert.strictEqual(snapJuly10Manual.snapshot_type, 'manual');
+  assert.strictEqual(snapJuly10Manual.total_players, 85);
+
+  // Check 10.07.2026 - 23:55:00 (auto, 90 players)
+  const snapJuly10Auto = allDates.find(d => d.snapshot_date === '2026-07-10' && d.snapshot_time === '23:55:00');
+  assert(snapJuly10Auto, 'Snapshot for 2026-07-10 23:55:00 (auto) must exist');
+  assert.strictEqual(snapJuly10Auto.snapshot_type, 'auto');
+  assert.strictEqual(snapJuly10Auto.total_players, 90);
+
+  // Crucial: getAutoLeaderboardSnapshotByDate must find the 23:55 auto snapshot, not the manual one
+  const autoSnap = db.getAutoLeaderboardSnapshotByDate('2026-07-10');
+  assert(autoSnap, 'getAutoLeaderboardSnapshotByDate must find auto snapshot');
+  assert.strictEqual(autoSnap.id, snapJuly10Auto.id);
+  assert.strictEqual(autoSnap.snapshot_time, '23:55:00');
+
+  // Check 11.07.2026 - 23:55:00 (auto, 94 players)
+  const snapJuly11 = allDates.find(d => d.snapshot_date === '2026-07-11');
+  assert(snapJuly11, 'Snapshot for 2026-07-11 must exist');
+  assert.strictEqual(snapJuly11.total_players, 94);
+
+  // Check 4th Sept (85 players)
   const snap4 = db.getLeaderboardSnapshotByDate('2026-09-04');
   assert(snap4, 'Snapshot for 2026-09-04 must exist');
   assert.strictEqual(snap4.snapshot_date, '2026-09-04');
@@ -40,7 +64,7 @@ runTest('Historical Seed Snapshots at 23:55 Kyiv Time', () => {
   assert.strictEqual(snap4.total_players, 85);
   assert.strictEqual(snap4.players.length, 85);
 
-  // Check 6th (15 players)
+  // Check 6th Sept (15 players)
   const snap6 = db.getLeaderboardSnapshotByDate('2026-09-06');
   assert(snap6, 'Snapshot for 2026-09-06 must exist');
   assert.strictEqual(snap6.snapshot_date, '2026-09-06');
@@ -48,7 +72,7 @@ runTest('Historical Seed Snapshots at 23:55 Kyiv Time', () => {
   assert.strictEqual(snap6.total_players, 15);
   assert.strictEqual(snap6.players.length, 15);
 
-  // Check 10th (110 players)
+  // Check 10th Sept (110 players)
   const snap10 = db.getLeaderboardSnapshotByDate('2026-09-10');
   assert(snap10, 'Snapshot for 2026-09-10 must exist');
   assert.strictEqual(snap10.snapshot_date, '2026-09-10');
@@ -56,7 +80,7 @@ runTest('Historical Seed Snapshots at 23:55 Kyiv Time', () => {
   assert.strictEqual(snap10.total_players, 110);
   assert.strictEqual(snap10.players.length, 110);
 
-  // Check 15th (140 players)
+  // Check 15th Sept (140 players)
   const snap15 = db.getLeaderboardSnapshotByDate('2026-09-15');
   assert(snap15, 'Snapshot for 2026-09-15 must exist');
   assert.strictEqual(snap15.snapshot_date, '2026-09-15');
@@ -69,6 +93,41 @@ runTest('Historical Seed Snapshots at 23:55 Kyiv Time', () => {
   assert.strictEqual(top1.rank, 1);
   assert.strictEqual(top1.telegram_id, '5761685341');
   assert.strictEqual(top1.level, 150);
+});
+
+// 2b. Manual snapshot during day does NOT block 23:55 auto snapshot
+runTest('Manual Snapshot Does NOT Cancel/Block 23:55 Auto Snapshot', () => {
+  const testDate = '2026-07-20';
+  // 1. Admin creates manual snapshot at 14:30
+  const manualSnap = db.saveLeaderboardSnapshot({
+    dateStr: testDate,
+    timeStr: '14:30:00',
+    snapshotType: 'manual'
+  });
+  assert(manualSnap && manualSnap.id, 'Manual snapshot created');
+  assert.strictEqual(manualSnap.snapshot_type, 'manual');
+
+  // 2. Scheduler checks if auto snapshot exists for today
+  const autoBefore = db.getAutoLeaderboardSnapshotByDate(testDate);
+  assert.strictEqual(autoBefore, null, 'Auto snapshot MUST be null even though manual snapshot exists');
+
+  // 3. At 23:55, scheduler triggers auto snapshot
+  const autoSnap = db.saveLeaderboardSnapshot({
+    dateStr: testDate,
+    timeStr: '23:55:00',
+    snapshotType: 'auto'
+  });
+  assert(autoSnap && autoSnap.id, 'Auto snapshot created at 23:55');
+  assert.notStrictEqual(autoSnap.id, manualSnap.id, 'Auto snapshot must have a distinct ID');
+  assert.strictEqual(autoSnap.snapshot_type, 'auto');
+
+  // 4. Both snapshots exist independently in dates list
+  const list = db.getLeaderboardSnapshotDates().filter(d => d.snapshot_date === testDate);
+  assert.strictEqual(list.length, 2, 'Both manual and auto snapshots must exist for this date');
+
+  // Clean up test records
+  db.deleteLeaderboardSnapshot(manualSnap.id);
+  db.deleteLeaderboardSnapshot(autoSnap.id);
 });
 
 // 3. Save Snapshot and Verify User Data Unchanged

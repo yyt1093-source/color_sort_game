@@ -143,11 +143,23 @@ function parseNaturalDate(input) {
   return null;
 }
 
+function formatDisplayDateTime(dateStr, timeStr) {
+  if (!dateStr) return '';
+  const parts = String(dateStr).split('-');
+  const d = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dateStr;
+  const t = timeStr ? String(timeStr).substring(0, 5) : '23:55';
+  return `${d} — ${t}`;
+}
+
 function printSnapshotTable(snapshot) {
   const players = snapshot.players || [];
+  const dtFormatted = formatDisplayDateTime(snapshot.snapshot_date, snapshot.snapshot_time);
+  const typeBadge = snapshot.snapshot_type === 'manual' ? '✋ Ручной' : '🤖 Авто (23:55)';
+
   console.log(`========================================================================================`);
-  console.log(`🏆 СНИМОК ЛИДЕРБОРДА ЗА: ${snapshot.snapshot_date}`);
-  console.log(`⏰ Время фиксации: ${snapshot.snapshot_time} (Киевское время)`);
+  console.log(`🏆 СНИМОК ЛИДЕРБОРДА: ${dtFormatted} [ID: ${snapshot.id || '—'}]`);
+  console.log(`📌 Тип снимка: ${typeBadge}`);
+  console.log(`📅 Дата: ${snapshot.snapshot_date} | ⏰ Время фиксации: ${snapshot.snapshot_time} (Киев)`);
   console.log(`👥 Всего участников в лидерборде: ${snapshot.total_players}`);
   console.log(`========================================================================================`);
   console.log(``);
@@ -179,14 +191,16 @@ function printSnapshotTable(snapshot) {
 }
 
 function printAvailableDates() {
-  const dates = db.getLeaderboardSnapshotDates();
-  console.log(`📋 Доступные даты снимков в архиве (${dates.length}):`);
-  if (dates.length === 0) {
+  const snapshots = db.getLeaderboardSnapshotDates();
+  console.log(`📋 Сохранённые снимки лидерборда списком (${snapshots.length}):`);
+  if (snapshots.length === 0) {
     console.log(`  (Снимки ещё не сохранялись)`);
     return;
   }
-  dates.forEach(d => {
-    console.log(`  • ${d.snapshot_date} в ${d.snapshot_time} (Киев) — ${d.total_players} игроков`);
+  snapshots.forEach(s => {
+    const dt = formatDisplayDateTime(s.snapshot_date, s.snapshot_time);
+    const typeBadge = s.snapshot_type === 'manual' ? '✋ Ручной' : '🤖 Авто 23:55';
+    console.log(`  • [ID: ${s.id}] ${dt} (${typeBadge}) — ${s.total_players} игроков`);
   });
 }
 
@@ -196,22 +210,55 @@ async function main() {
 
   // Flag: take snapshot immediately
   if (args.includes('--snapshot') || args.includes('-s') || inputArg === 'сохранить' || inputArg === 'сделать снимок') {
-    const snap = db.saveLeaderboardSnapshot();
-    console.log(`✅ Снимок лидерборда за ${snap.snapshot_date} (${snap.snapshot_time} Киев) успешно создан!`);
+    const isManual = !args.includes('--auto');
+    const snap = db.saveLeaderboardSnapshot({ snapshotType: isManual ? 'manual' : 'auto' });
+    const dt = formatDisplayDateTime(snap.snapshot_date, snap.snapshot_time);
+    console.log(`✅ Снимок лидерборда ${dt} [ID: ${snap.id}] (${snap.snapshot_type}) успешно создан!`);
     console.log(`👥 Сохранено участников: ${snap.total_players}`);
     return;
   }
 
-  // Flag: list available dates
+  // Delete command: node scripts/get_leaderboard_history.js delete 3
+  if (args[0] === 'delete' || args[0] === '--delete' || args[0] === 'удалить') {
+    const idToDelete = parseInt(args[1], 10);
+    if (!idToDelete) {
+      console.log(`⚠️ Укажите ID снимка для удаления: node scripts/get_leaderboard_history.js delete <ID>`);
+      process.exit(1);
+    }
+    const deleted = db.deleteLeaderboardSnapshot(idToDelete);
+    if (deleted) {
+      console.log(`🗑️ Снимок с ID ${idToDelete} успешно удалён из архива.`);
+    } else {
+      console.log(`❌ Снимок с ID ${idToDelete} не найден.`);
+    }
+    return;
+  }
+
+  // Flag: list available snapshots
   if (!inputArg || inputArg === 'list' || inputArg === 'список' || inputArg === 'даты') {
     printAvailableDates();
     return;
   }
 
+  // Check if argument is query by ID: "id=1" or integer ID "1"
+  const idMatch = inputArg.match(/^(?:id=)?(\d+)$/i);
+  if (idMatch) {
+    const idNum = parseInt(idMatch[1], 10);
+    const snapshotById = db.getLeaderboardSnapshotById(idNum);
+    if (snapshotById) {
+      if (args.includes('--json')) {
+        console.log(JSON.stringify(snapshotById, null, 2));
+        return;
+      }
+      printSnapshotTable(snapshotById);
+      return;
+    }
+  }
+
   const dateStr = parseNaturalDate(inputArg);
   if (!dateStr) {
-    console.log(`⚠️ Не удалось распознать дату: "${inputArg}"`);
-    console.log(`💡 Примеры допустимых форматов: "6 сентября", "2026-09-06", "06.09.2026", "сегодня", "вчера", "list"`);
+    console.log(`⚠️ Не удалось распознать дату или ID: "${inputArg}"`);
+    console.log(`💡 Примеры допустимых форматов: "10.07.2026", "6 сентября", "id=1", "сегодня", "вчера", "list"`);
     printAvailableDates();
     process.exit(1);
   }

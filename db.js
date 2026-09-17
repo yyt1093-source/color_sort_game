@@ -74,6 +74,7 @@ function initDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       snapshot_date TEXT NOT NULL,
       snapshot_time TEXT NOT NULL,
+      snapshot_type TEXT NOT NULL DEFAULT 'auto',
       created_at TEXT NOT NULL,
       created_at_ts INTEGER NOT NULL,
       total_players INTEGER NOT NULL DEFAULT 0,
@@ -95,6 +96,11 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_lb_snapshots_date ON leaderboard_snapshots(snapshot_date);
     CREATE INDEX IF NOT EXISTS idx_lb_entries_snapshot ON leaderboard_snapshot_entries(snapshot_id, rank ASC);
   `);
+  
+  // Try to add snapshot_type if it doesn't exist (for existing databases)
+  try {
+    db.exec(`ALTER TABLE leaderboard_snapshots ADD COLUMN snapshot_type TEXT DEFAULT 'auto';`);
+  } catch (e) {}
   
   // Try to add total_moves, reveals, extra_bottles and shuffles if they don't exist (for existing databases)
   try {
@@ -907,6 +913,7 @@ function saveLeaderboardSnapshot(options = {}) {
   const kyiv = getKyivDateTime(options.date || new Date());
   const snapshotDate = options.dateStr || kyiv.dateStr;
   const snapshotTime = options.timeStr || kyiv.timeStr;
+  const snapshotType = options.snapshotType || (options.isManual ? 'manual' : (options.timeStr === '23:55:00' ? 'auto' : 'manual'));
   const createdAt = `${snapshotDate} ${snapshotTime}`;
   const createdAtTs = options.date ? new Date(options.date).getTime() : kyiv.timestamp;
 
@@ -972,12 +979,13 @@ function saveLeaderboardSnapshot(options = {}) {
 
   // 5. Insert snapshot record
   const insertSnapStmt = db.prepare(`
-    INSERT INTO leaderboard_snapshots (snapshot_date, snapshot_time, created_at, created_at_ts, total_players, players_data)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO leaderboard_snapshots (snapshot_date, snapshot_time, snapshot_type, created_at, created_at_ts, total_players, players_data)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
   const snapResult = insertSnapStmt.run(
     snapshotDate,
     snapshotTime,
+    snapshotType,
     createdAt,
     createdAtTs,
     snapshotPlayers.length,
@@ -1005,12 +1013,13 @@ function saveLeaderboardSnapshot(options = {}) {
     }
   }
 
-  console.log(`[DB Snapshot] Saved snapshot #${snapshotId} for date ${snapshotDate} (${snapshotTime}): ${snapshotPlayers.length} players.`);
+  console.log(`[DB Snapshot] Saved snapshot #${snapshotId} for ${snapshotDate} (${snapshotTime}) [${snapshotType}]: ${snapshotPlayers.length} players.`);
 
   return {
     id: snapshotId,
     snapshot_date: snapshotDate,
     snapshot_time: snapshotTime,
+    snapshot_type: snapshotType,
     created_at: createdAt,
     created_at_ts: createdAtTs,
     total_players: snapshotPlayers.length,
@@ -1019,15 +1028,31 @@ function saveLeaderboardSnapshot(options = {}) {
 }
 
 /**
- * Get all available snapshot dates and summaries
+ * Get all available snapshot items and summaries
  */
 function getLeaderboardSnapshotDates() {
   const stmt = db.prepare(`
-    SELECT id, snapshot_date, snapshot_time, created_at, created_at_ts, total_players
+    SELECT id, snapshot_date, snapshot_time, snapshot_type, created_at, created_at_ts, total_players
     FROM leaderboard_snapshots
     ORDER BY created_at_ts DESC, id DESC
   `);
   return stmt.all();
+}
+
+/**
+ * Check if an automatic snapshot already exists for date (prevents guard skipping 23:55)
+ */
+function getAutoLeaderboardSnapshotByDate(dateStr) {
+  if (!dateStr) return null;
+  const cleanDate = String(dateStr).trim();
+  const stmt = db.prepare(`
+    SELECT id, snapshot_date, snapshot_time, snapshot_type, created_at, created_at_ts, total_players
+    FROM leaderboard_snapshots
+    WHERE snapshot_date = ? AND (snapshot_type = 'auto' OR snapshot_time = '23:55:00')
+    ORDER BY created_at_ts DESC, id DESC
+    LIMIT 1
+  `);
+  return stmt.get(cleanDate) || null;
 }
 
 /**
@@ -1037,7 +1062,7 @@ function getLeaderboardSnapshotByDate(dateStr) {
   if (!dateStr) return null;
   const cleanDate = String(dateStr).trim();
   const stmt = db.prepare(`
-    SELECT id, snapshot_date, snapshot_time, created_at, created_at_ts, total_players, players_data
+    SELECT id, snapshot_date, snapshot_time, snapshot_type, created_at, created_at_ts, total_players, players_data
     FROM leaderboard_snapshots
     WHERE snapshot_date = ?
     ORDER BY created_at_ts DESC, id DESC
@@ -1063,6 +1088,7 @@ function getLeaderboardSnapshotByDate(dateStr) {
     id: row.id,
     snapshot_date: row.snapshot_date,
     snapshot_time: row.snapshot_time,
+    snapshot_type: row.snapshot_type || 'auto',
     created_at: row.created_at,
     created_at_ts: row.created_at_ts,
     total_players: row.total_players,
@@ -1075,7 +1101,7 @@ function getLeaderboardSnapshotByDate(dateStr) {
  */
 function getLeaderboardSnapshotById(snapshotId) {
   const stmt = db.prepare(`
-    SELECT id, snapshot_date, snapshot_time, created_at, created_at_ts, total_players, players_data
+    SELECT id, snapshot_date, snapshot_time, snapshot_type, created_at, created_at_ts, total_players, players_data
     FROM leaderboard_snapshots
     WHERE id = ?
   `);
@@ -1099,6 +1125,7 @@ function getLeaderboardSnapshotById(snapshotId) {
     id: row.id,
     snapshot_date: row.snapshot_date,
     snapshot_time: row.snapshot_time,
+    snapshot_type: row.snapshot_type || 'auto',
     created_at: row.created_at,
     created_at_ts: row.created_at_ts,
     total_players: row.total_players,
@@ -1133,18 +1160,21 @@ function ensureSeedLeaderboardSnapshot() {
   } catch (e) {}
 
   const seedConfigs = [
-    { date: '2026-09-04', count: 85, maxLvl: 130, ts: 1788470100000 },
-    { date: '2026-09-06', count: 15, maxLvl: 150, ts: 1788642900000 },
-    { date: '2026-09-10', count: 110, maxLvl: 175, ts: 1788988500000 },
-    { date: '2026-09-15', count: 140, maxLvl: 210, ts: 1789420500000 }
+    { date: '2026-07-10', time: '12:00:00', type: 'manual', count: 85, maxLvl: 120, ts: 1783587600000 },
+    { date: '2026-07-10', time: '23:55:00', type: 'auto', count: 90, maxLvl: 125, ts: 1783630500000 },
+    { date: '2026-07-11', time: '23:55:00', type: 'auto', count: 94, maxLvl: 128, ts: 1783716900000 },
+    { date: '2026-09-04', time: '23:55:00', type: 'auto', count: 85, maxLvl: 130, ts: 1788470100000 },
+    { date: '2026-09-06', time: '23:55:00', type: 'auto', count: 15, maxLvl: 150, ts: 1788642900000 },
+    { date: '2026-09-10', time: '23:55:00', type: 'auto', count: 110, maxLvl: 175, ts: 1788988500000 },
+    { date: '2026-09-15', time: '23:55:00', type: 'auto', count: 140, maxLvl: 210, ts: 1789420500000 }
   ];
 
   const firstNames = ['Alligator', 'Александр', 'Мария', 'Дмитрий', 'Елена', 'Сергей', 'Анна', 'Максим', 'Ольга', 'Богдан', 'Катерина', 'Владимир', 'Татьяна', 'Денис', 'Игорь', 'Наталья', 'Виктор', 'Юлия', 'Артем', 'Светлана', 'Роман', 'Алина', 'Павел', 'Виктория', 'Михаил'];
 
   for (const cfg of seedConfigs) {
     try {
-      const checkStmt = db.prepare(`SELECT id FROM leaderboard_snapshots WHERE snapshot_date = ? LIMIT 1`);
-      if (checkStmt.get(cfg.date)) continue; // Already exists
+      const checkStmt = db.prepare(`SELECT id FROM leaderboard_snapshots WHERE snapshot_date = ? AND snapshot_time = ? LIMIT 1`);
+      if (checkStmt.get(cfg.date, cfg.time)) continue; // Already exists
 
       const players = [];
       let currentLevel = cfg.maxLvl;
@@ -1167,10 +1197,10 @@ function ensureSeedLeaderboardSnapshot() {
       }
 
       const insertSnapStmt = db.prepare(`
-        INSERT INTO leaderboard_snapshots (snapshot_date, snapshot_time, created_at, created_at_ts, total_players, players_data)
-        VALUES (?, '23:55:00', ?, ?, ?, ?)
+        INSERT INTO leaderboard_snapshots (snapshot_date, snapshot_time, snapshot_type, created_at, created_at_ts, total_players, players_data)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
-      const snapRes = insertSnapStmt.run(cfg.date, `${cfg.date} 23:55:00`, cfg.ts, players.length, JSON.stringify(players));
+      const snapRes = insertSnapStmt.run(cfg.date, cfg.time, cfg.type, `${cfg.date} ${cfg.time}`, cfg.ts, players.length, JSON.stringify(players));
       const snapId = Number(snapRes.lastInsertRowid);
 
       const insertEntryStmt = db.prepare(`
@@ -1180,7 +1210,7 @@ function ensureSeedLeaderboardSnapshot() {
       for (const sp of players) {
         insertEntryStmt.run(snapId, sp.rank, sp.telegram_id, sp.name, sp.username, sp.level, sp.stars);
       }
-      console.log(`[DB Snapshot] Seeded historical snapshot for ${cfg.date} (23:55 Kyiv) with ${players.length} players.`);
+      console.log(`[DB Snapshot] Seeded historical snapshot for ${cfg.date} — ${cfg.time} [${cfg.type}] with ${players.length} players.`);
     } catch (err) {
       console.warn(`[DB Snapshot] Failed to seed ${cfg.date} snapshot:`, err.message);
     }
@@ -1209,6 +1239,7 @@ module.exports = {
   saveLeaderboardSnapshot,
   deleteLeaderboardSnapshot,
   getLeaderboardSnapshotDates,
+  getAutoLeaderboardSnapshotByDate,
   getLeaderboardSnapshotByDate,
   getLeaderboardSnapshotById,
   ensureSeedLeaderboardSnapshot

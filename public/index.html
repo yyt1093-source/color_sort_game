@@ -696,97 +696,47 @@
           </button>
         </div>
 
-        <!-- Tab 2: Leaderboard History (23:55 Kyiv Daily Snapshots) -->
+        <!-- Tab 2: Leaderboard History (List of snapshots by date & time) -->
         <div id="adminTabHistoryContent" class="admin-tab-content hidden">
+          <!-- Header & Top Button "Сделать снимок сейчас" -->
           <div class="admin-history-header-box">
             <div class="admin-history-title-row">
               <span style="font-size: 1.3rem;">📜</span>
               <div>
                 <strong id="adminHistoryTitle">История лидерборда</strong>
-                <div class="admin-history-sub" id="adminHistorySub">Ежедневные снимки в 23:55 (Киев)</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Controls: Date selector, View, Delete, Calendar picker, Snapshot -->
-          <div class="admin-history-controls-card">
-            <div class="admin-history-control-group">
-              <label for="adminHistoryDateSelect" class="admin-history-label" id="adminHistoryDateSelectLabel">Выберите дату снимка:</label>
-              <div style="display: flex; gap: 8px; width: 100%;">
-                <select id="adminHistoryDateSelect" class="admin-history-select"></select>
-                <button type="button" id="adminHistoryRefreshDatesBtn" class="admin-history-icon-btn" title="Обновить список дат">🔄</button>
+                <div class="admin-history-sub" id="adminHistorySub">Ежедневные снимки в 23:55 (Киев). Ручные снимки сохраняются отдельно.</div>
               </div>
             </div>
 
-            <!-- Action buttons: View and Delete -->
-            <div class="admin-history-main-actions">
-              <button type="button" id="adminHistoryViewBtn" class="admin-history-view-btn">
-                <span>👁️</span>
-                <span id="adminHistoryViewBtnLabel">Просмотреть</span>
-              </button>
-              <button type="button" id="adminHistoryDeleteBtn" class="admin-history-delete-btn" title="Удалить выбранный снимок">
-                <span>🗑️</span>
-                <span id="adminHistoryDeleteBtnLabel">Удалить</span>
-              </button>
-            </div>
-
-            <div class="admin-divider" style="margin: 4px 0;"></div>
-
-            <!-- Quick pick by calendar or manual snapshot -->
-            <div class="admin-history-actions-row">
-              <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
-                <input type="date" id="adminHistoryDatePicker" class="admin-history-date-input" title="Выбрать дату в календаре">
-                <button type="button" id="adminHistoryLoadDateBtn" class="admin-history-btn-secondary">
-                  <span id="adminHistoryLoadBtnLabel">Найти</span>
-                </button>
-              </div>
-              <button type="button" id="adminHistoryTakeSnapshotBtn" class="admin-history-snapshot-btn">
-                <span>📸</span>
-                <span id="adminHistoryTakeSnapshotLabel">Снимок сейчас</span>
-              </button>
-            </div>
+            <!-- Prominent top button: "Сделать снимок сейчас" -->
+            <button type="button" id="adminHistoryTakeSnapshotBtn" class="admin-history-snapshot-btn-primary">
+              <span style="font-size: 1.15rem;">📸</span>
+              <span id="adminHistoryTakeSnapshotLabel">Сделать снимок сейчас</span>
+            </button>
           </div>
 
-          <!-- Active Snapshot Summary -->
-          <div id="adminHistorySummaryCard" class="admin-history-summary-card hidden">
-            <div class="admin-history-summary-left">
-              <div class="admin-history-summary-date" id="adminHistorySelectedDate">—</div>
-              <div class="admin-history-summary-time" id="adminHistorySelectedTime">—</div>
-            </div>
-            <div class="admin-history-summary-badge" id="adminHistoryTotalBadge">👥 0 игроков</div>
+          <!-- Section title and Refresh button -->
+          <div class="admin-history-list-bar">
+            <span class="admin-history-list-title" id="adminHistoryListTitle">История сохранённых снимков:</span>
+            <button type="button" id="adminHistoryRefreshDatesBtn" class="admin-history-icon-btn" title="Обновить список снимков">🔄</button>
           </div>
 
-          <!-- Search Filter in Snapshot -->
-          <div class="admin-history-search-wrap">
-            <span class="admin-history-search-icon">🔍</span>
-            <input type="text" id="adminHistorySearchInput" class="admin-history-search-input" placeholder="Поиск по имени, username или ID...">
-            <button type="button" id="adminHistoryClearSearchBtn" class="admin-history-clear-search hidden">✕</button>
-          </div>
-
-          <!-- Players Table / List Container -->
-          <div class="admin-history-table-container">
+          <!-- List Container -->
+          <div class="admin-history-list-container">
             <div id="adminHistoryLoadingSpinner" class="admin-history-loading hidden">
               <div class="spinner"></div>
-              <span id="adminHistoryLoadingText">Загрузка снимка...</span>
+              <span id="adminHistoryLoadingText">Загрузка списка снимков...</span>
             </div>
             <div id="adminHistoryEmptyState" class="admin-history-empty hidden">
               <span style="font-size: 2rem;">📭</span>
-              <span id="adminHistoryEmptyText">Нет сохранённых снимков за эту дату</span>
+              <span id="adminHistoryEmptyText">Нет сохранённых снимков</span>
             </div>
-            <div id="adminHistoryTableWrap" class="admin-history-table-wrap">
-              <table class="admin-history-table">
-                <thead>
-                  <tr>
-                    <th style="width: 44px; text-align: center;" id="adminHistoryColRank">#</th>
-                    <th id="adminHistoryColPlayer">Игрок</th>
-                    <th id="adminHistoryColTid">Telegram ID</th>
-                    <th style="width: 68px; text-align: right;" id="adminHistoryColLevel">Уровень</th>
-                  </tr>
-                </thead>
-                <tbody id="adminHistoryTableBody">
-                  <!-- Rendered dynamically -->
-                </tbody>
-              </table>
+
+            <!-- Dynamic list of snapshot items -->
+            <div id="adminHistoryItemsList" class="admin-history-items-list">
+              <!-- Rendered dynamically as cards:
+                   [ 📅 10.07.2026 — 12:00 | 👥 85 игр. | ✋ Ручной ]  [ 👁️ Просмотреть ] [ 🗑️ Удалить ]
+              -->
             </div>
           </div>
         </div>
@@ -831,6 +781,60 @@
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
         <button id="cancelResetSeasonBtn" class="btn-cancel" style="flex: 1;">Отмена</button>
         <button id="confirmResetSeasonBtn" class="btn-confirm-danger" style="flex: 1;">🔥 Сбросить всё</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard Snapshot Viewer Modal (Detailed view of a specific snapshot) -->
+  <div id="adminHistoryViewerModal" class="modal-overlay hidden">
+    <div class="glass-modal admin-history-viewer-modal">
+      <div class="admin-viewer-header">
+        <div class="admin-viewer-title-box">
+          <div class="admin-viewer-date" id="adminViewerDateTitle">📅 10.07.2026 — 12:00</div>
+          <div class="admin-viewer-sub-row">
+            <span class="admin-viewer-badge" id="adminViewerTotalBadge">👥 0 игроков</span>
+            <span class="admin-viewer-badge-type" id="adminViewerTypeBadge">✋ Ручной</span>
+          </div>
+        </div>
+        <button type="button" id="adminViewerCloseBtn" class="modal-close-btn" title="Закрыть">✕</button>
+      </div>
+
+      <!-- Search in snapshot -->
+      <div class="admin-history-search-wrap" style="margin: 10px 0 14px 0;">
+        <span class="admin-history-search-icon">🔍</span>
+        <input type="text" id="adminHistorySearchInput" class="admin-history-search-input" placeholder="Поиск по имени, username или ID...">
+        <button type="button" id="adminHistoryClearSearchBtn" class="admin-history-clear-search hidden">✕</button>
+      </div>
+
+      <!-- Scrollable Table -->
+      <div class="admin-history-table-container">
+        <div id="adminViewerLoadingSpinner" class="admin-history-loading hidden">
+          <div class="spinner"></div>
+          <span id="adminViewerLoadingText">Загрузка данных снимка...</span>
+        </div>
+        <div id="adminViewerEmptyState" class="admin-history-empty hidden">
+          <span style="font-size: 2rem;">📭</span>
+          <span>В этом снимке нет игроков</span>
+        </div>
+        <div id="adminHistoryTableWrap" class="admin-history-table-wrap">
+          <table class="admin-history-table">
+            <thead>
+              <tr>
+                <th style="width: 44px; text-align: center;" id="adminHistoryColRank">#</th>
+                <th id="adminHistoryColPlayer">Игрок</th>
+                <th id="adminHistoryColTid">Telegram ID</th>
+                <th style="width: 68px; text-align: right;" id="adminHistoryColLevel">Уровень</th>
+              </tr>
+            </thead>
+            <tbody id="adminHistoryTableBody">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; text-align: center;">
+        <button type="button" id="adminViewerBackBtn" class="admin-viewer-back-btn">← Назад к списку снимков</button>
       </div>
     </div>
   </div>

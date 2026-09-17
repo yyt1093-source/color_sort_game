@@ -790,8 +790,8 @@ app.post('/api/admin/leaderboard-history/snapshot', async (req, res) => {
       }
     } catch (e) {}
 
-    const snapshot = db.saveLeaderboardSnapshot({ additionalPlayers: kvdbPlayers });
-    res.json({ success: true, snapshot, message: 'Снимок лидерборда успешно сохранён!' });
+    const snapshot = db.saveLeaderboardSnapshot({ additionalPlayers: kvdbPlayers, snapshotType: 'manual' });
+    res.json({ success: true, snapshot, message: 'Ручной снимок лидерборда успешно сохранён!' });
   } catch (err) {
     console.error('[API ERROR] /api/admin/leaderboard-history/snapshot:', err);
     res.status(500).json({ success: false, error: err.message });
@@ -848,7 +848,7 @@ app.post('/api/admin/leaderboard-history/delete', (req, res) => {
 app.get('/api/cron/leaderboard-snapshot', async (req, res) => {
   try {
     const kyiv = db.getKyivDateTime();
-    const snapshot = db.saveLeaderboardSnapshot({ timeStr: '23:55:00' });
+    const snapshot = db.saveLeaderboardSnapshot({ timeStr: '23:55:00', snapshotType: 'auto' });
     res.json({ success: true, snapshot, message: `Снимок лидерборда за ${kyiv.fullStr} сохранён` });
   } catch (err) {
     console.error('[API CRON ERROR] /api/cron/leaderboard-snapshot:', err);
