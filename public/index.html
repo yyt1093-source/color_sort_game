@@ -26,10 +26,10 @@
   
   <!-- Preload critical game assets for instant boot -->
   <link rel="preload" href="referral_share.jpg?v=4" as="image">
-  <link rel="preload" href="js/gameEngine.js?v=48810" as="script">
-  <link rel="preload" href="js/renderer.js?v=48810" as="script">
-  <link rel="preload" href="js/levelGenerator.js?v=48810" as="script">
-  <link rel="preload" href="js/app.js?v=48810" as="script">
+  <link rel="preload" href="js/gameEngine.js?v=48820" as="script">
+  <link rel="preload" href="js/renderer.js?v=48820" as="script">
+  <link rel="preload" href="js/levelGenerator.js?v=48820" as="script">
+  <link rel="preload" href="js/app.js?v=48820" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -43,7 +43,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=48810">
+  <link rel="stylesheet" href="style.css?v=48820">
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -608,23 +608,47 @@
           <span class="admin-shield-icon">🛡️</span>
           <div>
             <strong id="adminPanelTitle">Панель Администратора</strong>
-            <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48810)</span>
+            <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48820)</span>
           </div>
         </div>
 
-        <!-- Admin Tabs Switcher -->
+        <!-- Admin Navigation (Отдельные разделы в столбик) -->
         <div class="admin-nav-tabs">
           <button type="button" class="admin-nav-tab active" id="adminTabActionsBtn" data-tab="actions">
-            <span>⚡</span>
-            <span id="adminTabActionsLabel">Управление</span>
+            <div class="admin-nav-tab-main">
+              <span class="admin-nav-tab-icon">⚡</span>
+              <div class="admin-nav-tab-text">
+                <strong id="adminTabActionsLabel">Управление</strong>
+                <span class="admin-nav-tab-desc" id="adminTabActionsDesc">Бесплатные функции, бустеры и сброс сезона</span>
+              </div>
+            </div>
+            <span class="admin-nav-tab-status">
+              <span class="admin-tab-indicator"></span>
+            </span>
           </button>
           <button type="button" class="admin-nav-tab" id="adminTabHistoryBtn" data-tab="history">
-            <span>📜</span>
-            <span id="adminTabHistoryLabel">История</span>
+            <div class="admin-nav-tab-main">
+              <span class="admin-nav-tab-icon">📜</span>
+              <div class="admin-nav-tab-text">
+                <strong id="adminTabHistoryLabel">История лидерборда</strong>
+                <span class="admin-nav-tab-desc" id="adminTabHistoryDesc">Снимки в 23:55 (Киев), ручные копии и архив</span>
+              </div>
+            </div>
+            <span class="admin-nav-tab-status">
+              <span class="admin-tab-indicator"></span>
+            </span>
           </button>
           <button type="button" class="admin-nav-tab" id="adminTabWalletsBtn" data-tab="wallets">
-            <span>👛</span>
-            <span id="adminTabWalletsLabel">Кошельки</span>
+            <div class="admin-nav-tab-main">
+              <span class="admin-nav-tab-icon">👛</span>
+              <div class="admin-nav-tab-text">
+                <strong id="adminTabWalletsLabel">Кошельки</strong>
+                <span class="admin-nav-tab-desc" id="adminTabWalletsDesc">Список игроков, подключивших TON кошелёк</span>
+              </div>
+            </div>
+            <span class="admin-nav-tab-status">
+              <span class="admin-tab-indicator"></span>
+            </span>
           </button>
         </div>
 
@@ -1173,12 +1197,12 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=48810"></script>
-  <script src="js/audio.js?v=48810"></script>
-  <script src="js/solver.js?v=48810"></script>
-  <script src="js/levelGenerator.js?v=48810"></script>
-  <script src="js/gameEngine.js?v=48810"></script>
-  <script src="js/renderer.js?v=48810"></script>
-  <script src="js/app.js?v=48810"></script>
+  <script src="js/telegram.js?v=48820"></script>
+  <script src="js/audio.js?v=48820"></script>
+  <script src="js/solver.js?v=48820"></script>
+  <script src="js/levelGenerator.js?v=48820"></script>
+  <script src="js/gameEngine.js?v=48820"></script>
+  <script src="js/renderer.js?v=48820"></script>
+  <script src="js/app.js?v=48820"></script>
 </body>
 </html>
