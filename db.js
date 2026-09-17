@@ -69,6 +69,31 @@ function initDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_leaderboard ON users(max_level DESC, stars DESC);
     CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
+
+    CREATE TABLE IF NOT EXISTS leaderboard_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      snapshot_date TEXT NOT NULL,
+      snapshot_time TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      created_at_ts INTEGER NOT NULL,
+      total_players INTEGER NOT NULL DEFAULT 0,
+      players_data TEXT NOT NULL DEFAULT '[]'
+    );
+
+    CREATE TABLE IF NOT EXISTS leaderboard_snapshot_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      snapshot_id INTEGER NOT NULL,
+      rank INTEGER NOT NULL,
+      telegram_id TEXT NOT NULL,
+      first_name TEXT,
+      username TEXT,
+      max_level INTEGER NOT NULL,
+      stars INTEGER DEFAULT 0,
+      FOREIGN KEY (snapshot_id) REFERENCES leaderboard_snapshots(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_lb_snapshots_date ON leaderboard_snapshots(snapshot_date);
+    CREATE INDEX IF NOT EXISTS idx_lb_entries_snapshot ON leaderboard_snapshot_entries(snapshot_id, rank ASC);
   `);
   
   // Try to add total_moves, reveals, extra_bottles and shuffles if they don't exist (for existing databases)
@@ -129,6 +154,7 @@ function initDatabase() {
 }
 
 initDatabase();
+ensureSeedLeaderboardSnapshot();
 
 function generateMemoCode(telegramId) {
   const digits = String(telegramId).replace(/\D/g, '');
@@ -838,6 +864,329 @@ function claimReferralReward(referrerId, referralId = null) {
   }
 }
 
+/**
+ * Format Date in Europe/Kyiv timezone (UTC+2 / UTC+3 with DST)
+ */
+function getKyivDateTime(dateInput = new Date()) {
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Kyiv',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  const parts = formatter.formatToParts(d);
+  const obj = {};
+  parts.forEach(p => obj[p.type] = p.value);
+  const dateStr = `${obj.year}-${obj.month}-${obj.day}`;
+  const timeStr = `${obj.hour}:${obj.minute}:${obj.second}`;
+  const fullStr = `${dateStr} ${timeStr}`;
+  return {
+    dateStr,
+    timeStr,
+    fullStr,
+    timestamp: d.getTime(),
+    year: parseInt(obj.year, 10),
+    month: parseInt(obj.month, 10),
+    day: parseInt(obj.day, 10),
+    hour: parseInt(obj.hour, 10),
+    minute: parseInt(obj.minute, 10),
+    second: parseInt(obj.second, 10)
+  };
+}
+
+/**
+ * Save complete snapshot of all leaderboard players without modifying player records.
+ * STRICT: Preserves all user states, levels, and stats unchanged.
+ */
+function saveLeaderboardSnapshot(options = {}) {
+  const kyiv = getKyivDateTime(options.date || new Date());
+  const snapshotDate = options.dateStr || kyiv.dateStr;
+  const snapshotTime = options.timeStr || kyiv.timeStr;
+  const createdAt = `${snapshotDate} ${snapshotTime}`;
+  const createdAtTs = options.date ? new Date(options.date).getTime() : kyiv.timestamp;
+
+  // 1. Fetch ALL real players from SQLite who completed at least 1 level (max_level >= 1)
+  const stmt = db.prepare(`
+    SELECT telegram_id, first_name, username, max_level, stars
+    FROM users
+    WHERE max_level >= 1
+      AND telegram_id NOT LIKE 'guest%'
+      AND telegram_id NOT LIKE 'dev%'
+    ORDER BY max_level DESC, stars DESC
+  `);
+  const localPlayers = stmt.all();
+
+  // 2. Combine with any external players provided (e.g. KVDB)
+  const playersMap = new Map();
+  localPlayers.forEach(p => {
+    playersMap.set(String(p.telegram_id), {
+      telegram_id: String(p.telegram_id),
+      first_name: p.first_name || 'Игрок',
+      username: p.username || '',
+      max_level: Number(p.max_level || 0),
+      stars: Number(p.stars || 0)
+    });
+  });
+
+  if (Array.isArray(options.additionalPlayers)) {
+    options.additionalPlayers.forEach(cp => {
+      if (!cp || !cp.telegramId) return;
+      const tid = String(cp.telegramId);
+      if (tid.startsWith('guest') || tid.startsWith('dev')) return;
+      const cpLevel = Number(cp.maxLevel || cp.level || 0);
+      if (cpLevel < 1) return;
+
+      const existing = playersMap.get(tid);
+      if (!existing || cpLevel > existing.max_level) {
+        playersMap.set(tid, {
+          telegram_id: tid,
+          first_name: cp.firstName || (existing ? existing.first_name : 'Игрок'),
+          username: cp.username || (existing ? existing.username : ''),
+          max_level: cpLevel,
+          stars: Number(cp.stars || (existing ? existing.stars : 0))
+        });
+      }
+    });
+  }
+
+  // 3. Sort all players: max_level DESC, stars DESC
+  const sortedPlayers = Array.from(playersMap.values())
+    .sort((a, b) => b.max_level - a.max_level || (b.stars || 0) - (a.stars || 0));
+
+  // 4. Assign rank 1..N
+  const snapshotPlayers = sortedPlayers.map((p, idx) => ({
+    rank: idx + 1,
+    telegram_id: String(p.telegram_id),
+    name: p.first_name || 'Игрок',
+    username: p.username || '',
+    level: Number(p.max_level || 0),
+    stars: Number(p.stars || 0)
+  }));
+
+  const playersDataJson = JSON.stringify(snapshotPlayers);
+
+  // 5. Insert snapshot record
+  const insertSnapStmt = db.prepare(`
+    INSERT INTO leaderboard_snapshots (snapshot_date, snapshot_time, created_at, created_at_ts, total_players, players_data)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  const snapResult = insertSnapStmt.run(
+    snapshotDate,
+    snapshotTime,
+    createdAt,
+    createdAtTs,
+    snapshotPlayers.length,
+    playersDataJson
+  );
+
+  const snapshotId = Number(snapResult.lastInsertRowid);
+
+  // 6. Insert individual entries
+  if (snapshotPlayers.length > 0) {
+    const insertEntryStmt = db.prepare(`
+      INSERT INTO leaderboard_snapshot_entries (snapshot_id, rank, telegram_id, first_name, username, max_level, stars)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const player of snapshotPlayers) {
+      insertEntryStmt.run(
+        snapshotId,
+        player.rank,
+        player.telegram_id,
+        player.name,
+        player.username,
+        player.level,
+        player.stars
+      );
+    }
+  }
+
+  console.log(`[DB Snapshot] Saved snapshot #${snapshotId} for date ${snapshotDate} (${snapshotTime}): ${snapshotPlayers.length} players.`);
+
+  return {
+    id: snapshotId,
+    snapshot_date: snapshotDate,
+    snapshot_time: snapshotTime,
+    created_at: createdAt,
+    created_at_ts: createdAtTs,
+    total_players: snapshotPlayers.length,
+    players: snapshotPlayers
+  };
+}
+
+/**
+ * Get all available snapshot dates and summaries
+ */
+function getLeaderboardSnapshotDates() {
+  const stmt = db.prepare(`
+    SELECT id, snapshot_date, snapshot_time, created_at, created_at_ts, total_players
+    FROM leaderboard_snapshots
+    ORDER BY created_at_ts DESC, id DESC
+  `);
+  return stmt.all();
+}
+
+/**
+ * Get leaderboard snapshot for a specific date (YYYY-MM-DD)
+ */
+function getLeaderboardSnapshotByDate(dateStr) {
+  if (!dateStr) return null;
+  const cleanDate = String(dateStr).trim();
+  const stmt = db.prepare(`
+    SELECT id, snapshot_date, snapshot_time, created_at, created_at_ts, total_players, players_data
+    FROM leaderboard_snapshots
+    WHERE snapshot_date = ?
+    ORDER BY created_at_ts DESC, id DESC
+    LIMIT 1
+  `);
+  const row = stmt.get(cleanDate);
+  if (!row) return null;
+
+  let players = [];
+  try {
+    players = JSON.parse(row.players_data);
+  } catch (e) {
+    const entriesStmt = db.prepare(`
+      SELECT rank, telegram_id, first_name as name, username, max_level as level, stars
+      FROM leaderboard_snapshot_entries
+      WHERE snapshot_id = ?
+      ORDER BY rank ASC
+    `);
+    players = entriesStmt.all(row.id);
+  }
+
+  return {
+    id: row.id,
+    snapshot_date: row.snapshot_date,
+    snapshot_time: row.snapshot_time,
+    created_at: row.created_at,
+    created_at_ts: row.created_at_ts,
+    total_players: row.total_players,
+    players
+  };
+}
+
+/**
+ * Get leaderboard snapshot by ID
+ */
+function getLeaderboardSnapshotById(snapshotId) {
+  const stmt = db.prepare(`
+    SELECT id, snapshot_date, snapshot_time, created_at, created_at_ts, total_players, players_data
+    FROM leaderboard_snapshots
+    WHERE id = ?
+  `);
+  const row = stmt.get(Number(snapshotId));
+  if (!row) return null;
+
+  let players = [];
+  try {
+    players = JSON.parse(row.players_data);
+  } catch (e) {
+    const entriesStmt = db.prepare(`
+      SELECT rank, telegram_id, first_name as name, username, max_level as level, stars
+      FROM leaderboard_snapshot_entries
+      WHERE snapshot_id = ?
+      ORDER BY rank ASC
+    `);
+    players = entriesStmt.all(row.id);
+  }
+
+  return {
+    id: row.id,
+    snapshot_date: row.snapshot_date,
+    snapshot_time: row.snapshot_time,
+    created_at: row.created_at,
+    created_at_ts: row.created_at_ts,
+    total_players: row.total_players,
+    players
+  };
+}
+
+/**
+ * Delete a leaderboard snapshot and its entries
+ */
+function deleteLeaderboardSnapshot(snapshotId) {
+  try {
+    const id = Number(snapshotId);
+    if (!id) return false;
+
+    db.prepare(`DELETE FROM leaderboard_snapshot_entries WHERE snapshot_id = ?`).run(id);
+    const res = db.prepare(`DELETE FROM leaderboard_snapshots WHERE id = ?`).run(id);
+    return res.changes > 0;
+  } catch (err) {
+    console.error('[DB Delete Snapshot Error]', err);
+    return false;
+  }
+}
+
+/**
+ * Seed historical snapshots for 2026-09-04 (85 players), 2026-09-06 (15 players),
+ * 2026-09-10 (110 players), and 2026-09-15 (140 players) at 23:55 Kyiv time
+ */
+function ensureSeedLeaderboardSnapshot() {
+  try {
+    db.prepare(`UPDATE leaderboard_snapshots SET snapshot_time = '23:55:00' WHERE snapshot_time = '00:00:00'`).run();
+  } catch (e) {}
+
+  const seedConfigs = [
+    { date: '2026-09-04', count: 85, maxLvl: 130, ts: 1788470100000 },
+    { date: '2026-09-06', count: 15, maxLvl: 150, ts: 1788642900000 },
+    { date: '2026-09-10', count: 110, maxLvl: 175, ts: 1788988500000 },
+    { date: '2026-09-15', count: 140, maxLvl: 210, ts: 1789420500000 }
+  ];
+
+  const firstNames = ['Alligator', 'Александр', 'Мария', 'Дмитрий', 'Елена', 'Сергей', 'Анна', 'Максим', 'Ольга', 'Богдан', 'Катерина', 'Владимир', 'Татьяна', 'Денис', 'Игорь', 'Наталья', 'Виктор', 'Юлия', 'Артем', 'Светлана', 'Роман', 'Алина', 'Павел', 'Виктория', 'Михаил'];
+
+  for (const cfg of seedConfigs) {
+    try {
+      const checkStmt = db.prepare(`SELECT id FROM leaderboard_snapshots WHERE snapshot_date = ? LIMIT 1`);
+      if (checkStmt.get(cfg.date)) continue; // Already exists
+
+      const players = [];
+      let currentLevel = cfg.maxLvl;
+
+      for (let i = 1; i <= cfg.count; i++) {
+        if (i > 1 && i % 2 === 0 && currentLevel > 2) {
+          currentLevel = Math.max(1, currentLevel - Math.floor((cfg.maxLvl / cfg.count) * 1.5 || 1));
+        }
+        const name = i === 1 ? 'Alligator' : firstNames[(i - 1) % firstNames.length] + (i > firstNames.length ? ` #${i}` : '');
+        const uname = i === 1 ? 'alligator' : (i % 3 === 0 ? '' : `player_${i}`);
+        const tid = i === 1 ? '5761685341' : String(5800000000 + i * 137);
+        players.push({
+          rank: i,
+          telegram_id: tid,
+          name,
+          username: uname,
+          level: currentLevel,
+          stars: currentLevel * 3
+        });
+      }
+
+      const insertSnapStmt = db.prepare(`
+        INSERT INTO leaderboard_snapshots (snapshot_date, snapshot_time, created_at, created_at_ts, total_players, players_data)
+        VALUES (?, '23:55:00', ?, ?, ?, ?)
+      `);
+      const snapRes = insertSnapStmt.run(cfg.date, `${cfg.date} 23:55:00`, cfg.ts, players.length, JSON.stringify(players));
+      const snapId = Number(snapRes.lastInsertRowid);
+
+      const insertEntryStmt = db.prepare(`
+        INSERT INTO leaderboard_snapshot_entries (snapshot_id, rank, telegram_id, first_name, username, max_level, stars)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const sp of players) {
+        insertEntryStmt.run(snapId, sp.rank, sp.telegram_id, sp.name, sp.username, sp.level, sp.stars);
+      }
+      console.log(`[DB Snapshot] Seeded historical snapshot for ${cfg.date} (23:55 Kyiv) with ${players.length} players.`);
+    } catch (err) {
+      console.warn(`[DB Snapshot] Failed to seed ${cfg.date} snapshot:`, err.message);
+    }
+  }
+}
+
 module.exports = {
   getUser,
   updateUserProgress,
@@ -855,5 +1204,12 @@ module.exports = {
   buyShopItem,
   registerReferral,
   getReferrals,
-  claimReferralReward
+  claimReferralReward,
+  getKyivDateTime,
+  saveLeaderboardSnapshot,
+  deleteLeaderboardSnapshot,
+  getLeaderboardSnapshotDates,
+  getLeaderboardSnapshotByDate,
+  getLeaderboardSnapshotById,
+  ensureSeedLeaderboardSnapshot
 };

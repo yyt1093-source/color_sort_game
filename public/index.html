@@ -612,74 +612,184 @@
           </div>
         </div>
 
-        <!-- Admin Free Boosters (No Ads) -->
-        <div class="admin-boosters-container">
-          <div class="admin-boosters-header" id="adminBoostersTitle">⚡ Бесплатные функции (Без рекламы):</div>
-          <div class="admin-boosters-grid">
-            <button type="button" id="adminAddBottleBtn" class="admin-boost-btn">
-              <span class="admin-boost-icon">🧪</span>
-              <span class="admin-boost-label" id="adminAddBottleLabel">+5 Пустых колб</span>
-            </button>
-            <button type="button" id="adminAddHintsBtn" class="admin-boost-btn">
-              <span class="admin-boost-icon">💡</span>
-              <span class="admin-boost-label" id="adminAddHintsLabel">+5 Подсказок</span>
-            </button>
-            <button type="button" id="adminAddUndosBtn" class="admin-boost-btn">
-              <span class="admin-boost-icon">↩️</span>
-              <span class="admin-boost-label" id="adminAddUndosLabel">+5 Отмен хода</span>
-            </button>
-            <button type="button" id="adminAddRevealsBtn" class="admin-boost-btn">
-              <span class="admin-boost-icon">🔮</span>
-              <span class="admin-boost-label" id="adminAddRevealsLabel">+5 Открытий</span>
-            </button>
-            <button type="button" id="adminAddCoinsBtn" class="admin-boost-btn">
-              <span class="admin-boost-icon">💎</span>
-              <span class="admin-boost-label" id="adminAddCoinsLabel">+5 TON</span>
-            </button>
-            <button type="button" id="adminAddLevelsBtn" class="admin-boost-btn">
-              <span class="admin-boost-icon">🏆</span>
-              <span class="admin-boost-label" id="adminAddLevelsLabel">+5 Уровней</span>
-            </button>
-          </div>
-          <button type="button" id="adminAddAllBtn" class="admin-add-all-btn">
-            <span class="admin-boost-icon">⚡</span>
-            <span id="adminAddAllLabel">Пополнить ВСЁ сразу (+10 ко всем бонусам)</span>
+        <!-- Admin Tabs Switcher -->
+        <div class="admin-nav-tabs">
+          <button type="button" class="admin-nav-tab active" id="adminTabActionsBtn" data-tab="actions">
+            <span>⚡</span>
+            <span id="adminTabActionsLabel">Управление</span>
           </button>
-          <div id="adminFeedbackMsg" class="admin-feedback-msg hidden"></div>
+          <button type="button" class="admin-nav-tab" id="adminTabHistoryBtn" data-tab="history">
+            <span>📜</span>
+            <span id="adminTabHistoryLabel">История лидерборда</span>
+          </button>
         </div>
 
-        <div class="admin-divider"></div>
-
-        <!-- Section: Reset TON Purchases (Admin Only) -->
-        <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 14px; margin-top: 10px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: #38bdf8; margin-bottom: 6px;">
-            <span>💎</span> <span id="adminPurchasesHeader">Управление покупками за TON (Только Admin)</span>
-          </div>
-          <p class="admin-desc" id="adminResetPurchasesDesc" style="margin-bottom: 12px; font-size: 12px; line-height: 1.4;">Аннулировать действующие покупки преимуществ за TON (например, «Все краски открыты») без списания баланса с кошельков игроков.</p>
-
-          <!-- Action Controls -->
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Reset Admin's Own Account Only -->
-            <button type="button" id="adminResetSelfPurchasesBtn" style="width: 100%; padding: 11px 14px; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(56,189,248,0.4); border-radius: 10px; color: #fff; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(2,132,199,0.25);">
-              <span>👑</span>
-              <span id="adminResetSelfPurchasesBtnLabel">Сбросить только мой аккаунт</span>
+        <!-- Tab 1: Admin Actions / Boosters & Resets -->
+        <div id="adminTabActionsContent" class="admin-tab-content">
+          <!-- Admin Free Boosters (No Ads) -->
+          <div class="admin-boosters-container">
+            <div class="admin-boosters-header" id="adminBoostersTitle">⚡ Бесплатные функции (Без рекламы):</div>
+            <div class="admin-boosters-grid">
+              <button type="button" id="adminAddBottleBtn" class="admin-boost-btn">
+                <span class="admin-boost-icon">🧪</span>
+                <span class="admin-boost-label" id="adminAddBottleLabel">+5 Пустых колб</span>
+              </button>
+              <button type="button" id="adminAddHintsBtn" class="admin-boost-btn">
+                <span class="admin-boost-icon">💡</span>
+                <span class="admin-boost-label" id="adminAddHintsLabel">+5 Подсказок</span>
+              </button>
+              <button type="button" id="adminAddUndosBtn" class="admin-boost-btn">
+                <span class="admin-boost-icon">↩️</span>
+                <span class="admin-boost-label" id="adminAddUndosLabel">+5 Отмен хода</span>
+              </button>
+              <button type="button" id="adminAddRevealsBtn" class="admin-boost-btn">
+                <span class="admin-boost-icon">🔮</span>
+                <span class="admin-boost-label" id="adminAddRevealsLabel">+5 Открытий</span>
+              </button>
+              <button type="button" id="adminAddCoinsBtn" class="admin-boost-btn">
+                <span class="admin-boost-icon">💎</span>
+                <span class="admin-boost-label" id="adminAddCoinsLabel">+5 TON</span>
+              </button>
+              <button type="button" id="adminAddLevelsBtn" class="admin-boost-btn">
+                <span class="admin-boost-icon">🏆</span>
+                <span class="admin-boost-label" id="adminAddLevelsLabel">+5 Уровней</span>
+              </button>
+            </div>
+            <button type="button" id="adminAddAllBtn" class="admin-add-all-btn">
+              <span class="admin-boost-icon">⚡</span>
+              <span id="adminAddAllLabel">Пополнить ВСЁ сразу (+10 ко всем бонусам)</span>
             </button>
-
-            <!-- Reset ALL Players in the Game -->
-            <button type="button" id="adminResetPurchasesBtn" class="admin-reset-purchases-btn" style="width: 100%; margin: 0;">
-              <span class="reset-btn-icon">🌐</span>
-              <span class="reset-btn-label" id="adminResetPurchasesBtnLabel">Сбросить ВСЕМ игрокам в игре</span>
-            </button>
+            <div id="adminFeedbackMsg" class="admin-feedback-msg hidden"></div>
           </div>
+
+          <div class="admin-divider"></div>
+
+          <!-- Section: Reset TON Purchases (Admin Only) -->
+          <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 14px; margin-top: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: #38bdf8; margin-bottom: 6px;">
+              <span>💎</span> <span id="adminPurchasesHeader">Управление покупками за TON (Только Admin)</span>
+            </div>
+            <p class="admin-desc" id="adminResetPurchasesDesc" style="margin-bottom: 12px; font-size: 12px; line-height: 1.4;">Аннулировать действующие покупки преимуществ за TON (например, «Все краски открыты») без списания баланса с кошельков игроков.</p>
+
+            <!-- Action Controls -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <!-- Reset Admin's Own Account Only -->
+              <button type="button" id="adminResetSelfPurchasesBtn" style="width: 100%; padding: 11px 14px; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(56,189,248,0.4); border-radius: 10px; color: #fff; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(2,132,199,0.25);">
+                <span>👑</span>
+                <span id="adminResetSelfPurchasesBtnLabel">Сбросить только мой аккаунт</span>
+              </button>
+
+              <!-- Reset ALL Players in the Game -->
+              <button type="button" id="adminResetPurchasesBtn" class="admin-reset-purchases-btn" style="width: 100%; margin: 0;">
+                <span class="reset-btn-icon">🌐</span>
+                <span class="reset-btn-label" id="adminResetPurchasesBtnLabel">Сбросить ВСЕМ игрокам в игре</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="admin-divider"></div>
+
+          <p class="admin-desc" id="adminResetSeasonDesc">Сброс сезона обнуляет глобальный лидерборд и сбрасывает всех игроков на Уровень 0. Баланс TON, покупки и рефералы сохраняются.</p>
+          <button id="adminResetSeasonBtn" class="admin-reset-season-btn">
+            <span class="reset-btn-icon">🔥</span>
+            <span class="reset-btn-label" id="adminResetSeasonBtnLabel">Сбросить сезон (Всё в ноль)</span>
+          </button>
         </div>
 
-        <div class="admin-divider"></div>
+        <!-- Tab 2: Leaderboard History (23:55 Kyiv Daily Snapshots) -->
+        <div id="adminTabHistoryContent" class="admin-tab-content hidden">
+          <div class="admin-history-header-box">
+            <div class="admin-history-title-row">
+              <span style="font-size: 1.3rem;">📜</span>
+              <div>
+                <strong id="adminHistoryTitle">История лидерборда</strong>
+                <div class="admin-history-sub" id="adminHistorySub">Ежедневные снимки в 23:55 (Киев)</div>
+              </div>
+            </div>
+          </div>
 
-        <p class="admin-desc" id="adminResetSeasonDesc">Сброс сезона обнуляет глобальный лидерборд и сбрасывает всех игроков на Уровень 0. Баланс TON, покупки и рефералы сохраняются.</p>
-        <button id="adminResetSeasonBtn" class="admin-reset-season-btn">
-          <span class="reset-btn-icon">🔥</span>
-          <span class="reset-btn-label" id="adminResetSeasonBtnLabel">Сбросить сезон (Всё в ноль)</span>
-        </button>
+          <!-- Controls: Date selector, View, Delete, Calendar picker, Snapshot -->
+          <div class="admin-history-controls-card">
+            <div class="admin-history-control-group">
+              <label for="adminHistoryDateSelect" class="admin-history-label" id="adminHistoryDateSelectLabel">Выберите дату снимка:</label>
+              <div style="display: flex; gap: 8px; width: 100%;">
+                <select id="adminHistoryDateSelect" class="admin-history-select"></select>
+                <button type="button" id="adminHistoryRefreshDatesBtn" class="admin-history-icon-btn" title="Обновить список дат">🔄</button>
+              </div>
+            </div>
+
+            <!-- Action buttons: View and Delete -->
+            <div class="admin-history-main-actions">
+              <button type="button" id="adminHistoryViewBtn" class="admin-history-view-btn">
+                <span>👁️</span>
+                <span id="adminHistoryViewBtnLabel">Просмотреть</span>
+              </button>
+              <button type="button" id="adminHistoryDeleteBtn" class="admin-history-delete-btn" title="Удалить выбранный снимок">
+                <span>🗑️</span>
+                <span id="adminHistoryDeleteBtnLabel">Удалить</span>
+              </button>
+            </div>
+
+            <div class="admin-divider" style="margin: 4px 0;"></div>
+
+            <!-- Quick pick by calendar or manual snapshot -->
+            <div class="admin-history-actions-row">
+              <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
+                <input type="date" id="adminHistoryDatePicker" class="admin-history-date-input" title="Выбрать дату в календаре">
+                <button type="button" id="adminHistoryLoadDateBtn" class="admin-history-btn-secondary">
+                  <span id="adminHistoryLoadBtnLabel">Найти</span>
+                </button>
+              </div>
+              <button type="button" id="adminHistoryTakeSnapshotBtn" class="admin-history-snapshot-btn">
+                <span>📸</span>
+                <span id="adminHistoryTakeSnapshotLabel">Снимок сейчас</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Snapshot Summary -->
+          <div id="adminHistorySummaryCard" class="admin-history-summary-card hidden">
+            <div class="admin-history-summary-left">
+              <div class="admin-history-summary-date" id="adminHistorySelectedDate">—</div>
+              <div class="admin-history-summary-time" id="adminHistorySelectedTime">—</div>
+            </div>
+            <div class="admin-history-summary-badge" id="adminHistoryTotalBadge">👥 0 игроков</div>
+          </div>
+
+          <!-- Search Filter in Snapshot -->
+          <div class="admin-history-search-wrap">
+            <span class="admin-history-search-icon">🔍</span>
+            <input type="text" id="adminHistorySearchInput" class="admin-history-search-input" placeholder="Поиск по имени, username или ID...">
+            <button type="button" id="adminHistoryClearSearchBtn" class="admin-history-clear-search hidden">✕</button>
+          </div>
+
+          <!-- Players Table / List Container -->
+          <div class="admin-history-table-container">
+            <div id="adminHistoryLoadingSpinner" class="admin-history-loading hidden">
+              <div class="spinner"></div>
+              <span id="adminHistoryLoadingText">Загрузка снимка...</span>
+            </div>
+            <div id="adminHistoryEmptyState" class="admin-history-empty hidden">
+              <span style="font-size: 2rem;">📭</span>
+              <span id="adminHistoryEmptyText">Нет сохранённых снимков за эту дату</span>
+            </div>
+            <div id="adminHistoryTableWrap" class="admin-history-table-wrap">
+              <table class="admin-history-table">
+                <thead>
+                  <tr>
+                    <th style="width: 44px; text-align: center;" id="adminHistoryColRank">#</th>
+                    <th id="adminHistoryColPlayer">Игрок</th>
+                    <th id="adminHistoryColTid">Telegram ID</th>
+                    <th style="width: 68px; text-align: right;" id="adminHistoryColLevel">Уровень</th>
+                  </tr>
+                </thead>
+                <tbody id="adminHistoryTableBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -721,6 +831,23 @@
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
         <button id="cancelResetSeasonBtn" class="btn-cancel" style="flex: 1;">Отмена</button>
         <button id="confirmResetSeasonBtn" class="btn-confirm-danger" style="flex: 1;">🔥 Сбросить всё</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Snapshot Confirmation Modal -->
+  <div id="deleteSnapshotModal" class="modal-overlay hidden">
+    <div class="glass-modal reset-modal-content">
+      <div class="warning-icon-glow" style="color: #ef4444;">🗑️</div>
+      <h2 id="deleteSnapshotModalTitle" class="reset-modal-title">Удаление снимка</h2>
+      <div class="reset-warning-card">
+        <p class="reset-warning-lead" id="deleteSnapshotLead">Вы действительно хотите удалить этот снимок лидерборда?</p>
+        <p id="deleteSnapshotInfo" style="font-size: 13px; color: #fbbf24; font-weight: 700; margin-top: 6px;">—</p>
+        <p style="font-size: 11px; color: #94a3b8; margin-top: 8px;">Данные и уровни игроков в игре не изменятся. Удаляется только архивная запись снимка.</p>
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
+        <button type="button" id="cancelDeleteSnapshotBtn" class="btn-cancel" style="flex: 1;">Отмена</button>
+        <button type="button" id="confirmDeleteSnapshotBtn" class="btn-confirm-danger" style="flex: 1;">🗑️ Удалить</button>
       </div>
     </div>
   </div>

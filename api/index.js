@@ -722,6 +722,141 @@ app.post('/api/admin/reset-purchases', async (req, res) => {
 });
 
 /**
+ * Admin: Get all available leaderboard snapshot dates
+ */
+app.get('/api/admin/leaderboard-history/dates', (req, res) => {
+  try {
+    if (!checkIsAdmin(req.query)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+    const dates = db.getLeaderboardSnapshotDates();
+    res.json({ success: true, dates });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/leaderboard-history/dates:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: Get saved leaderboard snapshot by date or ID
+ */
+app.get('/api/admin/leaderboard-history', (req, res) => {
+  try {
+    if (!checkIsAdmin(req.query)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+    const { date, id } = req.query;
+    let snapshot = null;
+    if (id) {
+      snapshot = db.getLeaderboardSnapshotById(id);
+    } else if (date) {
+      snapshot = db.getLeaderboardSnapshotByDate(date);
+    } else {
+      const dates = db.getLeaderboardSnapshotDates();
+      if (dates && dates.length > 0) {
+        snapshot = db.getLeaderboardSnapshotById(dates[0].id);
+      }
+    }
+
+    if (!snapshot) {
+      return res.status(404).json({ success: false, error: 'Снимок за указанную дату не найден' });
+    }
+
+    res.json({ success: true, snapshot });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/leaderboard-history:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: Take immediate snapshot of leaderboard (manual snapshot)
+ */
+app.post('/api/admin/leaderboard-history/snapshot', async (req, res) => {
+  try {
+    if (!checkIsAdmin(req.body)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+
+    let kvdbPlayers = [];
+    try {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      const cloudRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
+        signal: AbortSignal.timeout(2000)
+      });
+      if (cloudRes.ok) {
+        const pairs = await cloudRes.json();
+        kvdbPlayers = pairs.map(([k, p]) => typeof p === 'string' ? JSON.parse(p) : p).filter(Boolean);
+      }
+    } catch (e) {}
+
+    const snapshot = db.saveLeaderboardSnapshot({ additionalPlayers: kvdbPlayers });
+    res.json({ success: true, snapshot, message: 'Снимок лидерборда успешно сохранён!' });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/leaderboard-history/snapshot:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: Delete leaderboard snapshot by ID
+ */
+app.delete('/api/admin/leaderboard-history', (req, res) => {
+  try {
+    const authData = req.body && Object.keys(req.body).length > 0 ? req.body : req.query;
+    if (!checkIsAdmin(authData)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+    const id = (req.query && req.query.id) || (req.body && req.body.id);
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Не указан ID снимка' });
+    }
+    const deleted = db.deleteLeaderboardSnapshot(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Снимок не найден или уже удалён' });
+    }
+    res.json({ success: true, message: `Снимок #${id} успешно удалён!` });
+  } catch (err) {
+    console.error('[API ERROR] DELETE /api/admin/leaderboard-history:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/admin/leaderboard-history/delete', (req, res) => {
+  try {
+    if (!checkIsAdmin(req.body)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+    const id = req.body && req.body.id;
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Не указан ID снимка' });
+    }
+    const deleted = db.deleteLeaderboardSnapshot(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'Снимок не найден или уже удалён' });
+    }
+    res.json({ success: true, message: `Снимок #${id} успешно удалён!` });
+  } catch (err) {
+    console.error('[API ERROR] POST /api/admin/leaderboard-history/delete:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Cron trigger for daily leaderboard snapshot (23:55 Kyiv)
+ */
+app.get('/api/cron/leaderboard-snapshot', async (req, res) => {
+  try {
+    const kyiv = db.getKyivDateTime();
+    const snapshot = db.saveLeaderboardSnapshot({ timeStr: '23:55:00' });
+    res.json({ success: true, snapshot, message: `Снимок лидерборда за ${kyiv.fullStr} сохранён` });
+  } catch (err) {
+    console.error('[API CRON ERROR] /api/cron/leaderboard-snapshot:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * Register a new referral
  */
 app.post('/api/referral/register', (req, res) => {
