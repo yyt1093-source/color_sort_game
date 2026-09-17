@@ -1,0 +1,57 @@
+[2026-09-17T21:54:13.282Z] ================================================================
+[2026-09-17T21:54:13.286Z] 🕒 [Daily Snapshot Cron] Kyiv Time: 2026-09-18 00:54:13
+[2026-09-17T21:54:13.287Z] ================================================================
+[2026-09-17T21:54:13.287Z] 🎯 Target snapshot: Date = 2026-09-17, Time = 23:55:00, Type = auto
+[2026-09-17T21:54:13.288Z] 🔄 Starting bi-directional snapshot sync between SQLite and KVDB Cloud...
+[2026-09-17T21:54:13.906Z] ☁️ Uploading local snapshot #7 (2026-09-15 23:55:00) to KVDB Cloud...
+[2026-09-17T21:54:14.558Z] ☁️ Uploading local snapshot #6 (2026-09-10 23:55:00) to KVDB Cloud...
+[2026-09-17T21:54:15.282Z] ☁️ Uploading local snapshot #5 (2026-09-06 23:55:00) to KVDB Cloud...
+[2026-09-17T21:54:15.742Z] ☁️ Uploading local snapshot #4 (2026-09-04 23:55:00) to KVDB Cloud...
+[2026-09-17T21:54:16.357Z] ☁️ Uploading local snapshot #3 (2026-07-11 23:55:00) to KVDB Cloud...
+[2026-09-17T21:54:16.965Z] ☁️ Uploading local snapshot #2 (2026-07-10 23:55:00) to KVDB Cloud...
+[2026-09-17T21:54:17.555Z] ☁️ Uploading local snapshot #1 (2026-07-10 12:00:00) to KVDB Cloud...
+[2026-09-17T21:54:18.017Z] 📥 Downloading cloud snapshot #1789672235505 (2026-09-17 22:10:35) into local SQLite...
+[2026-09-17T21:54:18.695Z] ✅ Snapshot sync complete! Total synchronized snapshots: 8
+[2026-09-17T21:54:19.280Z] 🚀 Collecting players from KVDB Cloud and local SQLite...
+[2026-09-17T21:54:19.743Z]    • Found 5 players in KVDB Cloud.
+[2026-09-17T21:54:19.763Z] ✅ Saved snapshot #1789672235506 to SQLite: 5 players.
+[2026-09-17T21:54:20.381Z] ☁️ Successfully uploaded snapshot #1789672235506 to KVDB Cloud!
+[2026-09-17T21:54:21.536Z] 📋 Cloud meta_leaderboard_snapshots_index updated! (9 total snapshots)
+[2026-09-17T21:54:21.537Z] 🎉 DAILY LEADERBOARD SNAPSHOT COMPLETED SUCCESSFULLY!
+
+[2026-09-17T21:55:14.163Z] ================================================================
+[2026-09-17T21:55:14.168Z] 🕒 [Daily Snapshot Cron] Kyiv Time: 2026-09-18 00:55:14
+[2026-09-17T21:55:14.168Z] ================================================================
+[2026-09-17T21:55:14.169Z] 🎯 Target snapshot: Date = 2026-09-17, Time = 23:55:00, Type = auto
+[2026-09-17T21:55:14.169Z] 🔄 Starting bi-directional snapshot sync between SQLite and KVDB Cloud...
+[2026-09-17T21:55:15.369Z] ✅ Snapshot sync complete! Total synchronized snapshots: 8
+[2026-09-17T21:55:16.131Z] ⚠️ Flag --force passed: will create/overwrite auto snapshot for 2026-09-17
+[2026-09-17T21:55:16.132Z] 🚀 Collecting players from KVDB Cloud and local SQLite...
+[2026-09-17T21:55:16.743Z]    • Found 5 players in KVDB Cloud.
+[2026-09-17T21:55:16.757Z] ✅ Saved snapshot #1789672235507 to SQLite: 2 players.
+[2026-09-17T21:55:17.221Z] ☁️ Successfully uploaded snapshot #1789672235507 to KVDB Cloud!
+[2026-09-17T21:55:18.291Z] 📋 Cloud meta_leaderboard_snapshots_index updated! (9 total snapshots)
+[2026-09-17T21:55:18.292Z] 🎉 DAILY LEADERBOARD SNAPSHOT COMPLETED SUCCESSFULLY!
+
+[2026-09-17T21:56:08.365Z] ================================================================
+[2026-09-17T21:56:08.369Z] 🕒 [Daily Snapshot Cron] Kyiv Time: 2026-09-18 00:56:08
+[2026-09-17T21:56:08.369Z] ================================================================
+[2026-09-17T21:56:08.370Z] ℹ️ Catch-up mode (early morning 00:56:08): targeting yesterday's date: 2026-09-17
+[2026-09-17T21:56:08.370Z] 🎯 Target snapshot: Date = 2026-09-17, Time = 23:55:00, Type = auto
+[2026-09-17T21:56:08.371Z] 🔄 Starting bi-directional snapshot sync between SQLite and KVDB Cloud...
+[2026-09-17T21:56:09.602Z] ✅ Snapshot sync complete! Total synchronized snapshots: 9
+[2026-09-17T21:56:10.140Z] ℹ️ Automatic snapshot for 2026-09-17 already exists:
+[2026-09-17T21:56:10.140Z]    • SQLite: Snapshot #1789672235507 (2026-09-17 23:55:00)
+[2026-09-17T21:56:10.141Z]    • KVDB Cloud: Found matching 23:55 auto snapshot
+[2026-09-17T21:56:10.141Z] ⏩ Skipping creation (use --force to overwrite).
+[2026-09-17T21:56:35.775Z] ================================================================
+[2026-09-17T21:56:35.781Z] 🕒 [Daily Snapshot Cron] Kyiv Time: 2026-09-18 00:56:35
+[2026-09-17T21:56:35.782Z] ================================================================
+[2026-09-17T21:56:35.783Z] ℹ️ Catch-up mode (early morning 00:56:35): targeting yesterday's date: 2026-09-17
+[2026-09-17T21:56:35.783Z] 🎯 Target snapshot: Date = 2026-09-17, Time = 23:55:00, Type = auto
+[2026-09-17T21:56:35.784Z] 🔄 Starting bi-directional snapshot sync between SQLite and KVDB Cloud...
+[2026-09-17T21:56:37.020Z] ✅ Snapshot sync complete! Total synchronized snapshots: 9
+[2026-09-17T21:56:37.694Z] ℹ️ Automatic snapshot for 2026-09-17 already exists:
+[2026-09-17T21:56:37.695Z]    • SQLite: Snapshot #1789672235507 (2026-09-17 23:55:00)
+[2026-09-17T21:56:37.695Z]    • KVDB Cloud: Found matching 23:55 auto snapshot
+[2026-09-17T21:56:37.696Z] ⏩ Skipping creation (use --force to overwrite).
