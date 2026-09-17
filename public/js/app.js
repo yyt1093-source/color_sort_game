@@ -6045,7 +6045,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   let cachedSnapshotsList = [];
 
   const SNAPSHOTS_INDEX_KEY = 'meta_leaderboard_snapshots_index';
+  const SNAPSHOTS_DELETED_KEY = 'meta_leaderboard_deleted_snapshots';
   const SNAPSHOTS_LOCAL_STORAGE_KEY = 'color_sort_snapshots_index';
+  const SNAPSHOTS_DELETED_LOCAL_KEY = 'color_sort_deleted_snapshots';
   const SNAPSHOT_LOCAL_PREFIX = 'color_sort_snapshot_';
 
   function getKyivDateTimeClient() {
@@ -6143,8 +6145,36 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // Cloud & LocalStorage snapshot index retrieval
   async function fetchSnapshotsIndex() {
     let list = [];
+    const deletedSet = new Set();
 
-    // 1. Try global 24/7 KVDB cloud
+    // 0. Load local tombstones
+    try {
+      const localDel = localStorage.getItem(SNAPSHOTS_DELETED_LOCAL_KEY);
+      if (localDel) {
+        const parsed = JSON.parse(localDel);
+        if (Array.isArray(parsed)) parsed.forEach(id => deletedSet.add(String(id)));
+      }
+    } catch (e) {}
+
+    // 1. Fetch global 24/7 KVDB cloud deleted tombstones
+    try {
+      const delRes = await fetch(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_DELETED_KEY}?_cb=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      if (delRes.ok) {
+        const cloudDel = await delRes.json();
+        if (Array.isArray(cloudDel)) {
+          cloudDel.forEach(id => deletedSet.add(String(id)));
+          try {
+            localStorage.setItem(SNAPSHOTS_DELETED_LOCAL_KEY, JSON.stringify(Array.from(deletedSet)));
+          } catch (e) {}
+        }
+      }
+    } catch (e) {
+      console.warn('[Leaderboard History] Cloud deleted tombstones fetch notice:', e.message);
+    }
+
+    // 2. Fetch global 24/7 KVDB cloud index
     try {
       const res = await fetch(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}?_cb=${Date.now()}`, {
         cache: 'no-store'
@@ -6152,30 +6182,34 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (res.ok) {
         const cloudData = await res.json();
         if (Array.isArray(cloudData) && cloudData.length > 0) {
-          list = cloudData;
+          list = cloudData.filter(s => s && s.id && !deletedSet.has(String(s.id)));
         }
       }
     } catch (e) {
       console.warn('[Leaderboard History] Cloud index fetch notice:', e.message);
     }
 
-    // 2. Merge with localStorage so local snapshots are never lost
+    // 3. Clean up localStorage cache: remove any deleted snapshots from local storage
     try {
       const local = localStorage.getItem(SNAPSHOTS_LOCAL_STORAGE_KEY);
       if (local) {
         const parsed = JSON.parse(local);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const map = new Map();
-          parsed.forEach(s => map.set(String(s.id), s));
-          list.forEach(s => map.set(String(s.id), s));
-          list = Array.from(map.values());
+          const cleanedLocal = parsed.filter(s => s && s.id && !deletedSet.has(String(s.id)));
+          if (cleanedLocal.length !== parsed.length) {
+            localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(cleanedLocal));
+          }
+          // If cloud fetch was empty or failed, use clean local items
+          if (list.length === 0 && cleanedLocal.length > 0) {
+            list = cleanedLocal;
+          }
         }
       }
     } catch (e) {}
 
-    // 3. Fallback seeds if still empty
+    // 4. Fallback seeds ONLY if list is still empty AND seeds were not explicitly deleted
     if (!Array.isArray(list) || list.length === 0) {
-      list = [
+      const defaultSeeds = [
         { id: 7, snapshot_date: '2026-09-15', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 140, created_at_ts: 1789420500000 },
         { id: 6, snapshot_date: '2026-09-10', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 110, created_at_ts: 1788988500000 },
         { id: 5, snapshot_date: '2026-09-06', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 15, created_at_ts: 1788642900000 },
@@ -6184,19 +6218,17 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         { id: 2, snapshot_date: '2026-07-10', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 90, created_at_ts: 1783630500000 },
         { id: 1, snapshot_date: '2026-07-10', snapshot_time: '12:00:00', snapshot_type: 'manual', total_players: 85, created_at_ts: 1783587600000 }
       ];
+      list = defaultSeeds.filter(s => !deletedSet.has(String(s.id)));
     }
 
-    try {
-      localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(list));
-    } catch (e) {}
-
-    // 4. Try server API if available
+    // 5. Try server API if available (filter against deletedSet)
     try {
       const authQuery = getAdminAuthQuery();
       const srvData = await apiCall(`/api/admin/leaderboard-history/dates?${authQuery}`);
       if (srvData && srvData.success && Array.isArray(srvData.dates) && srvData.dates.length > 0) {
+        const srvValid = srvData.dates.filter(s => s && s.id && !deletedSet.has(String(s.id)));
         const map = new Map();
-        srvData.dates.forEach(s => map.set(String(s.id), s));
+        srvValid.forEach(s => map.set(String(s.id), s));
         list.forEach(s => {
           if (!map.has(String(s.id))) map.set(String(s.id), s);
         });
@@ -6204,12 +6236,36 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
     } catch (e) {}
 
+    // 6. Strict Deduplication: by ID AND by (date + time + type) to prevent ANY duplication
+    const seenIds = new Set();
+    const seenSlots = new Set();
+    const deduped = [];
+
+    for (const s of list) {
+      if (!s || !s.id || deletedSet.has(String(s.id))) continue;
+      const sid = String(s.id);
+      const slotKey = `${s.snapshot_date || ''}_${s.snapshot_time || ''}_${s.snapshot_type || ''}`;
+
+      if (seenIds.has(sid)) continue;
+      if (slotKey && slotKey !== '__' && seenSlots.has(slotKey)) continue;
+
+      seenIds.add(sid);
+      if (slotKey && slotKey !== '__') seenSlots.add(slotKey);
+      deduped.push(s);
+    }
+
+    list = deduped;
+
     list.sort((a, b) => {
       const tsA = Number(a.created_at_ts || (a.snapshot_date ? new Date(`${a.snapshot_date}T${a.snapshot_time || '00:00:00'}`).getTime() : a.id));
       const tsB = Number(b.created_at_ts || (b.snapshot_date ? new Date(`${b.snapshot_date}T${b.snapshot_time || '00:00:00'}`).getTime() : b.id));
       if (tsB !== tsA) return tsB - tsA;
       return Number(b.id) - Number(a.id);
     });
+
+    try {
+      localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {}
 
     return list;
   }
@@ -6311,21 +6367,39 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
   // Delete snapshot from KVDB cloud and localStorage
   async function deleteSnapshot(snapshotId) {
+    const sId = String(snapshotId);
+
     // 1. Delete from local cache
     try {
-      localStorage.removeItem(`${SNAPSHOT_LOCAL_PREFIX}${snapshotId}`);
+      localStorage.removeItem(`${SNAPSHOT_LOCAL_PREFIX}${sId}`);
+      localStorage.removeItem(`color_sort_snapshot_players_${sId}`);
     } catch (e) {}
 
-    // 2. Delete full snapshot from KVDB cloud
+    // 2. Track in local deleted tombstones
     try {
-      fetch(`${GLOBAL_CLOUD_BASE}/leaderboard_snapshot_${encodeURIComponent(snapshotId)}`, {
-        method: 'DELETE'
-      }).catch(() => {});
+      let localDel = [];
+      const raw = localStorage.getItem(SNAPSHOTS_DELETED_LOCAL_KEY);
+      if (raw) {
+        try { localDel = JSON.parse(raw); } catch (e) {}
+      }
+      if (!Array.isArray(localDel)) localDel = [];
+      if (!localDel.includes(sId)) localDel.push(sId);
+      localStorage.setItem(SNAPSHOTS_DELETED_LOCAL_KEY, JSON.stringify(localDel));
     } catch (e) {}
 
-    // 3. Update index in localStorage and KVDB cloud
+    // 3. Explicitly DELETE full snapshot from KVDB cloud (AWAITED to immediately free memory)
+    try {
+      await fetch(`${GLOBAL_CLOUD_BASE}/leaderboard_snapshot_${encodeURIComponent(sId)}`, {
+        method: 'DELETE',
+        keepalive: true
+      });
+    } catch (e) {
+      console.warn('[Leaderboard History] Cloud snapshot delete notice:', e);
+    }
+
+    // 4. Update index in localStorage and KVDB cloud
     let curIndex = await fetchSnapshotsIndex();
-    curIndex = curIndex.filter(x => String(x.id) !== String(snapshotId));
+    curIndex = curIndex.filter(x => String(x.id) !== sId);
 
     try {
       localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(curIndex));
@@ -6335,11 +6409,31 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       await fetch(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(curIndex)
+        body: JSON.stringify(curIndex),
+        keepalive: true
       });
     } catch (e) {}
 
-    // 4. Also call server API if available
+    // 5. Update global deleted tombstones list in KVDB Cloud so no background cron or sync ever resurrects it!
+    try {
+      const delRes = await fetch(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_DELETED_KEY}?_cb=${Date.now()}`);
+      let cloudDelList = [];
+      if (delRes.ok) {
+        try { cloudDelList = await delRes.json(); } catch (e) {}
+      }
+      if (!Array.isArray(cloudDelList)) cloudDelList = [];
+      if (!cloudDelList.includes(sId)) {
+        cloudDelList.push(sId);
+      }
+      await fetch(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_DELETED_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cloudDelList),
+        keepalive: true
+      });
+    } catch (e) {}
+
+    // 6. Also call server API if available
     try {
       apiCall('/api/admin/leaderboard-history/delete', 'POST', { id: snapshotId }).catch(() => {});
     } catch (e) {}
