@@ -340,6 +340,8 @@ async function initColorSortApp() {
       tonWalletStatusSub: "Статус кошелька:",
       tonWalletDisconnected: "Не подключен",
       tonWalletConnected: "Активен",
+      tonConnectHeading: "Подключение кошелька",
+      tonConnectSubtext: "Привяжите кошелёк для наград и баланса",
       tonConnectBtnLabel: "Подключить TON Кошелёк",
       tonAmountTitle: "Выберите сумму пополнения:",
       tonRewardLabel: "Зачисление на баланс GRAM:",
@@ -582,6 +584,8 @@ async function initColorSortApp() {
       tonWalletStatusSub: "Статус гаманця:",
       tonWalletDisconnected: "Не підключений",
       tonWalletConnected: "Активний",
+      tonConnectHeading: "Підключення гаманця",
+      tonConnectSubtext: "Прив'яжіть гаманець для нагород та балансу",
       tonConnectBtnLabel: "Підключити TON Гаманець",
       tonAmountTitle: "Виберіть суму поповнення:",
       tonRewardLabel: "Зарахування на баланс GRAM:",
@@ -817,6 +821,8 @@ async function initColorSortApp() {
       tonWalletStatusSub: "Wallet Status:",
       tonWalletDisconnected: "Disconnected",
       tonWalletConnected: "Connected",
+      tonConnectHeading: "Wallet Connection",
+      tonConnectSubtext: "Connect wallet for rewards and balance",
       tonConnectBtnLabel: "Connect TON Wallet",
       tonAmountTitle: "Select Top-Up Amount:",
       tonRewardLabel: "Credited to GRAM balance:",
@@ -1052,6 +1058,8 @@ async function initColorSortApp() {
       tonWalletStatusSub: "Wallet-Status:",
       tonWalletDisconnected: "Nicht verbunden",
       tonWalletConnected: "Verbunden",
+      tonConnectHeading: "Wallet verbinden",
+      tonConnectSubtext: "Wallet verbinden für Belohnungen und Guthaben",
       tonConnectBtnLabel: "TON-Wallet verbinden",
       tonAmountTitle: "Einzahlungsbetrag auswählen:",
       tonRewardLabel: "Gutschrift auf GRAM-Konto:",
@@ -1287,6 +1295,8 @@ async function initColorSortApp() {
       tonWalletStatusSub: "Piniginės būsena:",
       tonWalletDisconnected: "Neprijungta",
       tonWalletConnected: "Aktyvi",
+      tonConnectHeading: "Piniginės prijungimas",
+      tonConnectSubtext: "Prijunkite piniginę apdovanojimams ir balansui",
       tonConnectBtnLabel: "Prijungti TON piniginę",
       tonAmountTitle: "Pasirinkite papildymo sumą:",
       tonRewardLabel: "Įskaitymas į GRAM balansą:",
@@ -1645,6 +1655,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (tonWalletStatusSub) tonWalletStatusSub.textContent = t('tonWalletStatusSub');
     const tonConnectHeading = document.getElementById('tonConnectHeading');
     if (tonConnectHeading) tonConnectHeading.textContent = t('tonConnectHeading') || t('tonModalTitle');
+    const tonConnectSubtext = document.getElementById('tonConnectSubtext');
+    if (tonConnectSubtext) tonConnectSubtext.textContent = t('tonConnectSubtext');
     const tonAmountTitle = document.getElementById('tonAmountTitle');
     if (tonAmountTitle) tonAmountTitle.textContent = t('tonAmountTitle');
     const tonRewardLabel = document.getElementById('tonRewardLabel');
