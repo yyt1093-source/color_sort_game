@@ -5716,43 +5716,42 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         const cloudData = await res.json();
         if (Array.isArray(cloudData) && cloudData.length > 0) {
           list = cloudData;
-          try {
-            localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(cloudData));
-          } catch (e) {}
         }
       }
     } catch (e) {
       console.warn('[Leaderboard History] Cloud index fetch notice:', e.message);
     }
 
-    // 2. If cloud is empty or errored, load from localStorage
-    if (!Array.isArray(list) || list.length === 0) {
-      try {
-        const local = localStorage.getItem(SNAPSHOTS_LOCAL_STORAGE_KEY);
-        if (local) {
-          const parsed = JSON.parse(local);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            list = parsed;
-          }
+    // 2. Merge with localStorage so local snapshots are never lost
+    try {
+      const local = localStorage.getItem(SNAPSHOTS_LOCAL_STORAGE_KEY);
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map();
+          parsed.forEach(s => map.set(String(s.id), s));
+          list.forEach(s => map.set(String(s.id), s));
+          list = Array.from(map.values());
         }
-      } catch (e) {}
-    }
+      }
+    } catch (e) {}
 
     // 3. Fallback seeds if still empty
     if (!Array.isArray(list) || list.length === 0) {
       list = [
-        { id: 7, snapshot_date: '2026-09-15', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 140, created_at_ts: 1789506900000 },
-        { id: 6, snapshot_date: '2026-09-10', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 110, created_at_ts: 1789074900000 },
-        { id: 5, snapshot_date: '2026-09-06', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 15, created_at_ts: 1788729300000 },
-        { id: 4, snapshot_date: '2026-09-04', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 85, created_at_ts: 1788556500000 },
-        { id: 3, snapshot_date: '2026-07-11', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 94, created_at_ts: 1783804500000 },
-        { id: 2, snapshot_date: '2026-07-10', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 90, created_at_ts: 1783718100000 },
-        { id: 1, snapshot_date: '2026-07-10', snapshot_time: '12:00:00', snapshot_type: 'manual', total_players: 85, created_at_ts: 1783675200000 }
+        { id: 7, snapshot_date: '2026-09-15', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 140, created_at_ts: 1789420500000 },
+        { id: 6, snapshot_date: '2026-09-10', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 110, created_at_ts: 1788988500000 },
+        { id: 5, snapshot_date: '2026-09-06', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 15, created_at_ts: 1788642900000 },
+        { id: 4, snapshot_date: '2026-09-04', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 85, created_at_ts: 1788470100000 },
+        { id: 3, snapshot_date: '2026-07-11', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 94, created_at_ts: 1783716900000 },
+        { id: 2, snapshot_date: '2026-07-10', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 90, created_at_ts: 1783630500000 },
+        { id: 1, snapshot_date: '2026-07-10', snapshot_time: '12:00:00', snapshot_type: 'manual', total_players: 85, created_at_ts: 1783587600000 }
       ];
-      try {
-        localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(list));
-      } catch (e) {}
     }
+
+    try {
+      localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {}
 
     // 4. Try server API if available
     try {
@@ -5913,55 +5912,75 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
   // Take current leaderboard snapshot
   async function createCurrentLeaderboardSnapshot(snapshotType = 'manual') {
-    // 1. Load all current players
-    let rawPlayers = [];
-    try {
-      rawPlayers = (await loadLeaderboardData()) || [];
-    } catch (e) {}
+    const playersMap = new Map();
 
-    // If empty, query KVDB Cloud player_ keys directly
-    if (!rawPlayers || rawPlayers.length === 0) {
-      try {
-        const cloudRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
-        if (cloudRes.ok) {
-          const pairs = await cloudRes.json();
-          if (Array.isArray(pairs)) {
-            pairs.forEach(([k, p]) => {
-              let parsed = p;
-              if (typeof parsed === 'string') {
-                try { parsed = JSON.parse(parsed); } catch (e) { parsed = null; }
+    // 1. Load all registered players directly from KVDB Cloud
+    try {
+      const cloudRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      if (cloudRes.ok) {
+        const pairs = await cloudRes.json();
+        if (Array.isArray(pairs)) {
+          pairs.forEach(([k, p]) => {
+            let parsed = p;
+            if (typeof parsed === 'string') {
+              try { parsed = JSON.parse(parsed); } catch (e) { parsed = null; }
+            }
+            if (parsed && (parsed.telegramId || parsed.telegram_id)) {
+              const pid = String(parsed.telegramId || parsed.telegram_id);
+              if (pid && !pid.startsWith('guest') && !pid.startsWith('dev') && /^\d+$/.test(pid)) {
+                playersMap.set(pid, {
+                  telegram_id: pid,
+                  name: parsed.firstName || parsed.first_name || parsed.name || 'Игрок',
+                  username: parsed.username ? String(parsed.username).replace(/^@/, '') : '',
+                  level: Math.max(0, Number(parsed.maxLevel !== undefined ? parsed.maxLevel : (parsed.level || 0)))
+                });
               }
-              if (parsed && parsed.telegramId) rawPlayers.push(parsed);
-            });
-          }
+            }
+          });
         }
-      } catch (e) {}
+      }
+    } catch (e) {
+      console.warn('[Leaderboard Snapshot] KVDB fetch notice:', e);
     }
 
-    const playersMap = new Map();
-    rawPlayers.forEach(p => {
-      const pid = String(p.telegramId || p.telegram_id || '');
-      if (pid && !pid.startsWith('guest') && !pid.startsWith('dev') && /^\d+$/.test(pid)) {
-        playersMap.set(pid, {
-          telegram_id: pid,
-          name: p.firstName || p.first_name || p.name || 'Игрок',
-          username: p.username ? String(p.username).replace(/^@/, '') : '',
-          level: Math.max(0, Number(p.maxLevel !== undefined ? p.maxLevel : (p.level || 0)))
+    // 2. Also merge players from local leaderboard data if available
+    try {
+      const lbPlayers = await loadLeaderboardData();
+      if (Array.isArray(lbPlayers)) {
+        lbPlayers.forEach(p => {
+          const pid = String(p.telegramId || p.telegram_id || '');
+          if (pid && !pid.startsWith('guest') && !pid.startsWith('dev') && /^\d+$/.test(pid)) {
+            const existing = playersMap.get(pid);
+            const lvl = Math.max(0, Number(p.maxLevel !== undefined ? p.maxLevel : (p.level || 0)));
+            if (!existing || lvl > existing.level) {
+              playersMap.set(pid, {
+                telegram_id: pid,
+                name: p.firstName || p.first_name || p.name || 'Игрок',
+                username: p.username ? String(p.username).replace(/^@/, '') : (existing ? existing.username : ''),
+                level: lvl
+              });
+            }
+          }
         });
       }
-    });
+    } catch (e) {}
 
-    // Make sure current user is included
+    // 3. Ensure current user (Admin) is always included with their current level
     if (currentUser && currentUser.telegramId) {
       const myPid = String(currentUser.telegramId);
-      const myLvl = Math.max(0, Number(currentUser.maxLevel !== undefined ? currentUser.maxLevel : (currentUser.level || 0)));
-      if (!playersMap.has(myPid)) {
-        playersMap.set(myPid, {
-          telegram_id: myPid,
-          name: currentUser.firstName || 'Игрок',
-          username: currentUser.username ? String(currentUser.username).replace(/^@/, '') : '',
-          level: myLvl
-        });
+      if (!myPid.startsWith('guest') && !myPid.startsWith('dev') && /^\d+$/.test(myPid)) {
+        const myLvl = Math.max(0, Number(currentUser.maxLevel !== undefined ? currentUser.maxLevel : (currentUser.level || 0)));
+        const existing = playersMap.get(myPid);
+        if (!existing || myLvl > existing.level) {
+          playersMap.set(myPid, {
+            telegram_id: myPid,
+            name: currentUser.firstName || 'Игрок',
+            username: currentUser.username ? String(currentUser.username).replace(/^@/, '') : (existing ? existing.username : ''),
+            level: myLvl
+          });
+        }
       }
     }
 
