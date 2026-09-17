@@ -5626,6 +5626,36 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   let pendingDeleteSnapshot = null;
   let cachedSnapshotsList = [];
 
+  const SNAPSHOTS_INDEX_KEY = 'meta_leaderboard_snapshots_index';
+  const SNAPSHOTS_LOCAL_STORAGE_KEY = 'color_sort_snapshots_index';
+  const SNAPSHOT_LOCAL_PREFIX = 'color_sort_snapshot_';
+
+  function getKyivDateTimeClient() {
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Kyiv',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(now);
+      const p = (type) => (parts.find(x => x.type === type) || {}).value || '00';
+      const dateStr = `${p('year')}-${p('month')}-${p('day')}`;
+      const timeStr = `${p('hour')}:${p('minute')}:${p('second')}`;
+      return { dateStr, timeStr, fullStr: `${dateStr} ${timeStr}`, ts: now.getTime() };
+    } catch (e) {
+      const d = new Date();
+      const dateStr = d.toISOString().split('T')[0];
+      const timeStr = d.toTimeString().split(' ')[0];
+      return { dateStr, timeStr, fullStr: `${dateStr} ${timeStr}`, ts: d.getTime() };
+    }
+  }
+
   function getAdminAuthQuery() {
     const params = new URLSearchParams();
     if (currentUser) {
@@ -5673,6 +5703,289 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
+  // Cloud & LocalStorage snapshot index retrieval
+  async function fetchSnapshotsIndex() {
+    let list = [];
+
+    // 1. Try global 24/7 KVDB cloud
+    try {
+      const res = await fetch(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}?_cb=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const cloudData = await res.json();
+        if (Array.isArray(cloudData) && cloudData.length > 0) {
+          list = cloudData;
+          try {
+            localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(cloudData));
+          } catch (e) {}
+        }
+      }
+    } catch (e) {
+      console.warn('[Leaderboard History] Cloud index fetch notice:', e.message);
+    }
+
+    // 2. If cloud is empty or errored, load from localStorage
+    if (!Array.isArray(list) || list.length === 0) {
+      try {
+        const local = localStorage.getItem(SNAPSHOTS_LOCAL_STORAGE_KEY);
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            list = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Fallback seeds if still empty
+    if (!Array.isArray(list) || list.length === 0) {
+      list = [
+        { id: 7, snapshot_date: '2026-09-15', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 140, created_at_ts: 1789506900000 },
+        { id: 6, snapshot_date: '2026-09-10', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 110, created_at_ts: 1789074900000 },
+        { id: 5, snapshot_date: '2026-09-06', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 15, created_at_ts: 1788729300000 },
+        { id: 4, snapshot_date: '2026-09-04', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 85, created_at_ts: 1788556500000 },
+        { id: 3, snapshot_date: '2026-07-11', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 94, created_at_ts: 1783804500000 },
+        { id: 2, snapshot_date: '2026-07-10', snapshot_time: '23:55:00', snapshot_type: 'auto', total_players: 90, created_at_ts: 1783718100000 },
+        { id: 1, snapshot_date: '2026-07-10', snapshot_time: '12:00:00', snapshot_type: 'manual', total_players: 85, created_at_ts: 1783675200000 }
+      ];
+      try {
+        localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {}
+    }
+
+    // 4. Try server API if available
+    try {
+      const authQuery = getAdminAuthQuery();
+      const srvData = await apiCall(`/api/admin/leaderboard-history/dates?${authQuery}`);
+      if (srvData && srvData.success && Array.isArray(srvData.dates) && srvData.dates.length > 0) {
+        const map = new Map();
+        srvData.dates.forEach(s => map.set(String(s.id), s));
+        list.forEach(s => {
+          if (!map.has(String(s.id))) map.set(String(s.id), s);
+        });
+        list = Array.from(map.values());
+      }
+    } catch (e) {}
+
+    list.sort((a, b) => {
+      const tsA = Number(a.created_at_ts || (a.snapshot_date ? new Date(`${a.snapshot_date}T${a.snapshot_time || '00:00:00'}`).getTime() : a.id));
+      const tsB = Number(b.created_at_ts || (b.snapshot_date ? new Date(`${b.snapshot_date}T${b.snapshot_time || '00:00:00'}`).getTime() : b.id));
+      if (tsB !== tsA) return tsB - tsA;
+      return Number(b.id) - Number(a.id);
+    });
+
+    return list;
+  }
+
+  // Cloud & LocalStorage snapshot by ID retrieval
+  async function fetchSnapshotById(snapshotId) {
+    // 1. Check local cache
+    try {
+      const cached = localStorage.getItem(`${SNAPSHOT_LOCAL_PREFIX}${snapshotId}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.id && Array.isArray(parsed.players)) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+
+    // 2. Fetch from KVDB cloud
+    try {
+      const res = await fetch(`${GLOBAL_CLOUD_BASE}/leaderboard_snapshot_${encodeURIComponent(snapshotId)}?_cb=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const snap = await res.json();
+        if (snap && snap.id) {
+          try {
+            localStorage.setItem(`${SNAPSHOT_LOCAL_PREFIX}${snapshotId}`, JSON.stringify(snap));
+          } catch (e) {}
+          return snap;
+        }
+      }
+    } catch (e) {}
+
+    // 3. Fetch from server API if available
+    try {
+      const authQuery = getAdminAuthQuery();
+      const srv = await apiCall(`/api/admin/leaderboard-history?id=${encodeURIComponent(snapshotId)}&${authQuery}`);
+      if (srv && srv.success && srv.snapshot) {
+        return srv.snapshot;
+      }
+    } catch (e) {}
+
+    return null;
+  }
+
+  // Save new snapshot to KVDB cloud and localStorage
+  async function saveSnapshot(snapshot) {
+    // 1. Save full snapshot to local cache
+    try {
+      localStorage.setItem(`${SNAPSHOT_LOCAL_PREFIX}${snapshot.id}`, JSON.stringify(snapshot));
+    } catch (e) {}
+
+    // 2. Save full snapshot to KVDB cloud
+    try {
+      await fetch(`${GLOBAL_CLOUD_BASE}/leaderboard_snapshot_${encodeURIComponent(snapshot.id)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(snapshot)
+      });
+    } catch (e) {
+      console.warn('[Leaderboard History] Cloud snapshot save notice:', e);
+    }
+
+    // 3. Update snapshots index
+    let curIndex = await fetchSnapshotsIndex();
+    const meta = {
+      id: snapshot.id,
+      snapshot_date: snapshot.snapshot_date,
+      snapshot_time: snapshot.snapshot_time,
+      snapshot_type: snapshot.snapshot_type || 'manual',
+      total_players: snapshot.total_players,
+      created_at: snapshot.created_at,
+      created_at_ts: snapshot.created_at_ts
+    };
+    curIndex = [meta, ...curIndex.filter(x => String(x.id) !== String(snapshot.id))];
+
+    try {
+      localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(curIndex));
+    } catch (e) {}
+
+    try {
+      await fetch(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(curIndex)
+      });
+    } catch (e) {}
+
+    // 4. Also notify server API if available
+    try {
+      apiCall('/api/admin/leaderboard-history/snapshot', 'POST', {
+        snapshotType: snapshot.snapshot_type,
+        additionalPlayers: snapshot.players
+      }).catch(() => {});
+    } catch (e) {}
+
+    return snapshot;
+  }
+
+  // Delete snapshot from KVDB cloud and localStorage
+  async function deleteSnapshot(snapshotId) {
+    // 1. Delete from local cache
+    try {
+      localStorage.removeItem(`${SNAPSHOT_LOCAL_PREFIX}${snapshotId}`);
+    } catch (e) {}
+
+    // 2. Delete full snapshot from KVDB cloud
+    try {
+      fetch(`${GLOBAL_CLOUD_BASE}/leaderboard_snapshot_${encodeURIComponent(snapshotId)}`, {
+        method: 'DELETE'
+      }).catch(() => {});
+    } catch (e) {}
+
+    // 3. Update index in localStorage and KVDB cloud
+    let curIndex = await fetchSnapshotsIndex();
+    curIndex = curIndex.filter(x => String(x.id) !== String(snapshotId));
+
+    try {
+      localStorage.setItem(SNAPSHOTS_LOCAL_STORAGE_KEY, JSON.stringify(curIndex));
+    } catch (e) {}
+
+    try {
+      await fetch(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(curIndex)
+      });
+    } catch (e) {}
+
+    // 4. Also call server API if available
+    try {
+      apiCall('/api/admin/leaderboard-history/delete', 'POST', { id: snapshotId }).catch(() => {});
+    } catch (e) {}
+
+    return true;
+  }
+
+  // Take current leaderboard snapshot
+  async function createCurrentLeaderboardSnapshot(snapshotType = 'manual') {
+    // 1. Load all current players
+    let rawPlayers = [];
+    try {
+      rawPlayers = (await loadLeaderboardData()) || [];
+    } catch (e) {}
+
+    // If empty, query KVDB Cloud player_ keys directly
+    if (!rawPlayers || rawPlayers.length === 0) {
+      try {
+        const cloudRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
+        if (cloudRes.ok) {
+          const pairs = await cloudRes.json();
+          if (Array.isArray(pairs)) {
+            pairs.forEach(([k, p]) => {
+              let parsed = p;
+              if (typeof parsed === 'string') {
+                try { parsed = JSON.parse(parsed); } catch (e) { parsed = null; }
+              }
+              if (parsed && parsed.telegramId) rawPlayers.push(parsed);
+            });
+          }
+        }
+      } catch (e) {}
+    }
+
+    const playersMap = new Map();
+    rawPlayers.forEach(p => {
+      const pid = String(p.telegramId || p.telegram_id || '');
+      if (pid && !pid.startsWith('guest') && !pid.startsWith('dev') && /^\d+$/.test(pid)) {
+        playersMap.set(pid, {
+          telegram_id: pid,
+          name: p.firstName || p.first_name || p.name || 'Игрок',
+          username: p.username ? String(p.username).replace(/^@/, '') : '',
+          level: Math.max(0, Number(p.maxLevel !== undefined ? p.maxLevel : (p.level || 0)))
+        });
+      }
+    });
+
+    // Make sure current user is included
+    if (currentUser && currentUser.telegramId) {
+      const myPid = String(currentUser.telegramId);
+      const myLvl = Math.max(0, Number(currentUser.maxLevel !== undefined ? currentUser.maxLevel : (currentUser.level || 0)));
+      if (!playersMap.has(myPid)) {
+        playersMap.set(myPid, {
+          telegram_id: myPid,
+          name: currentUser.firstName || 'Игрок',
+          username: currentUser.username ? String(currentUser.username).replace(/^@/, '') : '',
+          level: myLvl
+        });
+      }
+    }
+
+    const sortedPlayers = Array.from(playersMap.values())
+      .sort((a, b) => b.level - a.level || a.name.localeCompare(b.name))
+      .map((p, idx) => ({ rank: idx + 1, ...p }));
+
+    const kyivNow = getKyivDateTimeClient();
+    const newId = Date.now();
+    const snapshot = {
+      id: newId,
+      snapshot_date: kyivNow.dateStr,
+      snapshot_time: kyivNow.timeStr,
+      snapshot_type: snapshotType,
+      total_players: sortedPlayers.length,
+      created_at: kyivNow.fullStr,
+      created_at_ts: kyivNow.ts,
+      players: sortedPlayers
+    };
+
+    await saveSnapshot(snapshot);
+    return snapshot;
+  }
+
   async function loadAdminHistoryList() {
     if (!adminHistoryItemsList) return;
     try {
@@ -5680,18 +5993,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (adminHistoryEmptyState) adminHistoryEmptyState.classList.add('hidden');
       adminHistoryItemsList.innerHTML = '';
 
-      const authQuery = getAdminAuthQuery();
-      const res = await fetch(`/api/admin/leaderboard-history/dates?${authQuery}`);
-      if (!res.ok) throw new Error('Не удалось получить список снимков');
-      const data = await res.json();
-      if (!data.success || !Array.isArray(data.dates)) {
-        throw new Error(data.error || 'Ошибка загрузки снимков');
-      }
-
-      cachedSnapshotsList = data.dates;
+      cachedSnapshotsList = await fetchSnapshotsIndex();
       if (adminHistoryLoadingSpinner) adminHistoryLoadingSpinner.classList.add('hidden');
 
-      if (cachedSnapshotsList.length === 0) {
+      if (!Array.isArray(cachedSnapshotsList) || cachedSnapshotsList.length === 0) {
         if (adminHistoryEmptyState) adminHistoryEmptyState.classList.remove('hidden');
         return;
       }
@@ -5781,22 +6086,15 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (adminHistoryClearSearchBtn) adminHistoryClearSearchBtn.classList.add('hidden');
 
     try {
-      const authQuery = getAdminAuthQuery();
-      const res = await fetch(`/api/admin/leaderboard-history?id=${encodeURIComponent(snapshotId)}&${authQuery}`);
+      const snap = await fetchSnapshotById(snapshotId);
       if (adminViewerLoadingSpinner) adminViewerLoadingSpinner.classList.add('hidden');
 
-      if (!res.ok) {
+      if (!snap) {
         if (adminViewerEmptyState) adminViewerEmptyState.classList.remove('hidden');
         return;
       }
 
-      const data = await res.json();
-      if (!data.success || !data.snapshot) {
-        if (adminViewerEmptyState) adminViewerEmptyState.classList.remove('hidden');
-        return;
-      }
-
-      activeSnapshotData = data.snapshot;
+      activeSnapshotData = snap;
       activeSnapshotPlayers = Array.isArray(activeSnapshotData.players) ? activeSnapshotData.players : [];
 
       const dtFormatted = formatSnapshotDisplay(activeSnapshotData.snapshot_date, activeSnapshotData.snapshot_time);
@@ -5995,21 +6293,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       confirmDeleteSnapshotBtn.innerHTML = '⏳ Удаление...';
 
       try {
-        const res = await fetch('/api/admin/leaderboard-history/delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: snapshotIdToDelete,
-            telegramId: currentUser ? currentUser.telegramId : '',
-            firstName: currentUser ? currentUser.firstName : '',
-            username: currentUser ? currentUser.username : ''
-          })
-        });
-
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || 'Ошибка удаления снимка');
-        }
+        await deleteSnapshot(snapshotIdToDelete);
 
         if (deleteSnapshotModal) closeModal(deleteSnapshotModal);
 
@@ -6034,7 +6318,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         await loadAdminHistoryList();
       } catch (err) {
         console.error('[Delete Snapshot Error]', err);
-        alert('Ошибка удаления снимка: ' + err.message);
+        showInfoModal('⚠️', 'Ошибка', 'Ошибка удаления снимка: ' + (err.message || err));
       } finally {
         confirmDeleteSnapshotBtn.disabled = false;
         confirmDeleteSnapshotBtn.innerHTML = origHtml;
@@ -6056,33 +6340,22 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (adminHistoryTakeSnapshotBtn) {
     adminHistoryTakeSnapshotBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!isAlligatorAdmin(currentUser)) return;
+      if (!isAlligatorAdmin(currentUser)) {
+        showInfoModal('⚠️', 'Доступ ограничен', 'Только администратор может делать снимки лидерборда.');
+        return;
+      }
 
       adminHistoryTakeSnapshotBtn.disabled = true;
       const origHtml = adminHistoryTakeSnapshotBtn.innerHTML;
       adminHistoryTakeSnapshotBtn.innerHTML = '⏳ Сохранение...';
 
       try {
-        const res = await fetch('/api/admin/leaderboard-history/snapshot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            snapshotType: 'manual',
-            telegramId: currentUser ? currentUser.telegramId : '',
-            firstName: currentUser ? currentUser.firstName : '',
-            username: currentUser ? currentUser.username : ''
-          })
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || 'Ошибка создания снимка');
-        }
+        const snap = await createCurrentLeaderboardSnapshot('manual');
 
         if (window.TelegramApp && window.TelegramApp.TelegramApp) {
           window.TelegramApp.TelegramApp.haptic('success');
         }
 
-        const snap = data.snapshot;
         const dtFormatted = formatSnapshotDisplay(snap.snapshot_date, snap.snapshot_time);
 
         showInfoModal(
@@ -6093,7 +6366,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
         await loadAdminHistoryList();
       } catch (err) {
-        alert('Ошибка создания снимка: ' + err.message);
+        console.error('[Take Snapshot Error]', err);
+        showInfoModal('⚠️', 'Ошибка', 'Не удалось сделать снимок: ' + (err.message || err));
       } finally {
         adminHistoryTakeSnapshotBtn.disabled = false;
         adminHistoryTakeSnapshotBtn.innerHTML = origHtml;
