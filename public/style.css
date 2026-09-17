@@ -2883,45 +2883,166 @@ body {
   font-weight: 600;
 }
 
-/* Admin Panel Tabs Navigation */
+/* ============================================================
+   Admin Panel Navigation (Отдельные карточки в столбик)
+   ============================================================ */
 .admin-nav-tabs {
   display: flex;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 12px;
-  padding: 4px;
-  gap: 4px;
-  margin-top: 4px;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .admin-nav-tab {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(10px);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+
+.admin-nav-tab-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
   flex: 1;
+}
+
+.admin-nav-tab-icon {
+  font-size: 1.35rem;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: #94a3b8;
-  font-size: 0.82rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.admin-nav-tab-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-nav-tab-text strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: 0.2px;
+  transition: color 0.2s ease;
+}
+
+.admin-nav-tab-desc {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease;
+}
+
+.admin-nav-tab-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.admin-tab-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #64748b;
+  transition: all 0.22s ease;
+}
+
+.admin-tab-indicator::after {
+  content: '›';
+  font-size: 1.3rem;
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
+  line-height: 1;
+  transform: translateY(-1px);
 }
 
 .admin-nav-tab:hover {
-  color: #f1f5f9;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
 }
 
+.admin-nav-tab:hover .admin-nav-tab-text strong {
+  color: #38bdf8;
+}
+
+.admin-nav-tab:hover .admin-nav-tab-icon {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* Active Highlighted State */
 .admin-nav-tab.active {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(245, 158, 11, 0.35));
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(2, 132, 199, 0.18));
+  border: 1.5px solid rgba(251, 191, 36, 0.65);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.admin-nav-tab.active .admin-nav-tab-text strong {
   color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.5);
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+.admin-nav-tab.active .admin-nav-tab-desc {
+  color: #94a3b8;
+}
+
+.admin-nav-tab.active .admin-nav-tab-icon {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+
+.admin-nav-tab.active .admin-tab-indicator {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(251, 191, 36, 0.5);
+  color: #fbbf24;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+}
+
+.admin-nav-tab.active .admin-tab-indicator::after {
+  content: '●';
+  font-size: 0.85rem;
+  transform: translateY(0);
+  text-shadow: 0 0 6px rgba(251, 191, 36, 0.8);
 }
 
 .admin-tab-content {

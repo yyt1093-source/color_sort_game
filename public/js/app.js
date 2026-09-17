@@ -273,7 +273,9 @@ async function initColorSortApp() {
       adminResetSuccessTitle: "💥 Сезон сброшен!",
       adminResetSuccessDesc: "Все игроки сброшены на Уровень 0! Лидерборд пуст. Баланс TON, покупки и рефералы сохранены.",
       adminTabActionsLabel: "Управление",
+      adminTabActionsDesc: "Бесплатные функции, бустеры и сброс сезона",
       adminTabHistoryLabel: "История лидерборда",
+      adminTabHistoryDesc: "Снимки в 23:55 (Киев), ручные копии и архив",
       adminHistoryTitle: "История лидерборда",
       adminHistorySub: "Ежедневные снимки в 23:55 (Киев). Ручные снимки сохраняются отдельно.",
       adminHistoryListTitle: "История сохранённых снимков:",
@@ -296,6 +298,7 @@ async function initColorSortApp() {
       deleteSnapshotLead: "Вы действительно хотите удалить этот снимок лидерборда?",
       deleteSnapshotSuccess: "🗑️ Снимок лидерборда успешно удалён!",
       adminTabWalletsLabel: "Кошельки",
+      adminTabWalletsDesc: "Список игроков, подключивших TON кошелёк",
       adminWalletsTitle: "Кошельки игроков",
       adminWalletsSub: "Игроки, подключившие TON кошелёк к игре",
       adminWalletsEmptyText: "Нет игроков с подключённым кошельком",
@@ -525,7 +528,9 @@ async function initColorSortApp() {
       adminResetSuccessTitle: "💥 Сезон скинуто!",
       adminResetSuccessDesc: "Всі гравці скинуті на Рівень 0! Лідерборд порожній. Баланс TON, покупки та реферали збережені.",
       adminTabActionsLabel: "Керування",
+      adminTabActionsDesc: "Безкоштовні функції, бустери та скидання сезону",
       adminTabHistoryLabel: "Історія лідерборду",
+      adminTabHistoryDesc: "Знімки о 23:55 (Київ), ручні копії та архів",
       adminHistoryTitle: "Історія лідерборду",
       adminHistorySub: "Щоденні знімки о 23:55 (Київ). Ручні знімки зберігаються окремо.",
       adminHistoryListTitle: "Історія збережених знімків:",
@@ -548,6 +553,7 @@ async function initColorSortApp() {
       deleteSnapshotLead: "Ви дійсно бажаєте видалити цей знімок лідерборду?",
       deleteSnapshotSuccess: "🗑️ Знімок лідерборду успішно видалено!",
       adminTabWalletsLabel: "Гаманці",
+      adminTabWalletsDesc: "Список гравців, які підключили TON гаманець",
       adminWalletsTitle: "Гаманці гравців",
       adminWalletsSub: "Гравці, які підключили TON гаманець до гри",
       adminWalletsEmptyText: "Немає гравців з підключеним гаманцем",
@@ -756,7 +762,9 @@ async function initColorSortApp() {
       adminResetSuccessTitle: "💥 Season Reset!",
       adminResetSuccessDesc: "All players have been reset to Level 0! Leaderboard is empty. TON balance, purchases and referrals are preserved.",
       adminTabActionsLabel: "Management",
+      adminTabActionsDesc: "Free boosts, rewards and season reset",
       adminTabHistoryLabel: "Leaderboard History",
+      adminTabHistoryDesc: "Kyiv 23:55 snapshots, manual backups & archive",
       adminHistoryTitle: "Leaderboard History",
       adminHistorySub: "Daily snapshots at 23:55 (Kyiv). Manual snapshots are saved separately.",
       adminHistoryListTitle: "Saved snapshots history:",
@@ -779,6 +787,7 @@ async function initColorSortApp() {
       deleteSnapshotLead: "Are you sure you want to delete this leaderboard snapshot?",
       deleteSnapshotSuccess: "🗑️ Leaderboard snapshot deleted successfully!",
       adminTabWalletsLabel: "Wallets",
+      adminTabWalletsDesc: "Players who connected a TON wallet",
       adminWalletsTitle: "Player Wallets",
       adminWalletsSub: "Players who connected a TON wallet to the game",
       adminWalletsEmptyText: "No players with connected wallets",
@@ -987,7 +996,9 @@ async function initColorSortApp() {
       adminResetSuccessTitle: "💥 Saison zurückgesetzt!",
       adminResetSuccessDesc: "Alle Spieler wurden auf Stufe 0 zurückgesetzt! Bestenliste ist leer. TON-Guthaben, Käufe und Empfehlungen bleiben erhalten.",
       adminTabActionsLabel: "Verwaltung",
+      adminTabActionsDesc: "Kostenlose Booster und Saison-Zurücksetzung",
       adminTabHistoryLabel: "Ranglisten-Verlauf",
+      adminTabHistoryDesc: "23:55 Snapshots (Kiew), manuelle Kopien & Archiv",
       adminHistoryTitle: "Ranglisten-Verlauf",
       adminHistorySub: "Tägliche Snapshots um 23:55 (Kiew). Manuelle Snapshots werden separat gespeichert.",
       adminHistoryListTitle: "Verlauf gespeicherter Snapshots:",
@@ -1010,6 +1021,7 @@ async function initColorSortApp() {
       deleteSnapshotLead: "Möchten Sie diesen Ranglisten-Snapshot wirklich löschen?",
       deleteSnapshotSuccess: "🗑️ Ranglisten-Snapshot erfolgreich gelöscht!",
       adminTabWalletsLabel: "Wallets",
+      adminTabWalletsDesc: "Spieler mit verbundenem TON-Wallet",
       adminWalletsTitle: "Spieler-Wallets",
       adminWalletsSub: "Spieler mit verbundenem TON-Wallet",
       adminWalletsEmptyText: "Keine Spieler mit verbundenem Wallet",
@@ -1218,7 +1230,9 @@ async function initColorSortApp() {
       adminResetSuccessTitle: "💥 Sezonas atstatytas!",
       adminResetSuccessDesc: "Visi žaidėjai atstatyti į 0 lygį! Lyderių lentelė tuščia. TON balansas, pirkiniai ir pakviesti draugai išsaugomi.",
       adminTabActionsLabel: "Valdymas",
+      adminTabActionsDesc: "Nemokami stiprintuvai ir sezono atstatymas",
       adminTabHistoryLabel: "Lyderių istorija",
+      adminTabHistoryDesc: "23:55 kopijos (Kijevas), rankinės kopijos ir archyvas",
       adminHistoryTitle: "Lyderių istorija",
       adminHistorySub: "Kasdieniai kadrai 23:55 (Kijevas). Rankiniai kadrai išsaugomi atskirai.",
       adminHistoryListTitle: "Išsaugotų kopijų istorija:",
@@ -1241,6 +1255,7 @@ async function initColorSortApp() {
       deleteSnapshotLead: "Ar tikrai norite ištrinti šią lyderių lentelės kopiją?",
       deleteSnapshotSuccess: "🗑️ Lyderių lentelės kopija sėkmingai ištrinta!",
       adminTabWalletsLabel: "Piniginės",
+      adminTabWalletsDesc: "Žaidėjai su prijungta TON pinigine",
       adminWalletsTitle: "Žaidėjų piniginės",
       adminWalletsSub: "Žaidėjai, prijungę TON piniginę prie žaidimo",
       adminWalletsEmptyText: "Nėra žaidėjų su prijungta pinigine",
@@ -1814,8 +1829,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     // Admin Tabs & History translations
     const adminTabActionsLabel = document.getElementById('adminTabActionsLabel');
     if (adminTabActionsLabel) adminTabActionsLabel.textContent = t('adminTabActionsLabel');
+    const adminTabActionsDesc = document.getElementById('adminTabActionsDesc');
+    if (adminTabActionsDesc) adminTabActionsDesc.textContent = t('adminTabActionsDesc');
     const adminTabHistoryLabel = document.getElementById('adminTabHistoryLabel');
     if (adminTabHistoryLabel) adminTabHistoryLabel.textContent = t('adminTabHistoryLabel');
+    const adminTabHistoryDesc = document.getElementById('adminTabHistoryDesc');
+    if (adminTabHistoryDesc) adminTabHistoryDesc.textContent = t('adminTabHistoryDesc');
     const adminHistoryTitle = document.getElementById('adminHistoryTitle');
     if (adminHistoryTitle) adminHistoryTitle.textContent = t('adminHistoryTitle');
     const adminHistorySub = document.getElementById('adminHistorySub');
@@ -1848,6 +1867,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     // Admin Wallets Tab
     const adminTabWalletsLabel = document.getElementById('adminTabWalletsLabel');
     if (adminTabWalletsLabel) adminTabWalletsLabel.textContent = t('adminTabWalletsLabel');
+    const adminTabWalletsDesc = document.getElementById('adminTabWalletsDesc');
+    if (adminTabWalletsDesc) adminTabWalletsDesc.textContent = t('adminTabWalletsDesc');
     const adminWalletsTitle = document.getElementById('adminWalletsTitle');
     if (adminWalletsTitle) adminWalletsTitle.textContent = t('adminWalletsTitle');
     const adminWalletsSub = document.getElementById('adminWalletsSub');
