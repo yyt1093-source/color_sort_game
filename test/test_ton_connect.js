@@ -1,4 +1,4 @@
-﻿const assert = require("assert");
+const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
 
@@ -42,20 +42,26 @@ runTest("tonconnect-manifest.json adheres strictly to TON Connect 2.0 specificat
 });
 
 // 2. Icon file verification
-runTest("ton_icon.png is a valid 180x180 PNG file", () => {
-  const iconPath = path.join(__dirname, "..", "public", "ton_icon.png");
-  assert(fs.existsSync(iconPath), "ton_icon.png must exist in public/");
-  const buf = fs.readFileSync(iconPath);
-  
-  const pngSig = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-  for (let i = 0; i < 8; i++) {
-    assert.strictEqual(buf[i], pngSig[i], "Byte " + i + " must match PNG signature");
+runTest("game_icon.png and ton_icon.png are valid 512x512 PNG files for wallet display", () => {
+  const manifestPath = path.join(__dirname, "..", "public", "tonconnect-manifest.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  assert(manifest.iconUrl.includes("game_icon.png"), "Manifest iconUrl must reference game_icon.png");
+
+  for (const filename of ["game_icon.png", "ton_icon.png"]) {
+    const iconPath = path.join(__dirname, "..", "public", filename);
+    assert(fs.existsSync(iconPath), filename + " must exist in public/");
+    const buf = fs.readFileSync(iconPath);
+    
+    const pngSig = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    for (let i = 0; i < 8; i++) {
+      assert.strictEqual(buf[i], pngSig[i], "Byte " + i + " must match PNG signature in " + filename);
+    }
+    
+    const width = buf.readUInt32BE(16);
+    const height = buf.readUInt32BE(20);
+    assert.strictEqual(width, 512, "Width should be 512px in " + filename);
+    assert.strictEqual(height, 512, "Height should be 512px in " + filename);
   }
-  
-  const width = buf.readUInt32BE(16);
-  const height = buf.readUInt32BE(20);
-  assert.strictEqual(width, 180, "Width should be 180px");
-  assert.strictEqual(height, 180, "Height should be 180px");
 });
 
 // 3. Local SDK verification
