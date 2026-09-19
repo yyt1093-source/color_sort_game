@@ -2020,21 +2020,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
   window.isAllColorsActive = function () {
     if (!currentUser) return false;
-
-    const globalResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
-    const userResetAt = Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || 0);
-    const localResetAt = Math.max(globalResetAt, userResetAt);
-    const purchasedAt = Number(currentUser.all_colors_purchased_at || 0);
-
-    if (localResetAt > 0 && (purchasedAt < localResetAt || !purchasedAt)) {
-      if (currentUser.all_colors_until) {
-        currentUser.all_colors_until = 0;
-        currentUser.all_colors_purchased_at = 0;
-        saveLocalUser();
-      }
-      return false;
-    }
-
     if (!currentUser.all_colors_until) return false;
     return Number(currentUser.all_colors_until) > Date.now();
   };
@@ -2152,7 +2137,29 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     user.ton_wallet_type = String(user.ton_wallet_type || user.tonWalletType || '').trim();
     user.ton_deposits_total = Number(user.ton_deposits_total || 0);
     user.ton_deposits_count = Number(user.ton_deposits_count || 0);
+    user.purchasesResetAt = Number(user.purchasesResetAt || user.purchases_reset_at || 0);
+    user.purchases_reset_at = user.purchasesResetAt;
     return user;
+  }
+
+  function updateCloudBoosterDirectly(field, value) {
+    if (!currentUser || !currentUser.telegramId) return;
+    const id = String(currentUser.telegramId);
+    if (id.startsWith('guest') || id.startsWith('dev') || !/^\d+$/.test(id)) return;
+    fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(cloud => {
+        if (cloud && typeof cloud === 'object') {
+          cloud[field] = value;
+          if (field === 'extraBottles') cloud.extra_bottles = value;
+          cloud.updatedAt = Date.now();
+          fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cloud)
+          }).catch(() => {});
+        }
+      }).catch(() => {});
   }
 
   async function syncPlayerToCloud(user, options = {}) {
@@ -2186,6 +2193,28 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     // 1. Send live signal to single global 24/7 cloud database for all real players
     if (id && isRealTelegramUser) {
       try {
+        // Fetch existing cloud player to merge and PRESERVE boosters, balance, and perks!
+        let existingCloud = null;
+        try {
+          const eRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
+          if (eRes.ok) existingCloud = await eRes.json();
+        } catch (e) {}
+
+        const finalHints = Math.max(Number(user.hints || 0), existingCloud ? Number(existingCloud.hints || 0) : 0);
+        const finalUndos = Math.max(Number(user.undos || 0), existingCloud ? Number(existingCloud.undos || 0) : 0);
+        const finalReveals = Math.max(Number(user.reveals || 0), existingCloud ? Number(existingCloud.reveals || 0) : 0);
+        const existingB = existingCloud ? (existingCloud.extra_bottles !== undefined ? existingCloud.extra_bottles : existingCloud.extraBottles) : 0;
+        const finalBottles = Math.max(Number(user.extraBottles || 0), Number(existingB || 0));
+        const finalBalance = Math.max(Number(user.ton_balance || 0), existingCloud ? Number(existingCloud.ton_balance || 0) : 0);
+        const finalAllColors = Math.max(Number(user.all_colors_until || 0), existingCloud ? Number(existingCloud.all_colors_until || 0) : 0);
+
+        if (finalHints > (user.hints || 0)) user.hints = finalHints;
+        if (finalUndos > (user.undos || 0)) user.undos = finalUndos;
+        if (finalReveals > (user.reveals || 0)) user.reveals = finalReveals;
+        if (finalBottles > (user.extraBottles || 0)) { user.extraBottles = finalBottles; user.extra_bottles = finalBottles; }
+        if (finalBalance > (user.ton_balance || 0)) user.ton_balance = finalBalance;
+        if (finalAllColors > (user.all_colors_until || 0)) user.all_colors_until = finalAllColors;
+
         const payload = {
           telegramId: id,
           firstName: user.firstName || 'Игрок',
@@ -2195,19 +2224,20 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           level: maxLvl,
           currentLevel: curLvl,
           stars: stars,
-          hints: Number(user.hints || 0),
-          undos: Number(user.undos || 0),
-          reveals: Number(user.reveals || 0),
-          extraBottles: Number(user.extraBottles || 0),
-          extra_bottles: Number(user.extraBottles || 0),
-          ton_balance: Number(user.ton_balance || 0),
-          ton_wallet: user.ton_wallet || '',
-          ton_wallet_type: user.ton_wallet_type || '',
+          hints: finalHints,
+          undos: finalUndos,
+          reveals: finalReveals,
+          extraBottles: finalBottles,
+          extra_bottles: finalBottles,
+          ton_balance: finalBalance,
+          ton_wallet: user.ton_wallet || (existingCloud ? existingCloud.ton_wallet : '') || '',
+          ton_wallet_type: user.ton_wallet_type || (existingCloud ? existingCloud.ton_wallet_type : '') || '',
           ton_deposits_total: Number(user.ton_deposits_total || 0),
           ton_deposits_count: Number(user.ton_deposits_count || 0),
-          all_colors_until: Number(user.all_colors_until || 0),
+          all_colors_until: finalAllColors,
           all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
           seasonResetAt: localSeasonReset,
+          purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
           updatedAt: Date.now()
         };
         fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
@@ -2219,26 +2249,30 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       } catch (e) {}
     }
 
-    // 2. Also send to Express API if available
-    apiCall('/api/user/sync', 'POST', {
+    // 2. Also send to Express API if available (only send boosters if > 0 to never overwrite server inventory with 0)
+    const syncPayload = {
       telegramId: user.telegramId,
       firstName: user.firstName,
       username: user.username,
       photoUrl: user.photoUrl,
       currentLevel: user.currentLevel,
       maxLevel: maxLvl,
-      hints: user.hints,
-      undos: user.undos,
-      reveals: user.reveals,
-      extraBottles: user.extraBottles,
-      extra_bottles: user.extraBottles,
       ton_balance: user.ton_balance,
       ton_wallet: user.ton_wallet,
       ton_wallet_type: user.ton_wallet_type,
       seasonResetAt: localSeasonReset,
+      purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
       starsAdded: 0,
       coinsAdded: 0
-    }).catch(() => {});
+    };
+    if (user.hints > 0) syncPayload.hints = user.hints;
+    if (user.undos > 0) syncPayload.undos = user.undos;
+    if (user.reveals > 0) syncPayload.reveals = user.reveals;
+    if (user.extraBottles > 0) {
+      syncPayload.extraBottles = user.extraBottles;
+      syncPayload.extra_bottles = user.extraBottles;
+    }
+    apiCall('/api/user/sync', 'POST', syncPayload).catch(() => {});
   }
 
   async function apiCall(endpoint, method = 'GET', body = null) {
@@ -2281,6 +2315,11 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         const parsed = JSON.parse(data);
         currentUser = { ...currentUser, ...parsed };
       } catch (e) {}
+    }
+    if (!currentUser.purchasesResetAt) {
+      const storedReset = Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || localStorage.getItem('color_sort_gram_reset_at') || 0);
+      currentUser.purchasesResetAt = storedReset;
+      currentUser.purchases_reset_at = storedReset;
     }
     normalizeUserObject(currentUser);
   }
@@ -2485,138 +2524,105 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // 6. Fetch user from local storage first (instant baseline)
   loadLocalUser();
 
-  // 6.1 Check global season reset immediately before trusting local data or merging cloud data
-  checkGlobalSeasonReset().then(wasReset => {
-    if (wasReset) {
-      console.log('[Startup] Season was reset globally. Starting clean from Level 1.');
-      return;
-    }
+  // 6.1 Unconditionally fetch live cloud inventory & stats from KVDB (works 24/7 on GitHub Pages)
+  if (currentUser.telegramId) {
+    fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}?_cb=${Date.now()}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(cloudData => {
+        if (cloudData && typeof cloudData === 'object') {
+          const localReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+          const cloudSeason = Number(cloudData.seasonResetAt || 0);
+          const cloudTime = Number(cloudData.updatedAt || cloudData.seasonResetAt || 0);
+          if (localReset > 0 && (cloudSeason < localReset || (cloudTime > 0 && cloudTime < localReset))) {
+            // Stale record from previous season - reset local level/stars, but preserve all boosters!
+            currentUser.currentLevel = 1;
+            currentUser.maxLevel = 0;
+            currentUser.level = 0;
+            currentUser.stars = 0;
+            currentUser.seasonResetAt = localReset;
+            saveLocalUser();
+            updateHeaderUI();
+            loadCurrentLevel();
+          }
+          let changed = false;
 
-    // Also fetch live cloud inventory & stats from KVDB (works 24/7 on GitHub Pages)
-    if (currentUser.telegramId) {
-      fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(currentUser.telegramId)}?_cb=${Date.now()}`)
-        .then(res => res.ok ? res.json() : null)
-        .then(cloudData => {
-          if (cloudData && typeof cloudData === 'object') {
-            const localReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
-            const cloudSeason = Number(cloudData.seasonResetAt || 0);
-            const cloudTime = Number(cloudData.updatedAt || cloudData.seasonResetAt || 0);
-            if (localReset > 0 && (cloudSeason < localReset || (cloudTime > 0 && cloudTime < localReset))) {
-              // Stale record from previous season - reset local state to clean Level 0 and sync
-              currentUser.currentLevel = 1;
-              currentUser.maxLevel = 0;
-              currentUser.level = 0;
-              currentUser.stars = 0;
-              currentUser.seasonResetAt = localReset;
-              saveLocalUser();
-              syncPlayerToCloud(currentUser);
-              updateHeaderUI();
-              loadCurrentLevel();
-              return;
-            }
-            let changed = false;
+          if (cloudData.hints !== undefined) {
+            const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
+            if (h !== currentUser.hints) { currentUser.hints = h; changed = true; }
+          }
+          if (cloudData.undos !== undefined) {
+            const u = Math.max(currentUser.undos || 0, Number(cloudData.undos || 0));
+            if (u !== currentUser.undos) { currentUser.undos = u; changed = true; }
+          }
+          if (cloudData.reveals !== undefined) {
+            const r = Math.max(currentUser.reveals || 0, Number(cloudData.reveals || 0));
+            if (r !== currentUser.reveals) { currentUser.reveals = r; changed = true; }
+          }
+          const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
+          if (cloudB !== undefined) {
+            const b = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(cloudB || 0));
+            if (b !== currentUser.extraBottles) { currentUser.extraBottles = b; currentUser.extra_bottles = b; changed = true; }
+          }
+          if (cloudData.all_colors_until !== undefined) {
+            const acu = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
+            if (acu !== currentUser.all_colors_until) { currentUser.all_colors_until = acu; changed = true; }
+          }
+          if (cloudData.all_colors_purchased_at !== undefined) {
+            const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
+            if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
+          }
 
-            const localResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
-            const userResetAt = Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || 0);
-            const cloudResetAt = Number(cloudData.purchasesResetAt || cloudData.purchases_reset_at || 0);
-            const activePurchasesResetAt = Math.max(localResetAt, userResetAt, cloudResetAt);
+          if (cloudData.ton_balance !== undefined) {
+            const tb = Math.max(Number(currentUser.ton_balance || 0), Number(cloudData.ton_balance || 0));
+            if (tb !== currentUser.ton_balance) { currentUser.ton_balance = tb; changed = true; }
+          }
+          if (cloudData.ton_wallet && !currentUser.ton_wallet) {
+            currentUser.ton_wallet = cloudData.ton_wallet;
+            changed = true;
+          }
+          if (cloudData.memo_code && !currentUser.memo_code) {
+            currentUser.memo_code = cloudData.memo_code;
+            changed = true;
+          }
 
-            const lastPurchased = Math.max(
-              Number(currentUser.all_colors_purchased_at || 0),
-              Number(cloudData.all_colors_purchased_at || 0)
-            );
-
-            const hasActivePurchasesReset = activePurchasesResetAt > 0 && (lastPurchased < activePurchasesResetAt || !lastPurchased);
-
-            if (hasActivePurchasesReset) {
-              if (currentUser.hints !== 0 || currentUser.undos !== 0 || currentUser.reveals !== 0 || currentUser.extraBottles !== 0 || currentUser.all_colors_until !== 0) {
-                currentUser.hints = 0;
-                currentUser.undos = 0;
-                currentUser.reveals = 0;
-                currentUser.extraBottles = 0;
-                currentUser.extra_bottles = 0;
-                currentUser.shuffles = 0;
-                currentUser.all_colors_until = 0;
-                currentUser.all_colors_purchased_at = 0;
-                changed = true;
-              }
-            } else {
-              if (cloudData.hints !== undefined) {
-                const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
-                if (h !== currentUser.hints) { currentUser.hints = h; changed = true; }
-              }
-              if (cloudData.undos !== undefined) {
-                const u = Math.max(currentUser.undos || 0, Number(cloudData.undos || 0));
-                if (u !== currentUser.undos) { currentUser.undos = u; changed = true; }
-              }
-              if (cloudData.reveals !== undefined) {
-                const r = Math.max(currentUser.reveals || 0, Number(cloudData.reveals || 0));
-                if (r !== currentUser.reveals) { currentUser.reveals = r; changed = true; }
-              }
-              const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
-              if (cloudB !== undefined) {
-                const b = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(cloudB || 0));
-                if (b !== currentUser.extraBottles) { currentUser.extraBottles = b; currentUser.extra_bottles = b; changed = true; }
-              }
-              if (cloudData.all_colors_until !== undefined) {
-                const acu = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
-                if (acu !== currentUser.all_colors_until) { currentUser.all_colors_until = acu; changed = true; }
-              }
-              if (cloudData.all_colors_purchased_at !== undefined) {
-                const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
-                if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
-              }
-            }
-
-            if (cloudData.ton_balance !== undefined) {
-              const tb = Math.max(Number(currentUser.ton_balance || 0), Number(cloudData.ton_balance || 0));
-              if (tb !== currentUser.ton_balance) { currentUser.ton_balance = tb; changed = true; }
-            }
-            if (cloudData.ton_wallet && !currentUser.ton_wallet) {
-              currentUser.ton_wallet = cloudData.ton_wallet;
+          const cloudMax = Number(cloudData.maxLevel !== undefined ? cloudData.maxLevel : (cloudData.level !== undefined ? cloudData.level : 0));
+          // If cloud has reset this account to Level 0, or cloud season is newer than user's season:
+          if ((cloudSeason > 0 && cloudSeason > Number(currentUser.seasonResetAt || 0)) ||
+              (cloudMax === 0 && (currentUser.maxLevel || 0) > 0 && cloudSeason >= localReset)) {
+            console.log('[Startup] Cloud forced season reset to Level 0');
+            currentUser.maxLevel = 0;
+            currentUser.level = 0;
+            currentUser.currentLevel = 1;
+            currentUser.stars = 0;
+            currentUser.seasonResetAt = cloudSeason || localReset;
+            localStorage.setItem('color_sort_season_reset_at', String(cloudSeason || localReset));
+            changed = true;
+            loadCurrentLevel();
+          } else if ((cloudData.level !== undefined || cloudData.maxLevel !== undefined) && (localReset === 0 || cloudSeason >= localReset)) {
+            if (cloudMax > (currentUser.maxLevel || 0)) {
+              currentUser.maxLevel = cloudMax;
               changed = true;
             }
-            if (cloudData.memo_code && !currentUser.memo_code) {
-              currentUser.memo_code = cloudData.memo_code;
-              changed = true;
-            }
-
-            const cloudMax = Number(cloudData.maxLevel !== undefined ? cloudData.maxLevel : (cloudData.level !== undefined ? cloudData.level : 0));
-            // If cloud has reset this account to Level 0, or cloud season is newer than user's season:
-            if ((cloudSeason > 0 && cloudSeason > Number(currentUser.seasonResetAt || 0)) ||
-                (cloudMax === 0 && (currentUser.maxLevel || 0) > 0 && cloudSeason >= localReset)) {
-              console.log('[Startup] Cloud forced season reset to Level 0');
-              currentUser.maxLevel = 0;
-              currentUser.level = 0;
-              currentUser.currentLevel = 1;
-              currentUser.stars = 0;
-              currentUser.seasonResetAt = cloudSeason || localReset;
-              localStorage.setItem('color_sort_season_reset_at', String(cloudSeason || localReset));
+            const cloudCur = Number(cloudData.currentLevel || (cloudMax > 0 ? cloudMax + 1 : 1));
+            if (cloudCur > (currentUser.currentLevel || 1)) {
+              currentUser.currentLevel = cloudCur;
               changed = true;
               loadCurrentLevel();
-            } else if ((cloudData.level !== undefined || cloudData.maxLevel !== undefined) && (localReset === 0 || cloudSeason >= localReset)) {
-              if (cloudMax > (currentUser.maxLevel || 0)) {
-                currentUser.maxLevel = cloudMax;
-                changed = true;
-              }
-              const cloudCur = Number(cloudData.currentLevel || (cloudMax > 0 ? cloudMax + 1 : 1));
-              if (cloudCur > (currentUser.currentLevel || 1)) {
-                currentUser.currentLevel = cloudCur;
-                changed = true;
-                loadCurrentLevel();
-              }
-            }
-            if (changed) {
-              normalizeUserObject(currentUser);
-              saveLocalUser();
-              updateHeaderUI();
-              if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
-              if (typeof updateShopUI === 'function') updateShopUI();
             }
           }
-        }).catch(() => {});
-    }
-  });
+          if (changed) {
+            normalizeUserObject(currentUser);
+            saveLocalUser();
+            updateHeaderUI();
+            if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
+            if (typeof updateShopUI === 'function') updateShopUI();
+          }
+        }
+      }).catch(() => {});
+  }
+
+  // 6.2 Check global season reset in parallel
+  checkGlobalSeasonReset();
 
   processIncomingReferral();
   applyLanguage(currentLang);
@@ -2727,54 +2733,25 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.maxLevel = 0;
         currentUser.stars = 0;
         currentUser.coins = 0;
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        currentUser.extra_bottles = 0;
-        // NOTE: all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
+        // NOTE: hints, undos, reveals, extraBottles, all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
         currentUser.season_reset_at = serverReset;
         saveLocalUser();
         updateHeaderUI();
         updateShopUI();
         loadCurrentLevel();
-        return;
       }
       const oldLevel = currentUser.currentLevel;
-      const serverPurchasesReset = Number(serverUser.purchasesResetAt || serverUser.purchases_reset_at || (serverUser.user && (serverUser.user.purchasesResetAt || serverUser.user.purchases_reset_at)) || 0);
-      const localPurchasesReset = Math.max(
-        Number(localStorage.getItem('color_sort_gram_reset_at') || 0),
-        Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || 0),
-        serverPurchasesReset
-      );
-      const lastPurchasedAt = Math.max(
-        Number(currentUser.all_colors_purchased_at || 0),
-        Number(serverUser.user.all_colors_purchased_at || 0)
-      );
-      const isPurchasesReset = localPurchasesReset > 0 && (lastPurchasedAt < localPurchasesReset || !lastPurchasedAt);
-
-      if (isPurchasesReset) {
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        currentUser.extra_bottles = 0;
-        currentUser.shuffles = 0;
-        currentUser.all_colors_until = 0;
-        currentUser.all_colors_purchased_at = 0;
-      } else {
-        if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints || 0);
-        if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos || 0);
-        if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, serverUser.user.reveals || 0);
-        const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
-        if (serverB !== undefined) {
-          const maxB = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(serverB || 0));
-          currentUser.extraBottles = maxB;
-          currentUser.extra_bottles = maxB;
-        }
-        if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, serverUser.user.all_colors_until || 0);
-        if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, serverUser.user.all_colors_purchased_at || 0);
+      if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, Number(serverUser.user.hints || 0));
+      if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, Number(serverUser.user.undos || 0));
+      if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, Number(serverUser.user.reveals || 0));
+      const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
+      if (serverB !== undefined) {
+        const maxB = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(serverB || 0));
+        currentUser.extraBottles = maxB;
+        currentUser.extra_bottles = maxB;
       }
+      if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, Number(serverUser.user.all_colors_until || 0));
+      if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, Number(serverUser.user.all_colors_purchased_at || 0));
       if (serverUser.user.ton_balance !== undefined) currentUser.ton_balance = Math.max(currentUser.ton_balance || 0, serverUser.user.ton_balance || 0);
       if (serverUser.user.ton_wallet !== undefined) currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
       if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
@@ -2789,7 +2766,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         loadCurrentLevel();
       }
     }
-    syncPlayerToCloud(currentUser);
     checkGlobalSeasonReset();
   }).catch(() => {
     checkGlobalSeasonReset();
@@ -2820,12 +2796,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     currentUser.currentLevel = 1;
     currentUser.stars = 0;
     currentUser.coins = 0;
-    currentUser.hints = 0;
-    currentUser.undos = 0;
-    currentUser.reveals = 0;
-    currentUser.extraBottles = 0;
-    currentUser.extra_bottles = 0;
-    // NOTE: all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
+    // NOTE: hints, undos, reveals, extraBottles, all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
     currentUser.seasonResetAt = resetTimestamp;
     currentUser.season_reset_at = resetTimestamp;
 
@@ -2835,29 +2806,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     updateShopUI();
     updateTonWalletUI();
 
-    // Clear toolbar badges explicitly
-    const revealBadgeEl = document.getElementById('revealBadge');
-    if (revealBadgeEl) {
-      revealBadgeEl.textContent = '0';
-      revealBadgeEl.classList.add('badge-zero');
-    }
-    const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
-    if (extraBottleBadgeEl) {
-      extraBottleBadgeEl.textContent = '0';
-      extraBottleBadgeEl.classList.add('badge-zero');
-    }
-    const hintBadgeEl = document.getElementById('hintBadge');
-    if (hintBadgeEl) {
-      hintBadgeEl.textContent = '0';
-      hintBadgeEl.classList.add('badge-zero');
-    }
-    const undoBadgeEl = document.getElementById('undoBadge');
-    if (undoBadgeEl) {
-      undoBadgeEl.textContent = '0';
-      undoBadgeEl.classList.add('badge-zero');
-    }
-
-    // 3. Push Level 0 directly to Cloud DB immediately
+    // 3. Push Level 0 directly to Cloud DB immediately (preserving boosters)
     if (currentUser.telegramId) {
       const pid = String(currentUser.telegramId);
       if (!pid.startsWith('guest') && !pid.startsWith('dev') && /^\d+$/.test(pid)) {
@@ -2871,11 +2820,11 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             level: 0,
             currentLevel: 1,
             stars: 0,
-            hints: 0,
-            undos: 0,
-            reveals: 0,
-            extraBottles: 0,
-            extra_bottles: 0,
+            hints: Number(currentUser.hints || 0),
+            undos: Number(currentUser.undos || 0),
+            reveals: Number(currentUser.reveals || 0),
+            extraBottles: Number(currentUser.extraBottles || 0),
+            extra_bottles: Number(currentUser.extraBottles || 0),
             ton_balance: Number(currentUser.ton_balance || 0),
             ton_wallet: currentUser.ton_wallet || '',
             memo_code: currentUser.memo_code || '',
@@ -3002,70 +2951,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       console.warn('[Season Reset Check Error]', err);
     }
 
-    // Also check purchases reset if season was not reset
-    if (!wasReset) {
-      try {
-        await checkGlobalPurchasesReset();
-      } catch (e) {}
-    }
-
     return wasReset;
-  }
-
-  async function checkGlobalPurchasesReset() {
-    try {
-      const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_gram_purchases_reset`, {
-        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(3000) : undefined
-      });
-      if (res.ok) {
-        const rawText = await res.text();
-        let resetAt = 0;
-        try {
-          const data = JSON.parse(rawText);
-          resetAt = Number(data.resetAt || data) || 0;
-        } catch (e) {
-          resetAt = Number(rawText) || 0;
-        }
-
-        const localResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
-        if (resetAt > 0 && resetAt > localResetAt) {
-          localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
-          const lastPurchased = Number(currentUser.all_colors_purchased_at || 0);
-          if (!lastPurchased || lastPurchased < resetAt) {
-            currentUser.all_colors_until = 0;
-            currentUser.all_colors_purchased_at = 0;
-            currentUser.hints = 0;
-            currentUser.undos = 0;
-            currentUser.reveals = 0;
-            currentUser.extraBottles = 0;
-            currentUser.extra_bottles = 0;
-            currentUser.shuffles = 0;
-            saveLocalUser();
-            updateShopUI();
-            updateHeaderUI();
-
-            const revealBadgeEl = document.getElementById('revealBadge');
-            if (revealBadgeEl) { revealBadgeEl.textContent = '0'; revealBadgeEl.classList.add('badge-zero'); }
-            const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
-            if (extraBottleBadgeEl) { extraBottleBadgeEl.textContent = '0'; extraBottleBadgeEl.classList.add('badge-zero'); }
-            const hintBadgeEl = document.getElementById('hintBadge');
-            if (hintBadgeEl) { hintBadgeEl.textContent = '0'; hintBadgeEl.classList.add('badge-zero'); }
-            const undoBadgeEl = document.getElementById('undoBadge');
-            if (undoBadgeEl) { undoBadgeEl.textContent = '0'; undoBadgeEl.classList.add('badge-zero'); }
-
-            if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
-              engine.revealed = engine.bottles.map(b => {
-                if (!b || b.length === 0) return [];
-                const rev = new Array(b.length).fill(false);
-                rev[b.length - 1] = true;
-                return rev;
-              });
-              if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
-            }
-          }
-        }
-      }
-    } catch (e) {}
   }
 
   // Realtime active watchdog while playing (every 30 seconds, throttled)
@@ -3244,6 +3130,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.undos = Math.max(0, (currentUser.undos || 0) - 1);
         updateHeaderUI();
         saveLocalUser();
+        updateCloudBoosterDirectly('undos', currentUser.undos);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
@@ -3297,6 +3184,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.hints = Math.max(0, (currentUser.hints || 0) - 1);
         updateHeaderUI();
         saveLocalUser();
+        updateCloudBoosterDirectly('hints', currentUser.hints);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
         await apiCall('/api/user/sync', 'POST', {
           telegramId: currentUser.telegramId,
@@ -3356,6 +3244,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       const res = engine.revealRandomBottle();
       if (res) {
         currentUser.reveals = Math.max(0, (currentUser.reveals || 0) - 1);
+        updateCloudBoosterDirectly('reveals', currentUser.reveals);
         if (renderer && renderer.highlightBottleReveal) renderer.highlightBottleReveal(res.bottleIndex);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
@@ -3419,6 +3308,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (added) {
         currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
         currentUser.extra_bottles = currentUser.extraBottles;
+        updateCloudBoosterDirectly('extraBottles', currentUser.extraBottles);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
         updateHeaderUI();
@@ -4617,31 +4507,30 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         if (res.user.all_colors_until !== undefined) currentUser.all_colors_until = res.user.all_colors_until;
         if (res.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = res.user.all_colors_purchased_at;
         
-        const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
-        if (serverB !== undefined) {
-          currentUser.extraBottles = Number(serverB || 0);
-          currentUser.extra_bottles = currentUser.extraBottles;
-        } else if (itemId === 'bottles_pack_15') {
+        if (itemId === 'bottles_pack_15') {
           currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
           currentUser.extra_bottles = currentUser.extraBottles;
+        } else if (serverB !== undefined && Number(serverB) > 0) {
+          currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+          currentUser.extra_bottles = currentUser.extraBottles;
         }
 
-        if (res.user.hints !== undefined) {
-          currentUser.hints = Number(res.user.hints || 0);
-        } else if (itemId === 'hints_pack_20') {
+        if (itemId === 'hints_pack_20') {
           currentUser.hints = (currentUser.hints || 0) + 20;
+        } else if (res.user.hints !== undefined && Number(res.user.hints) > 0) {
+          currentUser.hints = Math.max(currentUser.hints || 0, Number(res.user.hints || 0));
         }
 
-        if (res.user.undos !== undefined) {
-          currentUser.undos = Number(res.user.undos || 0);
-        } else if (itemId === 'undos_pack_20') {
+        if (itemId === 'undos_pack_20') {
           currentUser.undos = (currentUser.undos || 0) + 20;
+        } else if (res.user.undos !== undefined && Number(res.user.undos) > 0) {
+          currentUser.undos = Math.max(currentUser.undos || 0, Number(res.user.undos || 0));
         }
 
-        if (res.user.reveals !== undefined) {
-          currentUser.reveals = Number(res.user.reveals || 0);
-        } else if (itemId === 'reveals_pack_20') {
+        if (itemId === 'reveals_pack_20') {
           currentUser.reveals = (currentUser.reveals || 0) + 20;
+        } else if (res.user.reveals !== undefined && Number(res.user.reveals) > 0) {
+          currentUser.reveals = Math.max(currentUser.reveals || 0, Number(res.user.reveals || 0));
         }
       } else {
         // Fallback for static GitHub Pages / client-side test
@@ -5033,10 +4922,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       });
 
       if (res && res.success && res.user) {
-        currentUser.extraBottles = res.user.extra_bottles;
-        currentUser.hints = res.user.hints;
-        currentUser.undos = res.user.undos;
-        currentUser.reveals = res.user.reveals;
+        if (res.user.extra_bottles !== undefined) {
+          const eb = Math.max(currentUser.extraBottles || 0, Number(res.user.extra_bottles || 0));
+          currentUser.extraBottles = eb;
+          currentUser.extra_bottles = eb;
+        }
+        if (res.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, Number(res.user.hints || 0));
+        if (res.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, Number(res.user.undos || 0));
+        if (res.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, Number(res.user.reveals || 0));
         claimedCount = res.claimedCount || 1;
       } else {
         // Client-side cloud fallback: identify target items to claim
@@ -5703,7 +5596,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
       try {
         const nowTs = Date.now();
-        localStorage.setItem('color_sort_gram_reset_at', String(nowTs));
         localStorage.setItem(`color_sort_user_purchases_reset_${myId}`, String(nowTs));
 
         // 1. Call server API to reset admin's purchases in SQLite DB
@@ -6016,12 +5908,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.maxLevel = 0;
         currentUser.stars = 0;
         currentUser.coins = 0;
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        currentUser.extra_bottles = 0;
-        // Покупки (all_colors_until) и кошелек (ton_balance, ton_wallet) НЕ трогаем!
+        // Покупки (hints, undos, reveals, extraBottles, all_colors_until) и кошелек (ton_balance, ton_wallet) НЕ трогаем!
         currentUser.season_reset_at = resetTimestamp;
         currentUser.seasonResetAt = resetTimestamp;
 
@@ -6029,28 +5916,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         updateHeaderUI();
         updateShopUI();
         updateTonWalletUI();
-
-        // Очищаем бейджи на тулбаре
-        const revealBadgeEl = document.getElementById('revealBadge');
-        if (revealBadgeEl) {
-          revealBadgeEl.textContent = '0';
-          revealBadgeEl.classList.add('badge-zero');
-        }
-        const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
-        if (extraBottleBadgeEl) {
-          extraBottleBadgeEl.textContent = '0';
-          extraBottleBadgeEl.classList.add('badge-zero');
-        }
-        const hintBadgeEl = document.getElementById('hintBadge');
-        if (hintBadgeEl) {
-          hintBadgeEl.textContent = '0';
-          hintBadgeEl.classList.add('badge-zero');
-        }
-        const undoBadgeEl = document.getElementById('undoBadge');
-        if (undoBadgeEl) {
-          undoBadgeEl.textContent = '0';
-          undoBadgeEl.classList.add('badge-zero');
-        }
 
         // Перезагрузка 1-го уровня на игровом поле (игрок начинает с Уровня 0)
         if (levelDisplay) levelDisplay.textContent = '0';
@@ -7860,12 +7725,44 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
   }
 
-  // 12. Lifecycle handlers: Auto-sync player on app minimization, tab switch, or exit
   const handleAppExitOrHide = () => {
     try {
       if (currentUser && currentUser.telegramId) {
         saveLocalUser();
-        syncPlayerToCloud(currentUser, { keepalive: true });
+        const id = String(currentUser.telegramId);
+        if (id && !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id)) {
+          const payload = {
+            telegramId: id,
+            firstName: currentUser.firstName || 'Игрок',
+            username: currentUser.username || '',
+            photoUrl: currentUser.photoUrl || '',
+            maxLevel: Number(currentUser.maxLevel || 0),
+            level: Number(currentUser.maxLevel || 0),
+            currentLevel: Number(currentUser.currentLevel || 1),
+            stars: Number(currentUser.stars || 0),
+            hints: Number(currentUser.hints || 0),
+            undos: Number(currentUser.undos || 0),
+            reveals: Number(currentUser.reveals || 0),
+            extraBottles: Number(currentUser.extraBottles || 0),
+            extra_bottles: Number(currentUser.extraBottles || 0),
+            ton_balance: Number(currentUser.ton_balance || 0),
+            ton_wallet: currentUser.ton_wallet || '',
+            ton_wallet_type: currentUser.ton_wallet_type || '',
+            ton_deposits_total: Number(currentUser.ton_deposits_total || 0),
+            ton_deposits_count: Number(currentUser.ton_deposits_count || 0),
+            all_colors_until: Number(currentUser.all_colors_until || 0),
+            all_colors_purchased_at: Number(currentUser.all_colors_purchased_at || 0),
+            seasonResetAt: Number(localStorage.getItem('color_sort_season_reset_at') || 0),
+            purchasesResetAt: Number(currentUser.purchasesResetAt || 0),
+            updatedAt: Date.now()
+          };
+          fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true
+          }).catch(() => {});
+        }
       }
     } catch (e) {}
   };
