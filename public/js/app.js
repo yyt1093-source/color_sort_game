@@ -2205,14 +2205,13 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         const finalReveals = Math.max(Number(user.reveals || 0), existingCloud ? Number(existingCloud.reveals || 0) : 0);
         const existingB = existingCloud ? (existingCloud.extra_bottles !== undefined ? existingCloud.extra_bottles : existingCloud.extraBottles) : 0;
         const finalBottles = Math.max(Number(user.extraBottles || 0), Number(existingB || 0));
-        const finalBalance = Math.max(Number(user.ton_balance || 0), existingCloud ? Number(existingCloud.ton_balance || 0) : 0);
+        const finalBalance = Number(user.ton_balance !== undefined ? user.ton_balance : (existingCloud ? existingCloud.ton_balance : 0));
         const finalAllColors = Math.max(Number(user.all_colors_until || 0), existingCloud ? Number(existingCloud.all_colors_until || 0) : 0);
 
         if (finalHints > (user.hints || 0)) user.hints = finalHints;
         if (finalUndos > (user.undos || 0)) user.undos = finalUndos;
         if (finalReveals > (user.reveals || 0)) user.reveals = finalReveals;
         if (finalBottles > (user.extraBottles || 0)) { user.extraBottles = finalBottles; user.extra_bottles = finalBottles; }
-        if (finalBalance > (user.ton_balance || 0)) user.ton_balance = finalBalance;
         if (finalAllColors > (user.all_colors_until || 0)) user.all_colors_until = finalAllColors;
 
         const payload = {
@@ -2305,6 +2304,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
   // LocalStorage helper
   function saveLocalUser() {
+    currentUser.updatedAt = Date.now();
     normalizeUserObject(currentUser);
     localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
   }
@@ -2314,6 +2314,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       try {
         const parsed = JSON.parse(data);
         currentUser = { ...currentUser, ...parsed };
+        currentUser._localLoaded = true;
       } catch (e) {}
     }
     if (!currentUser.purchasesResetAt) {
@@ -2573,8 +2574,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           }
 
           if (cloudData.ton_balance !== undefined) {
-            const tb = Math.max(Number(currentUser.ton_balance || 0), Number(cloudData.ton_balance || 0));
-            if (tb !== currentUser.ton_balance) { currentUser.ton_balance = tb; changed = true; }
+            const cb = Number(cloudData.ton_balance || 0);
+            if (!currentUser._localLoaded || currentUser.ton_balance === undefined || currentUser.ton_balance === null) {
+              currentUser.ton_balance = cb;
+              changed = true;
+            } else if (cloudData.updatedAt && currentUser.updatedAt && cloudData.updatedAt > currentUser.updatedAt) {
+              currentUser.ton_balance = cb;
+              changed = true;
+            }
           }
           if (cloudData.ton_wallet && !currentUser.ton_wallet) {
             currentUser.ton_wallet = cloudData.ton_wallet;
@@ -2752,7 +2759,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
       if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, Number(serverUser.user.all_colors_until || 0));
       if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, Number(serverUser.user.all_colors_purchased_at || 0));
-      if (serverUser.user.ton_balance !== undefined) currentUser.ton_balance = Math.max(currentUser.ton_balance || 0, serverUser.user.ton_balance || 0);
+      if (serverUser.user.ton_balance !== undefined) {
+        const sb = Number(serverUser.user.ton_balance || 0);
+        if (!currentUser._localLoaded || currentUser.ton_balance === undefined || currentUser.ton_balance === null) {
+          currentUser.ton_balance = sb;
+        }
+      }
       if (serverUser.user.ton_wallet !== undefined) currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
       if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
       if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Number(serverUser.user.current_level || 1);
@@ -4497,21 +4509,30 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (btnEl) btnEl.disabled = true;
 
     try {
+      const newBalance = Number(Math.max(0, currentBal - price).toFixed(4));
+      currentUser.ton_balance = newBalance;
+
       const res = await apiCall('/api/shop/buy', 'POST', {
         telegramId: currentUser.telegramId,
         itemId: itemId
       });
 
       if (res && res.success && res.user) {
-        currentUser.ton_balance = res.user.ton_balance !== undefined ? res.user.ton_balance : currentUser.ton_balance;
+        if (res.user.ton_balance !== undefined) {
+          currentUser.ton_balance = Number(res.user.ton_balance);
+        } else {
+          currentUser.ton_balance = newBalance;
+        }
         if (res.user.all_colors_until !== undefined) currentUser.all_colors_until = res.user.all_colors_until;
         if (res.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = res.user.all_colors_purchased_at;
         
+        const serverExtraBottles = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
+
         if (itemId === 'bottles_pack_15') {
           currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
           currentUser.extra_bottles = currentUser.extraBottles;
-        } else if (serverB !== undefined && Number(serverB) > 0) {
-          currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+        } else if (serverExtraBottles !== undefined && Number(serverExtraBottles) > 0) {
+          currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverExtraBottles || 0));
           currentUser.extra_bottles = currentUser.extraBottles;
         }
 
@@ -4534,7 +4555,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         }
       } else {
         // Fallback for static GitHub Pages / client-side test
-        currentUser.ton_balance = Number((currentBal - price).toFixed(4));
+        currentUser.ton_balance = newBalance;
         if (itemId === 'all_colors_15d') {
           const now = Date.now();
           const curr = Number(currentUser.all_colors_until || 0);
@@ -4558,6 +4579,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       updateShopUI();
       updateHeaderUI();
       updateTonWalletUI();
+
+      // Immediately sync deducted balance and items directly to cloud KVDB and backend API
       syncPlayerToCloud(currentUser);
 
       const revealBadgeEl = document.getElementById('revealBadge');
