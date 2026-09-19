@@ -137,6 +137,9 @@ function initDatabase() {
     db.exec(`ALTER TABLE users ADD COLUMN all_colors_purchased_at INTEGER DEFAULT 0;`);
   } catch (e) {}
   try {
+    db.exec(`ALTER TABLE users ADD COLUMN purchases_reset_at INTEGER DEFAULT 0;`);
+  } catch (e) {}
+  try {
     db.exec(`ALTER TABLE users ADD COLUMN referrer_id TEXT DEFAULT NULL;`);
   } catch (e) {}
   try {
@@ -246,28 +249,28 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
 
   let newHints = Math.max(0, user.hints - hintsUsed);
   if (hints !== undefined && hints !== null) {
-    newHints = Math.max(newHints, Number(hints || 0));
+    newHints = Math.max(0, Number(hints || 0));
   }
 
   let newUndos = Math.max(0, user.undos - undosUsed);
   if (undos !== undefined && undos !== null) {
-    newUndos = Math.max(newUndos, Number(undos || 0));
+    newUndos = Math.max(0, Number(undos || 0));
   }
 
   let newReveals = Math.max(0, (user.reveals || 0) - revealsUsed);
   if (reveals !== undefined && reveals !== null) {
-    newReveals = Math.max(newReveals, Number(reveals || 0));
+    newReveals = Math.max(0, Number(reveals || 0));
   }
 
   let newExtraBottles = Math.max(0, (user.extra_bottles || 0) - extraBottlesUsed);
   const targetBottles = extraBottles !== undefined ? extraBottles : extra_bottles;
   if (targetBottles !== undefined && targetBottles !== null) {
-    newExtraBottles = Math.max(newExtraBottles, Number(targetBottles || 0));
+    newExtraBottles = Math.max(0, Number(targetBottles || 0));
   }
 
   let newShuffles = Math.max(0, (user.shuffles || 0) - shufflesUsed);
   if (shuffles !== undefined && shuffles !== null) {
-    newShuffles = Math.max(newShuffles, Number(shuffles || 0));
+    newShuffles = Math.max(0, Number(shuffles || 0));
   }
 
   const newTotalMoves = user.total_moves + (totalMoves || 0);
@@ -707,14 +710,26 @@ function buyShopItem(telegramId, itemId) {
 
 /**
  * Admin: Reset all active GRAM purchases in the chest for all players.
- * Annuls active advantages (all_colors_until) without touching wallet currency balances (ton_balance).
+ * Annuls active advantages (all_colors_until) and boosters without touching wallet currency balances (ton_balance).
  */
 function resetGramPurchases() {
   try {
-    db.exec(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT DEFAULT (datetime('now')));`);
-    db.exec(`UPDATE users SET all_colors_until = 0, all_colors_purchased_at = 0, hints = 0, undos = 0, reveals = 0, extra_bottles = 0, shuffles = 0;`);
-    db.exec(`DELETE FROM shop_purchases;`);
     const nowTs = Date.now();
+    db.exec(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT DEFAULT (datetime('now')));`);
+    db.exec(`
+      UPDATE users 
+      SET all_colors_until = 0, 
+          all_colors_purchased_at = 0, 
+          hints = 0, 
+          undos = 0, 
+          reveals = 0, 
+          extra_bottles = 0, 
+          shuffles = 0,
+          purchases_reset_at = ${nowTs},
+          updated_at = datetime('now');
+    `);
+    db.exec(`DELETE FROM shop_purchases;`);
+    db.exec(`DELETE FROM ad_rewards_log;`);
     db.prepare(`
       INSERT INTO system_settings (key, value) VALUES ('gram_reset_timestamp', ?)
       ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=datetime('now')
@@ -734,6 +749,7 @@ function resetGramPurchasesSingle(targetTelegramId) {
   if (!id) return { success: false, error: 'Telegram ID не указан' };
 
   try {
+    const nowTs = Date.now();
     const stmt = db.prepare(`
       UPDATE users
       SET all_colors_until = 0,
@@ -743,20 +759,33 @@ function resetGramPurchasesSingle(targetTelegramId) {
           reveals = 0,
           extra_bottles = 0,
           shuffles = 0,
+          purchases_reset_at = ?,
           updated_at = datetime('now')
       WHERE telegram_id = ?
     `);
-    const info = stmt.run(id);
+    const info = stmt.run(nowTs, id);
     db.prepare(`DELETE FROM shop_purchases WHERE telegram_id = ?`).run(id);
+    db.prepare(`DELETE FROM ad_rewards_log WHERE telegram_id = ?`).run(id);
 
     return {
       success: true,
       targetTelegramId: id,
+      resetAt: nowTs,
+      user: getUser(id),
       updated: info.changes > 0
     };
   } catch (err) {
     console.error('[DB Reset Single Player Error]', err);
     return { success: false, error: err.message };
+  }
+}
+
+function getPurchasesResetTimestamp() {
+  try {
+    const row = db.prepare("SELECT value FROM system_settings WHERE key = 'gram_reset_timestamp'").get();
+    return row ? Number(row.value) : 0;
+  } catch (e) {
+    return 0;
   }
 }
 
@@ -1507,6 +1536,7 @@ module.exports = {
   getAllTelegramIds,
   resetSeason,
   getSeasonResetTimestamp,
+  getPurchasesResetTimestamp,
   resetGramPurchases,
   resetGramPurchasesSingle,
   updateTonWallet,

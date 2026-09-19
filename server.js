@@ -145,7 +145,8 @@ app.post('/api/user/init', (req, res) => {
     });
 
     const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
-    res.json({ success: true, user, seasonResetAt });
+    const purchasesResetAt = db.getPurchasesResetTimestamp ? db.getPurchasesResetTimestamp() : 0;
+    res.json({ success: true, user, seasonResetAt, purchasesResetAt });
   } catch (err) {
     console.error('[API ERROR] /api/user/init:', err);
     res.status(500).json({ success: false, error: err.message });
@@ -543,10 +544,10 @@ function checkIsAdmin(reqBody) {
   const uname = String(adminUsername || username || '').toLowerCase().replace(/^@/, '').trim();
 
   // The admin panel is strictly reserved for one administrator: Alligator
-  // Telegram ID: 5761685341 or exact username/nickname "alligator" / "аллигатор"
+  // Telegram ID: 5761685341 or exact/partial username/nickname "alligator" / "аллигатор"
   if (tid === '5761685341') return true;
-  if (uname === 'alligator' || uname === 'аллигатор') return true;
-  if (fname === 'alligator' || fname === 'аллигатор') return true;
+  if (uname === 'alligator' || uname === 'аллигатор' || uname.includes('alligator') || uname.includes('аллигатор')) return true;
+  if (fname === 'alligator' || fname === 'аллигатор' || fname.includes('alligator') || fname.includes('аллигатор')) return true;
 
   return false;
 }
@@ -808,6 +809,7 @@ app.post('/api/admin/reset-purchases', async (req, res) => {
 
     if (targetId) {
       const result = db.resetGramPurchasesSingle(targetId);
+      const resetTs = result.resetAt || Date.now();
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
       const baseUrl = `https://kvdb.io/${bucket}`;
       fetch(`${baseUrl}/${encodeURIComponent('player_' + targetId)}`)
@@ -820,7 +822,10 @@ app.post('/api/admin/reset-purchases', async (req, res) => {
             val.undos = 0;
             val.reveals = 0;
             val.extraBottles = 0;
+            val.extra_bottles = 0;
             val.shuffles = 0;
+            val.purchasesResetAt = resetTs;
+            val.purchases_reset_at = resetTs;
             fetch(`${baseUrl}/${encodeURIComponent('player_' + targetId)}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -832,6 +837,8 @@ app.post('/api/admin/reset-purchases', async (req, res) => {
       return res.json({
         success: true,
         targetTelegramId: targetId,
+        resetAt: resetTs,
+        user: result.user,
         message: `Покупки за TON игрока ID ${targetId} успешно аннулированы!`
       });
     }
