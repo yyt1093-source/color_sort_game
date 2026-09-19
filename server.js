@@ -133,16 +133,48 @@ app.get('/api/config', (req, res) => {
 /**
  * Get or Init User Progress
  */
-app.post('/api/user/init', (req, res) => {
+app.post('/api/user/init', async (req, res) => {
   try {
     const { telegramId, firstName, username, photoUrl } = req.body;
 
     const id = telegramId || 'guest_dev_123';
-    const user = db.getUser(id, {
+    let user = db.getUser(id, {
       first_name: firstName || (id === 'guest_dev_123' ? 'Гость' : 'Игрок'),
       username: username || '',
       photo_url: photoUrl || ''
     });
+
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev') && user) {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      try {
+        const kvRes = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
+        if (kvRes.ok) {
+          const kvData = await kvRes.json();
+          if (kvData && typeof kvData === 'object') {
+            user.hints = Math.max(Number(user.hints || 0), Number(kvData.hints || 0));
+            user.undos = Math.max(Number(user.undos || 0), Number(kvData.undos || 0));
+            user.reveals = Math.max(Number(user.reveals || 0), Number(kvData.reveals || 0));
+            const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
+            const finalB = Math.max(Number(user.extra_bottles || 0), Number(kvB || 0));
+            user.extra_bottles = finalB;
+            user.extraBottles = finalB;
+            user.ton_balance = Math.max(Number(user.ton_balance || 0), Number(kvData.ton_balance || 0));
+            user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
+            user.all_colors_purchased_at = Math.max(Number(user.all_colors_purchased_at || 0), Number(kvData.all_colors_purchased_at || 0));
+            if (kvData.ton_wallet && !user.ton_wallet) user.ton_wallet = kvData.ton_wallet;
+            if (kvData.memo_code && !user.memo_code) user.memo_code = kvData.memo_code;
+
+            try {
+              db.prepare(`
+                UPDATE users 
+                SET hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?
+                WHERE telegram_id = ?
+              `).run(user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, String(id));
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
+    }
 
     const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
     const purchasesResetAt = db.getPurchasesResetTimestamp ? db.getPurchasesResetTimestamp() : 0;
@@ -185,28 +217,40 @@ app.post('/api/user/sync', (req, res) => {
     // Also forward sync to global cloud bucket if real player
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
-      fetch(`https://kvdb.io/${bucket}/player_${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          telegramId: String(id),
-          firstName: updatedUser.first_name || firstName || 'Игрок',
-          username: updatedUser.username || username || '',
-          photoUrl: updatedUser.photo_url || photoUrl || '',
-          maxLevel: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
-          stars: updatedUser.stars || 0,
-          hints: updatedUser.hints || 0,
-          undos: updatedUser.undos || 0,
-          reveals: updatedUser.reveals || 0,
-          extraBottles: updatedUser.extra_bottles || 0,
-          extra_bottles: updatedUser.extra_bottles || 0,
-          ton_balance: updatedUser.ton_balance || 0,
-          all_colors_until: updatedUser.all_colors_until || 0,
-          all_colors_purchased_at: updatedUser.all_colors_purchased_at || 0,
-          updatedAt: Date.now()
-        }),
-        signal: AbortSignal.timeout(3000)
-      }).catch(e => console.warn('[Cloud KVDB Sync Error]:', e.message));
+      fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(existing => {
+          const finalHints = hints !== undefined ? Number(hints) : Math.max(Number(updatedUser.hints || 0), existing ? Number(existing.hints || 0) : 0);
+          const finalUndos = undos !== undefined ? Number(undos) : Math.max(Number(updatedUser.undos || 0), existing ? Number(existing.undos || 0) : 0);
+          const finalReveals = reveals !== undefined ? Number(reveals) : Math.max(Number(updatedUser.reveals || 0), existing ? Number(existing.reveals || 0) : 0);
+          const exB = existing ? (existing.extra_bottles !== undefined ? existing.extra_bottles : existing.extraBottles) : 0;
+          const finalBottles = (extraBottles !== undefined || extra_bottles !== undefined)
+            ? Number(extraBottles !== undefined ? extraBottles : extra_bottles)
+            : Math.max(Number(updatedUser.extra_bottles || 0), Number(exB || 0));
+
+          const payload = {
+            telegramId: String(id),
+            firstName: updatedUser.first_name || firstName || 'Игрок',
+            username: updatedUser.username || username || '',
+            photoUrl: updatedUser.photo_url || photoUrl || '',
+            maxLevel: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
+            stars: updatedUser.stars || 0,
+            hints: finalHints,
+            undos: finalUndos,
+            reveals: finalReveals,
+            extraBottles: finalBottles,
+            extra_bottles: finalBottles,
+            ton_balance: Math.max(Number(updatedUser.ton_balance || 0), existing ? Number(existing.ton_balance || 0) : 0),
+            all_colors_until: Math.max(Number(updatedUser.all_colors_until || 0), existing ? Number(existing.all_colors_until || 0) : 0),
+            all_colors_purchased_at: Math.max(Number(updatedUser.all_colors_purchased_at || 0), existing ? Number(existing.all_colors_purchased_at || 0) : 0),
+            updatedAt: Date.now()
+          };
+          fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          }).catch(() => {});
+        }).catch(() => {});
     }
 
     res.json({ success: true, user: updatedUser });
@@ -315,7 +359,7 @@ app.get('/api/leaderboard', async (req, res) => {
 /**
  * Claim Ad Reward (Rewarded Ads Bonus)
  */
-app.post('/api/ad-reward', (req, res) => {
+app.post('/api/ad-reward', async (req, res) => {
   try {
     const { telegramId, rewardType } = req.body;
     const id = telegramId || 'guest_dev_123';
@@ -326,28 +370,39 @@ app.post('/api/ad-reward', (req, res) => {
       return res.status(429).json({ success: false, error: 'Достигнут дневной лимит просмотра рекламы (50/50).' });
     }
 
-    const updatedUser = db.logAdReward(id, rewardType);
+    let updatedUser = db.logAdReward(id, rewardType);
 
     // Forward sync to global KVDB cloud for real players
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
-      fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(val => {
-          if (val && typeof val === 'object') {
-            val.hints = updatedUser.hints || 0;
-            val.undos = updatedUser.undos || 0;
-            val.reveals = updatedUser.reveals || 0;
-            val.extraBottles = updatedUser.extra_bottles || 0;
-            val.extra_bottles = updatedUser.extra_bottles || 0;
-            val.updatedAt = Date.now();
-            fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(val)
-            }).catch(() => {});
-          }
-        }).catch(() => {});
+      try {
+        const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
+        let val = r.ok ? await r.json() : null;
+        if (!val || typeof val !== 'object') val = { telegramId: String(id) };
+
+        if (rewardType === 'hints') val.hints = (Number(val.hints) || 0) + 1;
+        else if (rewardType === 'undos') val.undos = (Number(val.undos) || 0) + 1;
+        else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') val.reveals = (Number(val.reveals) || 0) + 1;
+        else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') {
+          val.extraBottles = (Number(val.extraBottles || val.extra_bottles) || 0) + 1;
+          val.extra_bottles = val.extraBottles;
+        }
+
+        val.updatedAt = Date.now();
+        await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(val)
+        });
+
+        // Ensure returned updatedUser reflects cloud values
+        updatedUser.hints = Math.max(Number(updatedUser.hints || 0), Number(val.hints || 0));
+        updatedUser.undos = Math.max(Number(updatedUser.undos || 0), Number(val.undos || 0));
+        updatedUser.reveals = Math.max(Number(updatedUser.reveals || 0), Number(val.reveals || 0));
+        const finalB = Math.max(Number(updatedUser.extra_bottles || 0), Number(val.extraBottles || val.extra_bottles || 0));
+        updatedUser.extra_bottles = finalB;
+        updatedUser.extraBottles = finalB;
+      } catch (e) {}
     }
 
     const rewardNames = {
@@ -532,13 +587,40 @@ app.post('/api/wallet/verify-deposit', async (req, res) => {
 /**
  * Buy Shop Item with GRAM
  */
-app.post('/api/shop/buy', (req, res) => {
+app.post('/api/shop/buy', async (req, res) => {
   try {
     const { telegramId, itemId } = req.body;
     const id = telegramId || 'guest_dev_123';
 
     if (!itemId) {
       return res.status(400).json({ success: false, error: 'Не указан ID товара' });
+    }
+
+    // If real player on serverless, sync ton_balance and boosters from KVDB first so purchase check passes
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      try {
+        const kvRes = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
+        if (kvRes.ok) {
+          const kvData = await kvRes.json();
+          if (kvData && typeof kvData === 'object') {
+            const cur = db.getUser(id);
+            if (cur) {
+              const maxBal = Math.max(Number(cur.ton_balance || 0), Number(kvData.ton_balance || 0));
+              const maxH = Math.max(Number(cur.hints || 0), Number(kvData.hints || 0));
+              const maxU = Math.max(Number(cur.undos || 0), Number(kvData.undos || 0));
+              const maxR = Math.max(Number(cur.reveals || 0), Number(kvData.reveals || 0));
+              const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
+              const maxB = Math.max(Number(cur.extra_bottles || 0), Number(kvB || 0));
+              db.prepare(`
+                UPDATE users
+                SET ton_balance = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?
+                WHERE telegram_id = ?
+              `).run(maxBal, maxH, maxU, maxR, maxB, String(id));
+            }
+          }
+        }
+      } catch (e) {}
     }
 
     const result = db.buyShopItem(id, itemId);
@@ -552,26 +634,43 @@ app.post('/api/shop/buy', (req, res) => {
 
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev') && result.user) {
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
-      fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(val => {
-          if (val && typeof val === 'object') {
-            val.hints = result.user.hints || 0;
-            val.undos = result.user.undos || 0;
-            val.reveals = result.user.reveals || 0;
-            val.extraBottles = result.user.extra_bottles || 0;
-            val.extra_bottles = result.user.extra_bottles || 0;
-            val.ton_balance = result.user.ton_balance || 0;
-            val.all_colors_until = result.user.all_colors_until || 0;
-            val.all_colors_purchased_at = result.user.all_colors_purchased_at || 0;
-            val.updatedAt = Date.now();
-            fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(val)
-            }).catch(() => {});
-          }
-        }).catch(() => {});
+      try {
+        const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
+        let val = r.ok ? await r.json() : null;
+        if (!val || typeof val !== 'object') val = { telegramId: String(id) };
+
+        if (itemId === 'bottles_pack_15') {
+          val.extraBottles = (Number(val.extraBottles || val.extra_bottles) || 0) + 15;
+          val.extra_bottles = val.extraBottles;
+        } else if (itemId === 'hints_pack_20') {
+          val.hints = (Number(val.hints) || 0) + 20;
+        } else if (itemId === 'undos_pack_20') {
+          val.undos = (Number(val.undos) || 0) + 20;
+        } else if (itemId === 'reveals_pack_20') {
+          val.reveals = (Number(val.reveals) || 0) + 20;
+        } else if (itemId === 'all_colors_15d') {
+          const now = Date.now();
+          const curr = Number(val.all_colors_until || 0);
+          const base = (curr > now) ? curr : now;
+          val.all_colors_until = base + (15 * 24 * 60 * 60 * 1000);
+          val.all_colors_purchased_at = now;
+        }
+        val.ton_balance = result.user.ton_balance !== undefined ? result.user.ton_balance : (val.ton_balance || 0);
+        val.updatedAt = Date.now();
+        await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(val)
+        });
+
+        // Ensure result.user has accurate values
+        result.user.hints = Math.max(Number(result.user.hints || 0), Number(val.hints || 0));
+        result.user.undos = Math.max(Number(result.user.undos || 0), Number(val.undos || 0));
+        result.user.reveals = Math.max(Number(result.user.reveals || 0), Number(val.reveals || 0));
+        const finalB = Math.max(Number(result.user.extra_bottles || 0), Number(val.extraBottles || val.extra_bottles || 0));
+        result.user.extra_bottles = finalB;
+        result.user.extraBottles = finalB;
+      } catch (e) {}
     }
 
     res.json(result);

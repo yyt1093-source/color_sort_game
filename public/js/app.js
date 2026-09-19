@@ -4507,31 +4507,30 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         if (res.user.all_colors_until !== undefined) currentUser.all_colors_until = res.user.all_colors_until;
         if (res.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = res.user.all_colors_purchased_at;
         
-        const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
-        if (serverB !== undefined) {
-          currentUser.extraBottles = Number(serverB || 0);
-          currentUser.extra_bottles = currentUser.extraBottles;
-        } else if (itemId === 'bottles_pack_15') {
+        if (itemId === 'bottles_pack_15') {
           currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
           currentUser.extra_bottles = currentUser.extraBottles;
+        } else if (serverB !== undefined && Number(serverB) > 0) {
+          currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
+          currentUser.extra_bottles = currentUser.extraBottles;
         }
 
-        if (res.user.hints !== undefined) {
-          currentUser.hints = Number(res.user.hints || 0);
-        } else if (itemId === 'hints_pack_20') {
+        if (itemId === 'hints_pack_20') {
           currentUser.hints = (currentUser.hints || 0) + 20;
+        } else if (res.user.hints !== undefined && Number(res.user.hints) > 0) {
+          currentUser.hints = Math.max(currentUser.hints || 0, Number(res.user.hints || 0));
         }
 
-        if (res.user.undos !== undefined) {
-          currentUser.undos = Number(res.user.undos || 0);
-        } else if (itemId === 'undos_pack_20') {
+        if (itemId === 'undos_pack_20') {
           currentUser.undos = (currentUser.undos || 0) + 20;
+        } else if (res.user.undos !== undefined && Number(res.user.undos) > 0) {
+          currentUser.undos = Math.max(currentUser.undos || 0, Number(res.user.undos || 0));
         }
 
-        if (res.user.reveals !== undefined) {
-          currentUser.reveals = Number(res.user.reveals || 0);
-        } else if (itemId === 'reveals_pack_20') {
+        if (itemId === 'reveals_pack_20') {
           currentUser.reveals = (currentUser.reveals || 0) + 20;
+        } else if (res.user.reveals !== undefined && Number(res.user.reveals) > 0) {
+          currentUser.reveals = Math.max(currentUser.reveals || 0, Number(res.user.reveals || 0));
         }
       } else {
         // Fallback for static GitHub Pages / client-side test
@@ -4923,10 +4922,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       });
 
       if (res && res.success && res.user) {
-        currentUser.extraBottles = res.user.extra_bottles;
-        currentUser.hints = res.user.hints;
-        currentUser.undos = res.user.undos;
-        currentUser.reveals = res.user.reveals;
+        if (res.user.extra_bottles !== undefined) {
+          const eb = Math.max(currentUser.extraBottles || 0, Number(res.user.extra_bottles || 0));
+          currentUser.extraBottles = eb;
+          currentUser.extra_bottles = eb;
+        }
+        if (res.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, Number(res.user.hints || 0));
+        if (res.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, Number(res.user.undos || 0));
+        if (res.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, Number(res.user.reveals || 0));
         claimedCount = res.claimedCount || 1;
       } else {
         // Client-side cloud fallback: identify target items to claim
@@ -7722,12 +7725,44 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
   }
 
-  // 12. Lifecycle handlers: Auto-sync player on app minimization, tab switch, or exit
   const handleAppExitOrHide = () => {
     try {
       if (currentUser && currentUser.telegramId) {
         saveLocalUser();
-        syncPlayerToCloud(currentUser, { keepalive: true });
+        const id = String(currentUser.telegramId);
+        if (id && !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id)) {
+          const payload = {
+            telegramId: id,
+            firstName: currentUser.firstName || 'Игрок',
+            username: currentUser.username || '',
+            photoUrl: currentUser.photoUrl || '',
+            maxLevel: Number(currentUser.maxLevel || 0),
+            level: Number(currentUser.maxLevel || 0),
+            currentLevel: Number(currentUser.currentLevel || 1),
+            stars: Number(currentUser.stars || 0),
+            hints: Number(currentUser.hints || 0),
+            undos: Number(currentUser.undos || 0),
+            reveals: Number(currentUser.reveals || 0),
+            extraBottles: Number(currentUser.extraBottles || 0),
+            extra_bottles: Number(currentUser.extraBottles || 0),
+            ton_balance: Number(currentUser.ton_balance || 0),
+            ton_wallet: currentUser.ton_wallet || '',
+            ton_wallet_type: currentUser.ton_wallet_type || '',
+            ton_deposits_total: Number(currentUser.ton_deposits_total || 0),
+            ton_deposits_count: Number(currentUser.ton_deposits_count || 0),
+            all_colors_until: Number(currentUser.all_colors_until || 0),
+            all_colors_purchased_at: Number(currentUser.all_colors_purchased_at || 0),
+            seasonResetAt: Number(localStorage.getItem('color_sort_season_reset_at') || 0),
+            purchasesResetAt: Number(currentUser.purchasesResetAt || 0),
+            updatedAt: Date.now()
+          };
+          fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true
+          }).catch(() => {});
+        }
       }
     } catch (e) {}
   };
