@@ -158,7 +158,9 @@ app.post('/api/user/init', async (req, res) => {
             const finalB = Math.max(Number(user.extra_bottles || 0), Number(kvB || 0));
             user.extra_bottles = finalB;
             user.extraBottles = finalB;
-            user.ton_balance = Math.max(Number(user.ton_balance || 0), Number(kvData.ton_balance || 0));
+            if (kvData.ton_balance !== undefined) {
+              user.ton_balance = Number(kvData.ton_balance);
+            }
             user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
             user.all_colors_purchased_at = Math.max(Number(user.all_colors_purchased_at || 0), Number(kvData.all_colors_purchased_at || 0));
             if (kvData.ton_wallet && !user.ton_wallet) user.ton_wallet = kvData.ton_wallet;
@@ -240,7 +242,7 @@ app.post('/api/user/sync', (req, res) => {
             reveals: finalReveals,
             extraBottles: finalBottles,
             extra_bottles: finalBottles,
-            ton_balance: Math.max(Number(updatedUser.ton_balance || 0), existing ? Number(existing.ton_balance || 0) : 0),
+            ton_balance: (req.body.ton_balance !== undefined) ? Number(req.body.ton_balance) : Number(updatedUser.ton_balance !== undefined ? updatedUser.ton_balance : (existing ? existing.ton_balance : 0)),
             all_colors_until: Math.max(Number(updatedUser.all_colors_until || 0), existing ? Number(existing.all_colors_until || 0) : 0),
             all_colors_purchased_at: Math.max(Number(updatedUser.all_colors_purchased_at || 0), existing ? Number(existing.all_colors_purchased_at || 0) : 0),
             updatedAt: Date.now()
@@ -606,7 +608,7 @@ app.post('/api/shop/buy', async (req, res) => {
           if (kvData && typeof kvData === 'object') {
             const cur = db.getUser(id);
             if (cur) {
-              const maxBal = Math.max(Number(cur.ton_balance || 0), Number(kvData.ton_balance || 0));
+              const currentBal = (kvData.ton_balance !== undefined) ? Number(kvData.ton_balance) : Number(cur.ton_balance || 0);
               const maxH = Math.max(Number(cur.hints || 0), Number(kvData.hints || 0));
               const maxU = Math.max(Number(cur.undos || 0), Number(kvData.undos || 0));
               const maxR = Math.max(Number(cur.reveals || 0), Number(kvData.reveals || 0));
@@ -616,7 +618,7 @@ app.post('/api/shop/buy', async (req, res) => {
                 UPDATE users
                 SET ton_balance = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?
                 WHERE telegram_id = ?
-              `).run(maxBal, maxH, maxU, maxR, maxB, String(id));
+              `).run(currentBal, maxH, maxU, maxR, maxB, String(id));
             }
           }
         }
