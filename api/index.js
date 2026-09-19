@@ -204,6 +204,28 @@ app.post('/api/ad-reward', (req, res) => {
 
     const updatedUser = db.addBonus(id, bonus);
 
+    // Forward sync to global KVDB cloud for real players
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev') && updatedUser) {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(val => {
+          if (val && typeof val === 'object') {
+            val.hints = updatedUser.hints || 0;
+            val.undos = updatedUser.undos || 0;
+            val.reveals = updatedUser.reveals || 0;
+            val.extraBottles = updatedUser.extra_bottles || 0;
+            val.extra_bottles = updatedUser.extra_bottles || 0;
+            val.updatedAt = Date.now();
+            fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(val)
+            }).catch(() => {});
+          }
+        }).catch(() => {});
+    }
+
     res.json({
       success: true,
       message: `Бонус ${rewardType} успешно начислен!`,
@@ -394,6 +416,30 @@ app.post('/api/shop/buy', (req, res) => {
 
     if (!result.success) {
       return res.status(400).json(result);
+    }
+
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev') && result.user) {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(val => {
+          if (val && typeof val === 'object') {
+            val.hints = result.user.hints || 0;
+            val.undos = result.user.undos || 0;
+            val.reveals = result.user.reveals || 0;
+            val.extraBottles = result.user.extra_bottles || 0;
+            val.extra_bottles = result.user.extra_bottles || 0;
+            val.ton_balance = result.user.ton_balance || 0;
+            val.all_colors_until = result.user.all_colors_until || 0;
+            val.all_colors_purchased_at = result.user.all_colors_purchased_at || 0;
+            val.updatedAt = Date.now();
+            fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(val)
+            }).catch(() => {});
+          }
+        }).catch(() => {});
     }
 
     res.json(result);

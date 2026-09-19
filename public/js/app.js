@@ -2020,22 +2020,18 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
   window.isAllColorsActive = function () {
     if (!currentUser) return false;
+    if (!currentUser.all_colors_until) return false;
 
-    const globalResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
-    const userResetAt = Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || 0);
-    const localResetAt = Math.max(globalResetAt, userResetAt);
+    const userResetAt = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || 0);
     const purchasedAt = Number(currentUser.all_colors_purchased_at || 0);
 
-    if (localResetAt > 0 && (purchasedAt < localResetAt || !purchasedAt)) {
-      if (currentUser.all_colors_until) {
-        currentUser.all_colors_until = 0;
-        currentUser.all_colors_purchased_at = 0;
-        saveLocalUser();
-      }
+    if (userResetAt > 0 && purchasedAt > 0 && purchasedAt < userResetAt) {
+      currentUser.all_colors_until = 0;
+      currentUser.all_colors_purchased_at = 0;
+      saveLocalUser();
       return false;
     }
 
-    if (!currentUser.all_colors_until) return false;
     return Number(currentUser.all_colors_until) > Date.now();
   };
 
@@ -2152,6 +2148,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     user.ton_wallet_type = String(user.ton_wallet_type || user.tonWalletType || '').trim();
     user.ton_deposits_total = Number(user.ton_deposits_total || 0);
     user.ton_deposits_count = Number(user.ton_deposits_count || 0);
+    user.purchasesResetAt = Number(user.purchasesResetAt || user.purchases_reset_at || 0);
+    user.purchases_reset_at = user.purchasesResetAt;
     return user;
   }
 
@@ -2208,6 +2206,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           all_colors_until: Number(user.all_colors_until || 0),
           all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
           seasonResetAt: localSeasonReset,
+          purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
           updatedAt: Date.now()
         };
         fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
@@ -2236,6 +2235,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       ton_wallet: user.ton_wallet,
       ton_wallet_type: user.ton_wallet_type,
       seasonResetAt: localSeasonReset,
+      purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
       starsAdded: 0,
       coinsAdded: 0
     }).catch(() => {});
@@ -2281,6 +2281,11 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         const parsed = JSON.parse(data);
         currentUser = { ...currentUser, ...parsed };
       } catch (e) {}
+    }
+    if (!currentUser.purchasesResetAt) {
+      const storedReset = Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || localStorage.getItem('color_sort_gram_reset_at') || 0);
+      currentUser.purchasesResetAt = storedReset;
+      currentUser.purchases_reset_at = storedReset;
     }
     normalizeUserObject(currentUser);
   }
@@ -2516,30 +2521,22 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             }
             let changed = false;
 
-            const localResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
-            const userResetAt = Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || 0);
             const cloudResetAt = Number(cloudData.purchasesResetAt || cloudData.purchases_reset_at || 0);
-            const activePurchasesResetAt = Math.max(localResetAt, userResetAt, cloudResetAt);
+            const userCurrentReset = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || 0);
 
-            const lastPurchased = Math.max(
-              Number(currentUser.all_colors_purchased_at || 0),
-              Number(cloudData.all_colors_purchased_at || 0)
-            );
-
-            const hasActivePurchasesReset = activePurchasesResetAt > 0 && (lastPurchased < activePurchasesResetAt || !lastPurchased);
-
-            if (hasActivePurchasesReset) {
-              if (currentUser.hints !== 0 || currentUser.undos !== 0 || currentUser.reveals !== 0 || currentUser.extraBottles !== 0 || currentUser.all_colors_until !== 0) {
-                currentUser.hints = 0;
-                currentUser.undos = 0;
-                currentUser.reveals = 0;
-                currentUser.extraBottles = 0;
-                currentUser.extra_bottles = 0;
-                currentUser.shuffles = 0;
-                currentUser.all_colors_until = 0;
-                currentUser.all_colors_purchased_at = 0;
-                changed = true;
-              }
+            if (cloudResetAt > 0 && cloudResetAt > userCurrentReset) {
+              currentUser.hints = 0;
+              currentUser.undos = 0;
+              currentUser.reveals = 0;
+              currentUser.extraBottles = 0;
+              currentUser.extra_bottles = 0;
+              currentUser.shuffles = 0;
+              currentUser.all_colors_until = 0;
+              currentUser.all_colors_purchased_at = 0;
+              currentUser.purchasesResetAt = cloudResetAt;
+              currentUser.purchases_reset_at = cloudResetAt;
+              localStorage.setItem('color_sort_gram_reset_at', String(cloudResetAt));
+              changed = true;
             } else {
               if (cloudData.hints !== undefined) {
                 const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
@@ -2742,18 +2739,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
       const oldLevel = currentUser.currentLevel;
       const serverPurchasesReset = Number(serverUser.purchasesResetAt || serverUser.purchases_reset_at || (serverUser.user && (serverUser.user.purchasesResetAt || serverUser.user.purchases_reset_at)) || 0);
-      const localPurchasesReset = Math.max(
-        Number(localStorage.getItem('color_sort_gram_reset_at') || 0),
-        Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || 0),
-        serverPurchasesReset
-      );
-      const lastPurchasedAt = Math.max(
-        Number(currentUser.all_colors_purchased_at || 0),
-        Number(serverUser.user.all_colors_purchased_at || 0)
-      );
-      const isPurchasesReset = localPurchasesReset > 0 && (lastPurchasedAt < localPurchasesReset || !lastPurchasedAt);
+      const userCurrentReset = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || 0);
 
-      if (isPurchasesReset) {
+      if (serverPurchasesReset > 0 && serverPurchasesReset > userCurrentReset) {
         currentUser.hints = 0;
         currentUser.undos = 0;
         currentUser.reveals = 0;
@@ -2762,6 +2750,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.shuffles = 0;
         currentUser.all_colors_until = 0;
         currentUser.all_colors_purchased_at = 0;
+        currentUser.purchasesResetAt = serverPurchasesReset;
+        currentUser.purchases_reset_at = serverPurchasesReset;
+        localStorage.setItem('color_sort_gram_reset_at', String(serverPurchasesReset));
       } else {
         if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints || 0);
         if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos || 0);
@@ -3028,21 +3019,22 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         }
 
         const localResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
-        if (resetAt > 0 && resetAt > localResetAt) {
+        const userCurrentReset = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || localResetAt || 0);
+        if (resetAt > 0 && resetAt > userCurrentReset) {
           localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
-          const lastPurchased = Number(currentUser.all_colors_purchased_at || 0);
-          if (!lastPurchased || lastPurchased < resetAt) {
-            currentUser.all_colors_until = 0;
-            currentUser.all_colors_purchased_at = 0;
-            currentUser.hints = 0;
-            currentUser.undos = 0;
-            currentUser.reveals = 0;
-            currentUser.extraBottles = 0;
-            currentUser.extra_bottles = 0;
-            currentUser.shuffles = 0;
-            saveLocalUser();
-            updateShopUI();
-            updateHeaderUI();
+          currentUser.purchasesResetAt = resetAt;
+          currentUser.purchases_reset_at = resetAt;
+          currentUser.all_colors_until = 0;
+          currentUser.all_colors_purchased_at = 0;
+          currentUser.hints = 0;
+          currentUser.undos = 0;
+          currentUser.reveals = 0;
+          currentUser.extraBottles = 0;
+          currentUser.extra_bottles = 0;
+          currentUser.shuffles = 0;
+          saveLocalUser();
+          updateShopUI();
+          updateHeaderUI();
 
             const revealBadgeEl = document.getElementById('revealBadge');
             if (revealBadgeEl) { revealBadgeEl.textContent = '0'; revealBadgeEl.classList.add('badge-zero'); }
@@ -5703,7 +5695,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
       try {
         const nowTs = Date.now();
-        localStorage.setItem('color_sort_gram_reset_at', String(nowTs));
         localStorage.setItem(`color_sort_user_purchases_reset_${myId}`, String(nowTs));
 
         // 1. Call server API to reset admin's purchases in SQLite DB
