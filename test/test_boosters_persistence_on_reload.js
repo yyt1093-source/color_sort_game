@@ -65,25 +65,15 @@ const serverUser = {
   user: db.getUser(pId)
 };
 
-// Apply the fixed /api/user/init client-side sync logic
-const userCurrentReset = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || 0);
-if (serverPurchasesReset > 0 && serverPurchasesReset > userCurrentReset) {
-  currentUser.hints = 0;
-  currentUser.undos = 0;
-  currentUser.reveals = 0;
-  currentUser.extraBottles = 0;
-  currentUser.extra_bottles = 0;
-  currentUser.purchasesResetAt = serverPurchasesReset;
-} else {
-  if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints || 0);
-  if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos || 0);
-  if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, serverUser.user.reveals || 0);
-  const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
-  if (serverB !== undefined) {
-    const maxB = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(serverB || 0));
-    currentUser.extraBottles = maxB;
-    currentUser.extra_bottles = maxB;
-  }
+// Apply the fixed /api/user/init client-side sync logic (safe merge, no destructive resets)
+if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, Number(serverUser.user.hints || 0));
+if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, Number(serverUser.user.undos || 0));
+if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, Number(serverUser.user.reveals || 0));
+const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
+if (serverB !== undefined) {
+  const maxB = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(serverB || 0));
+  currentUser.extraBottles = maxB;
+  currentUser.extra_bottles = maxB;
 }
 
 // Verify that boosters DID NOT disappear on reload
@@ -127,16 +117,10 @@ const serverUser2 = {
   user: db.getUser(pId)
 };
 
-const userCurrentReset2 = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || 0);
-if (serverPurchasesReset > 0 && serverPurchasesReset > userCurrentReset2) {
-  currentUser.hints = 0;
-  currentUser.extraBottles = 0;
-} else {
-  if (serverUser2.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser2.user.hints || 0);
-  const serverB = serverUser2.user.extra_bottles !== undefined ? serverUser2.user.extra_bottles : serverUser2.user.extraBottles;
-  if (serverB !== undefined) {
-    currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
-  }
+if (serverUser2.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, Number(serverUser2.user.hints || 0));
+const serverB2 = serverUser2.user.extra_bottles !== undefined ? serverUser2.user.extra_bottles : serverUser2.user.extraBottles;
+if (serverB2 !== undefined) {
+  currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB2 || 0));
 }
 
 assert.strictEqual(currentUser.hints, 20, 'Hints must remain 20 on second reload');

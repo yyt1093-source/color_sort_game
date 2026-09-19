@@ -2021,17 +2021,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   window.isAllColorsActive = function () {
     if (!currentUser) return false;
     if (!currentUser.all_colors_until) return false;
-
-    const userResetAt = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || 0);
-    const purchasedAt = Number(currentUser.all_colors_purchased_at || 0);
-
-    if (userResetAt > 0 && purchasedAt > 0 && purchasedAt < userResetAt) {
-      currentUser.all_colors_until = 0;
-      currentUser.all_colors_purchased_at = 0;
-      saveLocalUser();
-      return false;
-    }
-
     return Number(currentUser.all_colors_until) > Date.now();
   };
 
@@ -2521,27 +2510,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             }
             let changed = false;
 
-            const cloudResetAt = Number(cloudData.purchasesResetAt || cloudData.purchases_reset_at || 0);
-            const userCurrentReset = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || 0);
-
-            if (cloudResetAt > 0 && cloudResetAt > userCurrentReset) {
-              currentUser.hints = 0;
-              currentUser.undos = 0;
-              currentUser.reveals = 0;
-              currentUser.extraBottles = 0;
-              currentUser.extra_bottles = 0;
-              currentUser.shuffles = 0;
-              currentUser.all_colors_until = 0;
-              currentUser.all_colors_purchased_at = 0;
-              currentUser.purchasesResetAt = cloudResetAt;
-              currentUser.purchases_reset_at = cloudResetAt;
-              localStorage.setItem('color_sort_gram_reset_at', String(cloudResetAt));
-              changed = true;
-            } else {
-              if (cloudData.hints !== undefined) {
-                const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
-                if (h !== currentUser.hints) { currentUser.hints = h; changed = true; }
-              }
+            if (cloudData.hints !== undefined) {
+              const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
+              if (h !== currentUser.hints) { currentUser.hints = h; changed = true; }
+            }
               if (cloudData.undos !== undefined) {
                 const u = Math.max(currentUser.undos || 0, Number(cloudData.undos || 0));
                 if (u !== currentUser.undos) { currentUser.undos = u; changed = true; }
@@ -2563,7 +2535,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
                 const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
                 if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
               }
-            }
 
             if (cloudData.ton_balance !== undefined) {
               const tb = Math.max(Number(currentUser.ton_balance || 0), Number(cloudData.ton_balance || 0));
@@ -2738,34 +2709,17 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         return;
       }
       const oldLevel = currentUser.currentLevel;
-      const serverPurchasesReset = Number(serverUser.purchasesResetAt || serverUser.purchases_reset_at || (serverUser.user && (serverUser.user.purchasesResetAt || serverUser.user.purchases_reset_at)) || 0);
-      const userCurrentReset = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || 0);
-
-      if (serverPurchasesReset > 0 && serverPurchasesReset > userCurrentReset) {
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        currentUser.extra_bottles = 0;
-        currentUser.shuffles = 0;
-        currentUser.all_colors_until = 0;
-        currentUser.all_colors_purchased_at = 0;
-        currentUser.purchasesResetAt = serverPurchasesReset;
-        currentUser.purchases_reset_at = serverPurchasesReset;
-        localStorage.setItem('color_sort_gram_reset_at', String(serverPurchasesReset));
-      } else {
-        if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, serverUser.user.hints || 0);
-        if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, serverUser.user.undos || 0);
-        if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, serverUser.user.reveals || 0);
-        const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
-        if (serverB !== undefined) {
-          const maxB = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(serverB || 0));
-          currentUser.extraBottles = maxB;
-          currentUser.extra_bottles = maxB;
-        }
-        if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, serverUser.user.all_colors_until || 0);
-        if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, serverUser.user.all_colors_purchased_at || 0);
+      if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, Number(serverUser.user.hints || 0));
+      if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, Number(serverUser.user.undos || 0));
+      if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, Number(serverUser.user.reveals || 0));
+      const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
+      if (serverB !== undefined) {
+        const maxB = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(serverB || 0));
+        currentUser.extraBottles = maxB;
+        currentUser.extra_bottles = maxB;
       }
+      if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, Number(serverUser.user.all_colors_until || 0));
+      if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, Number(serverUser.user.all_colors_purchased_at || 0));
       if (serverUser.user.ton_balance !== undefined) currentUser.ton_balance = Math.max(currentUser.ton_balance || 0, serverUser.user.ton_balance || 0);
       if (serverUser.user.ton_wallet !== undefined) currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
       if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
@@ -2993,71 +2947,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       console.warn('[Season Reset Check Error]', err);
     }
 
-    // Also check purchases reset if season was not reset
-    if (!wasReset) {
-      try {
-        await checkGlobalPurchasesReset();
-      } catch (e) {}
-    }
-
     return wasReset;
-  }
-
-  async function checkGlobalPurchasesReset() {
-    try {
-      const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_gram_purchases_reset`, {
-        signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(3000) : undefined
-      });
-      if (res.ok) {
-        const rawText = await res.text();
-        let resetAt = 0;
-        try {
-          const data = JSON.parse(rawText);
-          resetAt = Number(data.resetAt || data) || 0;
-        } catch (e) {
-          resetAt = Number(rawText) || 0;
-        }
-
-        const localResetAt = Number(localStorage.getItem('color_sort_gram_reset_at') || 0);
-        const userCurrentReset = Number(currentUser.purchasesResetAt || currentUser.purchases_reset_at || localResetAt || 0);
-        if (resetAt > 0 && resetAt > userCurrentReset) {
-          localStorage.setItem('color_sort_gram_reset_at', String(resetAt));
-          currentUser.purchasesResetAt = resetAt;
-          currentUser.purchases_reset_at = resetAt;
-          currentUser.all_colors_until = 0;
-          currentUser.all_colors_purchased_at = 0;
-          currentUser.hints = 0;
-          currentUser.undos = 0;
-          currentUser.reveals = 0;
-          currentUser.extraBottles = 0;
-          currentUser.extra_bottles = 0;
-          currentUser.shuffles = 0;
-          saveLocalUser();
-          updateShopUI();
-          updateHeaderUI();
-
-            const revealBadgeEl = document.getElementById('revealBadge');
-            if (revealBadgeEl) { revealBadgeEl.textContent = '0'; revealBadgeEl.classList.add('badge-zero'); }
-            const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
-            if (extraBottleBadgeEl) { extraBottleBadgeEl.textContent = '0'; extraBottleBadgeEl.classList.add('badge-zero'); }
-            const hintBadgeEl = document.getElementById('hintBadge');
-            if (hintBadgeEl) { hintBadgeEl.textContent = '0'; hintBadgeEl.classList.add('badge-zero'); }
-            const undoBadgeEl = document.getElementById('undoBadge');
-            if (undoBadgeEl) { undoBadgeEl.textContent = '0'; undoBadgeEl.classList.add('badge-zero'); }
-
-            if (engine && engine.bottles && engine.revealed && !engine.isAnimating) {
-              engine.revealed = engine.bottles.map(b => {
-                if (!b || b.length === 0) return [];
-                const rev = new Array(b.length).fill(false);
-                rev[b.length - 1] = true;
-                return rev;
-              });
-              if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
-            }
-          }
-        }
-      }
-    } catch (e) {}
   }
 
   // Realtime active watchdog while playing (every 30 seconds, throttled)
