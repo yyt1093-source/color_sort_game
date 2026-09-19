@@ -5002,13 +5002,15 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             <div class="referral-item-row">
               <div class="referral-item-left">
                 <div class="referral-item-avatar">👤</div>
-                <div>
-                  <strong class="referral-item-name">${escapeHtml(displayName)}</strong>
-                  ${usernameDisplay ? `<span class="referral-item-username">${escapeHtml(usernameDisplay)}</span>` : ''}
+                <div class="referral-item-info">
+                  <div class="referral-item-header">
+                    <strong class="referral-item-name">${escapeHtml(displayName)}</strong>
+                    ${usernameDisplay ? `<span class="referral-item-username">${escapeHtml(usernameDisplay)}</span>` : ''}
+                  </div>
+                  <div class="referral-item-status-row">
+                    ${statusHtml}
+                  </div>
                 </div>
-              </div>
-              <div class="referral-item-right">
-                ${statusHtml}
               </div>
             </div>
           `;
