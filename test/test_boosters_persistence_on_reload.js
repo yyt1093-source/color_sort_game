@@ -127,4 +127,71 @@ assert.strictEqual(currentUser.hints, 20, 'Hints must remain 20 on second reload
 assert.strictEqual(currentUser.extraBottles, 15, 'Extra bottles must remain 15 on second reload');
 console.log('✅ Boosters correctly maintained after second reload!');
 
+// 7. Simulate Phone Reboot / Cache Cleared with Season Reset Timestamp Active
+console.log('\n--- Step 6: Phone Reboot / Cache Cleared + Season Reset Simulation ---');
+// Phone reboot means localStorage is empty:
+let rebootedUser = {
+  telegramId: pId,
+  hints: 0,
+  undos: 0,
+  reveals: 0,
+  extraBottles: 0,
+  extra_bottles: 0,
+  currentLevel: 1,
+  maxLevel: 0,
+  stars: 0
+};
+const localSeasonReset = 0; // fresh reboot, no localStorage
+const serverSeasonReset = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 1789850020025;
+
+// Season reset triggers: levels/stars reset, but BOOSTERS ARE NOT ZEROED!
+if (serverSeasonReset > localSeasonReset) {
+  rebootedUser.currentLevel = 1;
+  rebootedUser.maxLevel = 0;
+  rebootedUser.stars = 0;
+  // NOTE: boosters are preserved!
+}
+
+// Server init returns DB user
+const initResponse = {
+  success: true,
+  seasonResetAt: serverSeasonReset,
+  user: db.getUser(pId)
+};
+
+// Client merges with server user
+if (initResponse.user.hints !== undefined) rebootedUser.hints = Math.max(rebootedUser.hints || 0, Number(initResponse.user.hints || 0));
+if (initResponse.user.undos !== undefined) rebootedUser.undos = Math.max(rebootedUser.undos || 0, Number(initResponse.user.undos || 0));
+if (initResponse.user.reveals !== undefined) rebootedUser.reveals = Math.max(rebootedUser.reveals || 0, Number(initResponse.user.reveals || 0));
+const rebootB = initResponse.user.extra_bottles !== undefined ? initResponse.user.extra_bottles : initResponse.user.extraBottles;
+if (rebootB !== undefined) {
+  rebootedUser.extraBottles = Math.max(rebootedUser.extraBottles || 0, Number(rebootB || 0));
+  rebootedUser.extra_bottles = rebootedUser.extraBottles;
+}
+
+assert.strictEqual(rebootedUser.hints, 20, 'Hints MUST survive phone reboot!');
+assert.strictEqual(rebootedUser.extraBottles, 15, 'Extra bottles MUST survive phone reboot!');
+assert.strictEqual(rebootedUser.reveals, 19, 'Reveals MUST survive phone reboot!');
+assert.strictEqual(rebootedUser.undos, 19, 'Undos MUST survive phone reboot!');
+console.log('✅ Boosters 100% preserved after phone reboot and season reset!');
+
+// 8. Verify that general progress sync (/api/user/sync) NEVER reduces boosters in DB
+console.log('\n--- Step 7: General Progress Sync (Level Won) does NOT reduce boosters ---');
+db.updateUserProgress(pId, {
+  currentLevel: 2,
+  maxLevel: 1,
+  starsAdded: 3,
+  hintsUsed: 0,
+  undosUsed: 0,
+  revealsUsed: 0,
+  extraBottlesUsed: 0
+});
+
+const userAfterGeneralSync = db.getUser(pId);
+assert.strictEqual(userAfterGeneralSync.hints, 20, 'Hints MUST NOT be reduced by general progress sync!');
+assert.strictEqual(userAfterGeneralSync.extra_bottles, 15, 'Extra bottles MUST NOT be reduced by general progress sync!');
+assert.strictEqual(userAfterGeneralSync.reveals, 19, 'Reveals MUST NOT be reduced by general progress sync!');
+assert.strictEqual(userAfterGeneralSync.undos, 19, 'Undos MUST NOT be reduced by general progress sync!');
+console.log('✅ General progress sync does NOT reduce boosters in DB!');
+
 console.log('\n🎉 ALL BOOSTERS PERSISTENCE TESTS PASSED SUCCESSFULLY!');

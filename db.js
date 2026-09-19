@@ -429,23 +429,17 @@ function getSeasonResetTimestamp() {
 
 function resetSeason(resetTimestamp = Date.now()) {
   try {
-    // Reset player scores, levels, boosters, and perks to 0/0, but PRESERVE user accounts, wallets, and referral records!
+    // Reset player scores and levels to 0/1, but PRESERVE user boosters, purchases, wallets, and referral records!
     db.exec(`
       UPDATE users 
       SET current_level = 1,
           max_level = 0,
           stars = 0,
           coins = 0,
-          hints = 0,
-          undos = 0,
-          reveals = 0,
-          extra_bottles = 0,
-          shuffles = 0,
           total_moves = 0,
           updated_at = datetime('now');
     `);
-    db.exec('DELETE FROM ad_rewards_log;');
-    // NOTE: shop_purchases, all_colors_until, ton_wallet, ton_balance, memo_code, and referrals are STRICTLY PRESERVED
+    // NOTE: hints, undos, reveals, extra_bottles, shop_purchases, ad_rewards_log, all_colors_until, ton_wallet, ton_balance, memo_code, and referrals are STRICTLY PRESERVED
 
     try {
       db.prepare(`

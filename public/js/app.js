@@ -2207,19 +2207,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       } catch (e) {}
     }
 
-    // 2. Also send to Express API if available
-    apiCall('/api/user/sync', 'POST', {
+    // 2. Also send to Express API if available (only send boosters if > 0 to never overwrite server inventory with 0)
+    const syncPayload = {
       telegramId: user.telegramId,
       firstName: user.firstName,
       username: user.username,
       photoUrl: user.photoUrl,
       currentLevel: user.currentLevel,
       maxLevel: maxLvl,
-      hints: user.hints,
-      undos: user.undos,
-      reveals: user.reveals,
-      extraBottles: user.extraBottles,
-      extra_bottles: user.extraBottles,
       ton_balance: user.ton_balance,
       ton_wallet: user.ton_wallet,
       ton_wallet_type: user.ton_wallet_type,
@@ -2227,7 +2222,15 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
       starsAdded: 0,
       coinsAdded: 0
-    }).catch(() => {});
+    };
+    if (user.hints > 0) syncPayload.hints = user.hints;
+    if (user.undos > 0) syncPayload.undos = user.undos;
+    if (user.reveals > 0) syncPayload.reveals = user.reveals;
+    if (user.extraBottles > 0) {
+      syncPayload.extraBottles = user.extraBottles;
+      syncPayload.extra_bottles = user.extraBottles;
+    }
+    apiCall('/api/user/sync', 'POST', syncPayload).catch(() => {});
   }
 
   async function apiCall(endpoint, method = 'GET', body = null) {
@@ -2496,17 +2499,15 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             const cloudSeason = Number(cloudData.seasonResetAt || 0);
             const cloudTime = Number(cloudData.updatedAt || cloudData.seasonResetAt || 0);
             if (localReset > 0 && (cloudSeason < localReset || (cloudTime > 0 && cloudTime < localReset))) {
-              // Stale record from previous season - reset local state to clean Level 0 and sync
+              // Stale record from previous season - reset local level/stars, but preserve all boosters!
               currentUser.currentLevel = 1;
               currentUser.maxLevel = 0;
               currentUser.level = 0;
               currentUser.stars = 0;
               currentUser.seasonResetAt = localReset;
               saveLocalUser();
-              syncPlayerToCloud(currentUser);
               updateHeaderUI();
               loadCurrentLevel();
-              return;
             }
             let changed = false;
 
@@ -2695,18 +2696,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.maxLevel = 0;
         currentUser.stars = 0;
         currentUser.coins = 0;
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        currentUser.extra_bottles = 0;
-        // NOTE: all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
+        // NOTE: hints, undos, reveals, extraBottles, all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
         currentUser.season_reset_at = serverReset;
         saveLocalUser();
         updateHeaderUI();
         updateShopUI();
         loadCurrentLevel();
-        return;
       }
       const oldLevel = currentUser.currentLevel;
       if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, Number(serverUser.user.hints || 0));
@@ -2765,12 +2760,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     currentUser.currentLevel = 1;
     currentUser.stars = 0;
     currentUser.coins = 0;
-    currentUser.hints = 0;
-    currentUser.undos = 0;
-    currentUser.reveals = 0;
-    currentUser.extraBottles = 0;
-    currentUser.extra_bottles = 0;
-    // NOTE: all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
+    // NOTE: hints, undos, reveals, extraBottles, all_colors_until, ton_wallet, ton_balance, memo_code and referrals are PRESERVED!
     currentUser.seasonResetAt = resetTimestamp;
     currentUser.season_reset_at = resetTimestamp;
 
@@ -2780,29 +2770,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     updateShopUI();
     updateTonWalletUI();
 
-    // Clear toolbar badges explicitly
-    const revealBadgeEl = document.getElementById('revealBadge');
-    if (revealBadgeEl) {
-      revealBadgeEl.textContent = '0';
-      revealBadgeEl.classList.add('badge-zero');
-    }
-    const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
-    if (extraBottleBadgeEl) {
-      extraBottleBadgeEl.textContent = '0';
-      extraBottleBadgeEl.classList.add('badge-zero');
-    }
-    const hintBadgeEl = document.getElementById('hintBadge');
-    if (hintBadgeEl) {
-      hintBadgeEl.textContent = '0';
-      hintBadgeEl.classList.add('badge-zero');
-    }
-    const undoBadgeEl = document.getElementById('undoBadge');
-    if (undoBadgeEl) {
-      undoBadgeEl.textContent = '0';
-      undoBadgeEl.classList.add('badge-zero');
-    }
-
-    // 3. Push Level 0 directly to Cloud DB immediately
+    // 3. Push Level 0 directly to Cloud DB immediately (preserving boosters)
     if (currentUser.telegramId) {
       const pid = String(currentUser.telegramId);
       if (!pid.startsWith('guest') && !pid.startsWith('dev') && /^\d+$/.test(pid)) {
@@ -2816,11 +2784,11 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             level: 0,
             currentLevel: 1,
             stars: 0,
-            hints: 0,
-            undos: 0,
-            reveals: 0,
-            extraBottles: 0,
-            extra_bottles: 0,
+            hints: Number(currentUser.hints || 0),
+            undos: Number(currentUser.undos || 0),
+            reveals: Number(currentUser.reveals || 0),
+            extraBottles: Number(currentUser.extraBottles || 0),
+            extra_bottles: Number(currentUser.extraBottles || 0),
             ton_balance: Number(currentUser.ton_balance || 0),
             ton_wallet: currentUser.ton_wallet || '',
             memo_code: currentUser.memo_code || '',
@@ -5897,12 +5865,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         currentUser.maxLevel = 0;
         currentUser.stars = 0;
         currentUser.coins = 0;
-        currentUser.hints = 0;
-        currentUser.undos = 0;
-        currentUser.reveals = 0;
-        currentUser.extraBottles = 0;
-        currentUser.extra_bottles = 0;
-        // Покупки (all_colors_until) и кошелек (ton_balance, ton_wallet) НЕ трогаем!
+        // Покупки (hints, undos, reveals, extraBottles, all_colors_until) и кошелек (ton_balance, ton_wallet) НЕ трогаем!
         currentUser.season_reset_at = resetTimestamp;
         currentUser.seasonResetAt = resetTimestamp;
 
@@ -5910,28 +5873,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         updateHeaderUI();
         updateShopUI();
         updateTonWalletUI();
-
-        // Очищаем бейджи на тулбаре
-        const revealBadgeEl = document.getElementById('revealBadge');
-        if (revealBadgeEl) {
-          revealBadgeEl.textContent = '0';
-          revealBadgeEl.classList.add('badge-zero');
-        }
-        const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
-        if (extraBottleBadgeEl) {
-          extraBottleBadgeEl.textContent = '0';
-          extraBottleBadgeEl.classList.add('badge-zero');
-        }
-        const hintBadgeEl = document.getElementById('hintBadge');
-        if (hintBadgeEl) {
-          hintBadgeEl.textContent = '0';
-          hintBadgeEl.classList.add('badge-zero');
-        }
-        const undoBadgeEl = document.getElementById('undoBadge');
-        if (undoBadgeEl) {
-          undoBadgeEl.textContent = '0';
-          undoBadgeEl.classList.add('badge-zero');
-        }
 
         // Перезагрузка 1-го уровня на игровом поле (игрок начинает с Уровня 0)
         if (levelDisplay) levelDisplay.textContent = '0';
