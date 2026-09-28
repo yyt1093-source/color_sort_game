@@ -22,7 +22,9 @@ assert(html.includes('id="tgChannelThumb"'), 'tgChannelThumb must exist in index
 assert(html.includes('id="tgCardCyberFarm"'), 'tgCardCyberFarm must exist in index.html');
 assert(html.includes('href="https://t.me/cyberfarmk"'), 'Link to https://t.me/cyberfarmk must exist');
 assert(html.includes('src="assets/cyberfarm.jpg"'), 'assets/cyberfarm.jpg image must exist in index.html');
-assert(html.includes('id="tgBadgeCyberFarm"'), 'tgBadgeCyberFarm must exist in index.html');
+assert(!html.includes('id="tgBadgeCyberFarm"'), 'tgBadgeCyberFarm must be removed from index.html');
+assert(!html.includes('ОФИЦИАЛЬНЫЙ'), 'ОФИЦИАЛЬНЫЙ badge text must be removed from index.html');
+assert(!html.includes('НАШ ПРОЕКТ'), 'НАШ ПРОЕКТ badge text must be removed from index.html');
 assert(html.includes('id="tgBtnCyberFarm"'), 'tgBtnCyberFarm must exist in index.html');
 assert(html.includes('id="tgLinkCyberFarm"'), 'tgLinkCyberFarm must exist in index.html');
 
