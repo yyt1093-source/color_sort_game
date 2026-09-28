@@ -308,8 +308,10 @@ async function initColorSortApp() {
       adminWalletDetailsTitle: "👛 Кошелёк игрока",
       adminWalletNoDeposits: "Подтверждённых пополнений пока нет",
       adminWalletBackBtn: "← Назад к списку кошельков",
-      tgChannelTitle: "Telegram-канал",
-      tgChannelBadge: "Официальный",
+      tgChannelTitle: "Telegram–канал",
+      officialBadge: "Официальный",
+      ourProject: "Наш проект",
+      tgChannelBadge: "Наш проект",
       tgChannelSub: "Новости, обновления и промокоды",
       tgChannelJoinBtn: "Перейти в канал",
       referralSectionTitle: "Color Sort",
@@ -566,8 +568,10 @@ async function initColorSortApp() {
       adminWalletDetailsTitle: "👛 Гаманець гравця",
       adminWalletNoDeposits: "Підтверджених поповнень поки немає",
       adminWalletBackBtn: "← Назад до списку гаманців",
-      tgChannelTitle: "Telegram-канал",
-      tgChannelBadge: "Офіційний",
+      tgChannelTitle: "Telegram–канал",
+      officialBadge: "Офіційний",
+      ourProject: "Наш проєкт",
+      tgChannelBadge: "Наш проєкт",
       tgChannelSub: "Новини, оновлення та промокоди",
       tgChannelJoinBtn: "Перейти до каналу",
       referralSectionTitle: "Color Sort",
@@ -804,9 +808,11 @@ async function initColorSortApp() {
       adminWalletNoDeposits: "No confirmed deposits yet",
       adminWalletBackBtn: "← Back to wallets list",
       tgChannelTitle: "Telegram Channel",
-      tgChannelBadge: "Official",
+      officialBadge: "Official",
+      ourProject: "Our project",
+      tgChannelBadge: "Our project",
       tgChannelSub: "News, updates and promo codes",
-      tgChannelJoinBtn: "Open Channel",
+      tgChannelJoinBtn: "Join Channel",
       referralSectionTitle: "Color Sort",
       referralSectionSub: "For each invitee — 5 undos, 5 hints, 5 color reveals, and 5 empty jars",
       shareReferralTelegramBtn: "📢 Invite in Telegram",
@@ -1041,7 +1047,9 @@ async function initColorSortApp() {
       adminWalletNoDeposits: "Noch keine bestätigten Einzahlungen",
       adminWalletBackBtn: "← Zurück zur Wallet-Liste",
       tgChannelTitle: "Telegram-Kanal",
-      tgChannelBadge: "Offiziell",
+      officialBadge: "Offiziell",
+      ourProject: "Unser Projekt",
+      tgChannelBadge: "Unser Projekt",
       tgChannelSub: "Neuigkeiten, Updates & Codes",
       tgChannelJoinBtn: "Kanal öffnen",
       referralSectionTitle: "Color Sort",
@@ -1278,7 +1286,9 @@ async function initColorSortApp() {
       adminWalletNoDeposits: "Patvirtintų papildymų kol kas nėra",
       adminWalletBackBtn: "← Atgal į piniginių sąrašą",
       tgChannelTitle: "Telegram kanalas",
-      tgChannelBadge: "Oficialus",
+      officialBadge: "Oficialus",
+      ourProject: "Mūsų projektas",
+      tgChannelBadge: "Mūsų projektas",
       tgChannelSub: "Naujienos, atnaujinimai ir kodai",
       tgChannelJoinBtn: "Atidaryti kanalą",
       referralSectionTitle: "Color Sort",
@@ -1736,15 +1746,22 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     const profileAdminBadge = document.getElementById('profileAdminBadge');
     if (profileAdminBadge) profileAdminBadge.title = t('adminBadge');
 
-    // Telegram Channel Section
+    // Telegram Channel Section (Cyber Farm & Color Sort)
+    const tgTitles = document.querySelectorAll('.tg-channel-title-i18n');
+    tgTitles.forEach(el => { el.textContent = t('tgChannelTitle') || 'Telegram–канал'; });
     const tgChannelTitle = document.getElementById('tgChannelTitle');
-    if (tgChannelTitle) tgChannelTitle.textContent = t('tgChannelTitle');
+    if (tgChannelTitle) tgChannelTitle.textContent = t('tgChannelTitle') || 'Telegram–канал';
+
+    const tgBadgeCyberFarm = document.getElementById('tgBadgeCyberFarm');
+    if (tgBadgeCyberFarm) tgBadgeCyberFarm.textContent = (t('officialBadge') || 'ОФИЦИАЛЬНЫЙ').toUpperCase();
+
     const tgChannelBadge = document.getElementById('tgChannelBadge');
-    if (tgChannelBadge) tgChannelBadge.textContent = t('tgChannelBadge');
-    const tgChannelSub = document.getElementById('tgChannelSub');
-    if (tgChannelSub) tgChannelSub.textContent = t('tgChannelSub');
+    if (tgChannelBadge) tgChannelBadge.textContent = (t('ourProject') || 'НАШ ПРОЕКТ').toUpperCase();
+
+    const tgJoinTexts = document.querySelectorAll('.tg-channel-join-text');
+    tgJoinTexts.forEach(el => { el.textContent = t('tgChannelJoinBtn') || 'Перейти в канал'; });
     const telegramChannelJoinBtnText = document.getElementById('telegramChannelJoinBtnText');
-    if (telegramChannelJoinBtnText) telegramChannelJoinBtnText.textContent = t('tgChannelJoinBtn');
+    if (telegramChannelJoinBtnText) telegramChannelJoinBtnText.textContent = t('tgChannelJoinBtn') || 'Перейти в канал';
 
     // Referral Section
     const referralSectionTitleEl = document.getElementById('referralSectionTitle');
@@ -5031,15 +5048,20 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
   }
 
-  // Telegram Channel Link & Join Button Handlers
-  function openSortColorsTelegramChannel(e) {
+  // Telegram Channel Link & Join Button Handlers (Cyber Farm & Color Sort)
+  function openTelegramChannelUrl(channelUrl, e) {
     if (e && e.cancelable) {
       e.preventDefault();
     }
     if (e) {
       e.stopPropagation();
     }
-    const channelUrl = 'https://t.me/sortcolors';
+
+    try {
+      if (navigator.clipboard && channelUrl) {
+        navigator.clipboard.writeText(channelUrl).catch(() => {});
+      }
+    } catch (_) {}
 
     // Haptic vibration feedback for Telegram Mini App
     try {
@@ -5079,6 +5101,44 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
   }
 
+  function openSortColorsTelegramChannel(e) {
+    openTelegramChannelUrl('https://t.me/sortcolors', e);
+  }
+
+  function openCyberFarmTelegramChannel(e) {
+    openTelegramChannelUrl('https://t.me/cyberfarmk', e);
+  }
+
+  // Cyber Farm Card Interactive Elements
+  const tgCardCyberFarm = document.getElementById('tgCardCyberFarm');
+  const tgCornerArrowCyberFarm = document.getElementById('tgCornerArrowCyberFarm');
+  const tgAvatarCyberFarm = document.getElementById('tgAvatarCyberFarm');
+  const tgLinkCyberFarm = document.getElementById('tgLinkCyberFarm');
+  const tgBtnCyberFarm = document.getElementById('tgBtnCyberFarm');
+
+  if (tgCardCyberFarm) {
+    tgCardCyberFarm.addEventListener('click', openCyberFarmTelegramChannel);
+    tgCardCyberFarm.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        openCyberFarmTelegramChannel(e);
+      }
+    });
+  }
+  if (tgCornerArrowCyberFarm) {
+    tgCornerArrowCyberFarm.addEventListener('click', openCyberFarmTelegramChannel);
+  }
+  if (tgAvatarCyberFarm) {
+    tgAvatarCyberFarm.addEventListener('click', openCyberFarmTelegramChannel);
+  }
+  if (tgLinkCyberFarm) {
+    tgLinkCyberFarm.addEventListener('click', openCyberFarmTelegramChannel);
+  }
+  if (tgBtnCyberFarm) {
+    tgBtnCyberFarm.addEventListener('click', openCyberFarmTelegramChannel);
+  }
+
+  // Color Sort Card Interactive Elements
+  const tgCornerArrowColorSort = document.getElementById('tgCornerArrowColorSort');
   if (telegramChannelCard) {
     telegramChannelCard.addEventListener('click', openSortColorsTelegramChannel);
     telegramChannelCard.addEventListener('keydown', (e) => {
@@ -5086,6 +5146,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         openSortColorsTelegramChannel(e);
       }
     });
+  }
+  if (tgCornerArrowColorSort) {
+    tgCornerArrowColorSort.addEventListener('click', openSortColorsTelegramChannel);
   }
   if (telegramChannelLink) {
     telegramChannelLink.addEventListener('click', openSortColorsTelegramChannel);
