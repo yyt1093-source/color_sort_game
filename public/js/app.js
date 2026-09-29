@@ -1708,8 +1708,11 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (profileTabTitleProfile) profileTabTitleProfile.textContent = t('profileTabLabel');
     const profileTabTitleReferrals = document.getElementById('profileTabTitleReferrals');
     if (profileTabTitleReferrals) profileTabTitleReferrals.textContent = t('referralsTabLabel');
-    const profileTabTitleAdmin = document.getElementById('profileTabTitleAdmin');
-    if (profileTabTitleAdmin) profileTabTitleAdmin.textContent = t('adminTabLabel');
+    const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
+    if (profileTabBtnAdmin) {
+      profileTabBtnAdmin.title = t('adminTabLabel') || 'Панель Администратора';
+      profileTabBtnAdmin.setAttribute('aria-label', t('adminTabLabel') || 'Панель Администратора');
+    }
     if (langSectionTitle) langSectionTitle.textContent = t('langSectionTitle');
     if (restartBtnLabel) restartBtnLabel.textContent = t('restartBtn');
     if (undoBtnLabel) undoBtnLabel.textContent = t('undoBtn');

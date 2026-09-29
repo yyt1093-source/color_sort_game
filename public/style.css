@@ -2162,16 +2162,17 @@ body {
 .profile-tab-btn {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 10px 8px;
-  border-radius: 10px;
+  gap: 3px;
+  padding: 8px 6px;
+  border-radius: 11px;
   border: 1px solid transparent;
   background: transparent;
   color: #94a3b8;
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2193,13 +2194,26 @@ body {
 }
 
 .profile-tab-btn .profile-tab-icon {
-  font-size: 15px;
+  font-size: 19px;
   line-height: 1;
 }
 
 .profile-tab-btn .profile-tab-title {
+  font-size: 11.5px;
   letter-spacing: 0.2px;
   white-space: nowrap;
+}
+
+/* Icon-only tab button (e.g. 🛡️ Admin button) */
+.profile-tab-btn.profile-tab-btn-icon-only {
+  flex: 0 0 52px;
+  padding: 8px 4px;
+  justify-content: center;
+}
+
+.profile-tab-btn.profile-tab-btn-icon-only .profile-tab-icon {
+  font-size: 22px;
+  line-height: 1;
 }
 
 /* Profile Tab Panes */
@@ -2293,12 +2307,19 @@ body {
 
 @media (max-width: 380px) {
   .profile-tab-btn {
-    padding: 8px 4px;
-    font-size: 12px;
-    gap: 4px;
+    padding: 6px 3px;
+    font-size: 11px;
+    gap: 2px;
   }
   .profile-tab-btn .profile-tab-icon {
-    font-size: 13px;
+    font-size: 17px;
+  }
+  .profile-tab-btn.profile-tab-btn-icon-only {
+    flex: 0 0 44px;
+    padding: 6px 2px;
+  }
+  .profile-tab-btn.profile-tab-btn-icon-only .profile-tab-icon {
+    font-size: 19px;
   }
 }
 
