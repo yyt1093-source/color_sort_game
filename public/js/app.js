@@ -2244,7 +2244,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // Server Communication & 24/7 Global Cloud Database
   const GLOBAL_CLOUD_BUCKET = '82kzJTUxZwwFNvg7kUSqgM';
   const GLOBAL_CLOUD_BASE = 'https://kvdb.io/' + GLOBAL_CLOUD_BUCKET;
-  const API_BASE = (typeof window !== 'undefined' && window.COLOR_SORT_API_URL)
+  const API_BASE = (typeof window !== 'undefined' && window.COLOR_SORT_API_URL) ? window.COLOR_SORT_API_URL : '';
+  const NEWS_API_BASE = (typeof window !== 'undefined' && window.COLOR_SORT_API_URL)
     ? window.COLOR_SORT_API_URL
     : (typeof window !== 'undefined' && window.location.hostname.includes('github.io')
         ? 'https://colorsortgame.vercel.app'
@@ -2310,15 +2311,17 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     let curLvl = Number(user.currentLevel || 1);
     let stars = Number(user.stars || 0);
 
-    // If user's season timestamp is older than current season reset, force 0 progress!
+    // Ensure season timestamp is up to date
     if (localSeasonReset > 0 && userSeasonReset < localSeasonReset) {
-      maxLvl = 0;
-      curLvl = 1;
-      stars = 0;
-      user.maxLevel = 0;
-      user.level = 0;
-      user.currentLevel = 1;
-      user.stars = 0;
+      if (window.__seasonResetKicking) {
+        maxLvl = 0;
+        curLvl = 1;
+        stars = 0;
+        user.maxLevel = 0;
+        user.level = 0;
+        user.currentLevel = 1;
+        user.stars = 0;
+      }
       user.seasonResetAt = localSeasonReset;
       user.season_reset_at = localSeasonReset;
     }
@@ -2332,6 +2335,26 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           const eRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
           if (eRes.ok) existingCloud = await eRes.json();
         } catch (e) {}
+
+        // Never allow a lower maxLevel to overwrite a higher maxLevel from the cloud
+        if (existingCloud && !window.__seasonResetKicking) {
+          const exCloudMax = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : (existingCloud.level || 0));
+          const exCloudCur = Number(existingCloud.currentLevel || 1);
+          const exCloudStars = Number(existingCloud.stars || 0);
+          if (exCloudMax > maxLvl) {
+            maxLvl = exCloudMax;
+            user.maxLevel = maxLvl;
+            user.level = maxLvl;
+          }
+          if (exCloudCur > curLvl) {
+            curLvl = exCloudCur;
+            user.currentLevel = curLvl;
+          }
+          if (exCloudStars > stars) {
+            stars = exCloudStars;
+            user.stars = stars;
+          }
+        }
 
         const finalHints = Math.max(Number(user.hints || 0), existingCloud ? Number(existingCloud.hints || 0) : 0);
         const finalUndos = Math.max(Number(user.undos || 0), existingCloud ? Number(existingCloud.undos || 0) : 0);
@@ -2726,29 +2749,27 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           }
 
           const cloudMax = Number(cloudData.maxLevel !== undefined ? cloudData.maxLevel : (cloudData.level !== undefined ? cloudData.level : 0));
-          // If cloud has reset this account to Level 0, or cloud season is newer than user's season:
-          if ((cloudSeason > 0 && cloudSeason > Number(currentUser.seasonResetAt || 0)) ||
-              (cloudMax === 0 && (currentUser.maxLevel || 0) > 0 && cloudSeason >= localReset)) {
-            console.log('[Startup] Cloud forced season reset to Level 0');
-            currentUser.maxLevel = 0;
-            currentUser.level = 0;
-            currentUser.currentLevel = 1;
-            currentUser.stars = 0;
-            currentUser.seasonResetAt = cloudSeason || localReset;
-            localStorage.setItem('color_sort_season_reset_at', String(cloudSeason || localReset));
+          const cloudCur = Number(cloudData.currentLevel || (cloudMax > 0 ? cloudMax + 1 : 1));
+          const cloudStars = Number(cloudData.stars || 0);
+
+          if (cloudMax > (currentUser.maxLevel || 0)) {
+            currentUser.maxLevel = cloudMax;
+            currentUser.level = cloudMax;
             changed = true;
-            loadCurrentLevel();
-          } else if ((cloudData.level !== undefined || cloudData.maxLevel !== undefined) && (localReset === 0 || cloudSeason >= localReset)) {
-            if (cloudMax > (currentUser.maxLevel || 0)) {
-              currentUser.maxLevel = cloudMax;
-              changed = true;
-            }
-            const cloudCur = Number(cloudData.currentLevel || (cloudMax > 0 ? cloudMax + 1 : 1));
-            if (cloudCur > (currentUser.currentLevel || 1)) {
-              currentUser.currentLevel = cloudCur;
-              changed = true;
-              loadCurrentLevel();
-            }
+          }
+          if (cloudCur > (currentUser.currentLevel || 1)) {
+            currentUser.currentLevel = cloudCur;
+            changed = true;
+          }
+          if (cloudStars > (currentUser.stars || 0)) {
+            currentUser.stars = cloudStars;
+            changed = true;
+          }
+          if (cloudSeason > 0 && cloudSeason > Number(currentUser.seasonResetAt || 0)) {
+            currentUser.seasonResetAt = cloudSeason;
+            currentUser.season_reset_at = cloudSeason;
+            localStorage.setItem('color_sort_season_reset_at', String(cloudSeason));
+            changed = true;
           }
           if (changed) {
             normalizeUserObject(currentUser);
@@ -2900,8 +2921,16 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
       if (serverUser.user.ton_wallet !== undefined) currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
       if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
-      if (serverUser.user.current_level !== undefined) currentUser.currentLevel = Number(serverUser.user.current_level || 1);
-      if (serverUser.user.max_level !== undefined) currentUser.maxLevel = Number(serverUser.user.max_level || 0);
+      if (serverUser.user.current_level !== undefined) {
+        currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(serverUser.user.current_level || 1));
+      }
+      if (serverUser.user.max_level !== undefined) {
+        currentUser.maxLevel = Math.max(Number(currentUser.maxLevel || 0), Number(serverUser.user.max_level || 0));
+        currentUser.level = Math.max(Number(currentUser.level || 0), currentUser.maxLevel);
+      }
+      if (serverUser.user.stars !== undefined) {
+        currentUser.stars = Math.max(Number(currentUser.stars || 0), Number(serverUser.user.stars || 0));
+      }
       normalizeUserObject(currentUser);
       updateTonWalletUI();
       updateShopUI();
@@ -3044,9 +3073,22 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
         const localResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
         const userSeasonReset = Number(currentUser.seasonResetAt || currentUser.season_reset_at || 0);
+        const userUpdated = Number(currentUser.updatedAt || 0);
 
-        if (resetAt > 0 && (resetAt > localResetAt || userSeasonReset < resetAt)) {
-          triggerSeasonResetKick(resetAt);
+        if (resetAt > 0) {
+          if (userUpdated >= resetAt || userSeasonReset >= resetAt) {
+            currentUser.seasonResetAt = Math.max(userSeasonReset, resetAt);
+            currentUser.season_reset_at = currentUser.seasonResetAt;
+            localStorage.setItem('color_sort_season_reset_at', String(Math.max(localResetAt, resetAt)));
+            return;
+          }
+          if (localResetAt > 0 && resetAt > localResetAt && userSeasonReset < resetAt && userUpdated < resetAt) {
+            triggerSeasonResetKick(resetAt);
+          } else if (localResetAt === 0) {
+            localStorage.setItem('color_sort_season_reset_at', String(resetAt));
+            currentUser.seasonResetAt = resetAt;
+            currentUser.season_reset_at = resetAt;
+          }
         }
       }
     } catch (e) {}
@@ -3086,11 +3128,22 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
       const localResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
       const userSeasonReset = Number(currentUser.seasonResetAt || currentUser.season_reset_at || 0);
+      const userUpdated = Number(currentUser.updatedAt || 0);
 
-      if (resetAt > 0 && (resetAt > localResetAt || userSeasonReset < resetAt)) {
-        console.log(`[Season Reset] Global season reset detected (server: ${resetAt}, local: ${localResetAt}). Wiping all player progress!`);
-        triggerSeasonResetKick(resetAt);
-        wasReset = true;
+      if (resetAt > 0) {
+        if (userUpdated >= resetAt || userSeasonReset >= resetAt) {
+          currentUser.seasonResetAt = Math.max(userSeasonReset, resetAt);
+          currentUser.season_reset_at = currentUser.seasonResetAt;
+          localStorage.setItem('color_sort_season_reset_at', String(Math.max(localResetAt, resetAt)));
+        } else if (localResetAt > 0 && resetAt > localResetAt && userSeasonReset < resetAt && userUpdated < resetAt) {
+          console.log(`[Season Reset] Global season reset detected (server: ${resetAt}, local: ${localResetAt}). Wiping all player progress!`);
+          triggerSeasonResetKick(resetAt);
+          wasReset = true;
+        } else if (localResetAt === 0) {
+          localStorage.setItem('color_sort_season_reset_at', String(resetAt));
+          currentUser.seasonResetAt = resetAt;
+          currentUser.season_reset_at = resetAt;
+        }
       }
     } catch (err) {
       console.warn('[Season Reset Check Error]', err);
@@ -7885,7 +7938,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
     try {
       const authQuery = getAdminAuthQuery();
-      const apiUrl = (API_BASE || '') + `/api/admin/news?action=list&${authQuery}`;
+      const apiUrl = (NEWS_API_BASE || API_BASE || '') + `/api/admin/news?action=list&${authQuery}`;
 
       let data = null;
       try {
@@ -8012,7 +8065,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         adminUsername: currentUser ? currentUser.username : ''
       };
 
-      const res = await fetch((API_BASE || '') + '/api/admin/news', {
+      const res = await fetch((NEWS_API_BASE || API_BASE || '') + '/api/admin/news', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -8087,7 +8140,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         payload.imageUrl = adminNewsImageUrlInput.value.trim();
       }
 
-      const res = await fetch((API_BASE || '') + '/api/admin/news', {
+      const res = await fetch((NEWS_API_BASE || API_BASE || '') + '/api/admin/news', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
