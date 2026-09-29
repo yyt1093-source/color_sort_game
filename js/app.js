@@ -4921,13 +4921,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // Profile & Language Modal Event Listeners
   function openProfileMenu() {
     const isUserAdmin = isAlligatorAdmin(currentUser);
-    if (profileAdminBadge) {
-      if (isUserAdmin) {
-        profileAdminBadge.classList.remove('hidden');
-      } else {
-        profileAdminBadge.classList.add('hidden');
-      }
-    }
     const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
     if (profileTabBtnAdmin) {
       if (isUserAdmin) {
