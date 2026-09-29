@@ -14,7 +14,7 @@ if (fs.existsSync(envPath)) {
   });
 }
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
+const BOT_TOKEN = process.env.BOT_TOKEN || '8837816458:AAGeBFs-ZOF56yro_QhZ7b-Wr6v8RaR6x0c';
 function getWebAppUrl() {
   return process.env.WEB_APP_URL || 'https://yyt1093-source.github.io/color_sort_game/';
 }

@@ -687,6 +687,18 @@
               <span class="admin-tab-indicator"></span>
             </span>
           </button>
+          <button type="button" class="admin-nav-tab" id="adminTabNewsBtn" data-tab="news">
+            <div class="admin-nav-tab-main">
+              <span class="admin-nav-tab-icon">📢</span>
+              <div class="admin-nav-tab-text">
+                <strong id="adminTabNewsLabel">Новости</strong>
+                <span class="admin-nav-tab-desc" id="adminTabNewsDesc">Рассылка уведомлений и картинок игрокам в боте</span>
+              </div>
+            </div>
+            <span class="admin-nav-tab-status">
+              <span class="admin-tab-indicator"></span>
+            </span>
+          </button>
         </div>
 
         <!-- Tab 1: Admin Actions / Boosters & Resets -->
@@ -846,6 +858,130 @@
               <!-- Rendered dynamically as cards:
                    [ 👤 Никнейм | ID: 12345 | 👛 UQ...1234 ]  [ 👁️ Просмотреть ]
               -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: News & Telegram Broadcast (Admin Only) -->
+        <div id="adminTabNewsContent" class="admin-tab-content hidden">
+          <!-- Header Banner -->
+          <div class="admin-news-header-box">
+            <div class="admin-news-title-row">
+              <span class="admin-news-icon">📢</span>
+              <div class="admin-news-title-col">
+                <strong id="adminNewsHeaderTitle">Новости и рассылка игрокам</strong>
+                <div class="admin-news-sub" id="adminNewsHeaderSub">Отправляйте игрокам сообщения, картинки, новости и обновления. В Telegram боте игрокам сразу придёт уведомление с кнопкой запуска игры!</div>
+              </div>
+            </div>
+
+            <!-- Audience & Time Badges -->
+            <div class="admin-news-metrics-grid">
+              <div class="admin-news-metric-card">
+                <span class="admin-news-metric-icon">👥</span>
+                <div>
+                  <div class="admin-news-metric-label" id="adminNewsAudienceLabel">Всего получателей (игроков):</div>
+                  <strong class="admin-news-metric-value" id="adminNewsAudienceCount">0 игроков</strong>
+                </div>
+              </div>
+              <div class="admin-news-metric-card">
+                <span class="admin-news-metric-icon">🕒</span>
+                <div>
+                  <div class="admin-news-metric-label" id="adminNewsTimeLabel">Время (Киев):</div>
+                  <strong class="admin-news-metric-value" id="adminNewsKyivTime">--:--:--</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Broadcast Form -->
+          <div class="admin-news-form-card">
+            <!-- Title Field -->
+            <div class="admin-news-field">
+              <label for="adminNewsTitleInput" class="admin-news-label" id="adminNewsTitleLabel">
+                <span>📝</span> Заголовок новости / сообщения:
+              </label>
+              <input type="text" id="adminNewsTitleInput" class="admin-news-input" placeholder="Например: Новые уровни или важное обновление...">
+            </div>
+
+            <!-- Message Body Field -->
+            <div class="admin-news-field">
+              <label for="adminNewsMessageInput" class="admin-news-label" id="adminNewsMessageLabel">
+                <span>💬</span> Текст сообщения игрокам:
+              </label>
+              <textarea id="adminNewsMessageInput" class="admin-news-textarea" rows="4" placeholder="Введите подробный текст новости или объявления..."></textarea>
+            </div>
+
+            <!-- Image Attachment Field -->
+            <div class="admin-news-field">
+              <label class="admin-news-label" id="adminNewsImageLabel">
+                <span>🖼️</span> Прикрепить картинку (необязательно):
+              </label>
+              <div class="admin-news-image-controls">
+                <input type="file" id="adminNewsFileInput" accept="image/*" style="display: none;">
+                <button type="button" id="adminNewsUploadFileBtn" class="admin-news-upload-btn">
+                  <span>📷</span> <span id="adminNewsUploadFileLabel">Выбрать фото с устройства</span>
+                </button>
+                <div class="admin-news-url-wrap">
+                  <input type="url" id="adminNewsImageUrlInput" class="admin-news-input" placeholder="Или вставьте ссылку на изображение (https://...)">
+                </div>
+              </div>
+
+              <!-- Image Preview Box -->
+              <div id="adminNewsPreviewBox" class="admin-news-preview-box hidden">
+                <img id="adminNewsPreviewImg" src="" alt="Превью" class="admin-news-preview-img">
+                <div class="admin-news-preview-info">
+                  <span id="adminNewsPreviewFileName" class="admin-news-preview-filename">image.jpg</span>
+                  <button type="button" id="adminNewsRemoveImageBtn" class="admin-news-remove-img-btn" title="Удалить картинку">✕</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Button Text Field -->
+            <div class="admin-news-field">
+              <label for="adminNewsButtonTextInput" class="admin-news-label" id="adminNewsButtonLabel">
+                <span>🔘</span> Текст кнопки в сообщении Telegram:
+              </label>
+              <input type="text" id="adminNewsButtonTextInput" class="admin-news-input" value="🚀 Играть в Color Sort" placeholder="🚀 Играть в Color Sort">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="admin-news-actions-grid">
+              <button type="button" id="adminNewsTestSendBtn" class="admin-news-btn-test">
+                <span>🧪</span>
+                <span id="adminNewsTestSendLabel">Тестовая отправка себе (Админу)</span>
+              </button>
+              <button type="button" id="adminNewsBroadcastBtn" class="admin-news-btn-broadcast">
+                <span>📢</span>
+                <span id="adminNewsBroadcastLabel">Опубликовать и разослать ВСЕМ игрокам</span>
+              </button>
+            </div>
+
+            <!-- Status Message Box -->
+            <div id="adminNewsStatusMsg" class="admin-feedback-msg hidden"></div>
+          </div>
+
+          <!-- Section: Sent News History -->
+          <div class="admin-news-history-section">
+            <div class="admin-news-history-header">
+              <div class="admin-news-history-title-wrap">
+                <span style="font-size: 1.2rem;">📜</span>
+                <strong id="adminNewsHistoryTitle">История отправленных новостей</strong>
+              </div>
+              <button type="button" id="adminNewsRefreshBtn" class="admin-history-icon-btn" title="Обновить список">🔄</button>
+            </div>
+
+            <div class="admin-news-history-container">
+              <div id="adminNewsLoadingSpinner" class="admin-history-loading hidden">
+                <div class="spinner"></div>
+                <span id="adminNewsLoadingText">Загрузка истории новостей...</span>
+              </div>
+              <div id="adminNewsEmptyState" class="admin-history-empty hidden">
+                <span style="font-size: 2rem;">📭</span>
+                <span id="adminNewsEmptyText">Пока нет отправленных новостей</span>
+              </div>
+              <div id="adminNewsItemsList" class="admin-news-items-list">
+                <!-- Rendered dynamically -->
+              </div>
             </div>
           </div>
         </div>

@@ -4,3 +4,4 @@ cloudflared.exe
 *.log
 game_database.sqlite
 .DS_Store
+.vercel

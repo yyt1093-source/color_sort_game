@@ -308,6 +308,22 @@ async function initColorSortApp() {
       adminWalletDetailsTitle: "👛 Кошелёк игрока",
       adminWalletNoDeposits: "Подтверждённых пополнений пока нет",
       adminWalletBackBtn: "← Назад к списку кошельков",
+      adminTabNewsLabel: "Новости",
+      adminTabNewsDesc: "Рассылка уведомлений и картинок игрокам в боте",
+      adminNewsHeaderTitle: "Новости и рассылка игрокам",
+      adminNewsHeaderSub: "Отправляйте игрокам сообщения, картинки, новости и обновления. В Telegram боте игрокам сразу придёт уведомление с кнопкой запуска игры!",
+      adminNewsAudienceLabel: "Всего получателей (игроков):",
+      adminNewsTimeLabel: "Время (Киев):",
+      adminNewsTitleLabel: "Заголовок новости / сообщения:",
+      adminNewsMessageLabel: "Текст сообщения игрокам:",
+      adminNewsImageLabel: "Прикрепить картинку (необязательно):",
+      adminNewsUploadFileLabel: "Выбрать фото с устройства",
+      adminNewsButtonLabel: "Текст кнопки в сообщении Telegram:",
+      adminNewsTestSendLabel: "Тестовая отправка себе (Админу)",
+      adminNewsBroadcastLabel: "Опубликовать и разослать ВСЕМ игрокам",
+      adminNewsHistoryTitle: "История отправленных новостей",
+      adminNewsLoadingText: "Загрузка истории новостей...",
+      adminNewsEmptyText: "Пока нет отправленных новостей",
       tgChannelTitle: "Telegram–канал",
       officialBadge: "Официальный",
       ourProject: "Наш проект",
@@ -568,6 +584,22 @@ async function initColorSortApp() {
       adminWalletDetailsTitle: "👛 Гаманець гравця",
       adminWalletNoDeposits: "Підтверджених поповнень поки немає",
       adminWalletBackBtn: "← Назад до списку гаманців",
+      adminTabNewsLabel: "Новини",
+      adminTabNewsDesc: "Розсилка повідомлень та картинок гравцям у боті",
+      adminNewsHeaderTitle: "Новини та розсилка гравцям",
+      adminNewsHeaderSub: "Надсилайте гравцям повідомлення, картинки, новини та оновлення. У Telegram боті гравцям одразу надійде сповіщення з кнопкою запуску гри!",
+      adminNewsAudienceLabel: "Всього одержувачів (гравців):",
+      adminNewsTimeLabel: "Час (Київ):",
+      adminNewsTitleLabel: "Заголовок новини / повідомлення:",
+      adminNewsMessageLabel: "Текст повідомлення гравцям:",
+      adminNewsImageLabel: "Прикріпити картинку (необов'язково):",
+      adminNewsUploadFileLabel: "Вибрати фото з пристрою",
+      adminNewsButtonLabel: "Текст кнопки у повідомленні Telegram:",
+      adminNewsTestSendLabel: "Тестове надсилання собі (Адміну)",
+      adminNewsBroadcastLabel: "Опублікувати та розіслати ВСІМ гравцям",
+      adminNewsHistoryTitle: "Історія надісланих новин",
+      adminNewsLoadingText: "Завантаження історії новин...",
+      adminNewsEmptyText: "Поки немає надісланих новин",
       tgChannelTitle: "Telegram–канал",
       officialBadge: "Офіційний",
       ourProject: "Наш проєкт",
@@ -807,6 +839,22 @@ async function initColorSortApp() {
       adminWalletDetailsTitle: "👛 Player Wallet",
       adminWalletNoDeposits: "No confirmed deposits yet",
       adminWalletBackBtn: "← Back to wallets list",
+      adminTabNewsLabel: "News",
+      adminTabNewsDesc: "Broadcast notifications and images to players in bot",
+      adminNewsHeaderTitle: "News & Player Broadcasts",
+      adminNewsHeaderSub: "Send messages, images, news and game updates to players. Players will receive a Telegram bot notification with a button to launch the game!",
+      adminNewsAudienceLabel: "Total Recipients (Players):",
+      adminNewsTimeLabel: "Time (Kyiv):",
+      adminNewsTitleLabel: "News / Message Title:",
+      adminNewsMessageLabel: "Message Text for Players:",
+      adminNewsImageLabel: "Attach Image (optional):",
+      adminNewsUploadFileLabel: "Choose Photo from Device",
+      adminNewsButtonLabel: "Telegram Button Text:",
+      adminNewsTestSendLabel: "Test Send to Self (Admin)",
+      adminNewsBroadcastLabel: "Publish & Broadcast to ALL Players",
+      adminNewsHistoryTitle: "Broadcast History",
+      adminNewsLoadingText: "Loading news history...",
+      adminNewsEmptyText: "No broadcast history yet",
       tgChannelTitle: "Telegram Channel",
       officialBadge: "Official",
       ourProject: "Our project",
@@ -1046,6 +1094,22 @@ async function initColorSortApp() {
       adminWalletDetailsTitle: "👛 Spieler-Wallet",
       adminWalletNoDeposits: "Noch keine bestätigten Einzahlungen",
       adminWalletBackBtn: "← Zurück zur Wallet-Liste",
+      adminTabNewsLabel: "Neuigkeiten",
+      adminTabNewsDesc: "Benachrichtigungen und Bilder an Spieler im Bot senden",
+      adminNewsHeaderTitle: "Neuigkeiten & Spieler-Broadcasts",
+      adminNewsHeaderSub: "Sende Nachrichten, Bilder und Updates an Spieler. Spieler erhalten eine Telegram-Bot-Benachrichtigung mit einem Button zum Starten des Spiels!",
+      adminNewsAudienceLabel: "Empfänger gesamt (Spieler):",
+      adminNewsTimeLabel: "Zeit (Kiew):",
+      adminNewsTitleLabel: "Titel der Nachricht:",
+      adminNewsMessageLabel: "Nachrichtentext an Spieler:",
+      adminNewsImageLabel: "Bild anhängen (optional):",
+      adminNewsUploadFileLabel: "Foto vom Gerät wählen",
+      adminNewsButtonLabel: "Telegram-Button-Text:",
+      adminNewsTestSendLabel: "Test an mich selbst (Admin)",
+      adminNewsBroadcastLabel: "Veröffentlichen & an ALLE Spieler senden",
+      adminNewsHistoryTitle: "Verlauf der gesendeten Nachrichten",
+      adminNewsLoadingText: "Lade Nachrichtenverlauf...",
+      adminNewsEmptyText: "Noch keine gesendeten Nachrichten",
       tgChannelTitle: "Telegram-Kanal",
       officialBadge: "Offiziell",
       ourProject: "Unser Projekt",
@@ -1285,6 +1349,22 @@ async function initColorSortApp() {
       adminWalletDetailsTitle: "👛 Žaidėjo piniginė",
       adminWalletNoDeposits: "Patvirtintų papildymų kol kas nėra",
       adminWalletBackBtn: "← Atgal į piniginių sąrašą",
+      adminTabNewsLabel: "Naujienos",
+      adminTabNewsDesc: "Pranešimų ir nuotraukų siuntimas žaidėjams per botą",
+      adminNewsHeaderTitle: "Naujienos ir žaidėjų pranešimai",
+      adminNewsHeaderSub: "Siųskite žaidėjams pranešimus, nuotraukas ir atnaujinimus. Žaidėjai gaus Telegram pranešimą su mygtuku paleisti žaidimą!",
+      adminNewsAudienceLabel: "Iš viso gavėjų (žaidėjų):",
+      adminNewsTimeLabel: "Laikas (Kijevas):",
+      adminNewsTitleLabel: "Naujienos / pranešimo antraštė:",
+      adminNewsMessageLabel: "Pranešimo tekstas žaidėjams:",
+      adminNewsImageLabel: "Pridėti nuotrauką (neprivaloma):",
+      adminNewsUploadFileLabel: "Pasirinkti nuotrauką iš įrenginio",
+      adminNewsButtonLabel: "Telegram mygtuko tekstas:",
+      adminNewsTestSendLabel: "Bandomasis siuntimas sau (Adminui)",
+      adminNewsBroadcastLabel: "Paskelbti ir išsiųsti VISIEMS žaidėjams",
+      adminNewsHistoryTitle: "Išsiųstų naujienų istorija",
+      adminNewsLoadingText: "Įkeliama naujienų istorija...",
+      adminNewsEmptyText: "Išsiųstų naujienų dar nėra",
       tgChannelTitle: "Telegram kanalas",
       officialBadge: "Oficialus",
       ourProject: "Mūsų projektas",
@@ -1916,6 +1996,40 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     const adminWalletDetailsBackBtn = document.getElementById('adminWalletDetailsBackBtn');
     if (adminWalletDetailsBackBtn) adminWalletDetailsBackBtn.textContent = t('adminWalletBackBtn');
 
+    // Admin News Tab
+    const adminTabNewsLabel = document.getElementById('adminTabNewsLabel');
+    if (adminTabNewsLabel) adminTabNewsLabel.textContent = t('adminTabNewsLabel');
+    const adminTabNewsDesc = document.getElementById('adminTabNewsDesc');
+    if (adminTabNewsDesc) adminTabNewsDesc.textContent = t('adminTabNewsDesc');
+    const adminNewsHeaderTitle = document.getElementById('adminNewsHeaderTitle');
+    if (adminNewsHeaderTitle) adminNewsHeaderTitle.textContent = t('adminNewsHeaderTitle');
+    const adminNewsHeaderSub = document.getElementById('adminNewsHeaderSub');
+    if (adminNewsHeaderSub) adminNewsHeaderSub.textContent = t('adminNewsHeaderSub');
+    const adminNewsAudienceLabel = document.getElementById('adminNewsAudienceLabel');
+    if (adminNewsAudienceLabel) adminNewsAudienceLabel.textContent = t('adminNewsAudienceLabel');
+    const adminNewsTimeLabel = document.getElementById('adminNewsTimeLabel');
+    if (adminNewsTimeLabel) adminNewsTimeLabel.textContent = t('adminNewsTimeLabel');
+    const adminNewsTitleLabel = document.getElementById('adminNewsTitleLabel');
+    if (adminNewsTitleLabel) adminNewsTitleLabel.textContent = t('adminNewsTitleLabel');
+    const adminNewsMessageLabel = document.getElementById('adminNewsMessageLabel');
+    if (adminNewsMessageLabel) adminNewsMessageLabel.textContent = t('adminNewsMessageLabel');
+    const adminNewsImageLabel = document.getElementById('adminNewsImageLabel');
+    if (adminNewsImageLabel) adminNewsImageLabel.textContent = t('adminNewsImageLabel');
+    const adminNewsUploadFileLabel = document.getElementById('adminNewsUploadFileLabel');
+    if (adminNewsUploadFileLabel) adminNewsUploadFileLabel.textContent = t('adminNewsUploadFileLabel');
+    const adminNewsButtonLabel = document.getElementById('adminNewsButtonLabel');
+    if (adminNewsButtonLabel) adminNewsButtonLabel.textContent = t('adminNewsButtonLabel');
+    const adminNewsTestSendLabel = document.getElementById('adminNewsTestSendLabel');
+    if (adminNewsTestSendLabel) adminNewsTestSendLabel.textContent = t('adminNewsTestSendLabel');
+    const adminNewsBroadcastLabel = document.getElementById('adminNewsBroadcastLabel');
+    if (adminNewsBroadcastLabel) adminNewsBroadcastLabel.textContent = t('adminNewsBroadcastLabel');
+    const adminNewsHistoryTitle = document.getElementById('adminNewsHistoryTitle');
+    if (adminNewsHistoryTitle) adminNewsHistoryTitle.textContent = t('adminNewsHistoryTitle');
+    const adminNewsLoadingText = document.getElementById('adminNewsLoadingText');
+    if (adminNewsLoadingText) adminNewsLoadingText.textContent = t('adminNewsLoadingText');
+    const adminNewsEmptyText = document.getElementById('adminNewsEmptyText');
+    if (adminNewsEmptyText) adminNewsEmptyText.textContent = t('adminNewsEmptyText');
+
     // Leaderboard
     const leaderboardModalTitle = document.getElementById('leaderboardModalTitle');
     if (leaderboardModalTitle) leaderboardModalTitle.textContent = t('leaderboardTitle');
@@ -2132,7 +2246,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   const GLOBAL_CLOUD_BASE = 'https://kvdb.io/' + GLOBAL_CLOUD_BUCKET;
   const API_BASE = (typeof window !== 'undefined' && window.COLOR_SORT_API_URL)
     ? window.COLOR_SORT_API_URL
-    : '';
+    : (typeof window !== 'undefined' && window.location.hostname.includes('github.io')
+        ? 'https://colorsortgame.vercel.app'
+        : '');
 
   function normalizeUserObject(user) {
     if (!user || typeof user !== 'object') return user;
@@ -6092,9 +6208,11 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   const adminTabActionsBtn = document.getElementById('adminTabActionsBtn');
   const adminTabHistoryBtn = document.getElementById('adminTabHistoryBtn');
   const adminTabWalletsBtn = document.getElementById('adminTabWalletsBtn');
+  const adminTabNewsBtn = document.getElementById('adminTabNewsBtn');
   const adminTabActionsContent = document.getElementById('adminTabActionsContent');
   const adminTabHistoryContent = document.getElementById('adminTabHistoryContent');
   const adminTabWalletsContent = document.getElementById('adminTabWalletsContent');
+  const adminTabNewsContent = document.getElementById('adminTabNewsContent');
 
   const adminHistoryTakeSnapshotBtn = document.getElementById('adminHistoryTakeSnapshotBtn');
   const adminHistoryRefreshDatesBtn = document.getElementById('adminHistoryRefreshDatesBtn');
@@ -6182,25 +6300,41 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.add('active');
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
+      if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.remove('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
+      if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
       loadAdminHistoryList();
     } else if (tabName === 'wallets') {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.add('active');
+      if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.remove('hidden');
+      if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
       loadAdminWalletsList();
+    } else if (tabName === 'news') {
+      if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
+      if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
+      if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
+      if (adminTabNewsBtn) adminTabNewsBtn.classList.add('active');
+      if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
+      if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
+      if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
+      if (adminTabNewsContent) adminTabNewsContent.classList.remove('hidden');
+      loadAdminNewsData();
     } else {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.add('active');
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
+      if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.remove('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
+      if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
     }
   }
 
@@ -6222,6 +6356,13 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     adminTabWalletsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       switchAdminTab('wallets');
+    });
+  }
+
+  if (adminTabNewsBtn) {
+    adminTabNewsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchAdminTab('news');
     });
   }
 
@@ -7612,6 +7753,403 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         closeModal(adminWalletDetailsModal);
         activeViewingWalletPlayer = null;
       }
+    });
+  }
+
+  // ============================================================
+  // 📢 Admin News & Telegram Broadcast System (Admin Only)
+  // ============================================================
+  const adminNewsAudienceCount = document.getElementById('adminNewsAudienceCount');
+  const adminNewsKyivTime = document.getElementById('adminNewsKyivTime');
+  const adminNewsRefreshBtn = document.getElementById('adminNewsRefreshBtn');
+  const adminNewsTitleInput = document.getElementById('adminNewsTitleInput');
+  const adminNewsMessageInput = document.getElementById('adminNewsMessageInput');
+  const adminNewsFileInput = document.getElementById('adminNewsFileInput');
+  const adminNewsUploadFileBtn = document.getElementById('adminNewsUploadFileBtn');
+  const adminNewsImageUrlInput = document.getElementById('adminNewsImageUrlInput');
+  const adminNewsPreviewBox = document.getElementById('adminNewsPreviewBox');
+  const adminNewsPreviewImg = document.getElementById('adminNewsPreviewImg');
+  const adminNewsPreviewFileName = document.getElementById('adminNewsPreviewFileName');
+  const adminNewsRemoveImageBtn = document.getElementById('adminNewsRemoveImageBtn');
+  const adminNewsButtonTextInput = document.getElementById('adminNewsButtonTextInput');
+  const adminNewsTestSendBtn = document.getElementById('adminNewsTestSendBtn');
+  const adminNewsBroadcastBtn = document.getElementById('adminNewsBroadcastBtn');
+  const adminNewsStatusMsg = document.getElementById('adminNewsStatusMsg');
+  const adminNewsLoadingSpinner = document.getElementById('adminNewsLoadingSpinner');
+  const adminNewsEmptyState = document.getElementById('adminNewsEmptyState');
+  const adminNewsItemsList = document.getElementById('adminNewsItemsList');
+
+  let newsImageBase64 = null;
+  let newsImageFileName = '';
+  let cachedNewsAudienceCount = 0;
+  let statusMsgTimer = null;
+
+  function showNewsStatus(text, type = 'success') {
+    if (!adminNewsStatusMsg) return;
+    if (statusMsgTimer) clearTimeout(statusMsgTimer);
+
+    adminNewsStatusMsg.textContent = text;
+    adminNewsStatusMsg.className = 'admin-feedback-msg';
+    if (type === 'error') {
+      adminNewsStatusMsg.style.background = 'rgba(239, 68, 68, 0.15)';
+      adminNewsStatusMsg.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      adminNewsStatusMsg.style.color = '#f87171';
+    } else {
+      adminNewsStatusMsg.style.background = 'rgba(16, 185, 129, 0.15)';
+      adminNewsStatusMsg.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+      adminNewsStatusMsg.style.color = '#34d399';
+    }
+    adminNewsStatusMsg.classList.remove('hidden');
+
+    statusMsgTimer = setTimeout(() => {
+      adminNewsStatusMsg.classList.add('hidden');
+    }, 7000);
+  }
+
+  function removeNewsSelectedImage() {
+    newsImageBase64 = null;
+    newsImageFileName = '';
+    if (adminNewsFileInput) adminNewsFileInput.value = '';
+    if (adminNewsImageUrlInput) adminNewsImageUrlInput.value = '';
+    if (adminNewsPreviewBox) adminNewsPreviewBox.classList.add('hidden');
+    if (adminNewsPreviewImg) adminNewsPreviewImg.src = '';
+    if (adminNewsPreviewFileName) adminNewsPreviewFileName.textContent = '';
+  }
+
+  // Image Upload Listeners
+  if (adminNewsUploadFileBtn && adminNewsFileInput) {
+    adminNewsUploadFileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      adminNewsFileInput.click();
+    });
+  }
+
+  if (adminNewsFileInput) {
+    adminNewsFileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert('Пожалуйста, выберите файл изображения (JPG, PNG, WEBP).');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Размер файла превышает 5 МБ. Пожалуйста, выберите изображение меньшего размера.');
+        return;
+      }
+
+      newsImageFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = () => {
+        newsImageBase64 = reader.result;
+        if (adminNewsPreviewImg) adminNewsPreviewImg.src = reader.result;
+        if (adminNewsPreviewFileName) adminNewsPreviewFileName.textContent = file.name;
+        if (adminNewsPreviewBox) adminNewsPreviewBox.classList.remove('hidden');
+        if (adminNewsImageUrlInput) adminNewsImageUrlInput.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (adminNewsImageUrlInput) {
+    adminNewsImageUrlInput.addEventListener('input', () => {
+      const val = adminNewsImageUrlInput.value.trim();
+      if (val && /^https?:\/\//i.test(val)) {
+        newsImageBase64 = null;
+        newsImageFileName = 'URL Картинка';
+        if (adminNewsFileInput) adminNewsFileInput.value = '';
+        if (adminNewsPreviewImg) adminNewsPreviewImg.src = val;
+        if (adminNewsPreviewFileName) adminNewsPreviewFileName.textContent = 'Ссылка на изображение';
+        if (adminNewsPreviewBox) adminNewsPreviewBox.classList.remove('hidden');
+      } else if (!val && !newsImageBase64) {
+        if (adminNewsPreviewBox) adminNewsPreviewBox.classList.add('hidden');
+      }
+    });
+  }
+
+  if (adminNewsRemoveImageBtn) {
+    adminNewsRemoveImageBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeNewsSelectedImage();
+    });
+  }
+
+  // Load News History and Audience Stats
+  async function loadAdminNewsData() {
+    if (!isAlligatorAdmin(currentUser)) return;
+
+    if (adminNewsLoadingSpinner) adminNewsLoadingSpinner.classList.remove('hidden');
+    if (adminNewsEmptyState) adminNewsEmptyState.classList.add('hidden');
+    if (adminNewsItemsList) adminNewsItemsList.innerHTML = '';
+
+    try {
+      const authQuery = getAdminAuthQuery();
+      const apiUrl = (API_BASE || '') + `/api/admin/news?action=list&${authQuery}`;
+
+      let data = null;
+      try {
+        const res = await fetch(apiUrl, { cache: 'no-store' });
+        if (res.ok) {
+          data = await res.json();
+        }
+      } catch (e) {
+        console.warn('[AdminNews] API fetch error:', e.message);
+      }
+
+      // Fallback: If API returned null (e.g. GitHub Pages static), fetch directly from KVDB
+      if (!data || !data.success) {
+        try {
+          const kvRes = await fetch(`${GLOBAL_CLOUD_BASE}/color_sort_news_list_v1?_cb=${Date.now()}`, { cache: 'no-store' });
+          if (kvRes.ok) {
+            const history = await kvRes.json();
+            if (Array.isArray(history)) {
+              data = {
+                success: true,
+                history,
+                totalPlayersCount: cachedNewsAudienceCount || 35,
+                kyivTimeNow: new Date().toLocaleTimeString('ru-RU', { timeZone: 'Europe/Kiev' }) + ' (Киев)'
+              };
+            }
+          }
+        } catch (kvErr) {}
+      }
+
+      if (data && data.success) {
+        cachedNewsAudienceCount = Number(data.totalPlayersCount || 0);
+        if (adminNewsAudienceCount) {
+          adminNewsAudienceCount.textContent = `${cachedNewsAudienceCount} игроков`;
+        }
+        if (adminNewsKyivTime && data.kyivTimeNow) {
+          adminNewsKyivTime.textContent = data.kyivTimeNow;
+        }
+
+        renderAdminNewsItems(data.history || []);
+      } else {
+        if (adminNewsEmptyState) adminNewsEmptyState.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.warn('[AdminNews] Load error:', err);
+      if (adminNewsEmptyState) adminNewsEmptyState.classList.remove('hidden');
+    } finally {
+      if (adminNewsLoadingSpinner) adminNewsLoadingSpinner.classList.add('hidden');
+    }
+  }
+
+  function renderAdminNewsItems(items) {
+    if (!adminNewsItemsList) return;
+    adminNewsItemsList.innerHTML = '';
+
+    if (!items || items.length === 0) {
+      if (adminNewsEmptyState) adminNewsEmptyState.classList.remove('hidden');
+      return;
+    }
+
+    if (adminNewsEmptyState) adminNewsEmptyState.classList.add('hidden');
+
+    items.forEach((item) => {
+      const card = document.createElement('div');
+      card.className = 'admin-news-card';
+
+      let statusBadge = '';
+      if (item.isTest) {
+        statusBadge = '<span class="admin-news-badge admin-news-badge-test">🧪 Тестовая отправка</span>';
+      } else if (item.status === 'sent') {
+        statusBadge = `<span class="admin-news-badge admin-news-badge-sent">✅ Разослано (${item.deliveredCount || 0}/${item.targetCount || 0})</span>`;
+      } else if (item.status === 'partially_sent') {
+        statusBadge = `<span class="admin-news-badge admin-news-badge-partial">⚠️ Частично (${item.deliveredCount || 0}/${item.targetCount || 0})</span>`;
+      } else {
+        statusBadge = '<span class="admin-news-badge admin-news-badge-failed">❌ Сбой отправки</span>';
+      }
+
+      const imgHtml = (item.imageUrl && item.imageUrl !== '[Прикрепленное фото]' && /^https?:\/\//i.test(item.imageUrl))
+        ? `<div style="margin-top: 4px;"><img src="${escapeHtml(item.imageUrl)}" style="max-height: 80px; border-radius: 6px; object-fit: cover;" alt="Фото"></div>`
+        : '';
+
+      const titleHtml = item.title ? `<div class="admin-news-card-title">${escapeHtml(item.title)}</div>` : '';
+      const msgHtml = item.message ? `<div class="admin-news-card-msg">${escapeHtml(item.message)}</div>` : '';
+
+      card.innerHTML = `
+        <div class="admin-news-card-header">
+          <div class="admin-news-card-badges">
+            ${statusBadge}
+            <span class="admin-news-card-date">${escapeHtml(item.kyivFormattedDate || '')}</span>
+          </div>
+          <button type="button" class="admin-news-delete-btn" data-id="${escapeHtml(item.id)}" title="Удалить из истории">🗑️</button>
+        </div>
+        ${titleHtml}
+        ${msgHtml}
+        ${imgHtml}
+        <div class="admin-news-card-footer">
+          <span class="admin-news-card-stats">👤 Автор: ${escapeHtml(item.author || 'Admin')}</span>
+          ${item.buttonText ? `<span style="font-size: 0.68rem; color: #38bdf8;">🔘 Кнопка: «${escapeHtml(item.buttonText)}»</span>` : ''}
+        </div>
+      `;
+
+      const deleteBtn = card.querySelector('.admin-news-delete-btn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteAdminNewsItem(item.id, item.title || 'Новость');
+        });
+      }
+
+      adminNewsItemsList.appendChild(card);
+    });
+  }
+
+  // Delete News Item from History
+  async function deleteAdminNewsItem(id, titleName) {
+    if (!confirm(`Вы уверены, что хотите удалить новость «${titleName}» из истории?`)) return;
+
+    try {
+      const payload = {
+        action: 'delete',
+        id,
+        telegramId: currentUser ? currentUser.telegramId : '',
+        adminTid: currentUser ? currentUser.telegramId : '',
+        username: currentUser ? currentUser.username : '',
+        adminUsername: currentUser ? currentUser.username : ''
+      };
+
+      const res = await fetch((API_BASE || '') + '/api/admin/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        showNewsStatus('🗑️ Новость удалена из истории', 'success');
+        loadAdminNewsData();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        showNewsStatus('❌ Ошибка при удалении: ' + (errData.error || 'Сбой запроса'), 'error');
+      }
+    } catch (e) {
+      showNewsStatus('❌ Ошибка сети: ' + e.message, 'error');
+    }
+  }
+
+  // Send Broadcast (Test to admin or Full to all players)
+  async function sendAdminNews(isTestOnly) {
+    if (!isAlligatorAdmin(currentUser)) {
+      alert('Доступ запрещён: требуются права администратора');
+      return;
+    }
+
+    const title = adminNewsTitleInput ? adminNewsTitleInput.value.trim() : '';
+    const message = adminNewsMessageInput ? adminNewsMessageInput.value.trim() : '';
+    const buttonText = (adminNewsButtonTextInput && adminNewsButtonTextInput.value.trim()) || '🚀 Играть в Color Sort';
+
+    if (!title && !message) {
+      alert('Пожалуйста, введите заголовок или текст сообщения.');
+      return;
+    }
+
+    if (!isTestOnly) {
+      const countStr = cachedNewsAudienceCount > 0 ? ` (${cachedNewsAudienceCount} чел.)` : '';
+      const confirmSend = window.confirm(
+        `📢 ПОДТВЕРДИТЕ РАССЫЛКУ:\n\nВы собираетесь разослать это уведомление ВСЕМ игрокам${countStr} в Telegram-боте Color Sort!\n\nКаждый игрок получит уведомление в Telegram с кнопкой запуска игры. Продолжить?`
+      );
+      if (!confirmSend) return;
+    }
+
+    const testBtnOrigText = adminNewsTestSendBtn ? adminNewsTestSendBtn.innerHTML : '';
+    const broadBtnOrigText = adminNewsBroadcastBtn ? adminNewsBroadcastBtn.innerHTML : '';
+
+    if (adminNewsTestSendBtn) adminNewsTestSendBtn.disabled = true;
+    if (adminNewsBroadcastBtn) adminNewsBroadcastBtn.disabled = true;
+
+    if (isTestOnly && adminNewsTestSendBtn) {
+      adminNewsTestSendBtn.innerHTML = '<span>⏳</span> <span>Отправка тестового сообщения...</span>';
+    } else if (!isTestOnly && adminNewsBroadcastBtn) {
+      adminNewsBroadcastBtn.innerHTML = '<span>⏳</span> <span>Рассылка игрокам...</span>';
+    }
+
+    try {
+      const payload = {
+        action: 'broadcast',
+        telegramId: currentUser ? currentUser.telegramId : '5761685341',
+        adminTid: currentUser ? currentUser.telegramId : '5761685341',
+        username: currentUser ? currentUser.username : '',
+        adminUsername: currentUser ? currentUser.username : '',
+        firstName: currentUser ? currentUser.firstName : '',
+        adminFirstName: currentUser ? currentUser.firstName : '',
+        title,
+        message,
+        buttonText,
+        isTestOnly
+      };
+
+      if (newsImageBase64) {
+        payload.imageBase64 = newsImageBase64;
+      } else if (adminNewsImageUrlInput && adminNewsImageUrlInput.value.trim()) {
+        payload.imageUrl = adminNewsImageUrlInput.value.trim();
+      }
+
+      const res = await fetch((API_BASE || '') + '/api/admin/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showNewsStatus(
+          isTestOnly
+            ? '✅ Тестовое уведомление доставлено в ваш Telegram!'
+            : `🎉 Уведомление успешно разослано! Доставлено: ${data.deliveredCount || 0} из ${data.totalTargeted || 0}`,
+          'success'
+        );
+
+        if (!isTestOnly) {
+          // Clear inputs after successful public broadcast
+          if (adminNewsTitleInput) adminNewsTitleInput.value = '';
+          if (adminNewsMessageInput) adminNewsMessageInput.value = '';
+          removeNewsSelectedImage();
+        }
+
+        // Refresh news history
+        await loadAdminNewsData();
+      } else {
+        showNewsStatus(`❌ Ошибка: ${data.error || 'Не удалось отправить уведомление'}`, 'error');
+      }
+    } catch (err) {
+      showNewsStatus(`❌ Ошибка сети: ${err.message || 'Сбой запроса'}`, 'error');
+    } finally {
+      if (adminNewsTestSendBtn) {
+        adminNewsTestSendBtn.disabled = false;
+        adminNewsTestSendBtn.innerHTML = testBtnOrigText;
+      }
+      if (adminNewsBroadcastBtn) {
+        adminNewsBroadcastBtn.disabled = false;
+        adminNewsBroadcastBtn.innerHTML = broadBtnOrigText;
+      }
+    }
+  }
+
+  // Bind Buttons
+  if (adminNewsRefreshBtn) {
+    adminNewsRefreshBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadAdminNewsData();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  if (adminNewsTestSendBtn) {
+    adminNewsTestSendBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sendAdminNews(true);
+    });
+  }
+
+  if (adminNewsBroadcastBtn) {
+    adminNewsBroadcastBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sendAdminNews(false);
     });
   }
 

@@ -4,11 +4,13 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../db');
 const { startBot } = require('../bot');
+const newsService = require('../newsService');
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Middleware to log API calls
@@ -986,6 +988,49 @@ app.post('/api/admin/leaderboard-history/delete', (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+/**
+ * Admin: Get all players who connected a TON wallet
+ */
+app.get('/api/admin/connected-wallets', (req, res) => {
+  try {
+    if (!checkIsAdmin(req.query)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+    const wallets = db.getConnectedWallets();
+    res.json({ success: true, wallets });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/connected-wallets:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: Get confirmed deposits for a specific player (Lazy-loaded)
+ */
+app.get('/api/admin/player-deposits', (req, res) => {
+  try {
+    if (!checkIsAdmin(req.query)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+    const targetTelegramId = req.query.telegramId || req.query.playerTid || req.query.playerTelegramId;
+    if (!targetTelegramId) {
+      return res.status(400).json({ success: false, error: 'Параметр telegramId обязателен' });
+    }
+    const deposits = db.getPlayerDeposits(targetTelegramId);
+    const totalAmount = Number(deposits.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0).toFixed(4));
+    const totalCount = deposits.length;
+    res.json({ success: true, deposits, totalAmount, totalCount });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/player-deposits:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: News & Telegram Notifications Broadcast
+ */
+app.all('/api/admin/news', (req, res) => newsService.handleRequest(req, res));
 
 /**
  * Cron trigger for daily leaderboard snapshot (23:55 Kyiv)
