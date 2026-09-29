@@ -20,14 +20,24 @@ if (opens !== closes) {
   process.exit(1);
 }
 
+// Verify that profileTabsNav contains ONLY 2 tabs (no admin tab)
+const navStart = html.indexOf('id="profileTabsNav"');
+const navEnd = html.indexOf('</div>', navStart);
+const navSlice = html.substring(navStart, navEnd);
+
+if (navSlice.includes('profileTabBtnAdmin') || navSlice.includes('🛡️')) {
+  console.error('ERROR: profileTabsNav still contains admin shield button!');
+  process.exit(1);
+}
+console.log('✅ profileTabsNav correctly has ONLY 2 tabs (Profile & Referrals)!');
+
 const requiredIds = [
   'profileTabsNav',
   'profileTabBtnProfile',
   'profileTabBtnReferrals',
-  'profileTabBtnAdmin',
   'profileTabContentProfile',
   'profileTabContentReferrals',
-  'profileTabContentAdmin',
+  'profileAdminQuickBtn',
   'langGrid',
   'tgCardCyberFarm',
   'telegramChannelCard',

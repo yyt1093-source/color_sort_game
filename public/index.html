@@ -492,6 +492,7 @@
       </div>
 
       <!-- Profile Tabs Navigation (Под ником и уровнем игрока) -->
+      <!-- Profile Tabs Navigation (Под ником и уровнем игрока: ровно 2 вкладки) -->
       <div class="profile-tabs-nav" id="profileTabsNav">
         <button type="button" class="profile-tab-btn active" id="profileTabBtnProfile" data-tab="profile">
           <span class="profile-tab-icon">👤</span>
@@ -500,9 +501,6 @@
         <button type="button" class="profile-tab-btn" id="profileTabBtnReferrals" data-tab="referrals">
           <span class="profile-tab-icon">👥</span>
           <span class="profile-tab-title" id="profileTabTitleReferrals">Рефералы</span>
-        </button>
-        <button type="button" class="profile-tab-btn profile-tab-btn-icon-only hidden" id="profileTabBtnAdmin" data-tab="admin" title="Панель Администратора" aria-label="Панель Администратора">
-          <span class="profile-tab-icon">🛡️</span>
         </button>
       </div>
 
@@ -622,60 +620,10 @@
               <span id="profileAdminQuickSub">Управление бонусами, снимки, кошельки и новости</span>
             </div>
           </div>
-          <span class="profile-admin-quick-arrow">→</span>
+          <span class="profile-admin-quick-arrow" id="profileAdminQuickArrow">▼</span>
         </button>
-      </div>
 
-      <!-- Tab 2: Referrals (Реферальная программа) -->
-      <div id="profileTabContentReferrals" class="profile-tab-pane hidden">
-        <!-- Referral Program Card -->
-        <div class="referral-section-box">
-          <div class="referral-box-header">
-            <div class="referral-header-left">
-              <div>
-                <strong id="referralSectionTitle">Color Sort</strong>
-                <span id="referralSectionSub" class="referral-sub">За каждого приглашённого — 5 отмен хода, 5 подсказок, 5 открытий цвета и 5 пустых баночек</span>
-              </div>
-            </div>
-            <div class="referral-badge-count">
-              <span id="referralCountVal">0</span>
-              <span class="ref-unit-label" id="referralUnitLabel">друзей</span>
-            </div>
-          </div>
-
-          <!-- Referral Promo Banner Image -->
-          <div class="referral-banner-wrap" id="referralBannerClickable">
-            <img src="referral_art_clean.jpg" alt="Color Sort" class="referral-banner-img">
-          </div>
-
-          <!-- Share & Copy Link Actions -->
-          <div class="referral-actions-grid">
-            <button type="button" id="shareReferralTelegramBtn" class="ref-action-btn ref-share-btn">
-              <span>📢 Пригласить в Telegram</span>
-            </button>
-            <button type="button" id="copyReferralLinkBtn" class="ref-action-btn ref-copy-btn" title="Скопировать реферальную ссылку">
-              <span id="copyReferralBtnText">📋 Скопировать ссылку</span>
-            </button>
-          </div>
-
-          <!-- Friends List -->
-          <div class="referrals-list-wrapper">
-            <div class="referrals-list-header">
-              <span id="referralsListHeader">Приглашённые друзья:</span>
-            </div>
-            <div id="referralsListContainer" class="referrals-list">
-              <div class="referrals-empty-state">
-                <span id="referralsEmptyText">Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab 3: Admin Panel (Только для Админа) -->
-      <div id="profileTabContentAdmin" class="profile-tab-pane hidden">
-      <!-- Admin Panel Section (Only for Alligator) -->
-      <div id="adminPanelSection" class="admin-panel-section hidden">
+        <div id="adminPanelSection" class="admin-panel-section hidden">
         <div class="admin-panel-header">
           <span class="admin-shield-icon">🛡️</span>
           <div>
@@ -1021,6 +969,51 @@
           </div>
         </div>
       </div>
+      </div>
+
+      <div id="profileTabContentReferrals" class="profile-tab-pane hidden">
+        <!-- Referral Program Card -->
+        <div class="referral-section-box">
+          <div class="referral-box-header">
+            <div class="referral-header-left">
+              <div>
+                <strong id="referralSectionTitle">Color Sort</strong>
+                <span id="referralSectionSub" class="referral-sub">За каждого приглашённого — 5 отмен хода, 5 подсказок, 5 открытий цвета и 5 пустых баночек</span>
+              </div>
+            </div>
+            <div class="referral-badge-count">
+              <span id="referralCountVal">0</span>
+              <span class="ref-unit-label" id="referralUnitLabel">друзей</span>
+            </div>
+          </div>
+
+          <!-- Referral Promo Banner Image -->
+          <div class="referral-banner-wrap" id="referralBannerClickable">
+            <img src="referral_art_clean.jpg" alt="Color Sort" class="referral-banner-img">
+          </div>
+
+          <!-- Share & Copy Link Actions -->
+          <div class="referral-actions-grid">
+            <button type="button" id="shareReferralTelegramBtn" class="ref-action-btn ref-share-btn">
+              <span>📢 Пригласить в Telegram</span>
+            </button>
+            <button type="button" id="copyReferralLinkBtn" class="ref-action-btn ref-copy-btn" title="Скопировать реферальную ссылку">
+              <span id="copyReferralBtnText">📋 Скопировать ссылку</span>
+            </button>
+          </div>
+
+          <!-- Friends List -->
+          <div class="referrals-list-wrapper">
+            <div class="referrals-list-header">
+              <span id="referralsListHeader">Приглашённые друзья:</span>
+            </div>
+            <div id="referralsListContainer" class="referrals-list">
+              <div class="referrals-empty-state">
+                <span id="referralsEmptyText">Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
