@@ -557,48 +557,104 @@ async function handleRequest(req, res) {
         return res.status(400).json({ success: false, error: 'ID новости не указан.' });
       }
 
-      const history = await fetchNewsHistory();
-      const targetItem = history.find(item => item.id === deleteId);
+      console.log(`[ColorSortNews] Запрос на полное удаление новости: ${deleteId}`);
+
+      // Collect all messages from all possible sources
+      const allFoundMessages = [];
+
+      // 1. Client-supplied messages (if frontend passed them)
+      if (Array.isArray(body.messages) && body.messages.length > 0) {
+        allFoundMessages.push(...body.messages);
+      }
+
+      // 2. Dedicated KVDB key for this news item's messages
+      try {
+        const msgsRes = await fetch(`https://kvdb.io/${KVDB_BUCKET}/color_sort_msgs_${deleteId}?_cb=${Date.now()}`, {
+          headers: { 'Cache-Control': 'no-cache, no-store' }
+        });
+        if (msgsRes.ok) {
+          const parsed = await msgsRes.json();
+          if (Array.isArray(parsed)) allFoundMessages.push(...parsed);
+        }
+      } catch (e) {}
+
+      // 3. Raw KVDB news history (WITHOUT any deletedIds filtering!)
+      let rawKvList = [];
+      try {
+        const rawRes = await fetch(`${KVDB_NEWS_URL}?_cb=${Date.now()}`, {
+          headers: { 'Cache-Control': 'no-cache, no-store' }
+        });
+        if (rawRes.ok) {
+          const parsed = await rawRes.json();
+          if (Array.isArray(parsed)) rawKvList = parsed;
+        }
+      } catch (e) {}
+
+      // 4. Disk and in-memory cache
+      const diskList = readDiskNews();
+      const memList = Array.isArray(globalThis.colorSortNewsHistoryCache) ? globalThis.colorSortNewsHistoryCache : [];
+      const combined = [...rawKvList, ...diskList, ...memList];
+      const targetItem = combined.find(it => it && String(it.id) === deleteId);
+      if (targetItem && Array.isArray(targetItem.messages)) {
+        allFoundMessages.push(...targetItem.messages);
+      }
+
+      // Deduplicate messages by chatId_messageId
+      const uniqueMsgMap = new Map();
+      allFoundMessages.forEach(m => {
+        if (m && m.chatId && m.messageId) {
+          const key = `${m.chatId}_${m.messageId}`;
+          uniqueMsgMap.set(key, { chatId: String(m.chatId), messageId: Number(m.messageId) });
+        }
+      });
+      const uniqueMessages = Array.from(uniqueMsgMap.values());
 
       let deletedFromTgCount = 0;
       let tgFailCount = 0;
 
-      // 1. Delete message from Telegram bot for all players who received it
-      if (targetItem && Array.isArray(targetItem.messages) && targetItem.messages.length > 0) {
-        console.log(`[AdminNews] Удаление сообщения из Telegram для ${targetItem.messages.length} игроков...`);
-        for (let i = 0; i < targetItem.messages.length; i++) {
-          const entry = targetItem.messages[i];
-          if (entry && entry.chatId && entry.messageId) {
-            try {
-              const delRes = await deleteTelegramMessage(entry.chatId, entry.messageId);
-              if (delRes.ok) {
-                deletedFromTgCount++;
-              } else {
-                tgFailCount++;
-              }
-            } catch (e) {
+      // 5. Delete from Telegram Bot API for ALL players who received the message!
+      if (uniqueMessages.length > 0) {
+        console.log(`[ColorSortNews] Отзыв ${uniqueMessages.length} сообщений из Telegram у игроков...`);
+        for (let i = 0; i < uniqueMessages.length; i++) {
+          const entry = uniqueMessages[i];
+          try {
+            const delRes = await deleteTelegramMessage(entry.chatId, entry.messageId);
+            if (delRes.ok) {
+              deletedFromTgCount++;
+            } else {
               tgFailCount++;
+              console.warn(`[ColorSortNews] deleteTelegramMessage fail for ${entry.chatId}: ${delRes.error}`);
             }
+          } catch (e) {
+            tgFailCount++;
+            console.warn(`[ColorSortNews] deleteTelegramMessage exception: ${e.message}`);
           }
-          if (i < targetItem.messages.length - 1) {
+          if (i < uniqueMessages.length - 1) {
             await sleep(25);
           }
         }
       }
 
-      // 2. Remove from history in memory, disk, and KVDB
-      const updated = history.filter(item => item.id !== deleteId);
-      await saveNewsHistory(updated);
+      // 6. Remove item from RAW history lists and save
+      const cleaned = (rawKvList.length > 0 ? rawKvList : combined).filter(it => it && String(it.id) !== deleteId);
+      await saveNewsHistory(cleaned);
 
-      // 3. Blacklist deleted ID so it can NEVER reappear
+      // 7. Permanently blacklist deleted ID in KVDB and disk
       await recordDeletedNewsId(deleteId);
+
+      // 8. Clean up dedicated KVDB messages key
+      try {
+        await fetch(`https://kvdb.io/${KVDB_BUCKET}/color_sort_msgs_${deleteId}`, {
+          method: 'DELETE'
+        });
+      } catch (e) {}
 
       return res.status(200).json({
         success: true,
         message: `Новость «${targetItem?.title || deleteId}» полностью удалена везде: у всех игроков в боте (удалено сообщений: ${deletedFromTgCount}) и из интерфейса.`,
         deletedId: deleteId,
         deletedFromTgCount,
-        totalMessages: targetItem?.messages?.length || 0
+        totalMessages: uniqueMessages.length
       });
     }
 
@@ -718,6 +774,15 @@ async function handleRequest(req, res) {
       // Keep up to 50 latest items
       const trimmed = history.slice(0, 50);
       await saveNewsHistory(trimmed);
+
+      // Also save to dedicated KVDB message key for 100% reliable recall
+      try {
+        await fetch(`https://kvdb.io/${KVDB_BUCKET}/color_sort_msgs_${newsItem.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sentMessages)
+        });
+      } catch (e) {}
 
       return res.status(200).json({
         success: true,
