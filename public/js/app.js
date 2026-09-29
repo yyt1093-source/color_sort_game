@@ -7953,10 +7953,19 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       // Fallback: If API returned null (e.g. GitHub Pages static), fetch directly from KVDB
       if (!data || !data.success) {
         try {
-          const kvRes = await fetch(`${GLOBAL_CLOUD_BASE}/color_sort_news_list_v1?_cb=${Date.now()}`, { cache: 'no-store' });
+          const [kvRes, delRes] = await Promise.all([
+            fetch(`${GLOBAL_CLOUD_BASE}/color_sort_news_list_v1?_cb=${Date.now()}`, { cache: 'no-store' }),
+            fetch(`${GLOBAL_CLOUD_BASE}/color_sort_deleted_news_ids?_cb=${Date.now()}`, { cache: 'no-store' }).catch(() => null)
+          ]);
           if (kvRes.ok) {
-            const history = await kvRes.json();
+            let history = await kvRes.json();
             if (Array.isArray(history)) {
+              if (delRes && delRes.ok) {
+                const deletedIds = await delRes.json().catch(() => []);
+                if (Array.isArray(deletedIds) && deletedIds.length > 0) {
+                  history = history.filter(item => item && item.id && !deletedIds.includes(item.id));
+                }
+              }
               data = {
                 success: true,
                 history,
@@ -8051,9 +8060,23 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
-  // Delete News Item from History
+  // Delete News Item everywhere: from Telegram bot for all players, history, and UI
   async function deleteAdminNewsItem(id, titleName) {
-    if (!confirm(`Вы уверены, что хотите удалить новость «${titleName}» из истории?`)) return;
+    if (!confirm(`Вы уверены, что хотите полностью удалить новость «${titleName}» везде?\n\nСообщение будет отозвано и удалено у ВСЕХ игроков в Telegram-боте, а также навсегда стёрто из игры!`)) return;
+
+    // 1. Instantly remove card from UI for instantaneous responsiveness
+    try {
+      const deleteButtons = adminNewsItemsList ? adminNewsItemsList.querySelectorAll(`.admin-news-delete-btn[data-id="${id}"]`) : [];
+      deleteButtons.forEach(btn => {
+        const card = btn.closest('.admin-news-card');
+        if (card) card.remove();
+      });
+      if (adminNewsItemsList && adminNewsItemsList.children.length === 0 && adminNewsEmptyState) {
+        adminNewsEmptyState.classList.remove('hidden');
+      }
+    } catch (e) {}
+
+    showNewsStatus('⏳ Удаление новости у всех игроков в боте и очистка...', 'info');
 
     try {
       const payload = {
@@ -8065,6 +8088,39 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         adminUsername: currentUser ? currentUser.username : ''
       };
 
+      // 2. Direct client KVDB cleanup to guarantee immediate cloud consistency
+      try {
+        const [kvRes, delRes] = await Promise.all([
+          fetch(`${GLOBAL_CLOUD_BASE}/color_sort_news_list_v1?_cb=${Date.now()}`),
+          fetch(`${GLOBAL_CLOUD_BASE}/color_sort_deleted_news_ids?_cb=${Date.now()}`).catch(() => null)
+        ]);
+        if (kvRes.ok) {
+          const list = await kvRes.json();
+          if (Array.isArray(list)) {
+            const filtered = list.filter(n => n.id !== id);
+            await fetch(`${GLOBAL_CLOUD_BASE}/color_sort_news_list_v1`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(filtered)
+            });
+          }
+        }
+        let delList = [];
+        if (delRes && delRes.ok) {
+          delList = await delRes.json().catch(() => []);
+          if (!Array.isArray(delList)) delList = [];
+        }
+        if (!delList.includes(id)) {
+          delList.push(id);
+          await fetch(`${GLOBAL_CLOUD_BASE}/color_sort_deleted_news_ids`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(delList)
+          });
+        }
+      } catch (kvErr) {}
+
+      // 3. Server call to delete Telegram messages for all recipients
       const res = await fetch((NEWS_API_BASE || API_BASE || '') + '/api/admin/news', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -8072,14 +8128,20 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       });
 
       if (res.ok) {
-        showNewsStatus('🗑️ Новость удалена из истории', 'success');
+        const data = await res.json();
+        const tgMsgInfo = (data && data.deletedFromTgCount !== undefined)
+          ? ` (удалено сообщений в боте: ${data.deletedFromTgCount})`
+          : '';
+        showNewsStatus(`🗑️ Новость «${titleName}» полностью удалена везде: у всех игроков в боте${tgMsgInfo} и из интерфейса!`, 'success');
         loadAdminNewsData();
       } else {
         const errData = await res.json().catch(() => ({}));
         showNewsStatus('❌ Ошибка при удалении: ' + (errData.error || 'Сбой запроса'), 'error');
+        loadAdminNewsData();
       }
     } catch (e) {
       showNewsStatus('❌ Ошибка сети: ' + e.message, 'error');
+      loadAdminNewsData();
     }
   }
 

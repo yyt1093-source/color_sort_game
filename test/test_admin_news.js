@@ -113,10 +113,14 @@ async function runTests() {
   assert.strictEqual(testBroadcastBody.success, true, 'Test broadcast should succeed');
   assert.strictEqual(testBroadcastBody.totalTargeted, 1, 'Total targeted MUST be exactly 1 (the admin)');
   assert.strictEqual(testBroadcastBody.newsItem.isTest, true, 'newsItem.isTest MUST be true');
-  console.log(`✅ Test 6 Passed: Test broadcast executed safely to admin only! Target count: ${testBroadcastBody.totalTargeted}, Delivered: ${testBroadcastBody.deliveredCount}.\n`);
+  assert.ok(Array.isArray(testBroadcastBody.newsItem.messages), 'newsItem.messages must be an array');
+  assert.strictEqual(testBroadcastBody.newsItem.messages.length, 1, 'newsItem.messages must have 1 message entry');
+  assert.strictEqual(testBroadcastBody.newsItem.messages[0].chatId, '5761685341', 'chatId must match admin');
+  assert.ok(typeof testBroadcastBody.newsItem.messages[0].messageId === 'number', 'messageId must be a number from Telegram Bot API');
+  console.log(`✅ Test 6 Passed: Test broadcast executed safely to admin only! Target count: ${testBroadcastBody.totalTargeted}, Delivered: ${testBroadcastBody.deliveredCount}, Message ID: ${testBroadcastBody.newsItem.messages[0].messageId}.\n`);
 
-  // Test 7: Delete news item from history
-  console.log('Test 7: Deleting news item from history...');
+  // Test 7: Delete news item from history & Telegram bot
+  console.log('Test 7: Deleting news item everywhere (from Telegram bot & history)...');
   const createdId = testBroadcastBody.newsItem.id;
   let deleteCode = null;
   let deleteBody = null;
@@ -143,12 +147,16 @@ async function runTests() {
   await newsService.handleRequest(mockDeleteReq, mockDeleteRes);
   assert.strictEqual(deleteCode, 200, 'Should return 200 OK for delete');
   assert.strictEqual(deleteBody.success, true, 'Delete should succeed');
+  assert.strictEqual(deleteBody.deletedFromTgCount, 1, 'Telegram message must be deleted for the recipient');
 
-  // Verify deletion from list
+  // Verify deletion from list & blacklist registration
   const historyAfter = await newsService.fetchNewsHistory();
   const exists = historyAfter.some(item => item.id === createdId);
   assert.strictEqual(exists, false, 'Deleted item must no longer exist in history');
-  console.log('✅ Test 7 Passed: Successfully deleted news item from history.\n');
+
+  const blacklisted = await newsService.fetchDeletedNewsIds();
+  assert.ok(blacklisted.includes(createdId), 'Deleted news ID must be stored in blacklist');
+  console.log(`✅ Test 7 Passed: Successfully deleted news item from history and recalled ${deleteBody.deletedFromTgCount} Telegram message(s)!\n`);
 
   console.log('🎉 ALL TESTS PASSED! News and notification broadcast system for Color Sort is 100% verified and production-ready!');
 }

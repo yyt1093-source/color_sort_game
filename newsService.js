@@ -9,17 +9,24 @@ const WEB_APP_URL = process.env.WEB_APP_URL || 'https://yyt1093-source.github.io
 const KVDB_BUCKET = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
 const KVDB_NEWS_KEY = 'color_sort_news_list_v1';
 const KVDB_NEWS_URL = `https://kvdb.io/${KVDB_BUCKET}/${KVDB_NEWS_KEY}`;
+const KVDB_DELETED_NEWS_KEY = 'color_sort_deleted_news_ids';
+const KVDB_DELETED_NEWS_URL = `https://kvdb.io/${KVDB_BUCKET}/${KVDB_DELETED_NEWS_KEY}`;
 
 // Disk storage paths (Writable /tmp on Vercel Serverless, or local data/ in dev)
 const TMP_DIR = process.env.TEMP || process.env.TMPDIR || '/tmp';
 const TMP_NEWS_DIR = path.join(TMP_DIR, 'color_sort_news');
 const TMP_NEWS_FILE = path.join(TMP_NEWS_DIR, 'news_history.json');
+const TMP_DELETED_NEWS_FILE = path.join(TMP_NEWS_DIR, 'deleted_news_ids.json');
 
 try {
   if (!fs.existsSync(TMP_NEWS_DIR)) {
     fs.mkdirSync(TMP_NEWS_DIR, { recursive: true });
   }
 } catch (e) {}
+
+if (!globalThis.colorSortDeletedNewsIds) {
+  globalThis.colorSortDeletedNewsIds = null;
+}
 
 // Kyiv Time helper: e.g. "29.09.2026, 18:30:15 (Киев)"
 function formatKyivTime(ts = Date.now()) {
@@ -85,9 +92,76 @@ function writeDiskNews(items) {
   } catch (e) {}
 }
 
+async function fetchDeletedNewsIds() {
+  const deletedSet = new Set();
+  if (globalThis.colorSortDeletedNewsIds && Array.isArray(globalThis.colorSortDeletedNewsIds)) {
+    globalThis.colorSortDeletedNewsIds.forEach(id => deletedSet.add(String(id)));
+  }
+
+  // 1. Check local disk
+  try {
+    if (fs.existsSync(TMP_DELETED_NEWS_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(TMP_DELETED_NEWS_FILE, 'utf-8'));
+      if (Array.isArray(parsed)) parsed.forEach(id => deletedSet.add(String(id)));
+    }
+    const localData = path.resolve(__dirname, 'data', 'deleted_news_ids.json');
+    if (fs.existsSync(localData)) {
+      const parsed = JSON.parse(fs.readFileSync(localData, 'utf-8'));
+      if (Array.isArray(parsed)) parsed.forEach(id => deletedSet.add(String(id)));
+    }
+  } catch (e) {}
+
+  // 2. Try Cloud KVDB
+  try {
+    const res = await fetch(`${KVDB_DELETED_NEWS_URL}?_cb=${Date.now()}`);
+    if (res.ok) {
+      const arr = await res.json();
+      if (Array.isArray(arr)) arr.forEach(id => deletedSet.add(String(id)));
+    }
+  } catch (e) {}
+
+  const result = Array.from(deletedSet);
+  globalThis.colorSortDeletedNewsIds = result;
+  return result;
+}
+
+async function recordDeletedNewsId(id) {
+  if (!id) return;
+  const list = await fetchDeletedNewsIds();
+  const idStr = String(id).trim();
+  if (!list.includes(idStr)) {
+    list.push(idStr);
+    globalThis.colorSortDeletedNewsIds = list;
+
+    // Save to disk
+    try {
+      fs.writeFileSync(TMP_DELETED_NEWS_FILE, JSON.stringify(list, null, 2), 'utf-8');
+      const localDataDir = path.resolve(__dirname, 'data');
+      if (!fs.existsSync(localDataDir)) fs.mkdirSync(localDataDir, { recursive: true });
+      fs.writeFileSync(path.resolve(localDataDir, 'deleted_news_ids.json'), JSON.stringify(list, null, 2), 'utf-8');
+    } catch (e) {}
+
+    // Save to KVDB
+    try {
+      await fetch(KVDB_DELETED_NEWS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(list)
+      });
+    } catch (e) {}
+  }
+}
+
 async function fetchNewsHistory() {
+  const deletedIds = await fetchDeletedNewsIds();
+  const filterDeleted = (items) => {
+    if (!Array.isArray(items)) return [];
+    if (!deletedIds || deletedIds.length === 0) return items;
+    return items.filter(it => it && it.id && !deletedIds.includes(String(it.id)));
+  };
+
   if (globalThis.colorSortNewsHistoryCache && Array.isArray(globalThis.colorSortNewsHistoryCache)) {
-    return globalThis.colorSortNewsHistoryCache;
+    return filterDeleted(globalThis.colorSortNewsHistoryCache);
   }
 
   // 1. Try Cloud KVDB
@@ -99,28 +173,34 @@ async function fetchNewsHistory() {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
-        globalThis.colorSortNewsHistoryCache = data;
-        writeDiskNews(data);
-        return data;
+        const cleaned = filterDeleted(data);
+        globalThis.colorSortNewsHistoryCache = cleaned;
+        writeDiskNews(cleaned);
+        return cleaned;
       }
     }
   } catch (e) {}
 
   // 2. Fallback to Disk
-  const diskItems = readDiskNews();
+  const diskItems = filterDeleted(readDiskNews());
   globalThis.colorSortNewsHistoryCache = diskItems;
   return diskItems;
 }
 
 async function saveNewsHistory(items) {
-  globalThis.colorSortNewsHistoryCache = items;
-  writeDiskNews(items);
+  const deletedIds = await fetchDeletedNewsIds();
+  const filtered = Array.isArray(items) 
+    ? (deletedIds && deletedIds.length > 0 ? items.filter(it => it && it.id && !deletedIds.includes(String(it.id))) : items)
+    : [];
+
+  globalThis.colorSortNewsHistoryCache = filtered;
+  writeDiskNews(filtered);
 
   try {
     const res = await fetch(KVDB_NEWS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(items)
+      body: JSON.stringify(filtered)
     });
     return res.ok;
   } catch (e) {
@@ -232,7 +312,7 @@ async function sendTelegramPhoto(chatId, photoSource, caption, buttonText) {
         })
       });
       const data = await res.json();
-      if (data.ok) return { ok: true, fileId: photoSource.fileId };
+      if (data.ok) return { ok: true, fileId: photoSource.fileId, messageId: data.result?.message_id };
 
       if (data.description && data.description.includes("can't parse entities")) {
         const retryRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
@@ -246,7 +326,7 @@ async function sendTelegramPhoto(chatId, photoSource, caption, buttonText) {
           })
         });
         const retryData = await retryRes.json();
-        return { ok: retryData.ok, fileId: photoSource.fileId, error: retryData.description };
+        return { ok: retryData.ok, fileId: photoSource.fileId, messageId: retryData.result?.message_id, error: retryData.description };
       }
       return { ok: false, error: data.description };
     } catch (e) {
@@ -275,7 +355,7 @@ async function sendTelegramPhoto(chatId, photoSource, caption, buttonText) {
       const data = await res.json();
       if (data.ok) {
         const capturedFileId = data.result?.photo?.slice(-1)[0]?.file_id;
-        return { ok: true, fileId: capturedFileId };
+        return { ok: true, fileId: capturedFileId, messageId: data.result?.message_id };
       }
       return { ok: false, error: data.description };
     } catch (err) {
@@ -300,7 +380,7 @@ async function sendTelegramPhoto(chatId, photoSource, caption, buttonText) {
       const data = await res.json();
       if (data.ok) {
         const capturedFileId = data.result?.photo?.slice(-1)[0]?.file_id;
-        return { ok: true, fileId: capturedFileId };
+        return { ok: true, fileId: capturedFileId, messageId: data.result?.message_id };
       }
       if (data.description && data.description.includes("can't parse entities")) {
         const retryRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
@@ -315,7 +395,7 @@ async function sendTelegramPhoto(chatId, photoSource, caption, buttonText) {
         });
         const retryData = await retryRes.json();
         const capturedFileId = retryData.result?.photo?.slice(-1)[0]?.file_id;
-        return { ok: retryData.ok, fileId: capturedFileId, error: retryData.description };
+        return { ok: retryData.ok, fileId: capturedFileId, messageId: retryData.result?.message_id, error: retryData.description };
       }
       return { ok: false, error: data.description };
     } catch (e) {
@@ -351,7 +431,7 @@ async function sendTelegramMessage(chatId, text, buttonText) {
       })
     });
     const data = await res.json();
-    if (data.ok) return { ok: true };
+    if (data.ok) return { ok: true, messageId: data.result?.message_id };
 
     if (data.description && data.description.includes("can't parse entities")) {
       const retryRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -364,12 +444,31 @@ async function sendTelegramMessage(chatId, text, buttonText) {
         })
       });
       const retryData = await retryRes.json();
-      return { ok: retryData.ok, error: retryData.description };
+      return { ok: retryData.ok, messageId: retryData.result?.message_id, error: retryData.description };
     }
 
     return { ok: false, error: data.description };
   } catch (e) {
     return { ok: false, error: e.message };
+  }
+}
+
+// Delete a message from Telegram chat (used when admin clicks delete news)
+async function deleteTelegramMessage(chatId, messageId) {
+  if (!chatId || !messageId) return { ok: false, error: 'Missing chatId or messageId' };
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId
+      })
+    });
+    const data = await res.json();
+    return { ok: Boolean(data.ok), error: data.description };
+  } catch (err) {
+    return { ok: false, error: err.message };
   }
 }
 
@@ -446,7 +545,7 @@ async function handleRequest(req, res) {
       });
     }
 
-    // ACTION: Delete news item from history
+    // ACTION: Delete news item everywhere (from Telegram bot for all players, history, KVDB, and UI)
     if (action === 'delete') {
       const deleteId = String(body.id || query.id || '').trim();
       if (!deleteId) {
@@ -454,10 +553,48 @@ async function handleRequest(req, res) {
       }
 
       const history = await fetchNewsHistory();
+      const targetItem = history.find(item => item.id === deleteId);
+
+      let deletedFromTgCount = 0;
+      let tgFailCount = 0;
+
+      // 1. Delete message from Telegram bot for all players who received it
+      if (targetItem && Array.isArray(targetItem.messages) && targetItem.messages.length > 0) {
+        console.log(`[AdminNews] Удаление сообщения из Telegram для ${targetItem.messages.length} игроков...`);
+        for (let i = 0; i < targetItem.messages.length; i++) {
+          const entry = targetItem.messages[i];
+          if (entry && entry.chatId && entry.messageId) {
+            try {
+              const delRes = await deleteTelegramMessage(entry.chatId, entry.messageId);
+              if (delRes.ok) {
+                deletedFromTgCount++;
+              } else {
+                tgFailCount++;
+              }
+            } catch (e) {
+              tgFailCount++;
+            }
+          }
+          if (i < targetItem.messages.length - 1) {
+            await sleep(25);
+          }
+        }
+      }
+
+      // 2. Remove from history in memory, disk, and KVDB
       const updated = history.filter(item => item.id !== deleteId);
       await saveNewsHistory(updated);
 
-      return res.status(200).json({ success: true, message: 'Новость успешно удалена из истории.' });
+      // 3. Blacklist deleted ID so it can NEVER reappear
+      await recordDeletedNewsId(deleteId);
+
+      return res.status(200).json({
+        success: true,
+        message: `Новость «${targetItem?.title || deleteId}» полностью удалена везде: у всех игроков в боте (удалено сообщений: ${deletedFromTgCount}) и из интерфейса.`,
+        deletedId: deleteId,
+        deletedFromTgCount,
+        totalMessages: targetItem?.messages?.length || 0
+      });
     }
 
     // ACTION: Broadcast news to Telegram
@@ -496,6 +633,7 @@ async function handleRequest(req, res) {
       let deliveredCount = 0;
       let failedCount = 0;
       let cachedPhotoFileId = undefined;
+      const sentMessages = [];
 
       const hasPhoto = Boolean(imageUrl || imageBase64);
 
@@ -513,6 +651,9 @@ async function handleRequest(req, res) {
             const photoRes = await sendTelegramPhoto(targetChatId, photoSource, formattedText, buttonText);
             if (photoRes.ok) {
               deliveredCount++;
+              if (photoRes.messageId) {
+                sentMessages.push({ chatId: String(targetChatId), messageId: photoRes.messageId });
+              }
               if (photoRes.fileId && !cachedPhotoFileId) {
                 cachedPhotoFileId = photoRes.fileId;
               }
@@ -521,6 +662,9 @@ async function handleRequest(req, res) {
               const textRes = await sendTelegramMessage(targetChatId, formattedText, buttonText);
               if (textRes.ok) {
                 deliveredCount++;
+                if (textRes.messageId) {
+                  sentMessages.push({ chatId: String(targetChatId), messageId: textRes.messageId });
+                }
               } else {
                 failedCount++;
               }
@@ -529,6 +673,9 @@ async function handleRequest(req, res) {
             const textRes = await sendTelegramMessage(targetChatId, formattedText, buttonText);
             if (textRes.ok) {
               deliveredCount++;
+              if (textRes.messageId) {
+                sentMessages.push({ chatId: String(targetChatId), messageId: textRes.messageId });
+              }
             } else {
               failedCount++;
             }
@@ -556,6 +703,7 @@ async function handleRequest(req, res) {
         targetCount: targetTids.length,
         deliveredCount,
         failedCount,
+        messages: sentMessages, // Saved sent messages with chat IDs and message IDs!
         status: deliveredCount === targetTids.length ? 'sent' : deliveredCount > 0 ? 'partially_sent' : 'failed',
         isTest: isTestOnly
       };
@@ -598,5 +746,8 @@ module.exports = {
   getTargetPlayerIds,
   sendTelegramPhoto,
   sendTelegramMessage,
+  deleteTelegramMessage,
+  fetchDeletedNewsIds,
+  recordDeletedNewsId,
   handleRequest
 };
