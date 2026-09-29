@@ -624,12 +624,18 @@
         </button>
 
         <div id="adminPanelSection" class="admin-panel-section hidden">
-        <div class="admin-panel-header">
-          <span class="admin-shield-icon">🛡️</span>
-          <div>
-            <strong id="adminPanelTitle">Панель Администратора</strong>
-            <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48860)</span>
+        <div class="admin-panel-header" id="adminPanelHeader" role="button" tabindex="0" title="Свернуть панель администратора">
+          <div class="admin-panel-header-left">
+            <span class="admin-shield-icon">🛡️</span>
+            <div>
+              <strong id="adminPanelTitle">Панель Администратора</strong>
+              <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48860)</span>
+            </div>
           </div>
+          <button type="button" class="admin-panel-collapse-btn" id="adminPanelCollapseBtn" title="Свернуть панель">
+            <span>Свернуть</span>
+            <span>▲</span>
+          </button>
         </div>
 
         <!-- Admin Navigation (Отдельные разделы в столбик) -->
@@ -968,6 +974,12 @@
             </div>
           </div>
         </div>
+
+        <!-- Bottom Collapse Button -->
+        <button type="button" id="adminPanelBottomCollapseBtn" class="admin-panel-bottom-collapse-btn" title="Свернуть панель администратора">
+          <span>▲</span>
+          <span>Свернуть панель администратора</span>
+        </button>
       </div>
       </div>
 

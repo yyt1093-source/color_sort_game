@@ -5006,26 +5006,69 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   }
 
   // Toggle Admin Panel in Bottom of Profile
+  function toggleAdminPanel(forceState) {
+    if (!adminPanelSection) return;
+    const isCurrentlyHidden = adminPanelSection.classList.contains('hidden');
+    const willBeHidden = typeof forceState === 'boolean' ? forceState : !isCurrentlyHidden;
+
+    const quickBtn = document.getElementById('profileAdminQuickBtn');
+    const arrow = document.getElementById('profileAdminQuickArrow');
+
+    if (willBeHidden) {
+      adminPanelSection.classList.add('hidden');
+      if (arrow) arrow.textContent = '▼';
+      if (quickBtn) {
+        quickBtn.classList.remove('active');
+        setTimeout(() => {
+          quickBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 30);
+      }
+    } else {
+      adminPanelSection.classList.remove('hidden');
+      if (arrow) arrow.textContent = '▲';
+      if (quickBtn) {
+        quickBtn.classList.add('active');
+      }
+      setTimeout(() => {
+        adminPanelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('light');
+    }
+  }
+
   const profileAdminQuickBtn = document.getElementById('profileAdminQuickBtn');
   if (profileAdminQuickBtn) {
     profileAdminQuickBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      if (!adminPanelSection) return;
-      const isHidden = adminPanelSection.classList.contains('hidden');
-      const arrow = document.getElementById('profileAdminQuickArrow');
-      if (isHidden) {
-        adminPanelSection.classList.remove('hidden');
-        if (arrow) arrow.textContent = '▲';
-        setTimeout(() => {
-          adminPanelSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 50);
-      } else {
-        adminPanelSection.classList.add('hidden');
-        if (arrow) arrow.textContent = '▼';
-      }
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
-        window.TelegramApp.TelegramApp.haptic('light');
-      }
+      toggleAdminPanel();
+    });
+  }
+
+  const adminPanelHeader = document.getElementById('adminPanelHeader');
+  if (adminPanelHeader) {
+    adminPanelHeader.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleAdminPanel(true);
+    });
+  }
+
+  const adminPanelCollapseBtn = document.getElementById('adminPanelCollapseBtn');
+  if (adminPanelCollapseBtn) {
+    adminPanelCollapseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAdminPanel(true);
+    });
+  }
+
+  const adminPanelBottomCollapseBtn = document.getElementById('adminPanelBottomCollapseBtn');
+  if (adminPanelBottomCollapseBtn) {
+    adminPanelBottomCollapseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleAdminPanel(true);
     });
   }
 
