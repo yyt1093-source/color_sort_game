@@ -53,6 +53,17 @@ app.post('/api/user/init', async (req, res) => {
         if (kvRes.ok) {
           const kvData = await kvRes.json();
           if (kvData && typeof kvData === 'object') {
+            const kvMaxLvl = kvData.max_level !== undefined ? kvData.max_level : kvData.maxLevel;
+            if (kvMaxLvl !== undefined) {
+              user.max_level = Math.max(Number(user.max_level || 0), Number(kvMaxLvl || 0));
+            }
+            const kvCurLvl = kvData.current_level !== undefined ? kvData.current_level : kvData.currentLevel;
+            if (kvCurLvl !== undefined) {
+              user.current_level = Math.max(Number(user.current_level || 1), Number(kvCurLvl || 1));
+            }
+            if (kvData.stars !== undefined) {
+              user.stars = Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
+            }
             user.hints = Math.max(Number(user.hints || 0), Number(kvData.hints || 0));
             user.undos = Math.max(Number(user.undos || 0), Number(kvData.undos || 0));
             user.reveals = Math.max(Number(user.reveals || 0), Number(kvData.reveals || 0));
@@ -71,9 +82,9 @@ app.post('/api/user/init', async (req, res) => {
             try {
               db.prepare(`
                 UPDATE users 
-                SET hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?
+                SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?
                 WHERE telegram_id = ?
-              `).run(user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, String(id));
+              `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, String(id));
             } catch (e) {}
           }
         }
@@ -181,7 +192,7 @@ app.get('/api/leaderboard', async (req, res) => {
           const cpMaxLevel = Number(cp.maxLevel || cp.level || 0);
 
           // Exclude cloud players from old season or players who haven't completed round 1 (maxLevel < 1)
-          if (seasonResetAt > 0 && cpSeason < seasonResetAt) return;
+          if (seasonResetAt > 0 && cpSeason < seasonResetAt && Number(cp.updatedAt || 0) < seasonResetAt) return;
           if (cpMaxLevel < 1) return;
 
           if (!existing || cpMaxLevel > existing.max_level) {

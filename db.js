@@ -1521,6 +1521,9 @@ function ensureSeedLeaderboardSnapshot() {
 }
 
 module.exports = {
+  db,
+  prepare: (sql) => db.prepare(sql),
+  exec: (sql) => db.exec(sql),
   getUser,
   updateUserProgress,
   addBonus,
