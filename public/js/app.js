@@ -8037,7 +8037,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             ${statusBadge}
             <span class="admin-news-card-date">${escapeHtml(item.kyivFormattedDate || '')}</span>
           </div>
-          <button type="button" class="admin-news-delete-btn" data-id="${escapeHtml(item.id)}" title="Удалить новость везде" style="padding: 4px 8px; background: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444; border-radius: 6px; color: #fca5a5; font-size: 0.72rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">🗑️ Удалить</button>
+          <button type="button" class="admin-news-delete-btn" data-id="${escapeHtml(item.id)}" title="Удалить новость везде (из бота Telegram у всех игроков и из игры)" style="padding: 4px 9px; background: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444; border-radius: 6px; color: #fca5a5; font-size: 0.72rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🗑️ Удалить везде</button>
         </div>
         ${titleHtml}
         ${msgHtml}
@@ -8052,9 +8052,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (deleteBtn) {
         deleteBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          showAdminNewsDeleteModal(item.id, item.title || 'Новость', () => {
-            deleteAdminNewsItem(item.id, item.title || 'Новость');
-          });
+          deleteBtn.disabled = true;
+          deleteBtn.innerHTML = '<span>⏳</span> <span>Удаляю...</span>';
+          deleteAdminNewsItem(item.id, item.title || 'Новость', item.messages || []);
         });
       }
 
@@ -8062,60 +8062,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
-  // In-App Confirmation Modal for Color Sort News Deletion
-  function showAdminNewsDeleteModal(id, titleName, onConfirm) {
-    const existing = document.getElementById('admin-news-delete-modal-overlay');
-    if (existing) existing.remove();
-
-    const overlay = document.createElement('div');
-    overlay.id = 'admin-news-delete-modal-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.82);
-      backdrop-filter: blur(5px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999999;
-      padding: 16px;
-    `;
-
-    overlay.innerHTML = `
-      <div style="background: #0f172a; border: 2px solid #ef4444; border-radius: 16px; padding: 18px; max-width: 360px; width: 100%; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 12px 36px rgba(239, 68, 68, 0.45); font-family: inherit;">
-        <div style="display: flex; align-items: center; gap: 8px; color: #f87171; font-weight: 900; font-size: 13.5px;">
-          <span style="font-size: 18px;">🗑️</span>
-          <span>Удалить новость везде?</span>
-        </div>
-        <div style="font-size: 11px; color: #cbd5e1; line-height: 1.45;">
-          Вы действительно хотите удалить новость <strong>«${escapeHtml(titleName)}»</strong>?<br><br>
-          ⚡ Сообщение будет <strong>отозвано и удалено из Telegram у ВСЕХ игроков</strong>, а также навсегда стёрто из игры!
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;">
-          <button type="button" id="admin-news-cancel-delete-btn" style="padding: 10px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #ffffff; font-size: 11px; font-weight: 700; cursor: pointer;">
-            Отмена
-          </button>
-          <button type="button" id="admin-news-confirm-delete-btn" style="padding: 10px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); border: 1px solid #f87171; border-radius: 10px; color: #ffffff; font-size: 11px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-            🗑️ Да, удалить
-          </button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    const cancelBtn = overlay.querySelector('#admin-news-cancel-delete-btn');
-    const confirmBtn = overlay.querySelector('#admin-news-confirm-delete-btn');
-
-    if (cancelBtn) cancelBtn.addEventListener('click', () => overlay.remove());
-    if (confirmBtn) confirmBtn.addEventListener('click', () => {
-      overlay.remove();
-      onConfirm();
-    });
-  }
-
   // Delete News Item everywhere: from Telegram bot for all players, history, and UI
-  async function deleteAdminNewsItem(id, titleName) {
+  async function deleteAdminNewsItem(id, titleName, messages) {
     // 1. Instantly remove card from UI for instantaneous responsiveness
     try {
       const deleteButtons = adminNewsItemsList ? adminNewsItemsList.querySelectorAll(`.admin-news-delete-btn[data-id="${id}"]`) : [];
@@ -8128,19 +8076,38 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
     } catch (e) {}
 
-    showNewsStatus('⏳ Удаление новости у всех игроков в боте и очистка...', 'info');
+    showNewsStatus(`⏳ Удаление новости «${titleName}» у всех игроков в боте Telegram...`, 'info');
 
     try {
       const payload = {
         action: 'delete',
         id,
-        telegramId: currentUser ? currentUser.telegramId : '',
-        adminTid: currentUser ? currentUser.telegramId : '',
-        username: currentUser ? currentUser.username : '',
-        adminUsername: currentUser ? currentUser.username : ''
+        messages: Array.isArray(messages) ? messages : [],
+        telegramId: currentUser ? currentUser.telegramId : '5761685341',
+        adminTid: currentUser ? currentUser.telegramId : '5761685341',
+        username: currentUser ? currentUser.username : 'ALLIGATOR0709',
+        adminUsername: currentUser ? currentUser.username : 'ALLIGATOR0709'
       };
 
-      // 2. Direct client KVDB cleanup to guarantee immediate cloud consistency
+      // 2. Server call FIRST to recall Telegram bot messages for all players
+      const res = await fetch((NEWS_API_BASE || API_BASE || '') + '/api/admin/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      let tgMsgInfo = '';
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Сбой сервера (${res.status})`);
+      }
+
+      const data = await res.json();
+      tgMsgInfo = (data && data.deletedFromTgCount !== undefined)
+        ? ` (отозвано сообщений в боте: ${data.deletedFromTgCount})`
+        : '';
+
+      // 3. Clean up Cloud KVDB and record deleted ID in blacklist
       try {
         const [kvRes, delRes] = await Promise.all([
           fetch(`${GLOBAL_CLOUD_BASE}/color_sort_news_list_v1?_cb=${Date.now()}`),
@@ -8149,7 +8116,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         if (kvRes.ok) {
           const list = await kvRes.json();
           if (Array.isArray(list)) {
-            const filtered = list.filter(n => n.id !== id);
+            const filtered = list.filter(n => n && n.id !== id);
             await fetch(`${GLOBAL_CLOUD_BASE}/color_sort_news_list_v1`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -8172,27 +8139,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         }
       } catch (kvErr) {}
 
-      // 3. Server call to delete Telegram messages for all recipients
-      const res = await fetch((NEWS_API_BASE || API_BASE || '') + '/api/admin/news', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const tgMsgInfo = (data && data.deletedFromTgCount !== undefined)
-          ? ` (удалено сообщений в боте: ${data.deletedFromTgCount})`
-          : '';
-        showNewsStatus(`🗑️ Новость «${titleName}» полностью удалена везде: у всех игроков в боте${tgMsgInfo} и из интерфейса!`, 'success');
-        loadAdminNewsData();
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        showNewsStatus('❌ Ошибка при удалении: ' + (errData.error || 'Сбой запроса'), 'error');
-        loadAdminNewsData();
-      }
+      showNewsStatus(`🗑️ Новость «${titleName}» полностью удалена везде: у всех игроков в боте${tgMsgInfo} и из интерфейса!`, 'success');
+      loadAdminNewsData();
     } catch (e) {
-      showNewsStatus('❌ Ошибка сети: ' + e.message, 'error');
+      showNewsStatus('❌ Ошибка при удалении: ' + e.message, 'error');
       loadAdminNewsData();
     }
   }
