@@ -94,11 +94,24 @@ function writeDiskNews(items) {
 
 async function fetchDeletedNewsIds() {
   const deletedSet = new Set();
+
+  // 1. Try Cloud KVDB FIRST with cache-busting timestamp
+  try {
+    const res = await fetch(`${KVDB_DELETED_NEWS_URL}?_cb=${Date.now()}`, {
+      headers: { 'Cache-Control': 'no-cache, no-store' }
+    });
+    if (res.ok) {
+      const arr = await res.json();
+      if (Array.isArray(arr)) arr.forEach(id => deletedSet.add(String(id)));
+    }
+  } catch (e) {}
+
+  // 2. Check in-memory global cache
   if (globalThis.colorSortDeletedNewsIds && Array.isArray(globalThis.colorSortDeletedNewsIds)) {
     globalThis.colorSortDeletedNewsIds.forEach(id => deletedSet.add(String(id)));
   }
 
-  // 1. Check local disk
+  // 3. Check local disk
   try {
     if (fs.existsSync(TMP_DELETED_NEWS_FILE)) {
       const parsed = JSON.parse(fs.readFileSync(TMP_DELETED_NEWS_FILE, 'utf-8'));
@@ -108,15 +121,6 @@ async function fetchDeletedNewsIds() {
     if (fs.existsSync(localData)) {
       const parsed = JSON.parse(fs.readFileSync(localData, 'utf-8'));
       if (Array.isArray(parsed)) parsed.forEach(id => deletedSet.add(String(id)));
-    }
-  } catch (e) {}
-
-  // 2. Try Cloud KVDB
-  try {
-    const res = await fetch(`${KVDB_DELETED_NEWS_URL}?_cb=${Date.now()}`);
-    if (res.ok) {
-      const arr = await res.json();
-      if (Array.isArray(arr)) arr.forEach(id => deletedSet.add(String(id)));
     }
   } catch (e) {}
 
@@ -160,15 +164,11 @@ async function fetchNewsHistory() {
     return items.filter(it => it && it.id && !deletedIds.includes(String(it.id)));
   };
 
-  if (globalThis.colorSortNewsHistoryCache && Array.isArray(globalThis.colorSortNewsHistoryCache)) {
-    return filterDeleted(globalThis.colorSortNewsHistoryCache);
-  }
-
-  // 1. Try Cloud KVDB
+  // 1. Try Cloud KVDB FIRST with cache-busting timestamp
   try {
     const res = await fetch(`${KVDB_NEWS_URL}?_cb=${Date.now()}`, {
       method: 'GET',
-      headers: { 'Cache-Control': 'no-cache' }
+      headers: { 'Cache-Control': 'no-cache, no-store' }
     });
     if (res.ok) {
       const data = await res.json();
@@ -181,7 +181,12 @@ async function fetchNewsHistory() {
     }
   } catch (e) {}
 
-  // 2. Fallback to Disk
+  // 2. In-memory cache fallback ONLY if KVDB network failed
+  if (globalThis.colorSortNewsHistoryCache && Array.isArray(globalThis.colorSortNewsHistoryCache)) {
+    return filterDeleted(globalThis.colorSortNewsHistoryCache);
+  }
+
+  // 3. Fallback to Disk
   const diskItems = filterDeleted(readDiskNews());
   globalThis.colorSortNewsHistoryCache = diskItems;
   return diskItems;
