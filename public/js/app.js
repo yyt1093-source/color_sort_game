@@ -1708,11 +1708,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (profileTabTitleProfile) profileTabTitleProfile.textContent = t('profileTabLabel');
     const profileTabTitleReferrals = document.getElementById('profileTabTitleReferrals');
     if (profileTabTitleReferrals) profileTabTitleReferrals.textContent = t('referralsTabLabel');
-    const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
-    if (profileTabBtnAdmin) {
-      profileTabBtnAdmin.title = t('adminTabLabel') || 'Панель Администратора';
-      profileTabBtnAdmin.setAttribute('aria-label', t('adminTabLabel') || 'Панель Администратора');
-    }
     if (langSectionTitle) langSectionTitle.textContent = t('langSectionTitle');
     if (restartBtnLabel) restartBtnLabel.textContent = t('restartBtn');
     if (undoBtnLabel) undoBtnLabel.textContent = t('undoBtn');
@@ -4882,9 +4877,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
   }, 10000);
 
-  // Profile Tabs Navigation System
+  // Profile Tabs Navigation System (Ровно 2 вкладки: Профиль и Рефералы)
   function switchProfileTab(tabName) {
-    const tabs = ['profile', 'referrals', 'admin'];
+    const tabs = ['profile', 'referrals'];
     tabs.forEach(name => {
       const btn = document.getElementById(`profileTabBtn${name.charAt(0).toUpperCase() + name.slice(1)}`);
       const pane = document.getElementById(`profileTabContent${name.charAt(0).toUpperCase() + name.slice(1)}`);
@@ -4921,14 +4916,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   // Profile & Language Modal Event Listeners
   function openProfileMenu() {
     const isUserAdmin = isAlligatorAdmin(currentUser);
-    const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
-    if (profileTabBtnAdmin) {
-      if (isUserAdmin) {
-        profileTabBtnAdmin.classList.remove('hidden');
-      } else {
-        profileTabBtnAdmin.classList.add('hidden');
-      }
-    }
     const profileAdminQuickBtn = document.getElementById('profileAdminQuickBtn');
     if (profileAdminQuickBtn) {
       if (isUserAdmin) {
@@ -4938,11 +4925,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       }
     }
     if (adminPanelSection) {
-      if (isUserAdmin) {
-        adminPanelSection.classList.remove('hidden');
-      } else {
-        adminPanelSection.classList.add('hidden');
-      }
+      // Сворачиваем панель администратора по умолчанию при открытии меню
+      adminPanelSection.classList.add('hidden');
+    }
+    const profileAdminQuickArrow = document.getElementById('profileAdminQuickArrow');
+    if (profileAdminQuickArrow) {
+      profileAdminQuickArrow.textContent = '▼';
     }
     if (profileCardAvatar && userAvatar) {
       profileCardAvatar.src = userAvatar.src;
@@ -5000,7 +4988,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
-  // Profile Modal Tab Switchers
+  // Profile Modal Tab Switchers (Только 2 вкладки: Профиль и Рефералы)
   const profileTabBtnProfile = document.getElementById('profileTabBtnProfile');
   if (profileTabBtnProfile) {
     profileTabBtnProfile.addEventListener('click', (e) => {
@@ -5017,19 +5005,27 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
-  const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
-  if (profileTabBtnAdmin) {
-    profileTabBtnAdmin.addEventListener('click', (e) => {
-      e.preventDefault();
-      switchProfileTab('admin');
-    });
-  }
-
+  // Toggle Admin Panel in Bottom of Profile
   const profileAdminQuickBtn = document.getElementById('profileAdminQuickBtn');
   if (profileAdminQuickBtn) {
     profileAdminQuickBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      switchProfileTab('admin');
+      if (!adminPanelSection) return;
+      const isHidden = adminPanelSection.classList.contains('hidden');
+      const arrow = document.getElementById('profileAdminQuickArrow');
+      if (isHidden) {
+        adminPanelSection.classList.remove('hidden');
+        if (arrow) arrow.textContent = '▲';
+        setTimeout(() => {
+          adminPanelSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      } else {
+        adminPanelSection.classList.add('hidden');
+        if (arrow) arrow.textContent = '▼';
+      }
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('light');
+      }
     });
   }
 

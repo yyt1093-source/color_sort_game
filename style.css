@@ -2204,18 +2204,6 @@ body {
   white-space: nowrap;
 }
 
-/* Icon-only tab button (e.g. 🛡️ Admin button) */
-.profile-tab-btn.profile-tab-btn-icon-only {
-  flex: 0 0 52px;
-  padding: 8px 4px;
-  justify-content: center;
-}
-
-.profile-tab-btn.profile-tab-btn-icon-only .profile-tab-icon {
-  font-size: 22px;
-  line-height: 1;
-}
-
 /* Profile Tab Panes */
 .profile-tab-pane {
   display: flex;
@@ -2313,13 +2301,6 @@ body {
   }
   .profile-tab-btn .profile-tab-icon {
     font-size: 17px;
-  }
-  .profile-tab-btn.profile-tab-btn-icon-only {
-    flex: 0 0 44px;
-    padding: 6px 2px;
-  }
-  .profile-tab-btn.profile-tab-btn-icon-only .profile-tab-icon {
-    font-size: 19px;
   }
 }
 
