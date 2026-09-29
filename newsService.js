@@ -510,9 +510,9 @@ async function handleRequest(req, res) {
 
     // ADMIN AUTH CHECK FOR ALL OTHER ACTIONS
     const authData = {
-      telegramId: body.telegramId || query.telegramId,
+      telegramId: body.telegramId || query.telegramId || body.tid || query.tid,
       adminTelegramId: body.adminTelegramId || query.adminTelegramId,
-      adminTid: body.adminTid || query.adminTid || body.telegramId || query.telegramId,
+      adminTid: body.adminTid || query.adminTid || body.telegramId || query.telegramId || body.tid || query.tid,
       adminId: body.adminId || query.adminId,
       firstName: body.firstName || query.firstName,
       adminFirstName: body.adminFirstName || query.adminFirstName,
