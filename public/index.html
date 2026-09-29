@@ -492,153 +492,190 @@
         </div>
       </div>
 
-      <!-- Cyber Farm Telegram Channel Card -->
-      <div class="telegram-channel-box" id="tgCardCyberFarm" role="button" tabindex="0" title="https://t.me/cyberfarmk" aria-label="Telegram-канал Cyber Farm">
-        <div class="tg-channel-header-row">
-          <div class="tg-channel-title-col">
-            <div class="tg-channel-card-title tg-channel-title-i18n">Telegram–канал</div>
-            <div class="tg-channel-subrow">
-              <span class="tg-channel-name">Cyber Farm</span>
-            </div>
-          </div>
-          <a href="https://t.me/cyberfarmk" target="_blank" rel="noopener noreferrer" class="tg-channel-corner-arrow" id="tgCornerArrowCyberFarm" title="Перейти в канал" aria-label="Открыть в Telegram">
-            ↗
-          </a>
-        </div>
+      <!-- Profile Tabs Navigation (Под ником и уровнем игрока) -->
+      <div class="profile-tabs-nav" id="profileTabsNav">
+        <button type="button" class="profile-tab-btn active" id="profileTabBtnProfile" data-tab="profile">
+          <span class="profile-tab-icon">👤</span>
+          <span class="profile-tab-title" id="profileTabTitleProfile">Профиль</span>
+        </button>
+        <button type="button" class="profile-tab-btn" id="profileTabBtnReferrals" data-tab="referrals">
+          <span class="profile-tab-icon">👥</span>
+          <span class="profile-tab-title" id="profileTabTitleReferrals">Рефералы</span>
+        </button>
+        <button type="button" class="profile-tab-btn hidden" id="profileTabBtnAdmin" data-tab="admin">
+          <span class="profile-tab-icon">🛡️</span>
+          <span class="profile-tab-title" id="profileTabTitleAdmin">Админ</span>
+        </button>
+      </div>
 
-        <div class="tg-channel-main-row">
-          <a href="https://t.me/cyberfarmk" target="_blank" rel="noopener noreferrer" class="tg-channel-avatar-wrap" id="tgAvatarCyberFarm" title="Cyber Farm Telegram">
-            <img src="assets/cyberfarm.jpg" alt="Cyber Farm" class="tg-channel-avatar-img">
-          </a>
-          <div class="tg-channel-actions-col">
-            <a href="https://t.me/cyberfarmk" target="_blank" rel="noopener noreferrer" class="tg-channel-link-pill tg-channel-link-btn" id="tgLinkCyberFarm" title="https://t.me/cyberfarmk">
-              <span class="tg-channel-link-text tg-link-domain">https://t.me/cyberfarmk</span>
-              <svg class="tg-link-external-icon tg-link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-            </a>
-            <button type="button" class="tg-channel-cta-btn tg-join-channel-btn" id="tgBtnCyberFarm">
-              <span class="tg-cta-icon tg-btn-icon">📢</span>
-              <span class="tg-cta-text tg-channel-join-text" id="tgBtnTextCyberFarm">Перейти в канал</span>
+      <!-- Tab 1: Profile (Вверху выбор языка, затем ссылки на Telegram-каналы) -->
+      <div id="profileTabContentProfile" class="profile-tab-pane">
+        <!-- Language Selection Box (Вверху вкладки Профиль) -->
+        <div class="language-selection-box">
+          <div class="language-box-header">
+            <span>🌐</span>
+            <strong id="langSectionTitle">Сменить язык</strong>
+          </div>
+          <div class="lang-grid" id="langGrid">
+            <button class="lang-btn" data-lang="ru">
+              <span class="lang-flag">🇷🇺</span>
+              <span class="lang-name">Русский</span>
+              <span class="lang-check">✓</span>
+            </button>
+            <button class="lang-btn" data-lang="uk">
+              <span class="lang-flag">🇺🇦</span>
+              <span class="lang-name">Українська</span>
+              <span class="lang-check">✓</span>
+            </button>
+            <button class="lang-btn" data-lang="en">
+              <span class="lang-flag">🇬🇧</span>
+              <span class="lang-name">English</span>
+              <span class="lang-check">✓</span>
+            </button>
+            <button class="lang-btn" data-lang="de">
+              <span class="lang-flag">🇩🇪</span>
+              <span class="lang-name">Deutsch</span>
+              <span class="lang-check">✓</span>
+            </button>
+            <button class="lang-btn" data-lang="lt">
+              <span class="lang-flag">🇱🇹</span>
+              <span class="lang-name">Lietuvių</span>
+              <span class="lang-check">✓</span>
             </button>
           </div>
         </div>
-      </div>
 
-      <!-- Color Sort Telegram Channel Card -->
-      <div class="telegram-channel-box" id="telegramChannelCard" role="button" tabindex="0" title="https://t.me/sortcolors" aria-label="Telegram-канал Color Sort">
-        <div class="tg-channel-header-row">
-          <div class="tg-channel-title-col">
-            <div class="tg-channel-card-title tg-channel-title-i18n" id="tgChannelTitle">Telegram–канал</div>
-            <div class="tg-channel-subrow">
-              <span class="tg-channel-name">Color Sort</span>
+        <!-- Cyber Farm Telegram Channel Card -->
+        <div class="telegram-channel-box" id="tgCardCyberFarm" role="button" tabindex="0" title="https://t.me/cyberfarmk" aria-label="Telegram-канал Cyber Farm">
+          <div class="tg-channel-header-row">
+            <div class="tg-channel-title-col">
+              <div class="tg-channel-card-title tg-channel-title-i18n">Telegram–канал</div>
+              <div class="tg-channel-subrow">
+                <span class="tg-channel-name">Cyber Farm</span>
+              </div>
+            </div>
+            <a href="https://t.me/cyberfarmk" target="_blank" rel="noopener noreferrer" class="tg-channel-corner-arrow" id="tgCornerArrowCyberFarm" title="Перейти в канал" aria-label="Открыть в Telegram">
+              ↗
+            </a>
+          </div>
+
+          <div class="tg-channel-main-row">
+            <a href="https://t.me/cyberfarmk" target="_blank" rel="noopener noreferrer" class="tg-channel-avatar-wrap" id="tgAvatarCyberFarm" title="Cyber Farm Telegram">
+              <img src="assets/cyberfarm.jpg" alt="Cyber Farm" class="tg-channel-avatar-img">
+            </a>
+            <div class="tg-channel-actions-col">
+              <a href="https://t.me/cyberfarmk" target="_blank" rel="noopener noreferrer" class="tg-channel-link-pill tg-channel-link-btn" id="tgLinkCyberFarm" title="https://t.me/cyberfarmk">
+                <span class="tg-channel-link-text tg-link-domain">https://t.me/cyberfarmk</span>
+                <svg class="tg-link-external-icon tg-link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
+              <button type="button" class="tg-channel-cta-btn tg-join-channel-btn" id="tgBtnCyberFarm">
+                <span class="tg-cta-icon tg-btn-icon">📢</span>
+                <span class="tg-cta-text tg-channel-join-text" id="tgBtnTextCyberFarm">Перейти в канал</span>
+              </button>
             </div>
           </div>
-          <a href="https://t.me/sortcolors" target="_blank" rel="noopener noreferrer" class="tg-channel-corner-arrow" id="tgCornerArrowColorSort" title="Перейти в канал" aria-label="Открыть в Telegram">
-            ↗
-          </a>
         </div>
 
-        <div class="tg-channel-main-row">
-          <a href="https://t.me/sortcolors" target="_blank" rel="noopener noreferrer" class="tg-channel-avatar-wrap tg-channel-thumb" id="tgChannelThumb" title="Color Sort Telegram">
-            <img src="assets/sortcolors.jpg" alt="Color Sort Channel" class="tg-channel-avatar-img tg-channel-thumb-img">
-          </a>
-          <div class="tg-channel-actions-col">
-            <a href="https://t.me/sortcolors" target="_blank" rel="noopener noreferrer" class="tg-channel-link-pill tg-channel-link-btn" id="telegramChannelLink" title="https://t.me/sortcolors">
-              <span class="tg-channel-link-text tg-link-domain">https://t.me/sortcolors</span>
-              <svg class="tg-link-external-icon tg-link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
+        <!-- Color Sort Telegram Channel Card -->
+        <div class="telegram-channel-box" id="telegramChannelCard" role="button" tabindex="0" title="https://t.me/sortcolors" aria-label="Telegram-канал Color Sort">
+          <div class="tg-channel-header-row">
+            <div class="tg-channel-title-col">
+              <div class="tg-channel-card-title tg-channel-title-i18n" id="tgChannelTitle">Telegram–канал</div>
+              <div class="tg-channel-subrow">
+                <span class="tg-channel-name">Color Sort</span>
+              </div>
+            </div>
+            <a href="https://t.me/sortcolors" target="_blank" rel="noopener noreferrer" class="tg-channel-corner-arrow" id="tgCornerArrowColorSort" title="Перейти в канал" aria-label="Открыть в Telegram">
+              ↗
             </a>
-            <button type="button" class="tg-channel-cta-btn tg-join-channel-btn" id="telegramChannelJoinBtn">
-              <span class="tg-cta-icon tg-btn-icon">📢</span>
-              <span class="tg-cta-text tg-channel-join-text" id="telegramChannelJoinBtnText">Перейти в канал</span>
+          </div>
+
+          <div class="tg-channel-main-row">
+            <a href="https://t.me/sortcolors" target="_blank" rel="noopener noreferrer" class="tg-channel-avatar-wrap tg-channel-thumb" id="tgChannelThumb" title="Color Sort Telegram">
+              <img src="assets/sortcolors.jpg" alt="Color Sort Channel" class="tg-channel-avatar-img tg-channel-thumb-img">
+            </a>
+            <div class="tg-channel-actions-col">
+              <a href="https://t.me/sortcolors" target="_blank" rel="noopener noreferrer" class="tg-channel-link-pill tg-channel-link-btn" id="telegramChannelLink" title="https://t.me/sortcolors">
+                <span class="tg-channel-link-text tg-link-domain">https://t.me/sortcolors</span>
+                <svg class="tg-link-external-icon tg-link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
+              <button type="button" class="tg-channel-cta-btn tg-join-channel-btn" id="telegramChannelJoinBtn">
+                <span class="tg-cta-icon tg-btn-icon">📢</span>
+                <span class="tg-cta-text tg-channel-join-text" id="telegramChannelJoinBtnText">Перейти в канал</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Quick Switch Button (Только для Админа) -->
+        <button type="button" id="profileAdminQuickBtn" class="profile-admin-quick-btn hidden">
+          <div class="profile-admin-quick-content">
+            <span class="profile-admin-quick-icon">🛡️</span>
+            <div class="profile-admin-quick-text">
+              <strong id="profileAdminQuickTitle">Панель Администратора</strong>
+              <span id="profileAdminQuickSub">Управление бонусами, снимки, кошельки и новости</span>
+            </div>
+          </div>
+          <span class="profile-admin-quick-arrow">→</span>
+        </button>
+      </div>
+
+      <!-- Tab 2: Referrals (Реферальная программа) -->
+      <div id="profileTabContentReferrals" class="profile-tab-pane hidden">
+        <!-- Referral Program Card -->
+        <div class="referral-section-box">
+          <div class="referral-box-header">
+            <div class="referral-header-left">
+              <div>
+                <strong id="referralSectionTitle">Color Sort</strong>
+                <span id="referralSectionSub" class="referral-sub">За каждого приглашённого — 5 отмен хода, 5 подсказок, 5 открытий цвета и 5 пустых баночек</span>
+              </div>
+            </div>
+            <div class="referral-badge-count">
+              <span id="referralCountVal">0</span>
+              <span class="ref-unit-label" id="referralUnitLabel">друзей</span>
+            </div>
+          </div>
+
+          <!-- Referral Promo Banner Image -->
+          <div class="referral-banner-wrap" id="referralBannerClickable">
+            <img src="referral_art_clean.jpg" alt="Color Sort" class="referral-banner-img">
+          </div>
+
+          <!-- Share & Copy Link Actions -->
+          <div class="referral-actions-grid">
+            <button type="button" id="shareReferralTelegramBtn" class="ref-action-btn ref-share-btn">
+              <span>📢 Пригласить в Telegram</span>
+            </button>
+            <button type="button" id="copyReferralLinkBtn" class="ref-action-btn ref-copy-btn" title="Скопировать реферальную ссылку">
+              <span id="copyReferralBtnText">📋 Скопировать ссылку</span>
             </button>
           </div>
-        </div>
-      </div>
 
-      <!-- Referral Program Card -->
-      <div class="referral-section-box">
-        <div class="referral-box-header">
-          <div class="referral-header-left">
-            <div>
-              <strong id="referralSectionTitle">Color Sort</strong>
-              <span id="referralSectionSub" class="referral-sub">За каждого приглашённого — 5 отмен хода, 5 подсказок, 5 открытий цвета и 5 пустых баночек</span>
+          <!-- Friends List -->
+          <div class="referrals-list-wrapper">
+            <div class="referrals-list-header">
+              <span id="referralsListHeader">Приглашённые друзья:</span>
             </div>
-          </div>
-          <div class="referral-badge-count">
-            <span id="referralCountVal">0</span>
-            <span class="ref-unit-label" id="referralUnitLabel">друзей</span>
-          </div>
-        </div>
-
-        <!-- Referral Promo Banner Image -->
-        <div class="referral-banner-wrap" id="referralBannerClickable">
-          <img src="referral_art_clean.jpg" alt="Color Sort" class="referral-banner-img">
-        </div>
-
-        <!-- Share & Copy Link Actions -->
-        <div class="referral-actions-grid">
-          <button type="button" id="shareReferralTelegramBtn" class="ref-action-btn ref-share-btn">
-            <span>📢 Пригласить в Telegram</span>
-          </button>
-          <button type="button" id="copyReferralLinkBtn" class="ref-action-btn ref-copy-btn" title="Скопировать реферальную ссылку">
-            <span id="copyReferralBtnText">📋 Скопировать ссылку</span>
-          </button>
-        </div>
-
-        <!-- Friends List -->
-        <div class="referrals-list-wrapper">
-          <div class="referrals-list-header">
-            <span id="referralsListHeader">Приглашённые друзья:</span>
-          </div>
-          <div id="referralsListContainer" class="referrals-list">
-            <div class="referrals-empty-state">
-              <span id="referralsEmptyText">Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!</span>
+            <div id="referralsListContainer" class="referrals-list">
+              <div class="referrals-empty-state">
+                <span id="referralsEmptyText">Пока никто не зашёл по вашей ссылке. Отправьте ссылку друзьям в Telegram!</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="language-selection-box">
-        <div class="language-box-header">
-          <span>🌐</span>
-          <strong id="langSectionTitle">Сменить язык</strong>
-        </div>
-        <div class="lang-grid" id="langGrid">
-          <button class="lang-btn" data-lang="ru">
-            <span class="lang-flag">🇷🇺</span>
-            <span class="lang-name">Русский</span>
-            <span class="lang-check">✓</span>
-          </button>
-          <button class="lang-btn" data-lang="uk">
-            <span class="lang-flag">🇺🇦</span>
-            <span class="lang-name">Українська</span>
-            <span class="lang-check">✓</span>
-          </button>
-          <button class="lang-btn" data-lang="en">
-            <span class="lang-flag">🇬🇧</span>
-            <span class="lang-name">English</span>
-            <span class="lang-check">✓</span>
-          </button>
-          <button class="lang-btn" data-lang="de">
-            <span class="lang-flag">🇩🇪</span>
-            <span class="lang-name">Deutsch</span>
-            <span class="lang-check">✓</span>
-          </button>
-          <button class="lang-btn" data-lang="lt">
-            <span class="lang-flag">🇱🇹</span>
-            <span class="lang-name">Lietuvių</span>
-            <span class="lang-check">✓</span>
-          </button>
-        </div>
-      </div>
-
+      <!-- Tab 3: Admin Panel (Только для Админа) -->
+      <div id="profileTabContentAdmin" class="profile-tab-pane hidden">
       <!-- Admin Panel Section (Only for Alligator) -->
       <div id="adminPanelSection" class="admin-panel-section hidden">
         <div class="admin-panel-header">
@@ -985,6 +1022,7 @@
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </div>

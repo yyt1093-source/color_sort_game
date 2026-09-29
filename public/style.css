@@ -2039,6 +2039,8 @@ body {
 }
 
 .profile-card,
+.profile-tabs-nav,
+.profile-tab-pane,
 .telegram-channel-box,
 .referral-section-box,
 .lang-settings-group {
@@ -2141,6 +2143,163 @@ body {
   font-size: 0.85rem;
   font-weight: 700;
   color: #38bdf8;
+}
+
+/* Profile Tabs Navigation (Под ником и уровнем игрока) */
+.profile-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  padding: 5px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.profile-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profile-tab-btn:hover:not(.active) {
+  background: rgba(56, 189, 248, 0.08);
+  color: #e2e8f0;
+}
+
+.profile-tab-btn.active {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.3) 0%, rgba(2, 132, 199, 0.2) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  color: #38bdf8;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.profile-tab-btn .profile-tab-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.profile-tab-btn .profile-tab-title {
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+/* Profile Tab Panes */
+.profile-tab-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  animation: profileTabFade 0.2s ease-out;
+}
+
+.profile-tab-pane.hidden {
+  display: none !important;
+}
+
+@keyframes profileTabFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Admin Quick Switch Button in Profile Tab */
+.profile-admin-quick-btn {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.14) 0%, rgba(185, 28, 28, 0.22) 100%);
+  border: 1.5px solid rgba(239, 68, 68, 0.4);
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  color: #fca5a5;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.profile-admin-quick-btn:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(185, 28, 28, 0.32) 100%);
+  border-color: rgba(239, 68, 68, 0.6);
+  transform: translateY(-1px);
+}
+
+.profile-admin-quick-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.profile-admin-quick-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.profile-admin-quick-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile-admin-quick-text strong {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #fecaca;
+}
+
+.profile-admin-quick-text span {
+  font-size: 11px;
+  color: #f87171;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-admin-quick-arrow {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fca5a5;
+  flex-shrink: 0;
+}
+
+@media (max-width: 380px) {
+  .profile-tab-btn {
+    padding: 8px 4px;
+    font-size: 12px;
+    gap: 4px;
+  }
+  .profile-tab-btn .profile-tab-icon {
+    font-size: 13px;
+  }
 }
 
 /* Telegram Channel Card Styles (Cyber Farm & Color Sort) */

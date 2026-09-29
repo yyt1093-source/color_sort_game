@@ -189,7 +189,10 @@ async function initColorSortApp() {
       levelLabel: "Уровень",
       levelDisplayVal: (lvl) => `Уровень ${lvl}`,
       profileHint: "⚙️ Язык",
-      profileTitle: "⚙️ Профиль и Язык",
+      profileTitle: "⚙️ Профиль",
+      profileTabLabel: "Профиль",
+      referralsTabLabel: "Рефералы",
+      adminTabLabel: "Админ",
       langSectionTitle: "Сменить язык",
       restartBtn: "Сначала",
       undoBtn: "Отмена",
@@ -465,7 +468,10 @@ async function initColorSortApp() {
       levelLabel: "Рівень",
       levelDisplayVal: (lvl) => `Рівень ${lvl}`,
       profileHint: "⚙️ Мова",
-      profileTitle: "⚙️ Профіль та Мова",
+      profileTitle: "⚙️ Профіль",
+      profileTabLabel: "Профіль",
+      referralsTabLabel: "Реферали",
+      adminTabLabel: "Адмін",
       langSectionTitle: "Змінити мову",
       restartBtn: "Спочатку",
       undoBtn: "Відміна",
@@ -727,7 +733,10 @@ async function initColorSortApp() {
       levelLabel: "Level",
       levelDisplayVal: (lvl) => `Level ${lvl}`,
       profileHint: "⚙️ Lang",
-      profileTitle: "⚙️ Profile & Language",
+      profileTitle: "⚙️ Profile",
+      profileTabLabel: "Profile",
+      referralsTabLabel: "Referrals",
+      adminTabLabel: "Admin",
       langSectionTitle: "Change Language",
       restartBtn: "Restart",
       undoBtn: "Undo",
@@ -982,7 +991,10 @@ async function initColorSortApp() {
       levelLabel: "Stufe",
       levelDisplayVal: (lvl) => `Stufe ${lvl}`,
       profileHint: "⚙️ Sprache",
-      profileTitle: "⚙️ Profil & Sprache",
+      profileTitle: "⚙️ Profil",
+      profileTabLabel: "Profil",
+      referralsTabLabel: "Empfehlungen",
+      adminTabLabel: "Admin",
       langSectionTitle: "Sprache ändern",
       restartBtn: "Neustart",
       undoBtn: "Zurück",
@@ -1237,7 +1249,10 @@ async function initColorSortApp() {
       levelLabel: "Lygis",
       levelDisplayVal: (lvl) => `Lygis ${lvl}`,
       profileHint: "⚙️ Kalba",
-      profileTitle: "⚙️ Profilis ir Kalba",
+      profileTitle: "⚙️ Profilis",
+      profileTabLabel: "Profilis",
+      referralsTabLabel: "Rekomendacijos",
+      adminTabLabel: "Admin",
       langSectionTitle: "Pakeisti kalbą",
       restartBtn: "Iš naujo",
       undoBtn: "Atšaukti",
@@ -1689,6 +1704,12 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (levelBadgeLabel) levelBadgeLabel.textContent = t('levelLabel');
     if (profileSettingsHint) profileSettingsHint.textContent = t('profileHint');
     if (profileModalTitle) profileModalTitle.textContent = t('profileTitle');
+    const profileTabTitleProfile = document.getElementById('profileTabTitleProfile');
+    if (profileTabTitleProfile) profileTabTitleProfile.textContent = t('profileTabLabel');
+    const profileTabTitleReferrals = document.getElementById('profileTabTitleReferrals');
+    if (profileTabTitleReferrals) profileTabTitleReferrals.textContent = t('referralsTabLabel');
+    const profileTabTitleAdmin = document.getElementById('profileTabTitleAdmin');
+    if (profileTabTitleAdmin) profileTabTitleAdmin.textContent = t('adminTabLabel');
     if (langSectionTitle) langSectionTitle.textContent = t('langSectionTitle');
     if (restartBtnLabel) restartBtnLabel.textContent = t('restartBtn');
     if (undoBtnLabel) undoBtnLabel.textContent = t('undoBtn');
@@ -4858,6 +4879,42 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     }
   }, 10000);
 
+  // Profile Tabs Navigation System
+  function switchProfileTab(tabName) {
+    const tabs = ['profile', 'referrals', 'admin'];
+    tabs.forEach(name => {
+      const btn = document.getElementById(`profileTabBtn${name.charAt(0).toUpperCase() + name.slice(1)}`);
+      const pane = document.getElementById(`profileTabContent${name.charAt(0).toUpperCase() + name.slice(1)}`);
+      if (btn) {
+        if (name === tabName) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      }
+      if (pane) {
+        if (name === tabName) {
+          pane.classList.remove('hidden');
+        } else {
+          pane.classList.add('hidden');
+        }
+      }
+    });
+
+    if (tabName === 'referrals') {
+      loadReferralsData();
+    }
+
+    const profileModalContent = document.querySelector('.profile-modal-content');
+    if (profileModalContent) {
+      profileModalContent.scrollTop = 0;
+    }
+
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('selection');
+    }
+  }
+
   // Profile & Language Modal Event Listeners
   function openProfileMenu() {
     const isUserAdmin = isAlligatorAdmin(currentUser);
@@ -4866,6 +4923,22 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         profileAdminBadge.classList.remove('hidden');
       } else {
         profileAdminBadge.classList.add('hidden');
+      }
+    }
+    const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
+    if (profileTabBtnAdmin) {
+      if (isUserAdmin) {
+        profileTabBtnAdmin.classList.remove('hidden');
+      } else {
+        profileTabBtnAdmin.classList.add('hidden');
+      }
+    }
+    const profileAdminQuickBtn = document.getElementById('profileAdminQuickBtn');
+    if (profileAdminQuickBtn) {
+      if (isUserAdmin) {
+        profileAdminQuickBtn.classList.remove('hidden');
+      } else {
+        profileAdminQuickBtn.classList.add('hidden');
       }
     }
     if (adminPanelSection) {
@@ -4887,6 +4960,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (adminFeedbackMsg) {
       adminFeedbackMsg.classList.add('hidden');
     }
+
+    // Default to 'profile' tab
+    switchProfileTab('profile');
+
     const profileModalContent = document.querySelector('.profile-modal-content');
     if (profileModalContent) {
       profileModalContent.scrollTop = 0;
@@ -4924,6 +5001,39 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       e.preventDefault();
       e.stopPropagation();
       openProfileMenu();
+    });
+  }
+
+  // Profile Modal Tab Switchers
+  const profileTabBtnProfile = document.getElementById('profileTabBtnProfile');
+  if (profileTabBtnProfile) {
+    profileTabBtnProfile.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchProfileTab('profile');
+    });
+  }
+
+  const profileTabBtnReferrals = document.getElementById('profileTabBtnReferrals');
+  if (profileTabBtnReferrals) {
+    profileTabBtnReferrals.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchProfileTab('referrals');
+    });
+  }
+
+  const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
+  if (profileTabBtnAdmin) {
+    profileTabBtnAdmin.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchProfileTab('admin');
+    });
+  }
+
+  const profileAdminQuickBtn = document.getElementById('profileAdminQuickBtn');
+  if (profileAdminQuickBtn) {
+    profileAdminQuickBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchProfileTab('admin');
     });
   }
 
