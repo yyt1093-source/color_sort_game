@@ -1144,6 +1144,14 @@ app.get('/api/admin/code-backups', async (req, res) => {
     if (checkpoints.length === 0) {
       checkpoints = [
         {
+          id: 'colorsort_checkpoint_20261003_004200',
+          createdAtTimestamp: 1790977320000,
+          kyivFormattedDate: '03.10.2026, 00:42:00 (Киев)',
+          title: 'Версия v1.0.4 — Мгновенный полноэкранный запуск и чистые колбочки',
+          note: 'Метка Git: v1.0.4-fullscreen-clean-checkpoint. Мгновенный запуск на весь экран в Telegram без задержек и дёрганья (ранняя инициализация в <head>, viewport-fit=cover, стабильная фиксация 100% высоты). Полностью убрана белая переливающаяся полоска над краской в колбочках. Снимки лидерборда в 23:59 по Киеву. Безлимитные подарки для администратора.',
+          tag: 'v1.0.4-fullscreen-clean-checkpoint'
+        },
+        {
           id: 'colorsort_checkpoint_20261003_001500',
           createdAtTimestamp: 1790975700000,
           kyivFormattedDate: '03.10.2026, 00:15:00 (Киев)',
