@@ -32,7 +32,8 @@
   <link rel="preload" href="js/renderer.js?v=48945" as="script">
   <link rel="preload" href="js/levelGenerator.js?v=48945" as="script">
   <link rel="preload" href="js/tonconnect-ui.min.js?v=48945" as="script">
-  <link rel="preload" href="js/app.js?v=48947" as="script">
+  <link rel="preload" href="js/gifts.js?v=48948" as="script">
+  <link rel="preload" href="js/app.js?v=48948" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -1524,30 +1525,165 @@
         </div>
         <button id="closeAdModalBtn" class="close-btn-circle" title="Закрыть">&times;</button>
       </div>
-      <div class="ad-options-grid">
-        <div class="ad-card" data-reward="extra_bottle">
-          <div class="ad-card-icon">🧪</div>
-          <h3 id="adModalBottleTitle">Пустая колба</h3>
-          <p id="adModalBottleDesc">+1 пустая колба в запас <span class="ad-user-count" id="adModalExtraBottlesCount"></span></p>
-          <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+      <!-- Navigation Tabs: Бонусы / Подарки -->
+      <div class="ad-modal-tabs-nav" id="adModalTabsNav">
+        <button type="button" class="ad-tab-btn active" id="adTabAdsBtn">
+          <span class="ad-tab-icon">📺</span>
+          <span class="ad-tab-title">Бонусы</span>
+        </button>
+        <button type="button" class="ad-tab-btn" id="adTabGiftsBtn">
+          <span class="ad-tab-icon" id="adGiftsTabIcon">🎁</span>
+          <span class="ad-tab-title">Подарки</span>
+          <span class="ad-tab-badge hidden" id="adGiftsTabBadge">0</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Ads Options Grid -->
+      <div id="adModalAdsContent" class="ad-tab-content">
+        <div class="ad-options-grid">
+          <div class="ad-card" data-reward="extra_bottle">
+            <div class="ad-card-icon">🧪</div>
+            <h3 id="adModalBottleTitle">Пустая колба</h3>
+            <p id="adModalBottleDesc">+1 пустая колба в запас <span class="ad-user-count" id="adModalExtraBottlesCount"></span></p>
+            <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+          </div>
+          <div class="ad-card" data-reward="hints">
+            <div class="ad-card-icon">💡</div>
+            <h3 id="adModalHintsTitle">+1 подсказка</h3>
+            <p id="adModalHintsDesc">1 точная подсказка хода <span class="ad-user-count" id="adModalHintsCount"></span></p>
+            <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+          </div>
+          <div class="ad-card" data-reward="undos">
+            <div class="ad-card-icon">↩️</div>
+            <h3 id="adModalUndosTitle">+1 отмена хода</h3>
+            <p id="adModalUndosDesc">1 бесплатная отмена хода <span class="ad-user-count" id="adModalUndosCount"></span></p>
+            <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+          </div>
+          <div class="ad-card" data-reward="reveal_bottle">
+            <div class="ad-card-icon">🧪</div>
+            <h3 id="adModalRevealTitle">Открыть цвета</h3>
+            <p id="adModalRevealDesc">Открыть 1 баночку со всеми цветами <span class="ad-user-count" id="adModalRevealsCount"></span></p>
+            <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+          </div>
         </div>
-        <div class="ad-card" data-reward="hints">
-          <div class="ad-card-icon">💡</div>
-          <h3 id="adModalHintsTitle">+1 подсказка</h3>
-          <p id="adModalHintsDesc">1 точная подсказка хода <span class="ad-user-count" id="adModalHintsCount"></span></p>
-          <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+      </div>
+
+      <!-- Tab 2: Gifts Section -->
+      <div id="adModalGiftsContent" class="ad-tab-content hidden">
+        <!-- Subnav: Получить подарки / Отправить подарок -->
+        <div class="gifts-subnav">
+          <button type="button" class="gifts-subnav-btn active" id="giftsSubnavReceiveBtn">
+            <span>📥 Получить подарки</span>
+            <span class="gifts-counter-badge hidden" id="giftsReceiveBadge">0</span>
+          </button>
+          <button type="button" class="gifts-subnav-btn" id="giftsSubnavSendBtn">
+            <span>📤 Отправить подарок</span>
+          </button>
         </div>
-        <div class="ad-card" data-reward="undos">
-          <div class="ad-card-icon">↩️</div>
-          <h3 id="adModalUndosTitle">+1 отмена хода</h3>
-          <p id="adModalUndosDesc">1 бесплатная отмена хода <span class="ad-user-count" id="adModalUndosCount"></span></p>
-          <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+
+        <!-- View 1: Получить подарки -->
+        <div id="giftsReceiveView" class="gifts-view-pane">
+          <div id="giftsReceiveLoading" class="gifts-loading-state hidden">
+            <div class="spinner"></div>
+            <span>Проверка входящих подарков...</span>
+          </div>
+          <div id="giftsReceiveEmpty" class="gifts-empty-box">
+            <span class="gifts-empty-emoji">📭</span>
+            <strong class="gifts-empty-headline">Нет новых подарков</strong>
+            <p class="gifts-empty-sub">Когда другой игрок отправит вам подарок, он появится здесь с кнопкой «Забрать».</p>
+          </div>
+          <div id="giftsReceiveList" class="gifts-inbox-list"></div>
         </div>
-        <div class="ad-card" data-reward="reveal_bottle">
-          <div class="ad-card-icon">🧪</div>
-          <h3 id="adModalRevealTitle">Открыть цвета</h3>
-          <p id="adModalRevealDesc">Открыть 1 баночку со всеми цветами <span class="ad-user-count" id="adModalRevealsCount"></span></p>
-          <button class="claim-ad-btn">▶ Смотреть рекламу</button>
+
+        <!-- View 2: Отправить подарок -->
+        <div id="giftsSendView" class="gifts-view-pane hidden">
+          <!-- Daily Limit Banner -->
+          <div class="gifts-limit-card">
+            <div class="gifts-limit-header">
+              <span class="limit-icon">⏳</span>
+              <div class="limit-texts">
+                <span class="limit-label">Отправлено сегодня:</span>
+                <strong id="giftsDailyCountDisplay" class="limit-val">0 / 10</strong>
+              </div>
+            </div>
+            <div class="limit-footnote">Лимит: максимум 10 подарков в сутки. Сброс в 23:59 (Киев).</div>
+          </div>
+
+          <!-- Step 1: Recipient Selection -->
+          <div id="giftsStepRecipient" class="gifts-step-container">
+            <div class="gifts-step-title">👥 Выберите получателя из игроков:</div>
+            <div class="gifts-search-wrapper">
+              <input type="text" id="giftsPlayerSearchInput" class="gifts-search-input" placeholder="🔍 Найти игрока..." autocomplete="off">
+              <button type="button" id="giftsClearSearchBtn" class="gifts-search-clear-btn hidden">&times;</button>
+            </div>
+            <div id="giftsPlayersLoading" class="gifts-loading-state hidden">
+              <div class="spinner"></div>
+              <span>Загрузка списка игроков...</span>
+            </div>
+            <div id="giftsPlayersList" class="gifts-players-scroll-list"></div>
+          </div>
+
+          <!-- Step 2: Choose which gift to send -->
+          <div id="giftsStepItem" class="gifts-step-container hidden">
+            <div class="gifts-selected-recipient-bar">
+              <button type="button" id="giftsBackToRecipientsBtn" class="gifts-back-link">‹ Сменить игрока</button>
+              <div class="recipient-badge-box">
+                <span class="recipient-label">Получатель:</span>
+                <strong id="giftsTargetPlayerName" class="recipient-name">—</strong>
+              </div>
+            </div>
+
+            <div class="gifts-step-title">🎁 Выберите подарок для отправки:</div>
+            <div class="gifts-catalog-grid">
+              <!-- Item 1: Undos -->
+              <div class="gift-choice-card" data-gift-type="undos">
+                <div class="gift-choice-top">
+                  <span class="gift-choice-icon">↩️</span>
+                  <div class="gift-choice-meta">
+                    <strong class="gift-choice-title">Отмена хода</strong>
+                    <span class="gift-choice-balance">В наличии: <b id="giftBalUndos">0</b></span>
+                  </div>
+                </div>
+                <button type="button" class="gift-send-btn" data-gift-type="undos">Подарить</button>
+              </div>
+
+              <!-- Item 2: Hints -->
+              <div class="gift-choice-card" data-gift-type="hints">
+                <div class="gift-choice-top">
+                  <span class="gift-choice-icon">💡</span>
+                  <div class="gift-choice-meta">
+                    <strong class="gift-choice-title">Подсказка</strong>
+                    <span class="gift-choice-balance">В наличии: <b id="giftBalHints">0</b></span>
+                  </div>
+                </div>
+                <button type="button" class="gift-send-btn" data-gift-type="hints">Подарить</button>
+              </div>
+
+              <!-- Item 3: Reveals -->
+              <div class="gift-choice-card" data-gift-type="reveals">
+                <div class="gift-choice-top">
+                  <span class="gift-choice-icon">🔮</span>
+                  <div class="gift-choice-meta">
+                    <strong class="gift-choice-title">Открыть цвет</strong>
+                    <span class="gift-choice-balance">В наличии: <b id="giftBalReveals">0</b></span>
+                  </div>
+                </div>
+                <button type="button" class="gift-send-btn" data-gift-type="reveals">Подарить</button>
+              </div>
+
+              <!-- Item 4: Extra Bottles -->
+              <div class="gift-choice-card" data-gift-type="extraBottles">
+                <div class="gift-choice-top">
+                  <span class="gift-choice-icon">🧪</span>
+                  <div class="gift-choice-meta">
+                    <strong class="gift-choice-title">Пустая колба</strong>
+                    <span class="gift-choice-balance">В наличии: <b id="giftBalBottles">0</b></span>
+                  </div>
+                </div>
+                <button type="button" class="gift-send-btn" data-gift-type="extraBottles">Подарить</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1641,6 +1777,7 @@
   <script src="js/gameEngine.js?v=48945"></script>
   <script src="js/renderer.js?v=48945"></script>
   <script src="js/tonconnect-ui.min.js?v=48945"></script>
-  <script src="js/app.js?v=48947"></script>
+  <script src="js/gifts.js?v=48948"></script>
+  <script src="js/app.js?v=48948"></script>
 </body>
 </html>
