@@ -1,7 +1,9 @@
-﻿node_modules/
+node_modules/
 .env
 cloudflared.exe
 *.log
 game_database.sqlite
 .DS_Store
 .vercel
+test/
+scratch*/
