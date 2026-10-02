@@ -470,6 +470,66 @@ async function initColorSortApp() {
       purchaseSuccessBottlesMsg: (c) => `Вам успешно начислено +15 пустых колб (всего в наличии: ${c}).\n\nСчётчик на кнопке 🧪 «Пустая колба» обновлён!`,
       purchaseSuccessHintsMsg: (c) => `Вам успешно начислено +20 подсказок (всего в наличии: ${c}).\n\nСчётчик на кнопке 💡 «Подсказка» обновлён!`,
       purchaseSuccessUndosMsg: (c) => `Вам успешно начислено +20 отмен хода (всего в наличии: ${c}).\n\nСчётчик на кнопке ↩️ «Отмена» обновлён!`,
+      adTabAds: "Бонусы",
+      adTabGifts: "Подарки",
+      adTabGiftsHeader: "🎁 Подарки",
+      adTabGiftsDesc: "Получайте и отправляйте полезные подарки другим игрокам",
+      giftsSubnavReceive: "📥 Получить подарки",
+      giftsSubnavSend: "📤 Отправить подарок",
+      giftsReceiveChecking: "Проверка входящих подарков...",
+      giftsReceiveEmptyTitle: "Нет новых подарков",
+      giftsReceiveEmptyDesc: "Когда другой игрок отправит вам подарок, он появится здесь с кнопкой «Забрать».",
+      giftsClaimBtn: "Забрать",
+      giftReceivedCardTitle: (name, amount) => `🎁 Подарок: ${name} (+${amount})`,
+      giftReceivedCardDesc: "Вам прислан полезный подарок!",
+      giftReceivedTimeKyiv: (time) => `🕒 ${time} (Киев)`,
+      giftsDailySentLabel: "Отправлено сегодня:",
+      giftsLimitFootnote: "Лимит: максимум 10 подарков в сутки. Сброс в 23:59 (Киев).",
+      giftsAdminUnlimitedFootnote: "👑 Режим администратора: отправка подарков без ограничений (безлимит).",
+      giftsUnlimitedTag: "∞ (Безлимит)",
+      giftsStepRecipientTitle: "👥 Выберите получателя из игроков:",
+      giftsSearchPlaceholder: "🔍 Найти игрока...",
+      giftsPlayersLoading: "Загрузка списка игроков...",
+      giftsPlayersNotFound: "Игроки по запросу не найдены",
+      giftsPlayersEmpty: "Список игроков пуст",
+      giftsSelectPlayerBtn: "Выбрать",
+      giftsBackToRecipientsBtn: "‹ Сменить игрока",
+      giftsRecipientLabel: "Получатель:",
+      giftsStepItemTitle: "🎁 Выберите подарок для отправки:",
+      giftsInStockLabel: "В наличии:",
+      giftsSendActionBtn: "Подарить",
+      giftItemUndo: "Отмена хода",
+      giftItemHint: "Подсказка",
+      giftItemReveal: "Открыть цвет",
+      giftItemBottle: "Пустая колба",
+      giftQtyModalTitle: "Сколько подарить?",
+      giftQtyRecipientDesc: "Получатель:",
+      giftQtyInStockLabel: "В наличии:",
+      giftQtyAvailableTodayLabel: "Доступно сегодня:",
+      giftQtyPickerLabel: "Количество для отправки:",
+      giftQtyPcs: "шт.",
+      giftQtyConfirmBtn: (qty) => `Подарить (${qty} шт.)`,
+      giftQtyCancelBtn: "Отмена",
+      giftSelfSendError: "Вы не можете отправить подарок самому себе.",
+      giftNoStockTitle: "У вас нет этого подарка",
+      giftNoStockDesc: (name) => `У вас 0 шт. «${name}». Нельзя подарить предмет, которого нет в вашем балансе.`,
+      giftLimitExceededTitle: "Лимит исчерпан",
+      giftLimitExceededDesc: "Вы уже отправили максимум 10 подарков сегодня.\n\nСчётчик сбросится сегодня в 23:59 по времени Киева.",
+      giftSentSuccessTitle: "Подарок отправлен!",
+      giftSentSuccessDesc: (icon, name, qty, recipient, left, dailyNotice) => `Вы успешно отправили ${icon} «${name}» (${qty} шт.) игроку ${recipient}!\n\nС вашего баланса списано: ${qty} шт. (осталось: ${left}).\n${dailyNotice}`,
+      giftClaimedSuccessTitle: "Подарок получен!",
+      giftClaimedSuccessDesc: (icon, name, qty) => `Вы успешно забрали ${icon} «${name}» (+${qty})!\n\nПредмет добавлен в ваш баланс и готов к использованию.`,
+      giftDailyNoticeAdmin: (count) => `Отправлено сегодня: ${count} шт. (Безлимит для администратора).`,
+      giftDailyNoticeUser: (count, max) => `Отправлено сегодня: ${count} / ${max}.`,
+      errorTitle: "Ошибка",
+      errorSendGift: "Не удалось доставить подарок:",
+      errorClaimGift: "Не удалось забрать подарок:",
+      profileAdminQuickTitle: "Панель Администратора",
+      profileAdminQuickSub: "Управление бонусами, снимки, кошельки и новости",
+      adminPanelCollapseBtn: "Свернуть",
+      adminPanelBottomCollapseBtn: "Свернуть панель администратора",
+      seasonResetKickTitle: "Сброс сезона!",
+      seasonResetKickOkBtn: "Начать заново (0 уровень)",
     },
     uk: {
       langName: "Українська",
@@ -743,6 +803,79 @@ async function initColorSortApp() {
       purchaseSuccessBottlesMsg: (c) => `Вам успішно нараховано +15 порожніх колб (всього в наявності: ${c}).\n\nЛічильник на кнопці 🧪 «Порожня колба» оновлено!`,
       purchaseSuccessHintsMsg: (c) => `Вам успішно нараховано +20 підказок (всього в наявності: ${c}).\n\nЛічильник на кнопці 💡 «Підказка» оновлено!`,
       purchaseSuccessUndosMsg: (c) => `Вам успішно нараховано +20 відмін ходу (всього в наявності: ${c}).\n\nЛічильник на кнопці ↩️ «Відміна» оновлено!`,
+      adTabAds: "Бонуси",
+      adTabGifts: "Подарунки",
+      adTabGiftsHeader: "🎁 Подарунки",
+      adTabGiftsDesc: "Отримуйте та надсилайте корисні подарунки іншим гравцям",
+      giftsSubnavReceive: "📥 Отримати подарунки",
+      giftsSubnavSend: "📤 Надіслати подарунок",
+      giftsReceiveChecking: "Перевірка вхідних подарунків...",
+      giftsReceiveEmptyTitle: "Немає нових подарунків",
+      giftsReceiveEmptyDesc: "Коли інший гравець надішле вам подарунок, він з'явиться тут із кнопкою «Забрати».",
+      giftsClaimBtn: "Забрати",
+      giftReceivedCardTitle: (name, amount) => `🎁 Подарунок: ${name} (+${amount})`,
+      giftReceivedCardDesc: "Вам надіслано корисний подарунок!",
+      giftReceivedTimeKyiv: (time) => `🕒 ${time} (Київ)`,
+      giftsDailySentLabel: "Надіслано сьогодні:",
+      giftsLimitFootnote: "Ліміт: максимум 10 подарунків на добу. Скидання о 23:59 (Київ).",
+      giftsAdminUnlimitedFootnote: "👑 Режим адміністратора: надсилання подарунків без обмежень (безліміт).",
+      giftsUnlimitedTag: "∞ (Безліміт)",
+      giftsStepRecipientTitle: "👥 Виберіть одержувача з гравців:",
+      giftsSearchPlaceholder: "🔍 Знайти гравця...",
+      giftsPlayersLoading: "Завантаження списку гравців...",
+      giftsPlayersNotFound: "Гравців за запитом не знайдено",
+      giftsPlayersEmpty: "Список гравців порожній",
+      giftsSelectPlayerBtn: "Обрати",
+      giftsBackToRecipientsBtn: "‹ Змінити гравця",
+      giftsRecipientLabel: "Одержувач:",
+      giftsStepItemTitle: "🎁 Виберіть подарунок для надсилання:",
+      giftsInStockLabel: "В наявності:",
+      giftsSendActionBtn: "Подарувати",
+      giftItemUndo: "Скасування ходу",
+      giftItemHint: "Підказка",
+      giftItemReveal: "Відкрити колір",
+      giftItemBottle: "Порожня колба",
+      giftQtyModalTitle: "Скільки подарувати?",
+      giftQtyRecipientDesc: "Одержувач:",
+      giftQtyInStockLabel: "В наявності:",
+      giftQtyAvailableTodayLabel: "Доступно сьогодні:",
+      giftQtyPickerLabel: "Кількість для надсилання:",
+      giftQtyPcs: "шт.",
+      giftQtyConfirmBtn: (qty) => `Подарувати (${qty} шт.)`,
+      giftQtyCancelBtn: "Скасувати",
+      giftSelfSendError: "Ви не можете надіслати подарунок самому собі.",
+      giftNoStockTitle: "У вас немає цього подарунка",
+      giftNoStockDesc: (name) => `У вас 0 шт. «${name}». Не можна подарувати предмет, якого немає у вашому балансі.`,
+      giftLimitExceededTitle: "Ліміт вичерпано",
+      giftLimitExceededDesc: "Ви вже надіслали максимум 10 подарунків сьогодні.\n\nЛічильник скинеться сьогодні о 23:59 за часом Києва.",
+      giftSentSuccessTitle: "Подарунок надіслано!",
+      giftSentSuccessDesc: (icon, name, qty, recipient, left, dailyNotice) => `Ви успішно надіслали ${icon} «${name}» (${qty} шт.) гравцеві ${recipient}!\n\nЗ вашого балансу списано: ${qty} шт. (залишилося: ${left}).\n${dailyNotice}`,
+      giftClaimedSuccessTitle: "Подарок отримано!",
+      giftClaimedSuccessDesc: (icon, name, qty) => `Ви успішно забрали ${icon} «${name}» (+${qty})!\n\nПредмет додано до вашого балансу і готовий до використання.`,
+      giftDailyNoticeAdmin: (count) => `Надіслано сьогодні: ${count} шт. (Безліміт для адміністратора).`,
+      giftDailyNoticeUser: (count, max) => `Надіслано сьогодні: ${count} / ${max}.`,
+      errorTitle: "Помилка",
+      errorSendGift: "Не вдалося доставити подарунок:",
+      errorClaimGift: "Не вдалося забрати подарунок:",
+      profileAdminQuickTitle: "Панель Адміністратора",
+      profileAdminQuickSub: "Керування бонусами, знімки, гаманці та новини",
+      adminPanelCollapseBtn: "Згорнути",
+      adminPanelBottomCollapseBtn: "Згорнути панель адміністратора",
+      seasonResetKickTitle: "Скидання сезону!",
+      seasonResetKickOkBtn: "Почати заново (0 рівень)",
+      tonConnectWalletBtn: "👛 Підключити гаманець TON",
+      tonDisconnectBtn: "Відключити",
+      tonBalanceLabel: "Баланс у грі:",
+      tonWithdrawBtn: "Вивести TON",
+      tonDepositTitle: "Поповнити баланс",
+      tonDepositDesc: "Надішліть TON на вказану адресу з вашим коментарем (Memo)",
+      tonAddressLabel: "Адреса для переказу:",
+      tonMemoLabel: "Ваш коментар (Memo) — ОБОВ'ЯЗКОВО:",
+      tonDepositNotice: "⚠️ Обов'язково вкажіть Memo при відправці, інакше кошти не будуть зараховані автоматично.",
+      copyBtn: "Копіювати",
+      copiedNotice: "Скопійовано в буфер обміну!",
+      refCopySuccess: "Посилання скопійовано! Надішліть його друзям.",
+      refEmptyTitle: "Друзів поки немає",
     },
     en: {
       langName: "English",
@@ -1009,6 +1142,79 @@ async function initColorSortApp() {
       purchaseSuccessBottlesMsg: (c) => `+15 empty bottles successfully added to your account (total: ${c}).\n\nCounter on the 🧪 "Empty Bottle" button updated!`,
       purchaseSuccessHintsMsg: (c) => `+20 hints successfully added to your account (total: ${c}).\n\nCounter on the 💡 "Hint" button updated!`,
       purchaseSuccessUndosMsg: (c) => `+20 undos successfully added to your account (total: ${c}).\n\nCounter on the ↩️ "Undo" button updated!`,
+      adTabAds: "Bonuses",
+      adTabGifts: "Gifts",
+      adTabGiftsHeader: "🎁 Gifts",
+      adTabGiftsDesc: "Receive and send useful gifts to other players",
+      giftsSubnavReceive: "📥 Receive gifts",
+      giftsSubnavSend: "📤 Send gift",
+      giftsReceiveChecking: "Checking incoming gifts...",
+      giftsReceiveEmptyTitle: "No new gifts",
+      giftsReceiveEmptyDesc: "When another player sends you a gift, it will appear here with a 'Claim' button.",
+      giftsClaimBtn: "Claim",
+      giftReceivedCardTitle: (name, amount) => `🎁 Gift: ${name} (+${amount})`,
+      giftReceivedCardDesc: "You received a useful gift!",
+      giftReceivedTimeKyiv: (time) => `🕒 ${time} (Kyiv)`,
+      giftsDailySentLabel: "Sent today:",
+      giftsLimitFootnote: "Limit: maximum 10 gifts per day. Reset at 23:59 (Kyiv).",
+      giftsAdminUnlimitedFootnote: "👑 Admin mode: unlimited gift sending.",
+      giftsUnlimitedTag: "∞ (Unlimited)",
+      giftsStepRecipientTitle: "👥 Select recipient from players:",
+      giftsSearchPlaceholder: "🔍 Find player...",
+      giftsPlayersLoading: "Loading players list...",
+      giftsPlayersNotFound: "No players found matching search",
+      giftsPlayersEmpty: "Players list is empty",
+      giftsSelectPlayerBtn: "Select",
+      giftsBackToRecipientsBtn: "‹ Change player",
+      giftsRecipientLabel: "Recipient:",
+      giftsStepItemTitle: "🎁 Choose gift to send:",
+      giftsInStockLabel: "In stock:",
+      giftsSendActionBtn: "Send gift",
+      giftItemUndo: "Undo move",
+      giftItemHint: "Hint",
+      giftItemReveal: "Reveal color",
+      giftItemBottle: "Empty bottle",
+      giftQtyModalTitle: "How many to send?",
+      giftQtyRecipientDesc: "Recipient:",
+      giftQtyInStockLabel: "In stock:",
+      giftQtyAvailableTodayLabel: "Available today:",
+      giftQtyPickerLabel: "Quantity to send:",
+      giftQtyPcs: "pcs",
+      giftQtyConfirmBtn: (qty) => `Send (${qty} pcs)`,
+      giftQtyCancelBtn: "Cancel",
+      giftSelfSendError: "You cannot send a gift to yourself.",
+      giftNoStockTitle: "You don't have this gift",
+      giftNoStockDesc: (name) => `You have 0 pcs of "${name}". You cannot send an item you do not own.`,
+      giftLimitExceededTitle: "Daily limit reached",
+      giftLimitExceededDesc: "You have already sent the maximum of 10 gifts today.\n\nCounter resets today at 23:59 (Kyiv time).",
+      giftSentSuccessTitle: "Gift sent!",
+      giftSentSuccessDesc: (icon, name, qty, recipient, left, dailyNotice) => `Successfully sent ${icon} "${name}" (${qty} pcs) to ${recipient}!\n\nDeducted from balance: ${qty} pcs (remaining: ${left}).\n${dailyNotice}`,
+      giftClaimedSuccessTitle: "Gift claimed!",
+      giftClaimedSuccessDesc: (icon, name, qty) => `Successfully claimed ${icon} "${name}" (+${qty})!\n\nItem added to your balance and ready to use.`,
+      giftDailyNoticeAdmin: (count) => `Sent today: ${count} pcs (Unlimited for administrator).`,
+      giftDailyNoticeUser: (count, max) => `Sent today: ${count} / ${max}.`,
+      errorTitle: "Error",
+      errorSendGift: "Failed to deliver gift:",
+      errorClaimGift: "Failed to claim gift:",
+      profileAdminQuickTitle: "Admin Panel",
+      profileAdminQuickSub: "Manage bonuses, snapshots, wallets and news",
+      adminPanelCollapseBtn: "Collapse",
+      adminPanelBottomCollapseBtn: "Collapse admin panel",
+      seasonResetKickTitle: "Season Reset!",
+      seasonResetKickOkBtn: "Start Over (Level 0)",
+      tonConnectWalletBtn: "👛 Connect TON Wallet",
+      tonDisconnectBtn: "Disconnect",
+      tonBalanceLabel: "In-game balance:",
+      tonWithdrawBtn: "Withdraw TON",
+      tonDepositTitle: "Top Up Balance",
+      tonDepositDesc: "Send TON to the specified address with your comment (Memo)",
+      tonAddressLabel: "Transfer address:",
+      tonMemoLabel: "Your comment (Memo) — REQUIRED:",
+      tonDepositNotice: "⚠️ Be sure to include Memo when sending, otherwise funds will not be credited automatically.",
+      copyBtn: "Copy",
+      copiedNotice: "Copied to clipboard!",
+      refCopySuccess: "Link copied! Send it to your friends.",
+      refEmptyTitle: "No friends yet",
     },
     de: {
       langName: "Deutsch",
@@ -1267,6 +1473,87 @@ async function initColorSortApp() {
       purchaseSuccessBottlesMsg: (c) => `+15 leere Flaschen erfolgreich hinzugefügt (gesamt: ${c}).\n\nZähler auf der Schaltfläche 🧪 „Leere Flasche“ aktualisiert!`,
       purchaseSuccessHintsMsg: (c) => `+20 Tipps erfolgreich hinzugefügt (gesamt: ${c}).\n\nZähler auf der Schaltfläche 💡 „Tipp“ aktualisiert!`,
       purchaseSuccessUndosMsg: (c) => `+20 Züge rückgängig erfolgreich hinzugefügt (gesamt: ${c}).\n\nZähler auf der Schaltfläche ↩️ „Rückgängig“ aktualisiert!`,
+      adTabAds: "Boni",
+      adTabGifts: "Geschenke",
+      adTabGiftsHeader: "🎁 Geschenke",
+      adTabGiftsDesc: "Nützliche Geschenke erhalten und an andere Spieler senden",
+      giftsSubnavReceive: "📥 Geschenke erhalten",
+      giftsSubnavSend: "📤 Geschenk senden",
+      giftsReceiveChecking: "Eingehende Geschenke prüfen...",
+      giftsReceiveEmptyTitle: "Keine neuen Geschenke",
+      giftsReceiveEmptyDesc: "Wenn Ihnen ein anderer Spieler ein Geschenk schickt, erscheint es hier mit der Schaltfläche „Abholen“.",
+      giftsClaimBtn: "Abholen",
+      giftReceivedCardTitle: (name, amount) => `🎁 Geschenk: ${name} (+${amount})`,
+      giftReceivedCardDesc: "Sie haben ein nützliches Geschenk erhalten!",
+      giftReceivedTimeKyiv: (time) => `🕒 ${time} (Kiew)`,
+      giftsDailySentLabel: "Heute gesendet:",
+      giftsLimitFootnote: "Limit: maximal 10 Geschenke pro Tag. Zurücksetzen um 23:59 (Kiew).",
+      giftsAdminUnlimitedFootnote: "👑 Admin-Modus: unbegrenzter Geschenkversand.",
+      giftsUnlimitedTag: "∞ (Unbegrenzt)",
+      giftsStepRecipientTitle: "👥 Empfänger aus Spielern wählen:",
+      giftsSearchPlaceholder: "🔍 Spieler suchen...",
+      giftsPlayersLoading: "Spielerliste wird geladen...",
+      giftsPlayersNotFound: "Keine Spieler gefunden",
+      giftsPlayersEmpty: "Spielerliste ist leer",
+      giftsSelectPlayerBtn: "Wählen",
+      giftsBackToRecipientsBtn: "‹ Spieler wechseln",
+      giftsRecipientLabel: "Empfänger:",
+      giftsStepItemTitle: "🎁 Geschenk zum Senden wählen:",
+      giftsInStockLabel: "Auf Lager:",
+      giftsSendActionBtn: "Schenken",
+      giftItemUndo: "Zug zurück",
+      giftItemHint: "Hinweis",
+      giftItemReveal: "Farbe aufdecken",
+      giftItemBottle: "Leere Flasche",
+      giftQtyModalTitle: "Wie viele schenken?",
+      giftQtyRecipientDesc: "Empfänger:",
+      giftQtyInStockLabel: "Auf Lager:",
+      giftQtyAvailableTodayLabel: "Heute verfügbar:",
+      giftQtyPickerLabel: "Menge zum Senden:",
+      giftQtyPcs: "Stk.",
+      giftQtyConfirmBtn: (qty) => `Schenken (${qty} Stk.)`,
+      giftQtyCancelBtn: "Abbrechen",
+      giftSelfSendError: "Sie können sich selbst kein Geschenk schicken.",
+      giftNoStockTitle: "Sie haben dieses Geschenk nicht",
+      giftNoStockDesc: (name) => `Sie haben 0 Stk. von „${name}“. Sie können keinen Gegenstand verschenken, den Sie nicht besitzen.`,
+      giftLimitExceededTitle: "Tageslimit erreicht",
+      giftLimitExceededDesc: "Sie haben heute bereits das Maximum von 10 Geschenken versendet.\n\nDer Zähler wird heute um 23:59 Uhr (Kiewer Zeit) zurückgesetzt.",
+      giftSentSuccessTitle: "Geschenk gesendet!",
+      giftSentSuccessDesc: (icon, name, qty, recipient, left, dailyNotice) => `Erfolgreich ${icon} „${name}“ (${qty} Stk.) an ${recipient} gesendet!\n\nVom Guthaben abgezogen: ${qty} Stk. (verbleibend: ${left}).\n${dailyNotice}`,
+      giftClaimedSuccessTitle: "Geschenk erhalten!",
+      giftClaimedSuccessDesc: (icon, name, qty) => `Erfolgreich ${icon} „${name}“ (+${qty}) abgeholt!\n\nGegenstand wurde Ihrem Inventar hinzugefügt und ist einsatzbereit.`,
+      giftDailyNoticeAdmin: (count) => `Heute gesendet: ${count} Stk. (Unbegrenzt für Administrator).`,
+      giftDailyNoticeUser: (count, max) => `Heute gesendet: ${count} / ${max}.`,
+      errorTitle: "Fehler",
+      errorSendGift: "Geschenk konnte nicht zugestellt werden:",
+      errorClaimGift: "Geschenk konnte nicht abgeholt werden:",
+      profileAdminQuickTitle: "Admin-Panel",
+      profileAdminQuickSub: "Boni verwalten, Snapshots, Wallets und Neuigkeiten",
+      adminPanelCollapseBtn: "Einklappen",
+      adminPanelBottomCollapseBtn: "Admin-Panel einklappen",
+      seasonResetKickTitle: "Saison-Reset!",
+      seasonResetKickOkBtn: "Neu starten (Stufe 0)",
+      adminTabCodeBackupLabel: "Sicherungen",
+      adminTabCodeBackupDesc: "Code-Versionen",
+      adminCodeBackupTitle: "SPIELCODE-Sicherungskopien (Kiewer Zeit)",
+      adminCodeBackupSub: "🛡️ Hier sind Kontrollpunkte des funktionierenden Spielcodes erfasst.",
+      adminCodeBackupListTitle: "Gespeicherte Versionen des Spielcodes (Kiew):",
+      adminCodeBackupEmptyText: "Noch keine Codekopien erstellt",
+      adminCodeBackupLoadingText: "Codeversionen werden geladen...",
+      adminCodeBackupDeleteBtnLabel: "Löschen",
+      tonConnectWalletBtn: "👛 TON-Wallet verbinden",
+      tonDisconnectBtn: "Trennen",
+      tonBalanceLabel: "Spielguthaben:",
+      tonWithdrawBtn: "TON abheben",
+      tonDepositTitle: "Guthaben aufladen",
+      tonDepositDesc: "Senden Sie TON mit Ihrem Kommentar (Memo) an die angegebene Adresse",
+      tonAddressLabel: "Adresse für die Überweisung:",
+      tonMemoLabel: "Ihr Kommentar (Memo) — ERFORDERLICH:",
+      tonDepositNotice: "⚠️ Geben Sie beim Senden unbedingt das Memo an, da das Geld sonst nicht automatisch gutgeschrieben wird.",
+      copyBtn: "Kopieren",
+      copiedNotice: "In die Zwischenablage kopiert!",
+      refCopySuccess: "Link kopiert! Sende ihn an deine Freunde.",
+      refEmptyTitle: "Noch keine Freunde",
     },
     lt: {
       langName: "Lietuvių",
@@ -1525,10 +1812,93 @@ async function initColorSortApp() {
       purchaseSuccessBottlesMsg: (c) => `+15 tuščių kolbų sėkmingai pridėta (iš viso: ${c}).\n\nMygtuko 🧪 „Tuščia kolba“ skaitiklis atnaujintas!`,
       purchaseSuccessHintsMsg: (c) => `+20 užuominų sėkmingai pridėta (iš viso: ${c}).\n\nMygtuko 💡 „Užuomina“ skaitiklis atnaujintas!`,
       purchaseSuccessUndosMsg: (c) => `+20 ėjimų atšaukimų sėkmingai pridėta (iš viso: ${c}).\n\nMygtuko ↩️ „Atšaukti“ skaitiklis atnaujintas!`,
+      adTabAds: "Premijos",
+      adTabGifts: "Dovanos",
+      adTabGiftsHeader: "🎁 Dovanos",
+      adTabGiftsDesc: "Gaukite ir siųskite naudingas dovanas kitiems žaidėjams",
+      giftsSubnavReceive: "📥 Gauti dovanas",
+      giftsSubnavSend: "📤 Siųsti dovaną",
+      giftsReceiveChecking: "Gaunamų dovanų tikrinimas...",
+      giftsReceiveEmptyTitle: "Nėra naujų dovanų",
+      giftsReceiveEmptyDesc: "Kai kitas žaidėjas atsiųs jums dovaną, ji atsiras čia su mygtuku „Atsiimti“.",
+      giftsClaimBtn: "Atsiimti",
+      giftReceivedCardTitle: (name, amount) => `🎁 Dovana: ${name} (+${amount})`,
+      giftReceivedCardDesc: "Gavote naudingą dovaną!",
+      giftReceivedTimeKyiv: (time) => `🕒 ${time} (Kijevas)`,
+      giftsDailySentLabel: "Išsiųsta šiandien:",
+      giftsLimitFootnote: "Limitas: iki 10 dovanų per dieną. Atstatymas 23:59 (Kijevo laiku).",
+      giftsAdminUnlimitedFootnote: "👑 Administratoriaus režimas: neribotas dovanų siuntimas.",
+      giftsUnlimitedTag: "∞ (Neribota)",
+      giftsStepRecipientTitle: "👥 Pasirinkite gavėją iš žaidėjų:",
+      giftsSearchPlaceholder: "🔍 Ieškoti žaidėjo...",
+      giftsPlayersLoading: "Kraunamas žaidėjų sąrašas...",
+      giftsPlayersNotFound: "Žaidėjų pagal užklausą nerasta",
+      giftsPlayersEmpty: "Žaidėjų sąrašas tuščias",
+      giftsSelectPlayerBtn: "Pasirinkti",
+      giftsBackToRecipientsBtn: "‹ Pakeisti žaidėją",
+      giftsRecipientLabel: "Gavėjas:",
+      giftsStepItemTitle: "🎁 Pasirinkite siunčiamą dovaną:",
+      giftsInStockLabel: "Turima:",
+      giftsSendActionBtn: "Padovanoti",
+      giftItemUndo: "Ėjimo atšaukimas",
+      giftItemHint: "Užuomina",
+      giftItemReveal: "Atskleisti spalvą",
+      giftItemBottle: "Tuščia kolba",
+      giftQtyModalTitle: "Kiek padovanoti?",
+      giftQtyRecipientDesc: "Gavėjas:",
+      giftQtyInStockLabel: "Turima:",
+      giftQtyAvailableTodayLabel: "Šiandien galima:",
+      giftQtyPickerLabel: "Siunčiamas kiekis:",
+      giftQtyPcs: "vnt.",
+      giftQtyConfirmBtn: (qty) => `Padovanoti (${qty} vnt.)`,
+      giftQtyCancelBtn: "Atšaukti",
+      giftSelfSendError: "Negalite siųsti dovanos sau.",
+      giftNoStockTitle: "Neturite šios dovanos",
+      giftNoStockDesc: (name) => `Turite 0 vnt. „${name}“. Negalima padovanoti daikto, kurio neturite balanse.`,
+      giftLimitExceededTitle: "Dienos limitas išnaudotas",
+      giftLimitExceededDesc: "Šiandien jau išsiuntėte maksimalų 10 dovanų skaičių.\n\nSkaitiklis bus atstatytas šiandien 23:59 Kijevo laiku.",
+      giftSentSuccessTitle: "Dovana išsiųsta!",
+      giftSentSuccessDesc: (icon, name, qty, recipient, left, dailyNotice) => `Sėkmingai išsiųsta ${icon} „${name}“ (${qty} vnt.) žaidėjui ${recipient}!\n\nIš balanso nuskaičiuota: ${qty} vnt. (liko: ${left}).\n${dailyNotice}`,
+      giftClaimedSuccessTitle: "Dovana atsiimta!",
+      giftClaimedSuccessDesc: (icon, name, qty) => `Sėkmingai atsiėmėte ${icon} „${name}“ (+${qty})!\n\nDaiktai pridėti į jūsų balansą ir paruošti naudoti.`,
+      giftDailyNoticeAdmin: (count) => `Išsiųsta šiandien: ${count} vnt. (Neribota administratoriui).`,
+      giftDailyNoticeUser: (count, max) => `Išsiųsta šiandien: ${count} / ${max}.`,
+      errorTitle: "Klaida",
+      errorSendGift: "Nepavyko pristatyti dovanos:",
+      errorClaimGift: "Nepavyko atsiimti dovanos:",
+      profileAdminQuickTitle: "Administratoriaus skydelis",
+      profileAdminQuickSub: "Premijų valdymas, momentinės nuotraukos, piniginės ir naujienos",
+      adminPanelCollapseBtn: "Suskleisti",
+      adminPanelBottomCollapseBtn: "Suskleisti administratoriaus skydelį",
+      seasonResetKickTitle: "Sezono atstatymas!",
+      seasonResetKickOkBtn: "Pradėti iš naujo (0 lygis)",
+      adminTabCodeBackupLabel: "Atsarginės kopijos",
+      adminTabCodeBackupDesc: "Kodo versijos",
+      adminCodeBackupTitle: "ŽAIDIMO KODO atsarginės kopijos (Kijevo laiku)",
+      adminCodeBackupSub: "🛡️ Čia užfiksuoti veikiančio žaidimo kodo kontroliniai taškai.",
+      adminCodeBackupListTitle: "Užfiksuotos žaidimo kodo versijos (Kijevas):",
+      adminCodeBackupEmptyText: "Kodo kopijų dar nesukurta",
+      adminCodeBackupLoadingText: "Kraunamos kodo versijos...",
+      adminCodeBackupDeleteBtnLabel: "Ištrinti",
+      tonConnectWalletBtn: "👛 Prijungti TON piniginę",
+      tonDisconnectBtn: "Atsijungti",
+      tonBalanceLabel: "Balansas žaidime:",
+      tonWithdrawBtn: "Išsiimti TON",
+      tonDepositTitle: "Papildyti balansą",
+      tonDepositDesc: "Nusiųskite TON nurodytu adresu su savo komentaru (Memo)",
+      tonAddressLabel: "Pervedimo adresas:",
+      tonMemoLabel: "Jūsų komentaras (Memo) — BŪTINA:",
+      tonDepositNotice: "⚠️ Būtinai nurodykite Memo siųsdami, kitaip lėšos nebus įskaitytos automatiškai.",
+      copyBtn: "Kopijuoti",
+      copiedNotice: "Nukopijuota į iškarpinę!",
+      refCopySuccess: "Nuoroda nukopijuota! Nusiųskite ją draugams.",
+      refEmptyTitle: "Draugų kol kas nėra",
     }
   };
 
-let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
+  window.TRANSLATIONS = TRANSLATIONS;
+
+  let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   if (!TRANSLATIONS[currentLang]) currentLang = 'ru';
 
   function t(key, ...args) {
@@ -1784,6 +2154,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (adVideoCloseBtn) adVideoCloseBtn.title = t('closeBtn');
     const closeLeaderboardBtn = document.getElementById('closeLeaderboardBtn');
     if (closeLeaderboardBtn) closeLeaderboardBtn.title = t('closeBtn');
+    const closeGiftQtyModalBtn = document.getElementById('closeGiftQtyModalBtn');
+    if (closeGiftQtyModalBtn) closeGiftQtyModalBtn.title = t('closeBtn');
     const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
     if (refreshLeaderboardBtn) refreshLeaderboardBtn.title = t('refreshLeaderboardTitle');
 
@@ -2136,9 +2508,15 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
 
     // Ad Bonus Modal
     const adModalTitle = document.getElementById('adModalTitle');
-    if (adModalTitle) adModalTitle.textContent = t('adModalTitle');
     const adModalDesc = document.getElementById('adModalDesc');
-    if (adModalDesc) adModalDesc.textContent = t('adModalDesc');
+    const adModalGiftsPane = document.getElementById('adModalGiftsContent');
+    if (adModalGiftsPane && !adModalGiftsPane.classList.contains('hidden')) {
+      if (adModalTitle) adModalTitle.textContent = t('adTabGiftsHeader');
+      if (adModalDesc) adModalDesc.textContent = t('adTabGiftsDesc');
+    } else {
+      if (adModalTitle) adModalTitle.textContent = t('adModalTitle');
+      if (adModalDesc) adModalDesc.textContent = t('adModalDesc');
+    }
     const adModalBottleTitle = document.getElementById('adModalBottleTitle');
     if (adModalBottleTitle) adModalBottleTitle.textContent = t('adModalBottleTitle');
     const adModalBottleDesc = document.getElementById('adModalBottleDesc');
@@ -2195,6 +2573,41 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (adVideoCtaBtn) adVideoCtaBtn.textContent = t('adVideoBtn');
     const adVideoStatus = document.getElementById('adVideoStatus');
     if (adVideoStatus) adVideoStatus.textContent = t('adVideoStatus');
+
+    // Ad Modal Tabs
+    const adTabAdsBtn = document.getElementById('adTabAdsBtn');
+    if (adTabAdsBtn) {
+      const titleSpan = adTabAdsBtn.querySelector('.ad-tab-title');
+      if (titleSpan) titleSpan.textContent = t('adTabAds');
+    }
+    const adTabGiftsBtn = document.getElementById('adTabGiftsBtn');
+    if (adTabGiftsBtn) {
+      const titleSpan = adTabGiftsBtn.querySelector('.ad-tab-title');
+      if (titleSpan) titleSpan.textContent = t('adTabGifts');
+    }
+
+    // Admin Quick and Collapse Buttons
+    const profileAdminQuickTitle = document.getElementById('profileAdminQuickTitle');
+    if (profileAdminQuickTitle) profileAdminQuickTitle.textContent = t('profileAdminQuickTitle');
+    const profileAdminQuickSub = document.getElementById('profileAdminQuickSub');
+    if (profileAdminQuickSub) profileAdminQuickSub.textContent = t('profileAdminQuickSub');
+    const adminPanelCollapseBtn = document.getElementById('adminPanelCollapseBtn');
+    if (adminPanelCollapseBtn) {
+      const span = adminPanelCollapseBtn.querySelector('span:first-child');
+      if (span) span.textContent = t('adminPanelCollapseBtn');
+    }
+    const adminPanelBottomCollapseBtn = document.getElementById('adminPanelBottomCollapseBtn');
+    if (adminPanelBottomCollapseBtn) {
+      const span = adminPanelBottomCollapseBtn.querySelector('span:last-child');
+      if (span) span.textContent = t('adminPanelBottomCollapseBtn');
+    }
+    const seasonResetKickOkBtn = document.getElementById('seasonResetKickOkBtn');
+    if (seasonResetKickOkBtn) seasonResetKickOkBtn.textContent = t('seasonResetKickOkBtn');
+
+    // Notify Gifts Module about language change
+    if (window.GiftsModule && typeof window.GiftsModule.setLanguage === 'function') {
+      window.GiftsModule.setLanguage(lang, t);
+    }
   }
 
   // 4. App state
@@ -2966,7 +3379,9 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           } catch (e) {
             return [];
           }
-        }
+        },
+        lang: currentLang,
+        t: t
       });
     } catch (giftInitErr) {
       console.error('[GiftsModule] Safe initialization caught error:', giftInitErr);
@@ -8780,8 +9195,8 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (adTabAdsBtn) adTabAdsBtn.classList.remove('active');
       if (adModalGiftsContent) adModalGiftsContent.classList.remove('hidden');
       if (adModalAdsContent) adModalAdsContent.classList.add('hidden');
-      if (adModalTitle) adModalTitle.textContent = '🎁 Подарки';
-      if (adModalDesc) adModalDesc.textContent = 'Получайте и отправляйте полезные подарки другим игрокам';
+      if (adModalTitle) adModalTitle.textContent = t('adTabGiftsHeader') || '🎁 Подарки';
+      if (adModalDesc) adModalDesc.textContent = t('adTabGiftsDesc') || 'Получайте и отправляйте полезные подарки другим игрокам';
       if (window.GiftsModule) window.GiftsModule.refresh();
     } else {
       if (adTabAdsBtn) adTabAdsBtn.classList.add('active');

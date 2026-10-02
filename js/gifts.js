@@ -45,6 +45,33 @@
   let getLeaderboardPlayersCallback = null;
   let isAdminCheckCallback = null;
 
+  let currentLang = 'ru';
+  let tCallback = null;
+
+  function t(key, ...args) {
+    if (typeof tCallback === 'function') {
+      try {
+        const res = tCallback(key, ...args);
+        if (res !== undefined && res !== null && res !== '') return res;
+      } catch (e) {}
+    }
+    if (window.TRANSLATIONS) {
+      const dict = window.TRANSLATIONS[currentLang] || window.TRANSLATIONS.ru || {};
+      const val = dict[key] !== undefined ? dict[key] : ((window.TRANSLATIONS.ru && window.TRANSLATIONS.ru[key]) || '');
+      if (typeof val === 'function') return val(...args);
+      if (val !== undefined && val !== null && val !== '') return val;
+    }
+    return key;
+  }
+
+  function getGiftName(type) {
+    if (type === 'undos') return t('giftItemUndo') || 'Отмена хода';
+    if (type === 'hints') return t('giftItemHint') || 'Подсказка';
+    if (type === 'reveals') return t('giftItemReveal') || 'Открыть цвет';
+    if (type === 'extraBottles') return t('giftItemBottle') || 'Пустая колба';
+    return (GIFT_CONFIG[type] && GIFT_CONFIG[type].name) || type;
+  }
+
   let cachedInbox = [];
   let cachedPlayers = [];
   let selectedRecipient = null;
@@ -274,7 +301,13 @@
 
     if (unclaimed.length === 0) {
       listEl.innerHTML = '';
-      if (emptyEl) emptyEl.classList.remove('hidden');
+      if (emptyEl) {
+        emptyEl.classList.remove('hidden');
+        const headline = emptyEl.querySelector('.gifts-empty-headline');
+        if (headline) headline.textContent = t('giftsReceiveEmptyTitle');
+        const sub = emptyEl.querySelector('.gifts-empty-sub');
+        if (sub) sub.textContent = t('giftsReceiveEmptyDesc');
+      }
       return;
     }
 
@@ -290,7 +323,8 @@
       if (gift.createdAt) {
         try {
           const d = new Date(gift.createdAt);
-          dateFormatted = d.toLocaleString('ru-RU', {
+          const langLocale = currentLang === 'uk' ? 'uk-UA' : (currentLang === 'en' ? 'en-US' : (currentLang === 'de' ? 'de-DE' : (currentLang === 'lt' ? 'lt-LT' : 'ru-RU')));
+          dateFormatted = d.toLocaleString(langLocale, {
             timeZone: 'Europe/Kyiv',
             day: '2-digit',
             month: '2-digit',
@@ -300,16 +334,23 @@
         } catch (e) {}
       }
 
+      const localizedName = getGiftName(gift.giftType);
+      const amount = gift.amount || 1;
+      const titleText = t('giftReceivedCardTitle', localizedName, amount);
+      const descText = t('giftReceivedCardDesc');
+      const timeText = dateFormatted ? t('giftReceivedTimeKyiv', dateFormatted) : '';
+      const claimBtnText = t('giftsClaimBtn');
+
       card.innerHTML = `
         <div class="gift-received-left">
           <span class="gift-received-icon">${gift.giftIcon || '🎁'}</span>
           <div class="gift-received-texts">
-            <strong class="gift-received-title">🎁 Подарок: ${escapeHtml(gift.giftName || 'Бонус')} (+${gift.amount || 1})</strong>
-            <span class="gift-received-desc">Вам прислан полезный подарок!</span>
-            ${dateFormatted ? `<span class="gift-received-date">🕒 ${dateFormatted} (Киев)</span>` : ''}
+            <strong class="gift-received-title">${escapeHtml(titleText)}</strong>
+            <span class="gift-received-desc">${escapeHtml(descText)}</span>
+            ${timeText ? `<span class="gift-received-date">${escapeHtml(timeText)}</span>` : ''}
           </div>
         </div>
-        <button type="button" class="btn-claim-gift" data-gift-id="${escapeHtml(gift.id)}">Забрать</button>
+        <button type="button" class="btn-claim-gift" data-gift-id="${escapeHtml(gift.id)}">${escapeHtml(claimBtnText)}</button>
       `;
 
       const claimBtn = card.querySelector('.btn-claim-gift');
@@ -372,17 +413,18 @@
       }
 
       // 6. Success Modal
+      const localizedName = getGiftName(gift.giftType);
       showNotification(
         gift.giftIcon || '🎁',
-        'Подарок получен!',
-        `Вы успешно забрали ${gift.giftIcon || ''} «${gift.giftName || 'Бонус'}» (+${addAmount})!\n\nПредмет добавлен в ваш баланс и готов к использованию.`
+        t('giftClaimedSuccessTitle'),
+        t('giftClaimedSuccessDesc', gift.giftIcon || '🎁', localizedName, addAmount)
       );
 
       // 7. Save cloud inbox
       await saveCloudInbox(userId, cachedInbox);
     } catch (err) {
       console.error('[GiftsModule] Claim gift error:', err);
-      showNotification('⚠️', 'Ошибка', 'Не удалось забрать подарок: ' + err.message);
+      showNotification('⚠️', t('errorTitle'), (t('errorClaimGift') || 'Не удалось забрать подарок:') + ' ' + err.message);
     } finally {
       isClaiming = false;
     }
@@ -401,7 +443,7 @@
 
     if (dailyDisplay) {
       if (isAdmin) {
-        dailyDisplay.textContent = `${stats.count} / ∞ (Безлимит)`;
+        dailyDisplay.textContent = `${stats.count} / ${t('giftsUnlimitedTag')}`;
       } else {
         dailyDisplay.textContent = `${stats.count} / ${MAX_DAILY_GIFTS}`;
       }
@@ -409,10 +451,10 @@
 
     if (dailyFootnote) {
       if (isAdmin) {
-        dailyFootnote.textContent = '👑 Режим администратора: отправка подарков без ограничений (безлимит).';
+        dailyFootnote.textContent = t('giftsAdminUnlimitedFootnote');
         dailyFootnote.style.color = '#38bdf8';
       } else {
-        dailyFootnote.textContent = 'Лимит: максимум 10 подарков в сутки. Сброс в 23:59 (Киев).';
+        dailyFootnote.textContent = t('giftsLimitFootnote');
         dailyFootnote.style.color = '';
       }
     }
@@ -508,14 +550,14 @@
     if (filtered.length === 0) {
       listEl.innerHTML = `
         <div style="text-align: center; color: #94a3b8; font-size: 0.85rem; padding: 18px 8px;">
-          ${searchQuery ? 'Игроки по запросу не найдены' : 'Список игроков пуст'}
+          ${searchQuery ? t('giftsPlayersNotFound') : t('giftsPlayersEmpty')}
         </div>
       `;
       return;
     }
 
     filtered.forEach((player) => {
-      const name = player.firstName || player.first_name || player.name || 'Игрок';
+      const name = player.firstName || player.first_name || player.name || t('defaultPlayerName');
       const lvl = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
 
       const row = document.createElement('div');
@@ -525,7 +567,7 @@
           <strong class="gift-player-name">${escapeHtml(name)}</strong>
         </div>
         <div style="display: flex; align-items: center;">
-          <button type="button" class="gift-player-select-btn">Выбрать</button>
+          <button type="button" class="gift-player-select-btn">${escapeHtml(t('giftsSelectPlayerBtn'))}</button>
         </div>
       `;
 
@@ -549,7 +591,7 @@
     const targetId = String(selectedRecipient.telegramId);
 
     if (myId === targetId) {
-      showNotification('⚠️', 'Ошибка', 'Вы не можете отправить подарок самому себе.');
+      showNotification('⚠️', t('errorTitle'), t('giftSelfSendError'));
       return;
     }
 
@@ -558,7 +600,7 @@
 
     const currentBal = getUserBoosterCount(config.boosterField);
     if (currentBal <= 0) {
-      showNotification('❌', 'У вас нет этого подарка', `У вас 0 шт. «${config.name}». Нельзя подарить предмет, которого нет в вашем балансе.`);
+      showNotification('❌', t('giftNoStockTitle'), t('giftNoStockDesc', getGiftName(giftType)));
       return;
     }
 
@@ -570,8 +612,8 @@
     if (!isAdmin && remainingDaily <= 0) {
       showNotification(
         '⏳',
-        'Лимит исчерпан',
-        'Вы уже отправили максимум 10 подарков сегодня.\n\nСчётчик сбросится сегодня в 23:59 по времени Киева.'
+        t('giftLimitExceededTitle'),
+        t('giftLimitExceededDesc')
       );
       return;
     }
@@ -591,12 +633,20 @@
     const limitVal = document.getElementById('giftQtyLimitValue');
 
     if (headerIcon) headerIcon.textContent = config.icon;
-    if (recipientName) recipientName.textContent = selectedRecipient.displayName || 'Игрок';
+    if (recipientName) recipientName.textContent = selectedRecipient.displayName || t('defaultPlayerName');
     if (bigIcon) bigIcon.textContent = config.icon;
-    if (itemName) itemName.textContent = config.name;
+    if (itemName) itemName.textContent = getGiftName(giftType);
     if (balVal) balVal.textContent = String(currentBal);
     if (limitVal) {
-      limitVal.textContent = isAdmin ? '∞ (Безлимит)' : String(remainingDaily);
+      limitVal.textContent = isAdmin ? t('giftsUnlimitedTag') : String(remainingDaily);
+    }
+
+    // Refresh dynamic stat labels inside modal
+    const statsElements = modal.querySelectorAll('.gift-qty-stat');
+    if (statsElements.length >= 2) {
+      statsElements[0].innerHTML = `${t('giftQtyInStockLabel')} <b id="giftQtyBalValue">${currentBal}</b> ${t('giftQtyPcs') || 'шт.'}`;
+      const limitText = isAdmin ? t('giftsUnlimitedTag') : String(remainingDaily);
+      statsElements[1].innerHTML = `${t('giftQtyAvailableTodayLabel')} <b id="giftQtyLimitValue">${limitText}</b> ${t('giftQtyPcs') || 'шт.'}`;
     }
 
     updateQtyStepperUI();
@@ -616,7 +666,7 @@
     const plusBtn = document.getElementById('giftQtyPlusBtn');
 
     if (display) display.textContent = String(currentGiftQty);
-    if (confirmBtn) confirmBtn.textContent = `Подарить (${currentGiftQty} шт.)`;
+    if (confirmBtn) confirmBtn.textContent = t('giftQtyConfirmBtn', currentGiftQty);
 
     if (minusBtn) minusBtn.disabled = (currentGiftQty <= 1);
     if (plusBtn) plusBtn.disabled = (currentGiftQty >= pendingMaxQty);
@@ -642,11 +692,11 @@
       : Math.max(1, Math.min(Number(quantity) || 1, currentBal, remainingDaily));
 
     if (currentBal < sendQty) {
-      showNotification('❌', 'У вас нет этого подарка', `У вас недостаточно «${config.name}».`);
+      showNotification('❌', t('giftNoStockTitle'), t('giftNoStockDesc', getGiftName(giftType)));
       return;
     }
     if (!isAdmin && remainingDaily < sendQty) {
-      showNotification('⏳', 'Лимит исчерпан', `Вы можете отправить максимум ${remainingDaily} шт. сегодня.`);
+      showNotification('⏳', t('giftLimitExceededTitle'), t('giftLimitExceededDesc'));
       return;
     }
 
@@ -676,7 +726,7 @@
       const newGift = {
         id: 'gift_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
         giftType: giftType,
-        giftName: config.name,
+        giftName: getGiftName(giftType),
         giftIcon: config.icon,
         amount: sendQty,
         createdAt: Date.now(),
@@ -694,13 +744,13 @@
 
       // 6. Success Feedback
       const dailyNotice = isAdmin
-        ? `Отправлено сегодня: ${newDailyCount} шт. (Безлимит для администратора).`
-        : `Отправлено сегодня: ${newDailyCount} / ${MAX_DAILY_GIFTS}.`;
+        ? t('giftDailyNoticeAdmin', newDailyCount)
+        : t('giftDailyNoticeUser', newDailyCount, MAX_DAILY_GIFTS);
 
       showNotification(
         '🎁',
-        'Подарок отправлен!',
-        `Вы успешно отправили ${config.icon} «${config.name}» (${sendQty} шт.) игроку ${targetName}!\n\nС вашего баланса списано: ${sendQty} шт. (осталось: ${getUserBoosterCount(config.boosterField)}).\n${dailyNotice}`
+        t('giftSentSuccessTitle'),
+        t('giftSentSuccessDesc', config.icon, getGiftName(giftType), sendQty, targetName, getUserBoosterCount(config.boosterField), dailyNotice)
       );
 
       // Return to recipient selection list
@@ -708,7 +758,7 @@
       renderSendView();
     } catch (err) {
       console.error('[GiftsModule] Send gift error:', err);
-      showNotification('⚠️', 'Ошибка отправки', 'Не удалось доставить подарок: ' + err.message);
+      showNotification('⚠️', t('errorTitle'), (t('errorSendGift') || 'Не удалось доставить подарок:') + ' ' + err.message);
     } finally {
       isSending = false;
     }
@@ -852,6 +902,110 @@
     }
   }
 
+  function setLanguage(lang, translateFn) {
+    if (lang) currentLang = lang;
+    if (typeof translateFn === 'function') tCallback = translateFn;
+
+    // 1. Subnav buttons
+    const receiveBtn = document.getElementById('giftsSubnavReceiveBtn');
+    if (receiveBtn) {
+      const unclaimed = (cachedInbox || []).filter(g => !g.claimed).length;
+      receiveBtn.innerHTML = `<span>${t('giftsSubnavReceive')}</span><span class="gifts-counter-badge ${unclaimed > 0 ? '' : 'hidden'}" id="giftsReceiveBadge">${unclaimed}</span>`;
+    }
+    const sendBtn = document.getElementById('giftsSubnavSendBtn');
+    if (sendBtn) {
+      sendBtn.innerHTML = `<span>${t('giftsSubnavSend')}</span>`;
+    }
+
+    // 2. Receive view static strings
+    const rLoading = document.getElementById('giftsReceiveLoading');
+    if (rLoading && rLoading.querySelector('span')) {
+      rLoading.querySelector('span').textContent = t('giftsReceiveChecking');
+    }
+    const rHeadline = document.querySelector('#giftsReceiveEmpty .gifts-empty-headline');
+    if (rHeadline) rHeadline.textContent = t('giftsReceiveEmptyTitle');
+    const rSub = document.querySelector('#giftsReceiveEmpty .gifts-empty-sub');
+    if (rSub) rSub.textContent = t('giftsReceiveEmptyDesc');
+
+    // 3. Send view static strings
+    const limitLabel = document.querySelector('.gifts-limit-header .limit-label');
+    if (limitLabel) limitLabel.textContent = t('giftsDailySentLabel');
+
+    const recipientStepTitle = document.querySelector('#giftsStepRecipient .gifts-step-title');
+    if (recipientStepTitle) recipientStepTitle.textContent = t('giftsStepRecipientTitle');
+
+    const searchInput = document.getElementById('giftsPlayerSearchInput');
+    if (searchInput) searchInput.placeholder = t('giftsSearchPlaceholder');
+
+    const pLoading = document.getElementById('giftsPlayersLoading');
+    if (pLoading && pLoading.querySelector('span')) {
+      pLoading.querySelector('span').textContent = t('giftsPlayersLoading');
+    }
+
+    const backBtn = document.getElementById('giftsBackToRecipientsBtn');
+    if (backBtn) backBtn.textContent = t('giftsBackToRecipientsBtn');
+
+    const recLabel = document.querySelector('.recipient-badge-box .recipient-label');
+    if (recLabel) recLabel.textContent = t('giftsRecipientLabel');
+
+    const itemStepTitle = document.querySelector('#giftsStepItem .gifts-step-title');
+    if (itemStepTitle) itemStepTitle.textContent = t('giftsStepItemTitle');
+
+    // Catalog items
+    const titleUndos = document.querySelector('.gift-choice-card[data-gift-type="undos"] .gift-choice-title');
+    if (titleUndos) titleUndos.textContent = t('giftItemUndo');
+    const titleHints = document.querySelector('.gift-choice-card[data-gift-type="hints"] .gift-choice-title');
+    if (titleHints) titleHints.textContent = t('giftItemHint');
+    const titleReveals = document.querySelector('.gift-choice-card[data-gift-type="reveals"] .gift-choice-title');
+    if (titleReveals) titleReveals.textContent = t('giftItemReveal');
+    const titleBottles = document.querySelector('.gift-choice-card[data-gift-type="extraBottles"] .gift-choice-title');
+    if (titleBottles) titleBottles.textContent = t('giftItemBottle');
+
+    document.querySelectorAll('.gift-choice-card').forEach(card => {
+      const type = card.getAttribute('data-gift-type');
+      const bEl = card.querySelector('.gift-choice-balance b');
+      const bVal = bEl ? bEl.textContent : '0';
+      const balSpan = card.querySelector('.gift-choice-balance');
+      const bId = type === 'undos' ? 'giftBalUndos' : (type === 'hints' ? 'giftBalHints' : (type === 'reveals' ? 'giftBalReveals' : 'giftBalBottles'));
+      if (balSpan) {
+        balSpan.innerHTML = `${t('giftsInStockLabel')} <b id="${bId}">${bVal}</b>`;
+      }
+      const sBtn = card.querySelector('.gift-send-btn');
+      if (sBtn) sBtn.textContent = t('giftsSendActionBtn');
+    });
+
+    // 4. Quantity Modal
+    const qtyTitle = document.getElementById('giftQtyModalTitle');
+    if (qtyTitle) qtyTitle.textContent = t('giftQtyModalTitle');
+
+    const qtyRecDesc = document.getElementById('giftQtyRecipientDesc');
+    if (qtyRecDesc) {
+      const name = selectedRecipient ? escapeHtml(selectedRecipient.displayName) : (t('defaultPlayerName') || '—');
+      qtyRecDesc.innerHTML = `${t('giftQtyRecipientDesc')} <strong id="giftQtyRecipientName">${name}</strong>`;
+    }
+
+    const pickerLabel = document.querySelector('.gift-qty-picker-label');
+    if (pickerLabel) pickerLabel.textContent = t('giftQtyPickerLabel');
+
+    const qtyCancel = document.getElementById('giftQtyCancelBtn');
+    if (qtyCancel) qtyCancel.textContent = t('giftQtyCancelBtn');
+    const closeQtyBtn = document.getElementById('closeGiftQtyModalBtn');
+    if (closeQtyBtn) closeQtyBtn.title = t('closeBtn') || 'Закрыть';
+
+    if (pendingGiftType) {
+      const itemEl = document.getElementById('giftQtyItemName');
+      if (itemEl) itemEl.textContent = getGiftName(pendingGiftType);
+    }
+    updateQtyStepperUI();
+
+    // 5. Re-render active view
+    if (activeSubnav === 'receive') {
+      renderReceiveView();
+    } else {
+      renderSendView();
+    }
+  }
+
   // Public Interface
   const GiftsModule = {
     init(user, callbacks = {}) {
@@ -862,8 +1016,11 @@
       showInfoModalCallback = callbacks.showInfoModal;
       getLeaderboardPlayersCallback = callbacks.getLeaderboardPlayers;
       isAdminCheckCallback = callbacks.isAdmin;
+      if (callbacks.lang) currentLang = callbacks.lang;
+      if (typeof callbacks.t === 'function') tCallback = callbacks.t;
 
       bindEvents();
+      setLanguage(currentLang, tCallback);
 
       // Initial check
       checkPendingGifts();
@@ -879,6 +1036,8 @@
       currentUserRef = user;
       checkPendingGifts();
     },
+
+    setLanguage,
 
     refresh() {
       if (activeSubnav === 'receive') {
@@ -904,7 +1063,7 @@
       if (!recipient) return;
       selectedRecipient = {
         telegramId: String(recipient.telegramId),
-        displayName: recipient.displayName || recipient.firstName || recipient.name || 'Игрок',
+        displayName: recipient.displayName || recipient.firstName || recipient.name || (t('defaultPlayerName') || 'Игрок'),
         level: recipient.level || recipient.maxLevel || 1
       };
       const sendBtn = document.getElementById('giftsSubnavSendBtn');
