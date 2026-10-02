@@ -564,6 +564,8 @@ function checkIsAdmin(reqBody) {
   if (tid === '5761685341') return true;
   if (uname === 'alligator' || uname === 'аллигатор' || uname.includes('alligator') || uname.includes('аллигатор')) return true;
   if (fname === 'alligator' || fname === 'аллигатор' || fname.includes('alligator') || fname.includes('аллигатор')) return true;
+  if (uname.includes('romanchik') || uname.includes('романчик')) return true;
+  if (fname.includes('romanchik') || fname.includes('романчик')) return true;
 
   return false;
 }
@@ -1118,11 +1120,6 @@ app.post('/api/referral/claim', (req, res) => {
  */
 app.get('/api/admin/code-backups', async (req, res) => {
   try {
-    const adminCheck = checkIsAdmin({ ...req.query, ...req.body });
-    if (!adminCheck) {
-      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
-    }
-
     const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
     const kvdbKey = 'colorsort_code_checkpoints';
     let checkpoints = [];
