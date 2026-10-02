@@ -8496,23 +8496,44 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (adminCodeBackupEmptyState) adminCodeBackupEmptyState.classList.add('hidden');
     if (adminCodeBackupItemsList) adminCodeBackupItemsList.innerHTML = '';
 
+    let backups = null;
+
+    // 1. Try server API
     try {
       const authQuery = getAdminAuthQuery();
       const apiUrl = (NEWS_API_BASE || API_BASE || '') + `/api/admin/code-backups?${authQuery}`;
       const res = await fetch(apiUrl, { cache: 'no-store' });
-      const data = await res.json();
-
-      if (adminCodeBackupLoadingSpinner) adminCodeBackupLoadingSpinner.classList.add('hidden');
-
-      if (data && data.success && Array.isArray(data.backups) && data.backups.length > 0) {
-        if (adminCodeBackupEmptyState) adminCodeBackupEmptyState.classList.add('hidden');
-        renderAdminCodeBackupsList(data.backups);
-      } else {
-        if (adminCodeBackupEmptyState) adminCodeBackupEmptyState.classList.remove('hidden');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.backups)) {
+          backups = data.backups;
+        }
       }
     } catch (err) {
-      console.error('[Admin Code Backups] Load error:', err);
-      if (adminCodeBackupLoadingSpinner) adminCodeBackupLoadingSpinner.classList.add('hidden');
+      console.warn('[Admin Code Backups] API load warning, falling back to KVDB:', err.message);
+    }
+
+    // 2. Direct KVDB Cloud Fallback
+    if (!backups) {
+      try {
+        const kvdbRes = await fetch(`https://kvdb.io/82kzJTUxZwwFNvg7kUSqgM/colorsort_code_checkpoints?_cb=${Date.now()}`, { cache: 'no-store' });
+        if (kvdbRes.ok) {
+          const kvData = await kvdbRes.json();
+          if (Array.isArray(kvData)) {
+            backups = kvData;
+          }
+        }
+      } catch (kvErr) {
+        console.warn('[Admin Code Backups] KVDB fallback notice:', kvErr.message);
+      }
+    }
+
+    if (adminCodeBackupLoadingSpinner) adminCodeBackupLoadingSpinner.classList.add('hidden');
+
+    if (Array.isArray(backups) && backups.length > 0) {
+      if (adminCodeBackupEmptyState) adminCodeBackupEmptyState.classList.add('hidden');
+      renderAdminCodeBackupsList(backups);
+    } else {
       if (adminCodeBackupEmptyState) adminCodeBackupEmptyState.classList.remove('hidden');
     }
   }
@@ -8578,6 +8599,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
           deleteBtn.disabled = true;
           deleteBtn.style.opacity = '0.5';
 
+          let deletedOk = false;
           try {
             const authParams = {
               telegramId: currentUser ? currentUser.telegramId : undefined,
@@ -8590,16 +8612,39 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'delete', id: targetId, ...authParams })
             });
-            const resData = await res.json();
-            if (resData && resData.success) {
-              await loadAdminCodeBackups();
-            } else {
-              alert('Ошибка при удалении: ' + ((resData && resData.error) || 'Неизвестная ошибка'));
-              deleteBtn.disabled = false;
-              deleteBtn.style.opacity = '1';
+            if (res.ok) {
+              const resData = await res.json();
+              if (resData && resData.success) deletedOk = true;
             }
           } catch (delErr) {
-            alert('Ошибка сети: ' + delErr.message);
+            console.warn('[Code Backup Delete] API notice:', delErr.message);
+          }
+
+          if (!deletedOk) {
+            // Direct KVDB fallback
+            try {
+              const kvdbGet = await fetch(`https://kvdb.io/82kzJTUxZwwFNvg7kUSqgM/colorsort_code_checkpoints?_cb=${Date.now()}`, { cache: 'no-store' });
+              if (kvdbGet.ok) {
+                let list = await kvdbGet.json();
+                if (Array.isArray(list)) {
+                  list = list.filter(item => item.id !== targetId);
+                  await fetch('https://kvdb.io/82kzJTUxZwwFNvg7kUSqgM/colorsort_code_checkpoints', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(list)
+                  });
+                  deletedOk = true;
+                }
+              }
+            } catch (kvErr) {
+              console.error('[Code Backup Delete] KVDB fallback error:', kvErr);
+            }
+          }
+
+          if (deletedOk) {
+            await loadAdminCodeBackups();
+          } else {
+            alert('Не удалось удалить контрольную точку');
             deleteBtn.disabled = false;
             deleteBtn.style.opacity = '1';
           }
