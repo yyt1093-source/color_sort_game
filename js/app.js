@@ -5078,6 +5078,17 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (quickBtn) {
         quickBtn.classList.add('active');
       }
+      const navTabs = document.querySelector('.admin-nav-tabs');
+      if (navTabs) {
+        navTabs.style.setProperty('display', 'grid', 'important');
+        navTabs.style.setProperty('grid-template-columns', 'repeat(2, 1fr)', 'important');
+        navTabs.style.setProperty('gap', '8px', 'important');
+        navTabs.style.setProperty('width', '100%', 'important');
+      }
+      const newsBtn = document.getElementById('adminTabNewsBtn');
+      if (newsBtn) {
+        newsBtn.style.setProperty('grid-column', '1 / -1', 'important');
+      }
       setTimeout(() => {
         adminPanelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 50);
@@ -6462,6 +6473,21 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   const adminTabWalletsContent = document.getElementById('adminTabWalletsContent');
   const adminTabNewsContent = document.getElementById('adminTabNewsContent');
   const adminTabCodeBackupContent = document.getElementById('adminTabCodeBackupContent');
+
+  // Enforce Checkerboard / Tile Grid on Admin Nav Tabs (2x2 + 1)
+  const enforceAdminNavGrid = () => {
+    const navTabs = document.querySelector('.admin-nav-tabs');
+    if (navTabs) {
+      navTabs.style.setProperty('display', 'grid', 'important');
+      navTabs.style.setProperty('grid-template-columns', 'repeat(2, 1fr)', 'important');
+      navTabs.style.setProperty('gap', '8px', 'important');
+      navTabs.style.setProperty('width', '100%', 'important');
+    }
+    if (adminTabNewsBtn) {
+      adminTabNewsBtn.style.setProperty('grid-column', '1 / -1', 'important');
+    }
+  };
+  enforceAdminNavGrid();
 
   const adminCodeBackupLoadingSpinner = document.getElementById('adminCodeBackupLoadingSpinner');
   const adminCodeBackupEmptyState = document.getElementById('adminCodeBackupEmptyState');

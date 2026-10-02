@@ -25,14 +25,14 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   
   <!-- Preload critical game assets for instant boot -->
-  <link rel="preload" href="referral_share.jpg?v=4" as="image">
-  <link rel="preload" href="game_icon.png?v=48930" as="image">
-  <link rel="preload" href="ton_icon.png?v=48930" as="image">
-  <link rel="preload" href="js/gameEngine.js?v=48930" as="script">
-  <link rel="preload" href="js/renderer.js?v=48930" as="script">
-  <link rel="preload" href="js/levelGenerator.js?v=48930" as="script">
-  <link rel="preload" href="js/tonconnect-ui.min.js?v=48930" as="script">
-  <link rel="preload" href="js/app.js?v=48930" as="script">
+  <link rel="preload" href="referral_share.jpg?v=48945" as="image">
+  <link rel="preload" href="game_icon.png?v=48945" as="image">
+  <link rel="preload" href="ton_icon.png?v=48945" as="image">
+  <link rel="preload" href="js/gameEngine.js?v=48945" as="script">
+  <link rel="preload" href="js/renderer.js?v=48945" as="script">
+  <link rel="preload" href="js/levelGenerator.js?v=48945" as="script">
+  <link rel="preload" href="js/tonconnect-ui.min.js?v=48945" as="script">
+  <link rel="preload" href="js/app.js?v=48945" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -43,7 +43,129 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=48930">
+  <link rel="stylesheet" href="style.css?v=48945">
+  <style>
+    /* Direct Fail-Safe Tile Grid for Admin Navigation (Шахматный порядок 2x2 + 1) */
+    .admin-nav-tabs {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 8px !important;
+      width: 100% !important;
+      margin-top: 6px !important;
+      margin-bottom: 12px !important;
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .admin-nav-tab {
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 10px 6px !important;
+      min-height: 72px !important;
+      border-radius: 13px !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      background: rgba(15, 23, 42, 0.78) !important;
+      backdrop-filter: blur(10px) !important;
+      color: #94a3b8 !important;
+      cursor: pointer !important;
+      user-select: none !important;
+      text-align: center !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+      box-sizing: border-box !important;
+      position: relative !important;
+    }
+    .admin-nav-tab-main {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 5px !important;
+      min-width: 0 !important;
+      width: 100% !important;
+    }
+    .admin-nav-tab-icon {
+      font-size: 1.3rem !important;
+      line-height: 1 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 36px !important;
+      height: 36px !important;
+      border-radius: 10px !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      flex-shrink: 0 !important;
+    }
+    .admin-nav-tab-text {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 1px !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      text-align: center !important;
+    }
+    .admin-nav-tab-text strong {
+      font-size: 0.82rem !important;
+      font-weight: 800 !important;
+      color: #f1f5f9 !important;
+      letter-spacing: 0.2px !important;
+      line-height: 1.25 !important;
+      text-align: center !important;
+    }
+    .admin-nav-tab-desc {
+      font-size: 0.65rem !important;
+      color: #64748b !important;
+      font-weight: 500 !important;
+      line-height: 1.15 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      max-width: 100% !important;
+    }
+    .admin-nav-tab-status {
+      display: none !important;
+    }
+    #adminTabNewsBtn {
+      grid-column: 1 / -1 !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 8px 12px !important;
+      min-height: 48px !important;
+    }
+    #adminTabNewsBtn .admin-nav-tab-main {
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      width: auto !important;
+    }
+    #adminTabNewsBtn .admin-nav-tab-icon {
+      width: 32px !important;
+      height: 32px !important;
+      font-size: 1.15rem !important;
+    }
+    #adminTabNewsBtn .admin-nav-tab-text {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      text-align: left !important;
+      width: auto !important;
+      gap: 1px !important;
+    }
+    #adminTabNewsBtn .admin-nav-tab-text strong {
+      font-size: 0.85rem !important;
+      text-align: left !important;
+    }
+    #adminTabNewsBtn .admin-nav-tab-desc {
+      font-size: 0.68rem !important;
+      text-align: left !important;
+    }
+  </style>
 </head>
 <body>
   <!-- Fullscreen Start Splash Screen -->
@@ -638,48 +760,48 @@
           </button>
         </div>
 
-        <!-- Admin Navigation (Плиточная панель) -->
-        <div class="admin-nav-tabs">
-          <button type="button" class="admin-nav-tab" id="adminTabCodeBackupBtn" data-tab="code_backup">
-            <div class="admin-nav-tab-main">
+        <!-- Admin Navigation (Плиточная панель - Шахматный порядок 2x2 + 1) -->
+        <div class="admin-nav-tabs" style="display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; width: 100% !important; margin-top: 6px !important; margin-bottom: 12px !important; background: transparent !important; border: none !important; padding: 0 !important; box-sizing: border-box !important;">
+          <button type="button" class="admin-nav-tab" id="adminTabCodeBackupBtn" data-tab="code_backup" style="width: 100% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-align: center !important; padding: 10px 6px !important; min-height: 72px !important; border-radius: 13px !important; box-sizing: border-box !important;">
+            <div class="admin-nav-tab-main" style="display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 5px !important; width: 100% !important;">
               <span class="admin-nav-tab-icon">💾</span>
-              <div class="admin-nav-tab-text">
+              <div class="admin-nav-tab-text" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important; width: 100% !important;">
                 <strong id="adminTabCodeBackupLabel">Резервные копии</strong>
                 <span class="admin-nav-tab-desc" id="adminTabCodeBackupDesc">Версии кода</span>
               </div>
             </div>
           </button>
-          <button type="button" class="admin-nav-tab active" id="adminTabActionsBtn" data-tab="actions">
-            <div class="admin-nav-tab-main">
+          <button type="button" class="admin-nav-tab active" id="adminTabActionsBtn" data-tab="actions" style="width: 100% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-align: center !important; padding: 10px 6px !important; min-height: 72px !important; border-radius: 13px !important; box-sizing: border-box !important;">
+            <div class="admin-nav-tab-main" style="display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 5px !important; width: 100% !important;">
               <span class="admin-nav-tab-icon">⚡</span>
-              <div class="admin-nav-tab-text">
+              <div class="admin-nav-tab-text" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important; width: 100% !important;">
                 <strong id="adminTabActionsLabel">Управление</strong>
                 <span class="admin-nav-tab-desc" id="adminTabActionsDesc">Бустеры и сброс</span>
               </div>
             </div>
           </button>
-          <button type="button" class="admin-nav-tab" id="adminTabHistoryBtn" data-tab="history">
-            <div class="admin-nav-tab-main">
+          <button type="button" class="admin-nav-tab" id="adminTabHistoryBtn" data-tab="history" style="width: 100% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-align: center !important; padding: 10px 6px !important; min-height: 72px !important; border-radius: 13px !important; box-sizing: border-box !important;">
+            <div class="admin-nav-tab-main" style="display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 5px !important; width: 100% !important;">
               <span class="admin-nav-tab-icon">📜</span>
-              <div class="admin-nav-tab-text">
+              <div class="admin-nav-tab-text" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important; width: 100% !important;">
                 <strong id="adminTabHistoryLabel">Исследование лидера</strong>
                 <span class="admin-nav-tab-desc" id="adminTabHistoryDesc">Снимки 23:55</span>
               </div>
             </div>
           </button>
-          <button type="button" class="admin-nav-tab" id="adminTabWalletsBtn" data-tab="wallets">
-            <div class="admin-nav-tab-main">
+          <button type="button" class="admin-nav-tab" id="adminTabWalletsBtn" data-tab="wallets" style="width: 100% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-align: center !important; padding: 10px 6px !important; min-height: 72px !important; border-radius: 13px !important; box-sizing: border-box !important;">
+            <div class="admin-nav-tab-main" style="display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 5px !important; width: 100% !important;">
               <span class="admin-nav-tab-icon">👛</span>
-              <div class="admin-nav-tab-text">
+              <div class="admin-nav-tab-text" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important; width: 100% !important;">
                 <strong id="adminTabWalletsLabel">Кошелек</strong>
                 <span class="admin-nav-tab-desc" id="adminTabWalletsDesc">TON игроки</span>
               </div>
             </div>
           </button>
-          <button type="button" class="admin-nav-tab" id="adminTabNewsBtn" data-tab="news">
-            <div class="admin-nav-tab-main">
-              <span class="admin-nav-tab-icon">📢</span>
-              <div class="admin-nav-tab-text">
+          <button type="button" class="admin-nav-tab" id="adminTabNewsBtn" data-tab="news" style="grid-column: 1 / -1 !important; width: 100% !important; display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: center !important; padding: 8px 12px !important; min-height: 48px !important; border-radius: 13px !important; box-sizing: border-box !important;">
+            <div class="admin-nav-tab-main" style="display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: center !important; gap: 8px !important; width: auto !important;">
+              <span class="admin-nav-tab-icon" style="width: 32px !important; height: 32px !important; font-size: 1.15rem !important;">📢</span>
+              <div class="admin-nav-tab-text" style="display: flex !important; flex-direction: column !important; align-items: flex-start !important; text-align: left !important; width: auto !important; gap: 1px !important;">
                 <strong id="adminTabNewsLabel">Новости</strong>
                 <span class="admin-nav-tab-desc" id="adminTabNewsDesc">Рассылка сообщений в боте</span>
               </div>
@@ -1464,13 +1586,13 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=48930"></script>
-  <script src="js/audio.js?v=48930"></script>
-  <script src="js/solver.js?v=48930"></script>
-  <script src="js/levelGenerator.js?v=48930"></script>
-  <script src="js/gameEngine.js?v=48930"></script>
-  <script src="js/renderer.js?v=48930"></script>
-  <script src="js/tonconnect-ui.min.js?v=48930"></script>
-  <script src="js/app.js?v=48930"></script>
+  <script src="js/telegram.js?v=48945"></script>
+  <script src="js/audio.js?v=48945"></script>
+  <script src="js/solver.js?v=48945"></script>
+  <script src="js/levelGenerator.js?v=48945"></script>
+  <script src="js/gameEngine.js?v=48945"></script>
+  <script src="js/renderer.js?v=48945"></script>
+  <script src="js/tonconnect-ui.min.js?v=48945"></script>
+  <script src="js/app.js?v=48945"></script>
 </body>
 </html>

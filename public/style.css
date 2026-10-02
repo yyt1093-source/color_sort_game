@@ -3159,16 +3159,16 @@ body {
    Admin Panel Navigation (Плиточная панель)
    ============================================================ */
 .admin-nav-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  width: 100%;
-  margin-top: 6px;
-  margin-bottom: 12px;
-  background: transparent;
-  border: none;
-  padding: 0;
-  box-sizing: border-box;
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin-top: 6px !important;
+  margin-bottom: 12px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
 .admin-nav-tab {
