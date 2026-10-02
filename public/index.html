@@ -624,12 +624,18 @@
         </button>
 
         <div id="adminPanelSection" class="admin-panel-section hidden">
-        <div class="admin-panel-header">
-          <span class="admin-shield-icon">🛡️</span>
-          <div>
-            <strong id="adminPanelTitle">Панель Администратора</strong>
-            <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48860)</span>
+        <div class="admin-panel-header" id="adminPanelHeader" role="button" tabindex="0" title="Свернуть панель администратора">
+          <div class="admin-panel-header-left">
+            <span class="admin-shield-icon">🛡️</span>
+            <div>
+              <strong id="adminPanelTitle">Панель Администратора</strong>
+              <span class="admin-panel-sub" id="adminPanelSub">Доступно только Аллигатору (v48860)</span>
+            </div>
           </div>
+          <button type="button" class="admin-panel-collapse-btn" id="adminPanelCollapseBtn" title="Свернуть панель">
+            <span>Свернуть</span>
+            <span>▲</span>
+          </button>
         </div>
 
         <!-- Admin Navigation (Отдельные разделы в столбик) -->
@@ -676,6 +682,18 @@
               <div class="admin-nav-tab-text">
                 <strong id="adminTabNewsLabel">Новости</strong>
                 <span class="admin-nav-tab-desc" id="adminTabNewsDesc">Рассылка уведомлений и картинок игрокам в боте</span>
+              </div>
+            </div>
+            <span class="admin-nav-tab-status">
+              <span class="admin-tab-indicator"></span>
+            </span>
+          </button>
+          <button type="button" class="admin-nav-tab" id="adminTabCodeBackupBtn" data-tab="code_backup">
+            <div class="admin-nav-tab-main">
+              <span class="admin-nav-tab-icon">💾</span>
+              <div class="admin-nav-tab-text">
+                <strong id="adminTabCodeBackupLabel">Резервные копии кода</strong>
+                <span class="admin-nav-tab-desc" id="adminTabCodeBackupDesc">Контрольные точки и версии рабочего кода игры (Киев)</span>
               </div>
             </div>
             <span class="admin-nav-tab-status">
@@ -968,6 +986,45 @@
             </div>
           </div>
         </div>
+
+        <!-- Tab 5: Admin Code Checkpoints Registry -->
+        <div id="adminTabCodeBackupContent" class="admin-tab-content hidden">
+          <div class="admin-history-header-box">
+            <div class="admin-history-title-row">
+              <span style="font-size: 18px;">💾</span>
+              <strong>Резервные копии КОДА ИГРЫ (Время Киева)</strong>
+            </div>
+            <span class="admin-history-sub" style="margin-top: 4px; display: block; line-height: 1.4;">
+              🛡️ Здесь зафиксированы контрольные точки рабочего кода игры. Выгрузка новых версий выполняется разработчиком при программировании. Если потребуется откат, назовите разработчику дату нужной версии.
+            </span>
+          </div>
+
+          <div class="admin-history-list-bar" style="margin-top: 10px;">
+            <div class="admin-history-list-title">
+              📅 <span>Зафиксированные версии кода игры (Киев):</span>
+            </div>
+          </div>
+
+          <div id="adminCodeBackupListContainer" class="admin-history-list-container">
+            <div id="adminCodeBackupLoadingSpinner" class="admin-history-loading hidden">
+              <div class="spinner"></div>
+              <span>Загрузка списка версий кода...</span>
+            </div>
+            <div id="adminCodeBackupEmptyState" class="admin-history-empty hidden">
+              <span style="font-size: 2rem;">📭</span>
+              <span>Копии кода еще не создавались</span>
+            </div>
+            <div id="adminCodeBackupItemsList" class="admin-history-items-list">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Collapse Button -->
+        <button type="button" id="adminPanelBottomCollapseBtn" class="admin-panel-bottom-collapse-btn" title="Свернуть панель администратора">
+          <span>▲</span>
+          <span>Свернуть панель администратора</span>
+        </button>
       </div>
       </div>
 
