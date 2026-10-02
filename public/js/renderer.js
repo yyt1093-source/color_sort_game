@@ -78,12 +78,7 @@
           segEl.style.borderTop = '1.5px solid rgba(255, 255, 255, 0.38)';
           segEl.style.boxShadow = 'inset 0 1.5px 2px rgba(0, 0, 0, 0.32), inset 0 -2px 3px rgba(0, 0, 0, 0.22)';
         }
-
-        if (isTopSegment) {
-          const wave = document.createElement('div');
-          wave.className = 'liquid-wave';
-          segEl.appendChild(wave);
-        }
+        // Top liquid wave eliminated per user request (no white shimmering strip)
       } else {
         segEl.className = 'liquid-layer liquid-hidden-layer';
         segEl.style.height = `${segHeight}px`;
