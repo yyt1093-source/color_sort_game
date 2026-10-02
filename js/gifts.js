@@ -51,6 +51,9 @@
   let isClaiming = false;
   let activeSubnav = 'receive'; // 'receive' or 'send'
   let pollingInterval = null;
+  let pendingGiftType = null;
+  let pendingMaxQty = 1;
+  let currentGiftQty = 1;
 
   // Time & Daily Limit Helpers
   function getKyivDateTime() {
@@ -95,11 +98,11 @@
     return stats;
   }
 
-  function incrementDailyStats(userId) {
+  function incrementDailyStats(userId, amount = 1) {
     const today = getKyivDateTime().dateStr;
     const key = `colorsort_gifts_daily_${userId}`;
     const stats = getDailyStats(userId);
-    stats.count += 1;
+    stats.count += Number(amount) || 1;
     stats.date = today;
     try {
       localStorage.setItem(key, JSON.stringify(stats));
@@ -464,9 +467,7 @@
       return;
     }
 
-    filtered.forEach((player, idx) => {
-      const rank = idx + 1;
-      const rankBadge = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+    filtered.forEach((player) => {
       const name = player.firstName || player.first_name || player.name || 'Игрок';
       const lvl = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
 
@@ -474,11 +475,9 @@
       row.className = 'gift-player-row';
       row.innerHTML = `
         <div class="gift-player-left">
-          <span class="gift-player-rank">${rankBadge}</span>
           <strong class="gift-player-name">${escapeHtml(name)}</strong>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="gift-player-lvl">Уровень ${lvl}</span>
+        <div style="display: flex; align-items: center;">
           <button type="button" class="gift-player-select-btn">Выбрать</button>
         </div>
       `;
@@ -496,21 +495,29 @@
     });
   }
 
-  async function sendGift(giftType) {
-    if (isSending || !currentUserRef || !selectedRecipient) return;
+  function openQuantityModal(giftType) {
+    if (!currentUserRef || !selectedRecipient) return;
 
     const myId = String(currentUserRef.telegramId);
     const targetId = String(selectedRecipient.telegramId);
-    const targetName = selectedRecipient.displayName;
 
     if (myId === targetId) {
       showNotification('⚠️', 'Ошибка', 'Вы не можете отправить подарок самому себе.');
       return;
     }
 
-    // 1. Check daily limit
+    const config = GIFT_CONFIG[giftType];
+    if (!config) return;
+
+    const currentBal = getUserBoosterCount(config.boosterField);
+    if (currentBal <= 0) {
+      showNotification('❌', 'У вас нет этого подарка', `У вас 0 шт. «${config.name}». Нельзя подарить предмет, которого нет в вашем балансе.`);
+      return;
+    }
+
     const dailyStats = getDailyStats(myId);
-    if (dailyStats.count >= MAX_DAILY_GIFTS) {
+    const remainingDaily = MAX_DAILY_GIFTS - dailyStats.count;
+    if (remainingDaily <= 0) {
       showNotification(
         '⏳',
         'Лимит исчерпан',
@@ -519,46 +526,103 @@
       return;
     }
 
-    // 2. Check balance of the item
+    pendingGiftType = giftType;
+    pendingMaxQty = Math.min(currentBal, remainingDaily);
+    currentGiftQty = 1;
+
+    const modal = document.getElementById('giftQuantityModal');
+    if (!modal) return;
+
+    const headerIcon = document.getElementById('giftQtyHeaderIcon');
+    const recipientName = document.getElementById('giftQtyRecipientName');
+    const bigIcon = document.getElementById('giftQtyBigIcon');
+    const itemName = document.getElementById('giftQtyItemName');
+    const balVal = document.getElementById('giftQtyBalValue');
+    const limitVal = document.getElementById('giftQtyLimitValue');
+
+    if (headerIcon) headerIcon.textContent = config.icon;
+    if (recipientName) recipientName.textContent = selectedRecipient.displayName || 'Игрок';
+    if (bigIcon) bigIcon.textContent = config.icon;
+    if (itemName) itemName.textContent = config.name;
+    if (balVal) balVal.textContent = String(currentBal);
+    if (limitVal) limitVal.textContent = String(remainingDaily);
+
+    updateQtyStepperUI();
+    modal.classList.remove('hidden');
+  }
+
+  function closeQuantityModal() {
+    const modal = document.getElementById('giftQuantityModal');
+    if (modal) modal.classList.add('hidden');
+    pendingGiftType = null;
+  }
+
+  function updateQtyStepperUI() {
+    const display = document.getElementById('giftQtyValDisplay');
+    const confirmBtn = document.getElementById('giftQtyConfirmBtn');
+    const minusBtn = document.getElementById('giftQtyMinusBtn');
+    const plusBtn = document.getElementById('giftQtyPlusBtn');
+
+    if (display) display.textContent = String(currentGiftQty);
+    if (confirmBtn) confirmBtn.textContent = `Подарить (${currentGiftQty} шт.)`;
+
+    if (minusBtn) minusBtn.disabled = (currentGiftQty <= 1);
+    if (plusBtn) plusBtn.disabled = (currentGiftQty >= pendingMaxQty);
+  }
+
+  async function executeSendGift(giftType, quantity) {
+    if (isSending || !currentUserRef || !selectedRecipient) return;
+
+    const myId = String(currentUserRef.telegramId);
+    const targetId = String(selectedRecipient.telegramId);
+    const targetName = selectedRecipient.displayName;
+
     const config = GIFT_CONFIG[giftType];
     if (!config) return;
-    const currentBal = getUserBoosterCount(config.boosterField);
 
-    if (currentBal <= 0) {
-      showNotification('❌', 'У вас нет этого подарка', `У вас 0 шт. «${config.name}». Нельзя подарить предмет, которого нет в вашем балансе.`);
+    const currentBal = getUserBoosterCount(config.boosterField);
+    const dailyStats = getDailyStats(myId);
+    const remainingDaily = MAX_DAILY_GIFTS - dailyStats.count;
+
+    const sendQty = Math.max(1, Math.min(Number(quantity) || 1, currentBal, remainingDaily));
+    if (currentBal < sendQty) {
+      showNotification('❌', 'У вас нет этого подарка', `У вас недостаточно «${config.name}».`);
+      return;
+    }
+    if (remainingDaily < sendQty) {
+      showNotification('⏳', 'Лимит исчерпан', `Вы можете отправить максимум ${remainingDaily} шт. сегодня.`);
       return;
     }
 
     isSending = true;
 
     try {
-      // 3. Deduct from sender balance
+      // 1. Deduct from sender balance
       if (config.boosterField === 'extraBottles') {
-        currentUserRef.extraBottles = Math.max(0, currentBal - 1);
+        const cur = Math.max(Number(currentUserRef.extraBottles || 0), Number(currentUserRef.extra_bottles || 0));
+        currentUserRef.extraBottles = Math.max(0, cur - sendQty);
         currentUserRef.extra_bottles = currentUserRef.extraBottles;
       } else {
-        currentUserRef[config.boosterField] = Math.max(0, currentBal - 1);
+        currentUserRef[config.boosterField] = Math.max(0, (Number(currentUserRef[config.boosterField]) || 0) - sendQty);
       }
 
-      // 4. Increment daily counter
-      const newDailyCount = incrementDailyStats(myId);
+      // 2. Increment daily counter by sent quantity
+      const newDailyCount = incrementDailyStats(myId, sendQty);
 
-      // 5. Save sender progress locally and to cloud
+      // 3. Save sender progress locally and to cloud
       if (typeof saveUserCallback === 'function') saveUserCallback();
       if (typeof updateUICallback === 'function') updateUICallback();
       if (typeof updateCloudBoosterCallback === 'function') {
         updateCloudBoosterCallback(config.boosterField, currentUserRef[config.boosterField]);
       }
 
-      // 6. Push gift to recipient's inbox in KVDB
-      // NOTE: Sender information is intentionally NOT included, as requested:
-      // "И не нужно показывать кто прислал подарок, просто уведомление о подарке."
+      // 4. Push gift to recipient's inbox in KVDB
       const newGift = {
         id: 'gift_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
         giftType: giftType,
         giftName: config.name,
         giftIcon: config.icon,
-        amount: 1,
+        amount: sendQty,
         createdAt: Date.now(),
         claimed: false
       };
@@ -567,16 +631,16 @@
       recipientInbox.push(newGift);
       await saveCloudInbox(targetId, recipientInbox);
 
-      // 7. Sound & Haptics
+      // 5. Sound & Haptics
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
         window.TelegramApp.TelegramApp.haptic('success');
       }
 
-      // 8. Success Feedback
+      // 6. Success Feedback
       showNotification(
         '🎁',
         'Подарок отправлен!',
-        `Вы успешно отправили ${config.icon} «${config.name}» игроку ${targetName}!\n\nС вашего баланса списан 1 предмет (осталось: ${getUserBoosterCount(config.boosterField)}).\nОтправлено сегодня: ${newDailyCount} / ${MAX_DAILY_GIFTS}.`
+        `Вы успешно отправили ${config.icon} «${config.name}» (${sendQty} шт.) игроку ${targetName}!\n\nС вашего баланса списано: ${sendQty} шт. (осталось: ${getUserBoosterCount(config.boosterField)}).\nОтправлено сегодня: ${newDailyCount} / ${MAX_DAILY_GIFTS}.`
       );
 
       // Return to recipient selection list
@@ -652,17 +716,80 @@
       });
     }
 
-    // Send Gift buttons in catalog
+    // Send Gift buttons in catalog -> Open quantity selection modal
     const sendButtons = document.querySelectorAll('.gift-send-btn');
     sendButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const type = btn.getAttribute('data-gift-type');
         if (type) {
-          sendGift(type);
+          openQuantityModal(type);
         }
       });
     });
+
+    // Quantity Modal Controls (minus, plus, confirm, cancel, close)
+    const qtyMinusBtn = document.getElementById('giftQtyMinusBtn');
+    const qtyPlusBtn = document.getElementById('giftQtyPlusBtn');
+    const qtyConfirmBtn = document.getElementById('giftQtyConfirmBtn');
+    const qtyCancelBtn = document.getElementById('giftQtyCancelBtn');
+    const closeQtyModalBtn = document.getElementById('closeGiftQtyModalBtn');
+
+    if (qtyMinusBtn) {
+      qtyMinusBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentGiftQty > 1) {
+          currentGiftQty--;
+          updateQtyStepperUI();
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+            window.TelegramApp.TelegramApp.haptic('selection');
+          }
+        }
+      });
+    }
+
+    if (qtyPlusBtn) {
+      qtyPlusBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentGiftQty < pendingMaxQty) {
+          currentGiftQty++;
+          updateQtyStepperUI();
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+            window.TelegramApp.TelegramApp.haptic('selection');
+          }
+        } else {
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+            window.TelegramApp.TelegramApp.haptic('warning');
+          }
+        }
+      });
+    }
+
+    if (qtyConfirmBtn) {
+      qtyConfirmBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (pendingGiftType) {
+          const typeToSend = pendingGiftType;
+          const qtyToSend = currentGiftQty;
+          closeQuantityModal();
+          executeSendGift(typeToSend, qtyToSend);
+        }
+      });
+    }
+
+    if (qtyCancelBtn) {
+      qtyCancelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeQuantityModal();
+      });
+    }
+
+    if (closeQtyModalBtn) {
+      closeQtyModalBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeQuantityModal();
+      });
+    }
   }
 
   // Public Interface

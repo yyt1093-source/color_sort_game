@@ -32,8 +32,8 @@
   <link rel="preload" href="js/renderer.js?v=48945" as="script">
   <link rel="preload" href="js/levelGenerator.js?v=48945" as="script">
   <link rel="preload" href="js/tonconnect-ui.min.js?v=48945" as="script">
-  <link rel="preload" href="js/gifts.js?v=48960" as="script">
-  <link rel="preload" href="js/app.js?v=48960" as="script">
+  <link rel="preload" href="js/gifts.js?v=48965" as="script">
+  <link rel="preload" href="js/app.js?v=48965" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -44,7 +44,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=48960">
+  <link rel="stylesheet" href="style.css?v=48965">
   <style>
     /* Direct Fail-Safe Tile Grid for Admin Navigation (Шахматный порядок 2x2 + 1) */
     .admin-nav-tabs {
@@ -1689,6 +1689,45 @@
     </div>
   </div>
 
+  <!-- Gift Quantity Selection Modal -->
+  <div id="giftQuantityModal" class="modal-overlay hidden" style="z-index: 10006;">
+    <div class="glass-modal gift-qty-modal-box">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <span class="modal-header-icon" id="giftQtyHeaderIcon">🎁</span>
+          <div>
+            <h2 id="giftQtyModalTitle">Сколько подарить?</h2>
+            <p class="modal-desc" id="giftQtyRecipientDesc">Получатель: <strong id="giftQtyRecipientName">—</strong></p>
+          </div>
+        </div>
+        <button id="closeGiftQtyModalBtn" class="close-btn-circle" title="Закрыть">&times;</button>
+      </div>
+
+      <div class="gift-qty-card">
+        <span class="gift-qty-big-icon" id="giftQtyBigIcon">💡</span>
+        <div class="gift-qty-details">
+          <strong class="gift-qty-item-name" id="giftQtyItemName">Подсказка</strong>
+          <span class="gift-qty-stat">В наличии: <b id="giftQtyBalValue">0</b> шт.</span>
+          <span class="gift-qty-stat">Доступно сегодня: <b id="giftQtyLimitValue">0</b> шт.</span>
+        </div>
+      </div>
+
+      <div class="gift-qty-picker-container">
+        <div class="gift-qty-picker-label">Количество для отправки:</div>
+        <div class="gift-qty-stepper-row">
+          <button type="button" id="giftQtyMinusBtn" class="gift-qty-step-btn" title="Уменьшить">−</button>
+          <div class="gift-qty-val-display" id="giftQtyValDisplay">1</div>
+          <button type="button" id="giftQtyPlusBtn" class="gift-qty-step-btn" title="Увеличить">+</button>
+        </div>
+      </div>
+
+      <div class="modal-actions gift-qty-actions">
+        <button type="button" id="giftQtyConfirmBtn" class="primary-btn gift-qty-btn-submit">Подарить (1 шт.)</button>
+        <button type="button" id="giftQtyCancelBtn" class="btn-cancel gift-qty-btn-cancel">Отмена</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Info/Alert Modal (replaces native alert) -->
   <div id="infoModal" class="modal-overlay hidden">
     <div class="glass-modal" style="text-align:center">
@@ -1777,7 +1816,7 @@
   <script src="js/gameEngine.js?v=48945"></script>
   <script src="js/renderer.js?v=48945"></script>
   <script src="js/tonconnect-ui.min.js?v=48945"></script>
-  <script src="js/gifts.js?v=48960"></script>
-  <script src="js/app.js?v=48960"></script>
+  <script src="js/gifts.js?v=48965"></script>
+  <script src="js/app.js?v=48965"></script>
 </body>
 </html>
