@@ -2951,21 +2951,25 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   loadCurrentLevel();
   updateHeaderUI();
 
-  // Initialize Gifts Module
+  // Initialize Gifts Module safely
   if (window.GiftsModule) {
-    window.GiftsModule.init(currentUser, {
-      saveUser: saveLocalUser,
-      updateUI: updateHeaderUI,
-      updateCloudBooster: updateCloudBoosterDirectly,
-      showInfoModal: showInfoModal,
-      getLeaderboardPlayers: async () => {
-        try {
-          return await loadLeaderboardData();
-        } catch (e) {
-          return [];
+    try {
+      window.GiftsModule.init(currentUser, {
+        saveUser: saveLocalUser,
+        updateUI: updateHeaderUI,
+        updateCloudBooster: updateCloudBoosterDirectly,
+        showInfoModal: showInfoModal,
+        getLeaderboardPlayers: async () => {
+          try {
+            return await loadLeaderboardData();
+          } catch (e) {
+            return [];
+          }
         }
-      }
-    });
+      });
+    } catch (giftInitErr) {
+      console.error('[GiftsModule] Safe initialization caught error:', giftInitErr);
+    }
   }
 
   // Background Cloud Sync & Init (non-blocking for instant startup)

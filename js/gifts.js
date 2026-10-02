@@ -50,6 +50,7 @@
   let isSending = false;
   let isClaiming = false;
   let activeSubnav = 'receive'; // 'receive' or 'send'
+  let pollingInterval = null;
 
   // Time & Daily Limit Helpers
   function getKyivDateTime() {
@@ -306,23 +307,29 @@
         currentUserRef[field] = (Number(currentUserRef[field]) || 0) + addAmount;
       }
 
-      // 2. Mark gift as claimed in local & cloud inbox
+      // 2. Mark gift as claimed in local inbox immediately
       const userId = String(currentUserRef.telegramId);
       const giftIdx = cachedInbox.findIndex(g => String(g.id) === String(gift.id));
       if (giftIdx !== -1) {
         cachedInbox[giftIdx].claimed = true;
         cachedInbox[giftIdx].claimedAt = Date.now();
       }
-      await saveCloudInbox(userId, cachedInbox);
+      try {
+        localStorage.setItem(`colorsort_gifts_inbox_${userId}`, JSON.stringify(cachedInbox));
+      } catch (e) {}
 
-      // 3. Save local and cloud player progress
+      // 3. Immediately refresh views and indicator animations
+      renderReceiveView();
+      renderSendView();
+
+      // 4. Save local and cloud player progress
       if (typeof saveUserCallback === 'function') saveUserCallback();
       if (typeof updateUICallback === 'function') updateUICallback();
       if (typeof updateCloudBoosterCallback === 'function') {
         updateCloudBoosterCallback(field, currentUserRef[field]);
       }
 
-      // 4. Sound & Haptics
+      // 5. Sound & Haptics
       if (window.SoundEngine && window.SoundEngine.SoundEngine) {
         window.SoundEngine.SoundEngine.playComplete();
       }
@@ -330,16 +337,15 @@
         window.TelegramApp.TelegramApp.haptic('success');
       }
 
-      // 5. Success Modal
+      // 6. Success Modal
       showNotification(
         gift.giftIcon || '🎁',
         'Подарок получен!',
         `Вы успешно забрали ${gift.giftIcon || ''} «${gift.giftName || 'Бонус'}» (+${addAmount})!\n\nПредмет добавлен в ваш баланс и готов к использованию.`
       );
 
-      // 6. Refresh views
-      renderReceiveView();
-      renderSendView();
+      // 7. Save cloud inbox
+      await saveCloudInbox(userId, cachedInbox);
     } catch (err) {
       console.error('[GiftsModule] Claim gift error:', err);
       showNotification('⚠️', 'Ошибка', 'Не удалось забрать подарок: ' + err.message);
@@ -704,6 +710,21 @@
     openSendTab() {
       const sendBtn = document.getElementById('giftsSubnavSendBtn');
       if (sendBtn) sendBtn.click();
+    },
+
+    openSendForRecipient(recipient) {
+      if (!recipient) return;
+      selectedRecipient = {
+        telegramId: String(recipient.telegramId),
+        displayName: recipient.displayName || recipient.firstName || recipient.name || 'Игрок',
+        level: recipient.level || recipient.maxLevel || 1
+      };
+      const sendBtn = document.getElementById('giftsSubnavSendBtn');
+      if (sendBtn && !sendBtn.classList.contains('active')) {
+        sendBtn.click();
+      } else {
+        renderSendView();
+      }
     },
 
     hasPendingGifts() {
