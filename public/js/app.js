@@ -3806,7 +3806,6 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
             <span class="rank-num">${crown}</span>
             <div class="player-info-cell">
               <strong>${nameDisplay}</strong>
-              ${player.username ? `<small class="player-handle">@${escapeHtml(player.username)}</small>` : ''}
             </div>
           </div>
           <span class="user-rank">${t('levelPrefix')} ${levelDisplayVal}</span>
