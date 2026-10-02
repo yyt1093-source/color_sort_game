@@ -2959,6 +2959,7 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         updateUI: updateHeaderUI,
         updateCloudBooster: updateCloudBoosterDirectly,
         showInfoModal: showInfoModal,
+        isAdmin: (u) => isAlligatorAdmin(u || currentUser),
         getLeaderboardPlayers: async () => {
           try {
             return await loadLeaderboardData();
