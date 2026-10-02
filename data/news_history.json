@@ -1,1 +1,63 @@
-[]
+[
+  {
+    "id": "news_1790746276247_hery4",
+    "title": "Новость Color Sort",
+    "message": "Всем привет! Вот и настало время старта первого сезона. Пусть победит сильнейший.",
+    "imageUrl": "[Прикрепленное фото]",
+    "buttonText": "🚀 Играть в Color Sort",
+    "createdAt": 1790746276247,
+    "kyivFormattedDate": "30.09.2026, 08:31:16 (Киев)",
+    "author": "5761685341",
+    "targetCount": 35,
+    "deliveredCount": 11,
+    "failedCount": 24,
+    "messages": [
+      {
+        "chatId": "1081742748",
+        "messageId": 166
+      },
+      {
+        "chatId": "1152401670",
+        "messageId": 167
+      },
+      {
+        "chatId": "1296421588",
+        "messageId": 168
+      },
+      {
+        "chatId": "1890528535",
+        "messageId": 169
+      },
+      {
+        "chatId": "296239050",
+        "messageId": 170
+      },
+      {
+        "chatId": "5269257903",
+        "messageId": 171
+      },
+      {
+        "chatId": "5761685341",
+        "messageId": 172
+      },
+      {
+        "chatId": "6582657380",
+        "messageId": 173
+      },
+      {
+        "chatId": "7116446051",
+        "messageId": 174
+      },
+      {
+        "chatId": "8982516215",
+        "messageId": 175
+      },
+      {
+        "chatId": "961168117",
+        "messageId": 176
+      }
+    ],
+    "status": "partially_sent",
+    "isTest": false
+  }
+]

@@ -1291,6 +1291,14 @@ app.get('/api/admin/code-backups', async (req, res) => {
     if (checkpoints.length === 0) {
       checkpoints = [
         {
+          id: 'colorsort_checkpoint_20261003_010000',
+          createdAtTimestamp: 1790978400000,
+          kyivFormattedDate: '03.10.2026, 01:00:00 (Киев)',
+          title: 'Версия v1.0.5 — Мгновенная заставка без чёрного экрана и шкала загрузки игры',
+          note: 'Метка Git: v1.0.5-instant-splash-loading-checkpoint. Полностью устранён чёрный экран при запуске благодаря встроенной заставке frame-0. Добавлена плавная шкала загрузки игры (0%-100%) с неоновым прогресс-баром. Кнопка START появляется только после завершения загрузки. Все игровые механики, лидерборд, подарки и админ-панель работают штатно.',
+          tag: 'v1.0.5-instant-splash-loading-checkpoint'
+        },
+        {
           id: 'colorsort_checkpoint_20261003_004200',
           createdAtTimestamp: 1790977320000,
           kyivFormattedDate: '03.10.2026, 00:42:00 (Киев)',
