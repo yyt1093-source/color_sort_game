@@ -1144,6 +1144,14 @@ app.get('/api/admin/code-backups', async (req, res) => {
     if (checkpoints.length === 0) {
       checkpoints = [
         {
+          id: 'colorsort_checkpoint_20261002_210400',
+          createdAtTimestamp: 1790964240000,
+          kyivFormattedDate: '02.10.2026, 21:04:00 (Киев)',
+          title: 'Версия v1.0.2 — Рабочая версия панели администратора',
+          note: 'Метка Git: v1.0.2-admin-panel-checkpoint. Полностью рабочая панель администратора: плиточный интерфейс, резервные копии, управление уровнями, исследование лидера, кошельки, новости. Очищен лидерборд.',
+          tag: 'v1.0.2-admin-panel-checkpoint'
+        },
+        {
           id: 'colorsort_checkpoint_20261002_184800',
           createdAtTimestamp: 1790956080000,
           kyivFormattedDate: '02.10.2026, 18:48:00 (Киев)',
