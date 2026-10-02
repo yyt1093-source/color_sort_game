@@ -8978,6 +8978,14 @@ async function initColorSortApp() {
   // ============================================================
   const DEFAULT_CODE_CHECKPOINTS = [
     {
+      id: 'colorsort_checkpoint_20261003_001500',
+      createdAtTimestamp: 1790975700000,
+      kyivFormattedDate: '03.10.2026, 00:15:00 (Киев)',
+      title: 'Версия v1.0.3 — Плавная загрузка, чистый экран старта и стабильная работа',
+      note: 'Метка Git: v1.0.3-smooth-loading-checkpoint. Устранено дёрганье экрана старта, убрана дублирующая кнопка и пустое место внизу. Оптимизирована нагрузка на телефон (0% лишней нагрузки на CPU/GPU). Снимки лидерборда в 23:59 по Киеву. Безлимитные подарки для администратора.',
+      tag: 'v1.0.3-smooth-loading-checkpoint'
+    },
+    {
       id: 'colorsort_checkpoint_20261002_210400',
       createdAtTimestamp: 1790964240000,
       kyivFormattedDate: '02.10.2026, 21:04:00 (Киев)',
