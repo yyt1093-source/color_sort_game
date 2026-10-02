@@ -1113,6 +1113,123 @@ app.post('/api/referral/claim', (req, res) => {
   }
 });
 
+/**
+ * Admin: Code Checkpoints / Backups Registry
+ */
+app.get('/api/admin/code-backups', async (req, res) => {
+  try {
+    const adminCheck = checkIsAdmin({ ...req.query, ...req.body });
+    if (!adminCheck) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    }
+
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    const kvdbKey = 'colorsort_code_checkpoints';
+    let checkpoints = [];
+
+    try {
+      const resp = await fetch(`https://kvdb.io/${bucket}/${kvdbKey}?_cb=${Date.now()}`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if (resp.ok) {
+        const text = await resp.text();
+        if (text && text.trim()) {
+          const parsed = JSON.parse(text);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            checkpoints = parsed;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[CodeBackups] KVDB read error:', e.message);
+    }
+
+    if (checkpoints.length === 0) {
+      checkpoints = [
+        {
+          id: 'colorsort_checkpoint_20261002_174000',
+          createdAtTimestamp: 1790952000000,
+          kyivFormattedDate: '02.10.2026, 17:40:00 (Киев)',
+          title: 'Версия v1.0.0 — Стабильная рабочая версия Color Sort',
+          note: 'Метка Git: v1.0.0-working-checkpoint. Все уровни, лидерборд, кошельки, бустеры и новости проверены и работают стабильно.',
+          tag: 'v1.0.0-working-checkpoint'
+        }
+      ];
+      // Seed KVDB
+      fetch(`https://kvdb.io/${bucket}/${kvdbKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkpoints)
+      }).catch(() => {});
+    }
+
+    res.json({ success: true, backups: checkpoints });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/code-backups:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/admin/code-backups', async (req, res) => {
+  try {
+    const adminCheck = checkIsAdmin({ ...req.query, ...req.body });
+    if (!adminCheck) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    }
+
+    const action = String(req.body?.action || req.query?.action || '').toLowerCase();
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    const kvdbKey = 'colorsort_code_checkpoints';
+
+    let checkpoints = [];
+    try {
+      const resp = await fetch(`https://kvdb.io/${bucket}/${kvdbKey}?_cb=${Date.now()}`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if (resp.ok) {
+        const text = await resp.text();
+        if (text && text.trim()) {
+          checkpoints = JSON.parse(text) || [];
+        }
+      }
+    } catch (e) {}
+
+    if (action === 'delete') {
+      const targetId = String(req.body?.id || req.query?.id || '');
+      checkpoints = checkpoints.filter(c => c.id !== targetId);
+      await fetch(`https://kvdb.io/${bucket}/${kvdbKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkpoints)
+      });
+      return res.json({ success: true, message: 'Контрольная точка удалена', backups: checkpoints });
+    }
+
+    if (action === 'create' || action === 'save') {
+      const newCheckpoint = {
+        id: String(req.body?.id || `colorsort_checkpoint_${Date.now()}`),
+        createdAtTimestamp: Number(req.body?.createdAtTimestamp || Date.now()),
+        kyivFormattedDate: String(req.body?.kyivFormattedDate || ''),
+        title: String(req.body?.title || 'Новая контрольная точка кода'),
+        note: req.body?.note ? String(req.body?.note) : undefined,
+        tag: req.body?.tag ? String(req.body?.tag) : undefined
+      };
+      checkpoints = [newCheckpoint, ...checkpoints.filter(c => c.id !== newCheckpoint.id)];
+      await fetch(`https://kvdb.io/${bucket}/${kvdbKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkpoints)
+      });
+      return res.json({ success: true, message: 'Контрольная точка сохранена', backups: checkpoints });
+    }
+
+    return res.status(400).json({ success: false, error: 'Неизвестное действие' });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/code-backups:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Serve static frontend
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../public', 'index.html'));

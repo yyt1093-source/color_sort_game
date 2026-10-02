@@ -688,6 +688,18 @@
               <span class="admin-tab-indicator"></span>
             </span>
           </button>
+          <button type="button" class="admin-nav-tab" id="adminTabCodeBackupBtn" data-tab="code_backup">
+            <div class="admin-nav-tab-main">
+              <span class="admin-nav-tab-icon">💾</span>
+              <div class="admin-nav-tab-text">
+                <strong id="adminTabCodeBackupLabel">Резервные копии кода</strong>
+                <span class="admin-nav-tab-desc" id="adminTabCodeBackupDesc">Контрольные точки и версии рабочего кода игры (Киев)</span>
+              </div>
+            </div>
+            <span class="admin-nav-tab-status">
+              <span class="admin-tab-indicator"></span>
+            </span>
+          </button>
         </div>
 
         <!-- Tab 1: Admin Actions / Boosters & Resets -->
@@ -971,6 +983,39 @@
               <div id="adminNewsItemsList" class="admin-news-items-list">
                 <!-- Rendered dynamically -->
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Admin Code Checkpoints Registry -->
+        <div id="adminTabCodeBackupContent" class="admin-tab-content hidden">
+          <div class="admin-history-header-box">
+            <div class="admin-history-title-row">
+              <span style="font-size: 18px;">💾</span>
+              <strong>Резервные копии КОДА ИГРЫ (Время Киева)</strong>
+            </div>
+            <span class="admin-history-sub" style="margin-top: 4px; display: block; line-height: 1.4;">
+              🛡️ Здесь зафиксированы контрольные точки рабочего кода игры. Выгрузка новых версий выполняется разработчиком при программировании. Если потребуется откат, назовите разработчику дату нужной версии.
+            </span>
+          </div>
+
+          <div class="admin-history-list-bar" style="margin-top: 10px;">
+            <div class="admin-history-list-title">
+              📅 <span>Зафиксированные версии кода игры (Киев):</span>
+            </div>
+          </div>
+
+          <div id="adminCodeBackupListContainer" class="admin-history-list-container">
+            <div id="adminCodeBackupLoadingSpinner" class="admin-history-loading hidden">
+              <div class="spinner"></div>
+              <span>Загрузка списка версий кода...</span>
+            </div>
+            <div id="adminCodeBackupEmptyState" class="admin-history-empty hidden">
+              <span style="font-size: 2rem;">📭</span>
+              <span>Копии кода еще не создавались</span>
+            </div>
+            <div id="adminCodeBackupItemsList" class="admin-history-items-list">
+              <!-- Rendered dynamically -->
             </div>
           </div>
         </div>

@@ -279,6 +279,14 @@ async function initColorSortApp() {
       adminTabActionsDesc: "Бесплатные функции, бустеры и сброс сезона",
       adminTabHistoryLabel: "История лидерборда",
       adminTabHistoryDesc: "Снимки в 23:55 (Киев), ручные копии и архив",
+      adminTabCodeBackupLabel: "Резервные копии кода",
+      adminTabCodeBackupDesc: "Контрольные точки и версии рабочего кода игры (Киев)",
+      adminCodeBackupTitle: "Резервные копии КОДА ИГРЫ (Время Киева)",
+      adminCodeBackupSub: "🛡️ Здесь зафиксированы контрольные точки рабочего кода игры. Выгрузка новых версий выполняется разработчиком при программировании. Если потребуется откат, назовите разработчику дату нужной версии.",
+      adminCodeBackupListTitle: "Зафиксированные версии кода игры (Киев):",
+      adminCodeBackupEmptyText: "Копии кода еще не создавались",
+      adminCodeBackupLoadingText: "Загрузка списка версий кода...",
+      adminCodeBackupDeleteBtnLabel: "Удалить",
       adminHistoryTitle: "История лидерборда",
       adminHistorySub: "Ежедневные снимки в 23:55 (Киев). Ручные снимки сохраняются отдельно.",
       adminHistoryListTitle: "История сохранённых снимков:",
@@ -558,6 +566,14 @@ async function initColorSortApp() {
       adminTabActionsDesc: "Безкоштовні функції, бустери та скидання сезону",
       adminTabHistoryLabel: "Історія лідерборду",
       adminTabHistoryDesc: "Знімки о 23:55 (Київ), ручні копії та архів",
+      adminTabCodeBackupLabel: "Резервні копії коду",
+      adminTabCodeBackupDesc: "Контрольні точки та версії робочого коду гри (Київ)",
+      adminCodeBackupTitle: "Резервні копії КОДУ ГРИ (Час Києва)",
+      adminCodeBackupSub: "🛡️ Тут зафіксовані контрольні точки робочого коду гри. Вивантаження нових версій виконується розробником під час програмування. Якщо знадобиться відкат, назвіть розробнику дату потрібної версії.",
+      adminCodeBackupListTitle: "Зафіксовані версії коду гри (Київ):",
+      adminCodeBackupEmptyText: "Копії коду ще не створювалися",
+      adminCodeBackupLoadingText: "Завантаження списку версій коду...",
+      adminCodeBackupDeleteBtnLabel: "Видалити",
       adminHistoryTitle: "Історія лідерборду",
       adminHistorySub: "Щоденні знімки о 23:55 (Київ). Ручні знімки зберігаються окремо.",
       adminHistoryListTitle: "Історія збережених знімків:",
@@ -816,6 +832,14 @@ async function initColorSortApp() {
       adminTabActionsDesc: "Free boosts, rewards and season reset",
       adminTabHistoryLabel: "Leaderboard History",
       adminTabHistoryDesc: "Kyiv 23:55 snapshots, manual backups & archive",
+      adminTabCodeBackupLabel: "Code Backups",
+      adminTabCodeBackupDesc: "Checkpoints and stable game code versions (Kyiv)",
+      adminCodeBackupTitle: "Game CODE Backups (Kyiv Time)",
+      adminCodeBackupSub: "🛡️ Stable game code checkpoints are registered here. New versions are deployed by the developer. If a rollback is needed, specify the target date to the developer.",
+      adminCodeBackupListTitle: "Registered game code versions (Kyiv):",
+      adminCodeBackupEmptyText: "No code backups created yet",
+      adminCodeBackupLoadingText: "Loading code versions...",
+      adminCodeBackupDeleteBtnLabel: "Delete",
       adminHistoryTitle: "Leaderboard History",
       adminHistorySub: "Daily snapshots at 23:55 (Kyiv). Manual snapshots are saved separately.",
       adminHistoryListTitle: "Saved snapshots history:",
@@ -2048,6 +2072,20 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     if (adminNewsLoadingText) adminNewsLoadingText.textContent = t('adminNewsLoadingText');
     const adminNewsEmptyText = document.getElementById('adminNewsEmptyText');
     if (adminNewsEmptyText) adminNewsEmptyText.textContent = t('adminNewsEmptyText');
+
+    // Admin Code Checkpoints Tab
+    const adminTabCodeBackupLabel = document.getElementById('adminTabCodeBackupLabel');
+    if (adminTabCodeBackupLabel) adminTabCodeBackupLabel.textContent = t('adminTabCodeBackupLabel');
+    const adminTabCodeBackupDesc = document.getElementById('adminTabCodeBackupDesc');
+    if (adminTabCodeBackupDesc) adminTabCodeBackupDesc.textContent = t('adminTabCodeBackupDesc');
+    const adminCodeBackupEmptyText = document.getElementById('adminCodeBackupEmptyState');
+    if (adminCodeBackupEmptyText && adminCodeBackupEmptyText.querySelector('span:last-child')) {
+      adminCodeBackupEmptyText.querySelector('span:last-child').textContent = t('adminCodeBackupEmptyText');
+    }
+    const adminCodeBackupLoadingText = document.getElementById('adminCodeBackupLoadingSpinner');
+    if (adminCodeBackupLoadingText && adminCodeBackupLoadingText.querySelector('span')) {
+      adminCodeBackupLoadingText.querySelector('span').textContent = t('adminCodeBackupLoadingText');
+    }
 
     // Leaderboard
     const leaderboardModalTitle = document.getElementById('leaderboardModalTitle');
@@ -6407,10 +6445,16 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   const adminTabHistoryBtn = document.getElementById('adminTabHistoryBtn');
   const adminTabWalletsBtn = document.getElementById('adminTabWalletsBtn');
   const adminTabNewsBtn = document.getElementById('adminTabNewsBtn');
+  const adminTabCodeBackupBtn = document.getElementById('adminTabCodeBackupBtn');
   const adminTabActionsContent = document.getElementById('adminTabActionsContent');
   const adminTabHistoryContent = document.getElementById('adminTabHistoryContent');
   const adminTabWalletsContent = document.getElementById('adminTabWalletsContent');
   const adminTabNewsContent = document.getElementById('adminTabNewsContent');
+  const adminTabCodeBackupContent = document.getElementById('adminTabCodeBackupContent');
+
+  const adminCodeBackupLoadingSpinner = document.getElementById('adminCodeBackupLoadingSpinner');
+  const adminCodeBackupEmptyState = document.getElementById('adminCodeBackupEmptyState');
+  const adminCodeBackupItemsList = document.getElementById('adminCodeBackupItemsList');
 
   const adminHistoryTakeSnapshotBtn = document.getElementById('adminHistoryTakeSnapshotBtn');
   const adminHistoryRefreshDatesBtn = document.getElementById('adminHistoryRefreshDatesBtn');
@@ -6499,40 +6543,60 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.add('active');
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
       if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
+      if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.remove('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
       if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
+      if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.add('hidden');
       loadAdminHistoryList();
     } else if (tabName === 'wallets') {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.add('active');
       if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
+      if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.remove('hidden');
       if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
+      if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.add('hidden');
       loadAdminWalletsList();
     } else if (tabName === 'news') {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
       if (adminTabNewsBtn) adminTabNewsBtn.classList.add('active');
+      if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
       if (adminTabNewsContent) adminTabNewsContent.classList.remove('hidden');
+      if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.add('hidden');
       loadAdminNewsData();
+    } else if (tabName === 'code_backup') {
+      if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
+      if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
+      if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
+      if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
+      if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.add('active');
+      if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
+      if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
+      if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
+      if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
+      if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.remove('hidden');
+      loadAdminCodeBackups();
     } else {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.add('active');
       if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
       if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
+      if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.remove('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
       if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
+      if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.add('hidden');
     }
   }
 
@@ -6561,6 +6625,13 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     adminTabNewsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       switchAdminTab('news');
+    });
+  }
+
+  if (adminTabCodeBackupBtn) {
+    adminTabCodeBackupBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchAdminTab('code_backup');
     });
   }
 
@@ -8412,6 +8483,130 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     adminNewsBroadcastBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       sendAdminNews(false);
+    });
+  }
+
+  // ============================================================
+  // 💾 Admin Code Checkpoints Feature
+  // ============================================================
+  async function loadAdminCodeBackups() {
+    if (!isAlligatorAdmin(currentUser)) return;
+
+    if (adminCodeBackupLoadingSpinner) adminCodeBackupLoadingSpinner.classList.remove('hidden');
+    if (adminCodeBackupEmptyState) adminCodeBackupEmptyState.classList.add('hidden');
+    if (adminCodeBackupItemsList) adminCodeBackupItemsList.innerHTML = '';
+
+    try {
+      const authQuery = getAdminAuthQuery();
+      const apiUrl = (NEWS_API_BASE || API_BASE || '') + `/api/admin/code-backups?${authQuery}`;
+      const res = await fetch(apiUrl, { cache: 'no-store' });
+      const data = await res.json();
+
+      if (adminCodeBackupLoadingSpinner) adminCodeBackupLoadingSpinner.classList.add('hidden');
+
+      if (data && data.success && Array.isArray(data.backups) && data.backups.length > 0) {
+        if (adminCodeBackupEmptyState) adminCodeBackupEmptyState.classList.add('hidden');
+        renderAdminCodeBackupsList(data.backups);
+      } else {
+        if (adminCodeBackupEmptyState) adminCodeBackupEmptyState.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.error('[Admin Code Backups] Load error:', err);
+      if (adminCodeBackupLoadingSpinner) adminCodeBackupLoadingSpinner.classList.add('hidden');
+      if (adminCodeBackupEmptyState) adminCodeBackupEmptyState.classList.remove('hidden');
+    }
+  }
+
+  function renderAdminCodeBackupsList(backups) {
+    if (!adminCodeBackupItemsList) return;
+    adminCodeBackupItemsList.innerHTML = '';
+
+    backups.forEach(b => {
+      const card = document.createElement('div');
+      card.className = 'admin-snapshot-card';
+      card.id = `code-backup-item-${b.id}`;
+      card.style.borderLeft = '3px solid #10b981';
+      card.style.padding = '12px 14px';
+
+      const tagHtml = b.tag ? `
+        <span class="admin-snapshot-badge" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-weight: 600;">
+          🏷️ ${escapeHtml(b.tag)}
+        </span>
+      ` : '';
+
+      const noteHtml = b.note ? `
+        <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.35; margin-top: 4px;">
+          📝 ${escapeHtml(b.note)}
+        </div>
+      ` : '';
+
+      card.innerHTML = `
+        <div class="admin-snapshot-info" style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span style="font-size: 1.1rem;">💾</span>
+            <span class="admin-snapshot-datetime" style="color: #67e8f9; font-size: 0.95rem;">${escapeHtml(b.title || 'Контрольная точка')}</span>
+          </div>
+          <div class="admin-snapshot-meta" style="gap: 6px;">
+            <span class="admin-snapshot-badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-weight: 700;">
+              🕒 ${escapeHtml(b.kyivFormattedDate || '')}
+            </span>
+            ${tagHtml}
+          </div>
+          ${noteHtml}
+        </div>
+        <div class="admin-snapshot-actions">
+          <button type="button" class="btn-snapshot-delete delete-code-backup-btn" data-id="${escapeHtml(b.id)}" data-date="${escapeHtml(b.kyivFormattedDate || '')}" title="Удалить версию">
+            🗑️ <span>${t('adminCodeBackupDeleteBtnLabel') || 'Удалить'}</span>
+          </button>
+        </div>
+      `;
+
+      const deleteBtn = card.querySelector('.delete-code-backup-btn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const targetId = deleteBtn.getAttribute('data-id');
+          const targetDate = deleteBtn.getAttribute('data-date') || '';
+
+          const pin = window.prompt(`Введите PIN-код для подтверждения удаления контрольной точки от ${targetDate} (1111):`);
+          if (!pin) return;
+          if (pin.trim() !== '1111') {
+            alert('Неверный PIN-код!');
+            return;
+          }
+
+          deleteBtn.disabled = true;
+          deleteBtn.style.opacity = '0.5';
+
+          try {
+            const authParams = {
+              telegramId: currentUser ? currentUser.telegramId : undefined,
+              firstName: currentUser ? currentUser.firstName : undefined,
+              username: currentUser ? currentUser.username : undefined
+            };
+            const apiUrl = (NEWS_API_BASE || API_BASE || '') + '/api/admin/code-backups';
+            const res = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'delete', id: targetId, ...authParams })
+            });
+            const resData = await res.json();
+            if (resData && resData.success) {
+              await loadAdminCodeBackups();
+            } else {
+              alert('Ошибка при удалении: ' + ((resData && resData.error) || 'Неизвестная ошибка'));
+              deleteBtn.disabled = false;
+              deleteBtn.style.opacity = '1';
+            }
+          } catch (delErr) {
+            alert('Ошибка сети: ' + delErr.message);
+            deleteBtn.disabled = false;
+            deleteBtn.style.opacity = '1';
+          }
+        });
+      }
+
+      adminCodeBackupItemsList.appendChild(card);
     });
   }
 
