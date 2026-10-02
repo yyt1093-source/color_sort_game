@@ -1030,7 +1030,7 @@ function saveLeaderboardSnapshot(options = {}) {
   const kyiv = getKyivDateTime(options.date || new Date());
   const snapshotDate = options.dateStr || kyiv.dateStr;
   const snapshotTime = options.timeStr || kyiv.timeStr;
-  const snapshotType = options.snapshotType || (options.isManual ? 'manual' : (options.timeStr === '23:55:00' ? 'auto' : 'manual'));
+  const snapshotType = options.snapshotType || (options.isManual ? 'manual' : (options.timeStr === '23:59:00' || options.timeStr === '23:55:00' ? 'auto' : 'manual'));
   const createdAt = `${snapshotDate} ${snapshotTime}`;
   const createdAtTs = options.date ? new Date(options.date).getTime() : kyiv.timestamp;
 
@@ -1203,7 +1203,7 @@ function getAutoLeaderboardSnapshotByDate(dateStr) {
   const stmt = db.prepare(`
     SELECT id, snapshot_date, snapshot_time, snapshot_type, created_at, created_at_ts, total_players
     FROM leaderboard_snapshots
-    WHERE snapshot_date = ? AND (snapshot_type = 'auto' OR snapshot_time = '23:55:00')
+    WHERE snapshot_date = ? AND (snapshot_type = 'auto' OR snapshot_time = '23:59:00' OR snapshot_time = '23:55:00')
     ORDER BY created_at_ts DESC, id DESC
     LIMIT 1
   `);
@@ -1304,7 +1304,7 @@ function insertExternalLeaderboardSnapshot(snap) {
   }
 
   const snapshotDate = snap.snapshot_date;
-  const snapshotTime = snap.snapshot_time || '23:55:00';
+  const snapshotTime = snap.snapshot_time || '23:59:00';
   const snapshotType = snap.snapshot_type || 'auto';
   const createdAt = snap.created_at || `${snapshotDate} ${snapshotTime}`;
   const createdAtTs = Number(snap.created_at_ts || (new Date(`${snapshotDate}T${snapshotTime}`).getTime()));

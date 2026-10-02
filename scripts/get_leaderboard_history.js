@@ -147,14 +147,15 @@ function formatDisplayDateTime(dateStr, timeStr) {
   if (!dateStr) return '';
   const parts = String(dateStr).split('-');
   const d = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dateStr;
-  const t = timeStr ? String(timeStr).substring(0, 5) : '23:55';
+  const t = timeStr ? String(timeStr).substring(0, 5) : '23:59';
   return `${d} — ${t}`;
 }
 
 function printSnapshotTable(snapshot) {
   const players = snapshot.players || [];
   const dtFormatted = formatDisplayDateTime(snapshot.snapshot_date, snapshot.snapshot_time);
-  const typeBadge = snapshot.snapshot_type === 'manual' ? '✋ Ручной' : '🤖 Авто (23:55)';
+  const timeDisplay = snapshot.snapshot_time ? String(snapshot.snapshot_time).substring(0, 5) : '23:59';
+  const typeBadge = snapshot.snapshot_type === 'manual' ? '✋ Ручной' : `🤖 Авто (${timeDisplay})`;
 
   console.log(`========================================================================================`);
   console.log(`🏆 СНИМОК ЛИДЕРБОРДА: ${dtFormatted} [ID: ${snapshot.id || '—'}]`);
@@ -199,7 +200,8 @@ function printAvailableDates() {
   }
   snapshots.forEach(s => {
     const dt = formatDisplayDateTime(s.snapshot_date, s.snapshot_time);
-    const typeBadge = s.snapshot_type === 'manual' ? '✋ Ручной' : '🤖 Авто 23:55';
+    const timeDisplay = s.snapshot_time ? String(s.snapshot_time).substring(0, 5) : '23:59';
+    const typeBadge = s.snapshot_type === 'manual' ? '✋ Ручной' : `🤖 Авто ${timeDisplay}`;
     console.log(`  • [ID: ${s.id}] ${dt} (${typeBadge}) — ${s.total_players} игроков`);
   });
 }

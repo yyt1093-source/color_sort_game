@@ -1193,12 +1193,12 @@ app.get('/api/admin/player-deposits', (req, res) => {
 app.all('/api/admin/news', (req, res) => newsService.handleRequest(req, res));
 
 /**
- * Cron trigger for daily leaderboard snapshot (23:55 Kyiv)
+ * Cron trigger for daily leaderboard snapshot (23:59 Kyiv)
  */
 app.get('/api/cron/leaderboard-snapshot', async (req, res) => {
   try {
     const kyiv = db.getKyivDateTime();
-    const snapshot = db.saveLeaderboardSnapshot({ timeStr: '23:55:00' });
+    const snapshot = db.saveLeaderboardSnapshot({ timeStr: '23:59:00', snapshotType: 'auto' });
     res.json({ success: true, snapshot, message: `Снимок лидерборда за ${kyiv.fullStr} сохранён` });
   } catch (err) {
     console.error('[API CRON ERROR] /api/cron/leaderboard-snapshot:', err);
@@ -1493,23 +1493,23 @@ function initLeaderboardDailyScheduler() {
     }
 
     const kyiv = db.getKyivDateTime();
-    // Target time: 23:55:00 Kyiv time
+    // Target time: 23:59:00 Kyiv time
     const currentSecondsOfDay = (kyiv.hour * 3600) + (kyiv.minute * 60) + kyiv.second;
-    const targetSecondsOfDay = (23 * 3600) + (55 * 60); // 86100 sec
+    const targetSecondsOfDay = (23 * 3600) + (59 * 60); // 86340 sec
     let secondsUntilTarget = targetSecondsOfDay - currentSecondsOfDay;
     if (secondsUntilTarget <= 0) {
-      // 23:55:00 passed today, schedule for tomorrow at 23:55:00
+      // 23:59:00 passed today, schedule for tomorrow at 23:59:00
       secondsUntilTarget += 86400;
     }
     const msUntilTarget = Math.max(1000, (secondsUntilTarget * 1000) + 150);
 
     const hoursLeft = (msUntilTarget / 3600000).toFixed(2);
-    console.log(`[Daily Scheduler] Киевское время: ${kyiv.timeStr} (${kyiv.dateStr}). Следующий снимок лидерборда в 23:55:00 через ${hoursLeft} ч.`);
+    console.log(`[Daily Scheduler] Киевское время: ${kyiv.timeStr} (${kyiv.dateStr}). Следующий снимок лидерборда в 23:59:00 через ${hoursLeft} ч.`);
 
     dailySchedulerTimeout = setTimeout(async () => {
       try {
         const targetKyiv = db.getKyivDateTime();
-        console.log(`[Daily Scheduler] ⏰ Наступило 23:55 Киев (${targetKyiv.dateStr})! Фиксируем полный снимок лидерборда...`);
+        console.log(`[Daily Scheduler] ⏰ Наступило 23:59 Киев (${targetKyiv.dateStr})! Фиксируем полный снимок лидерборда...`);
         
         let kvdbPlayers = [];
         try {
@@ -1523,26 +1523,26 @@ function initLeaderboardDailyScheduler() {
           }
         } catch (e) {}
 
-        const snapshot = db.saveLeaderboardSnapshot({ additionalPlayers: kvdbPlayers, timeStr: '23:55:00', snapshotType: 'auto' });
+        const snapshot = db.saveLeaderboardSnapshot({ additionalPlayers: kvdbPlayers, timeStr: '23:59:00', snapshotType: 'auto' });
         lastRecordedSnapshotDay = targetKyiv.dateStr;
-        console.log(`[Daily Scheduler] ✅ Снимок за ${snapshot.snapshot_date} (23:55) успешно сохранён! Всего игроков: ${snapshot.total_players}`);
+        console.log(`[Daily Scheduler] ✅ Снимок за ${snapshot.snapshot_date} (23:59) успешно сохранён! Всего игроков: ${snapshot.total_players}`);
       } catch (err) {
-        console.error('[Daily Scheduler ERROR] Ошибка сохранения снимка в 23:55:', err);
+        console.error('[Daily Scheduler ERROR] Ошибка сохранения снимка в 23:59:', err);
       } finally {
         scheduleNextKyivRun();
       }
     }, msUntilTarget);
   }
 
-  // Safety checker: every 60 seconds, check if current Kyiv time is 23:55-23:59 and no AUTO snapshot exists for today
+  // Safety checker: every 60 seconds, check if current Kyiv time is 23:59 and no AUTO snapshot exists for today
   setInterval(() => {
     try {
       const nowKyiv = db.getKyivDateTime();
-      if (nowKyiv.hour === 23 && nowKyiv.minute >= 55 && lastRecordedSnapshotDay !== nowKyiv.dateStr) {
+      if (nowKyiv.hour === 23 && nowKyiv.minute >= 59 && lastRecordedSnapshotDay !== nowKyiv.dateStr) {
         const existingAuto = db.getAutoLeaderboardSnapshotByDate(nowKyiv.dateStr);
         if (!existingAuto) {
-          console.log(`[Daily Scheduler Guard] 23:${nowKyiv.minute} Киев без авто-снимка за ${nowKyiv.dateStr}. Фиксируем авто-снимок 23:55...`);
-          db.saveLeaderboardSnapshot({ timeStr: '23:55:00', snapshotType: 'auto' });
+          console.log(`[Daily Scheduler Guard] 23:${nowKyiv.minute} Киев без авто-снимка за ${nowKyiv.dateStr}. Фиксируем авто-снимок 23:59...`);
+          db.saveLeaderboardSnapshot({ timeStr: '23:59:00', snapshotType: 'auto' });
           lastRecordedSnapshotDay = nowKyiv.dateStr;
         } else {
           lastRecordedSnapshotDay = nowKyiv.dateStr;
@@ -1568,7 +1568,7 @@ app.listen(PORT, '0.0.0.0', () => {
   // Connect tunnel asynchronously in background
   initTunnel();
 
-  // Start daily 23:55 Kyiv leaderboard snapshot scheduler
+  // Start daily 23:59 Kyiv leaderboard snapshot scheduler
   initLeaderboardDailyScheduler();
 });
 

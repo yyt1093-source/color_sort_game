@@ -1046,12 +1046,12 @@ app.get('/api/admin/player-deposits', (req, res) => {
 app.all('/api/admin/news', (req, res) => newsService.handleRequest(req, res));
 
 /**
- * Cron trigger for daily leaderboard snapshot (23:55 Kyiv)
+ * Cron trigger for daily leaderboard snapshot (23:59 Kyiv)
  */
 app.get('/api/cron/leaderboard-snapshot', async (req, res) => {
   try {
     const kyiv = db.getKyivDateTime();
-    const snapshot = db.saveLeaderboardSnapshot({ timeStr: '23:55:00', snapshotType: 'auto' });
+    const snapshot = db.saveLeaderboardSnapshot({ timeStr: '23:59:00', snapshotType: 'auto' });
     res.json({ success: true, snapshot, message: `Снимок лидерборда за ${kyiv.fullStr} сохранён` });
   } catch (err) {
     console.error('[API CRON ERROR] /api/cron/leaderboard-snapshot:', err);

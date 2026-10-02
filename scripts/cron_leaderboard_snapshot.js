@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Automated 23:55 Kyiv Daily Leaderboard Snapshot Runner
+ * Automated 23:59 Kyiv Daily Leaderboard Snapshot Runner
  * 
  * Capabilities:
  * - Fetches all real players from KVDB Cloud (24/7 global storage) & local SQLite
@@ -11,8 +11,8 @@
  * - Can be run via Windows Task Scheduler, GitHub Actions, or manually
  * 
  * Usage:
- *   node scripts/cron_leaderboard_snapshot.js             # Runs for target 23:55
- *   node scripts/cron_leaderboard_snapshot.js --catchup   # Catches up missed 23:55 snapshot
+ *   node scripts/cron_leaderboard_snapshot.js             # Runs for target 23:59
+ *   node scripts/cron_leaderboard_snapshot.js --catchup   # Catches up missed 23:59 snapshot
  *   node scripts/cron_leaderboard_snapshot.js --force     # Forces snapshot even if already exists
  *   node scripts/cron_leaderboard_snapshot.js --date 2026-09-17 # Specific date
  */
@@ -213,7 +213,7 @@ async function main() {
 
   if (!targetDate) {
     if (isCatchup) {
-      // If run between 00:00 and 06:00 Kyiv time, yesterday's 23:55 is the one to catch up!
+      // If run between 00:00 and 06:00 Kyiv time, yesterday's 23:59 is the one to catch up!
       if (kyiv.hour < 6) {
         const yesterday = new Date(Date.now() - 24 * 3600 * 1000);
         targetDate = db.getKyivDateTime(yesterday).dateStr;
@@ -227,7 +227,7 @@ async function main() {
     }
   }
 
-  const targetTime = '23:55:00';
+  const targetTime = '23:59:00';
   log(`🎯 Target snapshot: Date = ${targetDate}, Time = ${targetTime}, Type = auto`);
 
   // First, run bi-directional sync to have complete view
@@ -237,13 +237,13 @@ async function main() {
   const existingLocalAuto = db.getAutoLeaderboardSnapshotByDate(targetDate);
   const cloudIndex = await fetchJson(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}?_cb=${Date.now()}`);
   const existingCloudAuto = Array.isArray(cloudIndex) && cloudIndex.some(
-    s => s.snapshot_date === targetDate && (s.snapshot_type === 'auto' || s.snapshot_time === targetTime)
+    s => s.snapshot_date === targetDate && (s.snapshot_type === 'auto' || s.snapshot_time === targetTime || s.snapshot_time === '23:55:00')
   );
 
   if ((existingLocalAuto || existingCloudAuto) && !isForce) {
     log(`ℹ️ Automatic snapshot for ${targetDate} already exists:`);
     if (existingLocalAuto) log(`   • SQLite: Snapshot #${existingLocalAuto.id} (${existingLocalAuto.snapshot_date} ${existingLocalAuto.snapshot_time})`);
-    if (existingCloudAuto) log(`   • KVDB Cloud: Found matching 23:55 auto snapshot`);
+    if (existingCloudAuto) log(`   • KVDB Cloud: Found matching auto snapshot`);
     log(`⏩ Skipping creation (use --force to overwrite).`);
     return;
   }
@@ -256,7 +256,7 @@ async function main() {
   const cloudPlayers = await getCloudPlayers();
   log(`   • Found ${cloudPlayers.length} players in KVDB Cloud.`);
 
-  // Save to SQLite with target date and 23:55:00
+  // Save to SQLite with target date and 23:59:00
   const snapshot = db.saveLeaderboardSnapshot({
     additionalPlayers: cloudPlayers,
     dateStr: targetDate,

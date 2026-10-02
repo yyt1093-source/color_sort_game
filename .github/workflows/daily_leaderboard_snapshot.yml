@@ -1,11 +1,11 @@
-name: Daily 23:55 Kyiv Leaderboard Snapshot
+name: Daily 23:59 Kyiv Leaderboard Snapshot
 
 on:
   schedule:
-    # 20:55 UTC = 23:55 Kyiv (EEST summer time UTC+3)
-    - cron: '55 20 * * *'
-    # 21:55 UTC = 23:55 Kyiv (EET winter time UTC+2)
-    - cron: '55 21 * * *'
+    # 20:59 UTC = 23:59 Kyiv (EEST summer time UTC+3)
+    - cron: '59 20 * * *'
+    # 21:59 UTC = 23:59 Kyiv (EET winter time UTC+2)
+    - cron: '59 21 * * *'
   workflow_dispatch:
 
 jobs:

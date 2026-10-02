@@ -278,7 +278,7 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Управление",
       adminTabActionsDesc: "Бустеры и сброс",
       adminTabHistoryLabel: "Исследование лидера",
-      adminTabHistoryDesc: "Снимки 23:55",
+      adminTabHistoryDesc: "Снимки 23:59",
       adminTabCodeBackupLabel: "Резервные копии",
       adminTabCodeBackupDesc: "Версии кода",
       adminCodeBackupTitle: "Резервные копии КОДА ИГРЫ (Время Киева)",
@@ -288,12 +288,12 @@ async function initColorSortApp() {
       adminCodeBackupLoadingText: "Загрузка списка версий кода...",
       adminCodeBackupDeleteBtnLabel: "Удалить",
       adminHistoryTitle: "История лидерборда",
-      adminHistorySub: "Ежедневные снимки в 23:55 (Киев). Ручные снимки сохраняются отдельно.",
+      adminHistorySub: "Ежедневные снимки в 23:59 (Киев). Ручные снимки сохраняются отдельно.",
       adminHistoryListTitle: "История сохранённых снимков:",
       adminHistoryTakeSnapshotLabel: "Сделать снимок сейчас",
       adminHistoryViewBtnLabel: "Просмотреть",
       adminHistoryDeleteBtnLabel: "Удалить",
-      adminSnapshotAutoBadge: "🤖 Авто (23:55)",
+      adminSnapshotAutoBadge: "🤖 Авто (23:59)",
       adminSnapshotManualBadge: "✋ Ручной",
       adminViewerBackBtn: "← Назад к списку снимков",
       adminHistoryEmptyText: "Нет сохранённых снимков",
@@ -625,7 +625,7 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Керування",
       adminTabActionsDesc: "Бустери та скидання",
       adminTabHistoryLabel: "Дослідження лідера",
-      adminTabHistoryDesc: "Знімки 23:55",
+      adminTabHistoryDesc: "Знімки 23:59",
       adminTabCodeBackupLabel: "Резервні копії",
       adminTabCodeBackupDesc: "Версії коду",
       adminCodeBackupTitle: "Резервні копії КОДУ ГРИ (Час Києва)",
@@ -635,12 +635,12 @@ async function initColorSortApp() {
       adminCodeBackupLoadingText: "Завантаження списку версій коду...",
       adminCodeBackupDeleteBtnLabel: "Видалити",
       adminHistoryTitle: "Історія лідерборду",
-      adminHistorySub: "Щоденні знімки о 23:55 (Київ). Ручні знімки зберігаються окремо.",
+      adminHistorySub: "Щоденні знімки о 23:59 (Київ). Ручні знімки зберігаються окремо.",
       adminHistoryListTitle: "Історія збережених знімків:",
       adminHistoryTakeSnapshotLabel: "Зробити знімок зараз",
       adminHistoryViewBtnLabel: "Переглянути",
       adminHistoryDeleteBtnLabel: "Видалити",
-      adminSnapshotAutoBadge: "🤖 Авто (23:55)",
+      adminSnapshotAutoBadge: "🤖 Авто (23:59)",
       adminSnapshotManualBadge: "✋ Ручний",
       adminViewerBackBtn: "← Назад до списку знімків",
       adminHistoryEmptyText: "Немає збережених знімків",
@@ -964,7 +964,7 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Management",
       adminTabActionsDesc: "Boosts & Reset",
       adminTabHistoryLabel: "Leader Investigation",
-      adminTabHistoryDesc: "23:55 Snapshots",
+      adminTabHistoryDesc: "23:59 Snapshots",
       adminTabCodeBackupLabel: "Code Backups",
       adminTabCodeBackupDesc: "Code Versions",
       adminCodeBackupTitle: "Game CODE Backups (Kyiv Time)",
@@ -974,12 +974,12 @@ async function initColorSortApp() {
       adminCodeBackupLoadingText: "Loading code versions...",
       adminCodeBackupDeleteBtnLabel: "Delete",
       adminHistoryTitle: "Leaderboard History",
-      adminHistorySub: "Daily snapshots at 23:55 (Kyiv). Manual snapshots are saved separately.",
+      adminHistorySub: "Daily snapshots at 23:59 (Kyiv). Manual snapshots are saved separately.",
       adminHistoryListTitle: "Saved snapshots history:",
       adminHistoryTakeSnapshotLabel: "Take snapshot now",
       adminHistoryViewBtnLabel: "View",
       adminHistoryDeleteBtnLabel: "Delete",
-      adminSnapshotAutoBadge: "🤖 Auto (23:55)",
+      adminSnapshotAutoBadge: "🤖 Auto (23:59)",
       adminSnapshotManualBadge: "✋ Manual",
       adminViewerBackBtn: "← Back to snapshots list",
       adminHistoryEmptyText: "No saved snapshots",
@@ -1303,14 +1303,14 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Verwaltung",
       adminTabActionsDesc: "Kostenlose Booster und Saison-Zurücksetzung",
       adminTabHistoryLabel: "Ranglisten-Verlauf",
-      adminTabHistoryDesc: "23:55 Snapshots (Kiew), manuelle Kopien & Archiv",
+      adminTabHistoryDesc: "23:59 Snapshots (Kiew), manuelle Kopien & Archiv",
       adminHistoryTitle: "Ranglisten-Verlauf",
-      adminHistorySub: "Tägliche Snapshots um 23:55 (Kiew). Manuelle Snapshots werden separat gespeichert.",
+      adminHistorySub: "Tägliche Snapshots um 23:59 (Kiew). Manuelle Snapshots werden separat gespeichert.",
       adminHistoryListTitle: "Verlauf gespeicherter Snapshots:",
       adminHistoryTakeSnapshotLabel: "Snapshot jetzt erstellen",
       adminHistoryViewBtnLabel: "Anzeigen",
       adminHistoryDeleteBtnLabel: "Löschen",
-      adminSnapshotAutoBadge: "🤖 Auto (23:55)",
+      adminSnapshotAutoBadge: "🤖 Auto (23:59)",
       adminSnapshotManualBadge: "✋ Manuell",
       adminViewerBackBtn: "← Zurück zur Snapshot-Liste",
       adminHistoryEmptyText: "Keine gespeicherten Snapshots",
@@ -1642,14 +1642,14 @@ async function initColorSortApp() {
       adminTabActionsLabel: "Valdymas",
       adminTabActionsDesc: "Nemokami stiprintuvai ir sezono atstatymas",
       adminTabHistoryLabel: "Lyderių istorija",
-      adminTabHistoryDesc: "23:55 kopijos (Kijevas), rankinės kopijos ir archyvas",
+      adminTabHistoryDesc: "23:59 kopijos (Kijevas), rankinės kopijos ir archyvas",
       adminHistoryTitle: "Lyderių istorija",
-      adminHistorySub: "Kasdieniai kadrai 23:55 (Kijevas). Rankiniai kadrai išsaugomi atskirai.",
+      adminHistorySub: "Kasdieniai kadrai 23:59 (Kijevas). Rankiniai kadrai išsaugomi atskirai.",
       adminHistoryListTitle: "Išsaugotų kopijų istorija:",
       adminHistoryTakeSnapshotLabel: "Daryti kopiją dabar",
       adminHistoryViewBtnLabel: "Peržiūrėti",
       adminHistoryDeleteBtnLabel: "Ištrinti",
-      adminSnapshotAutoBadge: "🤖 Auto (23:55)",
+      adminSnapshotAutoBadge: "🤖 Auto (23:59)",
       adminSnapshotManualBadge: "✋ Rankinis",
       adminViewerBackBtn: "← Atgal į kopijų sąrašą",
       adminHistoryEmptyText: "Išsaugotų kopijų nėra",
@@ -7010,7 +7010,7 @@ async function initColorSortApp() {
     if (!dateStr) return '';
     const parts = String(dateStr).split('-');
     const formattedDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : dateStr;
-    const formattedTime = timeStr ? String(timeStr).substring(0, 5) : '23:55';
+    const formattedTime = timeStr ? String(timeStr).substring(0, 5) : '23:59';
     return `${formattedDate} — ${formattedTime}`;
   }
 
@@ -7517,17 +7517,17 @@ async function initColorSortApp() {
     return snapshot;
   }
 
-  // 🕒 23:55 Kyiv Daily Auto-Snapshot Catch-up Guard (Client / Cloud)
+  // 🕒 23:59 Kyiv Daily Auto-Snapshot Catch-up Guard (Client / Cloud)
   async function checkAndTriggerAutoSnapshotCatchup() {
     try {
       const kyiv = getKyivDateTimeClient();
       let targetDate = kyiv.dateStr;
       
-      const isPost2355Today = (kyiv.timeStr >= '23:55:00');
+      const isPost2359Today = (kyiv.timeStr >= '23:59:00');
       const isEarlyMorning = (kyiv.timeStr < '06:00:00');
       
-      if (!isPost2355Today && !isEarlyMorning) {
-        return; // Target time (23:55) not yet reached today
+      if (!isPost2359Today && !isEarlyMorning) {
+        return; // Target time (23:59) not yet reached today
       }
 
       if (isEarlyMorning) {
@@ -7544,19 +7544,19 @@ async function initColorSortApp() {
         }
       }
 
-      // Check if 23:55 auto snapshot already exists for targetDate
+      // Check if 23:59 or 23:55 auto snapshot already exists for targetDate
       const index = await fetchSnapshotsIndex();
       const hasAuto = Array.isArray(index) && index.some(
-        s => s.snapshot_date === targetDate && (s.snapshot_type === 'auto' || s.snapshot_time === '23:55:00')
+        s => s.snapshot_date === targetDate && (s.snapshot_type === 'auto' || s.snapshot_time === '23:59:00' || s.snapshot_time === '23:55:00')
       );
 
       if (hasAuto) {
         return; // Already recorded
       }
 
-      console.log(`[Auto-Cron Guard] ⏰ Auto 23:55 snapshot for ${targetDate} missing. Creating auto snapshot...`);
-      await createCurrentLeaderboardSnapshot('auto', targetDate, '23:55:00');
-      console.log(`[Auto-Cron Guard] ✅ Auto 23:55 snapshot for ${targetDate} saved to KVDB Cloud!`);
+      console.log(`[Auto-Cron Guard] ⏰ Auto 23:59 snapshot for ${targetDate} missing. Creating auto snapshot...`);
+      await createCurrentLeaderboardSnapshot('auto', targetDate, '23:59:00');
+      console.log(`[Auto-Cron Guard] ✅ Auto 23:59 snapshot for ${targetDate} saved to KVDB Cloud!`);
     } catch (err) {
       console.warn('[Auto-Cron Guard Notice]', err.message);
     }
@@ -7593,7 +7593,7 @@ async function initColorSortApp() {
         const badgeTypeClass = isManual ? 'manual' : 'auto';
         const badgeTypeLabel = isManual
           ? (typeof t === 'function' ? t('adminSnapshotManualBadge') : '✋ Ручной')
-          : (typeof t === 'function' ? t('adminSnapshotAutoBadge') : '🤖 Авто (23:55)');
+          : (typeof t === 'function' ? t('adminSnapshotAutoBadge') : '🤖 Авто (23:59)');
         const count = s.total_players !== undefined ? s.total_players : 0;
         const countLabel = typeof t === 'function' ? t('adminHistoryTotalBadge', count) : `👥 ${count} игроков`;
         const viewLabel = typeof t === 'function' ? t('adminHistoryViewBtnLabel') : 'Просмотреть';
@@ -7691,7 +7691,7 @@ async function initColorSortApp() {
       if (adminViewerTypeBadge) {
         adminViewerTypeBadge.textContent = isManual
           ? (typeof t === 'function' ? t('adminSnapshotManualBadge') : '✋ Ручной')
-          : (typeof t === 'function' ? t('adminSnapshotAutoBadge') : '🤖 Авто (23:55)');
+          : (typeof t === 'function' ? t('adminSnapshotAutoBadge') : '🤖 Авто (23:59)');
         adminViewerTypeBadge.className = `admin-viewer-badge-type ${isManual ? 'manual' : 'auto'}`;
       }
 
@@ -7827,7 +7827,7 @@ async function initColorSortApp() {
     if (deleteSnapshotInfo) {
       const dt = formatSnapshotDisplay(snapshot.snapshot_date, snapshot.snapshot_time);
       const isManual = snapshot.snapshot_type === 'manual';
-      const typeLabel = isManual ? 'Ручной' : 'Авто 23:55';
+      const typeLabel = isManual ? 'Ручной' : (snapshot.snapshot_time ? `Авто ${String(snapshot.snapshot_time).substring(0, 5)}` : 'Авто 23:59');
       const count = snapshot.total_players !== undefined ? snapshot.total_players : '?';
       deleteSnapshotInfo.textContent = `📅 ${dt} (${typeLabel}) — ${count} игроков`;
     }
@@ -7941,7 +7941,7 @@ async function initColorSortApp() {
         showInfoModal(
           '📸',
           'Ручной снимок сохранён!',
-          `Снимок за ${dtFormatted} успешно сохранён!\nВсего игроков в снимке: ${snap.total_players}\n\n🤖 Автоматический снимок в 23:55 (Киев) будет сохранён по расписанию отдельно.`
+          `Снимок за ${dtFormatted} успешно сохранён!\nВсего игроков в снимке: ${snap.total_players}\n\n🤖 Автоматический снимок в 23:59 (Киев) будет сохранён по расписанию отдельно.`
         );
 
         await loadAdminHistoryList();
