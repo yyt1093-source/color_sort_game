@@ -7,9 +7,13 @@
   function initTelegram() {
     if (window.Telegram && window.Telegram.WebApp) {
       tg = window.Telegram.WebApp;
-      tg.ready();
+      if (tg.setHeaderColor) {
+        try { tg.setHeaderColor('#070913'); } catch (e) {}
+      }
+      if (tg.setBackgroundColor) {
+        try { tg.setBackgroundColor('#070913'); } catch (e) {}
+      }
       tg.expand();
-
       try {
         if (tg.requestFullscreen) {
           tg.requestFullscreen();
@@ -18,18 +22,16 @@
         console.warn('[Telegram WebApp] requestFullscreen failed', e);
       }
 
-      document.body.classList.add('tg-theme');
-
-      try {
-        if (tg.setHeaderColor) {
-          tg.setHeaderColor('#0a0e1a');
-        }
-      } catch (e) {
-        console.warn('[Telegram WebApp] setHeaderColor failed', e);
+      if (tg.disableVerticalSwipes) {
+        try { tg.disableVerticalSwipes(); } catch (e) {}
       }
 
+      tg.ready();
+
+      document.body.classList.add('tg-theme');
+
       if (tg.enableClosingConfirmation) {
-        tg.enableClosingConfirmation();
+        try { tg.enableClosingConfirmation(); } catch (e) {}
       }
       console.log('[Telegram WebApp] Initialized successfully.', tg.initDataUnsafe);
     } else {
@@ -118,4 +120,5 @@
   };
   Object.assign(exports, telegramAPI);
   exports.TelegramApp = telegramAPI;
+  try { initTelegram(); } catch (e) {}
 })(typeof exports !== 'undefined' ? exports : (window.TelegramApp = {}));

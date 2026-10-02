@@ -5,7 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Color Sort — Telegram Mini App</title>
   
   <!-- Open Graph / Telegram Webpage Preview -->
@@ -23,17 +23,37 @@
   
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    /* Instant Zero-Delay Fullscreen & Viewport Setup */
+    (function() {
+      try {
+        if (window.Telegram && window.Telegram.WebApp) {
+          var tg = window.Telegram.WebApp;
+          if (tg.setHeaderColor) tg.setHeaderColor('#070913');
+          if (tg.setBackgroundColor) tg.setBackgroundColor('#070913');
+          tg.expand();
+          if (tg.requestFullscreen) {
+            try { tg.requestFullscreen(); } catch (fsErr) {}
+          }
+          if (tg.disableVerticalSwipes) {
+            try { tg.disableVerticalSwipes(); } catch (swErr) {}
+          }
+          tg.ready();
+        }
+      } catch (e) {}
+    })();
+  </script>
   
   <!-- Preload critical game assets for instant boot -->
-  <link rel="preload" href="referral_art_clean.jpg?v=48984" as="image">
+  <link rel="preload" href="referral_art_clean.jpg?v=48986" as="image">
   <link rel="preload" href="game_icon.png?v=48945" as="image">
   <link rel="preload" href="ton_icon.png?v=48945" as="image">
   <link rel="preload" href="js/gameEngine.js?v=48945" as="script">
   <link rel="preload" href="js/renderer.js?v=48985" as="script">
   <link rel="preload" href="js/levelGenerator.js?v=48945" as="script">
   <link rel="preload" href="js/tonconnect-ui.min.js?v=48945" as="script">
-  <link rel="preload" href="js/gifts.js?v=48984" as="script">
-  <link rel="preload" href="js/app.js?v=48984" as="script">
+  <link rel="preload" href="js/gifts.js?v=48986" as="script">
+  <link rel="preload" href="js/app.js?v=48986" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -44,7 +64,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=48985">
+  <link rel="stylesheet" href="style.css?v=48986">
   <style>
     /* Direct Fail-Safe Tile Grid for Admin Navigation (Шахматный порядок 2x2 + 1) */
     .admin-nav-tabs {
@@ -1822,14 +1842,14 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=48945"></script>
+  <script src="js/telegram.js?v=48986"></script>
   <script src="js/audio.js?v=48945"></script>
   <script src="js/solver.js?v=48945"></script>
   <script src="js/levelGenerator.js?v=48945"></script>
   <script src="js/gameEngine.js?v=48945"></script>
   <script src="js/renderer.js?v=48985"></script>
   <script src="js/tonconnect-ui.min.js?v=48945"></script>
-  <script src="js/gifts.js?v=48984"></script>
-  <script src="js/app.js?v=48984"></script>
+  <script src="js/gifts.js?v=48986"></script>
+  <script src="js/app.js?v=48986"></script>
 </body>
 </html>
