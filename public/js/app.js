@@ -2951,6 +2951,23 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
   loadCurrentLevel();
   updateHeaderUI();
 
+  // Initialize Gifts Module
+  if (window.GiftsModule) {
+    window.GiftsModule.init(currentUser, {
+      saveUser: saveLocalUser,
+      updateUI: updateHeaderUI,
+      updateCloudBooster: updateCloudBoosterDirectly,
+      showInfoModal: showInfoModal,
+      getLeaderboardPlayers: async () => {
+        try {
+          return await loadLeaderboardData();
+        } catch (e) {
+          return [];
+        }
+      }
+    });
+  }
+
   // Background Cloud Sync & Init (non-blocking for instant startup)
   apiCall('/api/user/init', 'POST', userData).then(serverUser => {
     if (serverUser && serverUser.success && serverUser.user) {
@@ -3316,6 +3333,10 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     const adModalExtraBottlesCount = document.getElementById('adModalExtraBottlesCount');
     if (adModalExtraBottlesCount) {
       setIfDiff(adModalExtraBottlesCount, `(${youStr}: ${currentUser.extraBottles || 0})`);
+    }
+
+    if (window.GiftsModule) {
+      window.GiftsModule.checkPendingGifts();
     }
   }
 
@@ -8743,6 +8764,44 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
     });
   }
 
+  const adTabAdsBtn = document.getElementById('adTabAdsBtn');
+  const adTabGiftsBtn = document.getElementById('adTabGiftsBtn');
+  const adModalAdsContent = document.getElementById('adModalAdsContent');
+  const adModalGiftsContent = document.getElementById('adModalGiftsContent');
+
+  function switchAdModalTab(tab) {
+    if (tab === 'gifts') {
+      if (adTabGiftsBtn) adTabGiftsBtn.classList.add('active');
+      if (adTabAdsBtn) adTabAdsBtn.classList.remove('active');
+      if (adModalGiftsContent) adModalGiftsContent.classList.remove('hidden');
+      if (adModalAdsContent) adModalAdsContent.classList.add('hidden');
+      if (adModalTitle) adModalTitle.textContent = '🎁 Подарки';
+      if (adModalDesc) adModalDesc.textContent = 'Получайте и отправляйте полезные подарки другим игрокам';
+      if (window.GiftsModule) window.GiftsModule.refresh();
+    } else {
+      if (adTabAdsBtn) adTabAdsBtn.classList.add('active');
+      if (adTabGiftsBtn) adTabGiftsBtn.classList.remove('active');
+      if (adModalAdsContent) adModalAdsContent.classList.remove('hidden');
+      if (adModalGiftsContent) adModalGiftsContent.classList.add('hidden');
+      if (adModalTitle) adModalTitle.textContent = t('adModalTitle') || '🎁 Реклама';
+      if (adModalDesc) adModalDesc.textContent = t('adModalDesc') || 'Посмотрите короткие видео и получите бесплатные бонусы';
+    }
+  }
+
+  if (adTabAdsBtn) {
+    adTabAdsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchAdModalTab('ads');
+    });
+  }
+
+  if (adTabGiftsBtn) {
+    adTabGiftsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchAdModalTab('gifts');
+    });
+  }
+
   if (adBonusBtn) {
     adBonusBtn.addEventListener('click', (e) => {
       if (justStartedGame || modalJustClosed) {
@@ -8753,6 +8812,14 @@ let currentLang = localStorage.getItem('color_sort_lang') || 'ru';
         resetAdModalButtons();
         const grid = adModal.querySelector('.ad-options-grid');
         if (grid) grid.scrollTop = 0;
+
+        // If player has pending gifts, open directly on Gifts tab!
+        if (window.GiftsModule && window.GiftsModule.hasPendingGifts()) {
+          switchAdModalTab('gifts');
+        } else {
+          switchAdModalTab('ads');
+        }
+
         openModal(adModal);
       }
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
