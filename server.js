@@ -1291,6 +1291,14 @@ app.get('/api/admin/code-backups', async (req, res) => {
     if (checkpoints.length === 0) {
       checkpoints = [
         {
+          id: 'colorsort_checkpoint_20261002_184800',
+          createdAtTimestamp: 1790956080000,
+          kyivFormattedDate: '02.10.2026, 18:48:00 (Киев)',
+          title: 'Версия v1.0.1 — Плиточная панель (шахматный порядок)',
+          note: 'Метка Git: v1.0.1-tile-grid-checkpoint. Шахматная панель администратора: Резервные копии, Управление, Исследование лидера, Кошелек, Новости. Все функции работают идеально.',
+          tag: 'v1.0.1-tile-grid-checkpoint'
+        },
+        {
           id: 'colorsort_checkpoint_20261002_174000',
           createdAtTimestamp: 1790952000000,
           kyivFormattedDate: '02.10.2026, 17:40:00 (Киев)',
