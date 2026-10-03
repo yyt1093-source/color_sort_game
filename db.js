@@ -95,6 +95,22 @@ function initDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_lb_snapshots_date ON leaderboard_snapshots(snapshot_date);
     CREATE INDEX IF NOT EXISTS idx_lb_entries_snapshot ON leaderboard_snapshot_entries(snapshot_id, rank ASC);
+
+    CREATE TABLE IF NOT EXISTS player_gifts (
+      id TEXT PRIMARY KEY,
+      sender_id TEXT NOT NULL,
+      sender_name TEXT,
+      sender_username TEXT,
+      recipient_id TEXT NOT NULL,
+      gift_type TEXT NOT NULL,
+      gift_name TEXT NOT NULL,
+      gift_icon TEXT,
+      amount INTEGER DEFAULT 1,
+      created_at INTEGER NOT NULL,
+      claimed INTEGER DEFAULT 0,
+      claimed_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_player_gifts_recipient ON player_gifts(recipient_id, claimed);
   `);
   
   // Try to add snapshot_type if it doesn't exist (for existing databases)
@@ -1520,17 +1536,63 @@ function ensureSeedLeaderboardSnapshot() {
   } catch (e) {}
 }
 
+function sendGift(giftData) {
+  const stmt = db.prepare(`
+    INSERT OR REPLACE INTO player_gifts 
+    (id, sender_id, sender_name, sender_username, recipient_id, gift_type, gift_name, gift_icon, amount, created_at, claimed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  stmt.run(
+    String(giftData.id || ('gift_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8))),
+    String(giftData.fromId || giftData.senderId || giftData.sender_id || ''),
+    String(giftData.fromName || giftData.senderName || giftData.sender_name || ''),
+    String(giftData.fromUsername || giftData.senderUsername || giftData.sender_username || ''),
+    String(giftData.recipientId || giftData.targetId || giftData.recipient_id || ''),
+    String(giftData.giftType || giftData.gift_type || ''),
+    String(giftData.giftName || giftData.gift_name || ''),
+    String(giftData.giftIcon || giftData.gift_icon || '🎁'),
+    Number(giftData.amount || 1),
+    Number(giftData.createdAt || giftData.created_at || Date.now()),
+    giftData.claimed ? 1 : 0
+  );
+  return true;
+}
+
+function getInboxGifts(recipientId) {
+  const stmt = db.prepare(`
+    SELECT id, sender_id as fromId, sender_name as fromName, sender_username as senderUsername,
+           recipient_id as recipientId, gift_type as giftType, gift_name as giftName, gift_icon as giftIcon,
+           amount, created_at as createdAt, claimed, claimed_at as claimedAt
+    FROM player_gifts
+    WHERE recipient_id = ?
+    ORDER BY created_at DESC
+  `);
+  const rows = stmt.all(String(recipientId));
+  return rows.map(r => ({
+    ...r,
+    fromUsername: r.senderUsername || '',
+    claimed: Boolean(r.claimed)
+  }));
+}
+
+function claimGift(giftId, recipientId) {
+  const stmt = db.prepare(`
+    UPDATE player_gifts
+    SET claimed = 1, claimed_at = ?
+    WHERE id = ? AND recipient_id = ?
+  `);
+  stmt.run(Date.now(), String(giftId), String(recipientId));
+  return true;
+}
+
 module.exports = {
   db,
   prepare: (sql) => db.prepare(sql),
   exec: (sql) => db.exec(sql),
   getUser,
   updateUserProgress,
-  addBonus,
-  logAdReward,
-  getAdRewardsCount,
   getLeaderboard,
-  getAllTelegramIds,
+  logAdReward,
   resetSeason,
   getSeasonResetTimestamp,
   getPurchasesResetTimestamp,
@@ -1553,5 +1615,8 @@ module.exports = {
   insertExternalLeaderboardSnapshot,
   ensureSeedLeaderboardSnapshot,
   getConnectedWallets,
-  getPlayerDeposits
+  getPlayerDeposits,
+  sendGift,
+  getInboxGifts,
+  claimGift
 };

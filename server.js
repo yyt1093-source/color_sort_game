@@ -1263,6 +1263,49 @@ app.post('/api/referral/claim', (req, res) => {
 });
 
 /**
+ * Gifts System Endpoints
+ */
+app.get('/api/gifts/inbox', (req, res) => {
+  try {
+    const telegramId = req.query.telegramId;
+    if (!telegramId) return res.json({ success: true, gifts: [] });
+    const gifts = db.getInboxGifts(telegramId);
+    res.json({ success: true, gifts });
+  } catch (err) {
+    console.error('[API ERROR] /api/gifts/inbox:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/gifts/send', (req, res) => {
+  try {
+    const gift = req.body;
+    if (!gift || !gift.recipientId || !gift.giftType) {
+      return res.status(400).json({ success: false, error: 'Invalid gift data' });
+    }
+    db.sendGift(gift);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[API ERROR] /api/gifts/send:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/gifts/claim', (req, res) => {
+  try {
+    const { giftId, recipientId } = req.body || {};
+    if (!giftId || !recipientId) {
+      return res.status(400).json({ success: false, error: 'Missing parameters' });
+    }
+    db.claimGift(giftId, recipientId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[API ERROR] /api/gifts/claim:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * Admin: Code Checkpoints / Backups Registry
  */
 app.get('/api/admin/code-backups', async (req, res) => {
