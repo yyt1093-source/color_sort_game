@@ -1291,6 +1291,14 @@ app.get('/api/admin/code-backups', async (req, res) => {
     if (checkpoints.length === 0) {
       checkpoints = [
         {
+          id: 'colorsort_checkpoint_20261003_033500',
+          createdAtTimestamp: 1790987700000,
+          kyivFormattedDate: '03.10.2026, 03:35:00 (Киев)',
+          title: 'Версия v1.0.6 — Стабильная рабочая версия (мгновенный старт, touchstart, чистые колбочки)',
+          note: 'Метка Git: v1.0.6-stable-instant-start-checkpoint. Полностью устранён зависающий экран заставки, убрана проблемная шкала 99%. Экран старта и кнопка START открываются мгновенно, добавлены обработчики touchstart для сверхбыстрого отклика на смартфонах в Telegram WebApp. Колбочки чистые, без полос над красками. Снимки лидерборда в 23:59 по Киеву. Безлимитные подарки администратора. 100% тестов пройдены.',
+          tag: 'v1.0.6-stable-instant-start-checkpoint'
+        },
+        {
           id: 'colorsort_checkpoint_20261003_004200',
           createdAtTimestamp: 1790977320000,
           kyivFormattedDate: '03.10.2026, 00:42:00 (Киев)',
