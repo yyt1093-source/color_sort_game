@@ -490,6 +490,7 @@ async function initColorSortApp() {
       giftsUnlimitedTag: "∞ (Безлимит)",
       giftsStepRecipientTitle: "👥 Выберите получателя из игроков:",
       giftsSearchPlaceholder: "🔍 Поиск по имени или @username...",
+      giftsSearchPlaceholderUser: "🔍 Найти игрока...",
       giftsPlayersLoading: "Загрузка списка игроков...",
       giftsPlayersNotFound: "Игроки по запросу не найдены",
       giftsPlayersEmpty: "Список игроков пуст",
@@ -824,6 +825,7 @@ async function initColorSortApp() {
       giftsUnlimitedTag: "∞ (Безліміт)",
       giftsStepRecipientTitle: "👥 Виберіть одержувача з гравців:",
       giftsSearchPlaceholder: "🔍 Пошук за ім'ям або @username...",
+      giftsSearchPlaceholderUser: "🔍 Пошук за ім'ям гравця...",
       giftsPlayersLoading: "Завантаження списку гравців...",
       giftsPlayersNotFound: "Гравців за запитом не знайдено",
       giftsPlayersEmpty: "Список гравців порожній",
@@ -1164,6 +1166,7 @@ async function initColorSortApp() {
       giftsUnlimitedTag: "∞ (Unlimited)",
       giftsStepRecipientTitle: "👥 Select recipient from players:",
       giftsSearchPlaceholder: "🔍 Find player (name or @username)...",
+      giftsSearchPlaceholderUser: "🔍 Find player by name...",
       giftsPlayersLoading: "Loading players list...",
       giftsPlayersNotFound: "No players found matching search",
       giftsPlayersEmpty: "Players list is empty",
@@ -1496,6 +1499,7 @@ async function initColorSortApp() {
       giftsUnlimitedTag: "∞ (Unbegrenzt)",
       giftsStepRecipientTitle: "👥 Empfänger aus Spielern wählen:",
       giftsSearchPlaceholder: "🔍 Spieler suchen (Name oder @Username)...",
+      giftsSearchPlaceholderUser: "🔍 Spieler nach Namen suchen...",
       giftsPlayersLoading: "Spielerliste wird geladen...",
       giftsPlayersNotFound: "Keine Spieler gefunden",
       giftsPlayersEmpty: "Spielerliste ist leer",
@@ -1836,6 +1840,7 @@ async function initColorSortApp() {
       giftsUnlimitedTag: "∞ (Neribota)",
       giftsStepRecipientTitle: "👥 Pasirinkite gavėją iš žaidėjų:",
       giftsSearchPlaceholder: "🔍 Ieškoti žaidėjo (vardas arba @username)...",
+      giftsSearchPlaceholderUser: "🔍 Ieškoti žaidėjo...",
       giftsPlayersLoading: "Kraunamas žaidėjų sąrašas...",
       giftsPlayersNotFound: "Žaidėjų pagal užklausą nerasta",
       giftsPlayersEmpty: "Žaidėjų sąrašas tuščias",
@@ -4266,6 +4271,7 @@ async function initColorSortApp() {
         </li>
       `;
     } else {
+      const isAdminViewer = isAlligatorAdmin(currentUser);
       sortedPlayers.forEach((player, idx) => {
         const rank = idx + 1;
         const li = document.createElement('li');
@@ -4279,13 +4285,14 @@ async function initColorSortApp() {
         const levelDisplayVal = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
         const rawUsername = player.username || '';
         const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
+        const showUsername = isAdminViewer && cleanUsername;
 
         li.innerHTML = `
           <div class="player-meta">
             <span class="rank-num">${crown}</span>
             <div class="player-info-cell">
               <strong>${nameDisplay}</strong>
-              ${cleanUsername ? `<small class="player-handle" style="font-size: 0.72rem; color: #94a3b8; display: block;">@${escapeHtml(cleanUsername)}</small>` : ''}
+              ${showUsername ? `<small class="player-handle" style="font-size: 0.72rem; color: #94a3b8; display: block;">@${escapeHtml(cleanUsername)}</small>` : ''}
             </div>
           </div>
           <span class="user-rank">${t('levelPrefix')} ${levelDisplayVal}</span>
@@ -5758,21 +5765,15 @@ async function initColorSortApp() {
           </div>
         `;
       } else {
+        const isAdmin = isAlligatorAdmin(currentUser);
         referralsListContainer.innerHTML = referrals.map(r => {
-          let displayName = 'Игрок';
+          let displayName = (r.referred_name && r.referred_name !== 'Друг' && r.referred_name !== 'Friend')
+            ? r.referred_name
+            : (t('defaultPlayerName') || 'Игрок');
           let usernameDisplay = '';
 
-          if (r.referred_username) {
+          if (isAdmin && r.referred_username) {
             usernameDisplay = `@${String(r.referred_username).replace(/^@/, '')}`;
-          }
-
-          if (r.referred_name && r.referred_name !== 'Друг' && r.referred_name !== 'Friend') {
-            displayName = r.referred_name;
-          } else if (usernameDisplay) {
-            displayName = usernameDisplay;
-            usernameDisplay = '';
-          } else {
-            displayName = t('defaultPlayerName') || 'Игрок';
           }
 
           const isClaimed = r.reward_claimed === 1 || r.reward_claimed === true;
