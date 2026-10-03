@@ -287,6 +287,14 @@ async function initColorSortApp() {
       adminCodeBackupEmptyText: "Копии кода еще не создавались",
       adminCodeBackupLoadingText: "Загрузка списка версий кода...",
       adminCodeBackupDeleteBtnLabel: "Удалить",
+      adminSaveCurrentVersionBtn: "Сохранить текущую версию",
+      adminSaveVersionActionTitle: "Фиксация рабочей версии кода",
+      adminSaveVersionActionSub: "Сохранить текущее состояние игры в контрольные точки",
+      adminSaveVersionModalTitle: "Сохранение версии кода",
+      adminSaveVersionTitleLabel: "Название версии:",
+      adminSaveVersionTagLabel: "Метка Git (тег):",
+      adminSaveVersionNoteLabel: "Описание изменений и состояния:",
+      adminSaveVersionConfirmBtn: "Зафиксировать версию",
       adminHistoryTitle: "История лидерборда",
       adminHistorySub: "Ежедневные снимки в 23:59 (Киев). Ручные снимки сохраняются отдельно.",
       adminHistoryListTitle: "История сохранённых снимков:",
@@ -2478,6 +2486,12 @@ async function initColorSortApp() {
     if (adminCodeBackupLoadingText && adminCodeBackupLoadingText.querySelector('span')) {
       adminCodeBackupLoadingText.querySelector('span').textContent = t('adminCodeBackupLoadingText');
     }
+    const adminSaveCurrentVersionBtnText = document.getElementById('adminSaveCurrentVersionBtnText');
+    if (adminSaveCurrentVersionBtnText) adminSaveCurrentVersionBtnText.textContent = t('adminSaveCurrentVersionBtn') || 'Сохранить текущую версию';
+    const adminSaveVersionActionTitle = document.getElementById('adminSaveVersionActionTitle');
+    if (adminSaveVersionActionTitle) adminSaveVersionActionTitle.textContent = t('adminSaveVersionActionTitle') || 'Фиксация рабочей версии кода';
+    const adminSaveVersionActionSub = document.getElementById('adminSaveVersionActionSub');
+    if (adminSaveVersionActionSub) adminSaveVersionActionSub.textContent = t('adminSaveVersionActionSub') || 'Сохранить текущее состояние игры в контрольные точки';
 
     // Leaderboard
     const leaderboardModalTitle = document.getElementById('leaderboardModalTitle');
@@ -6972,6 +6986,14 @@ async function initColorSortApp() {
   const adminCodeBackupLoadingSpinner = document.getElementById('adminCodeBackupLoadingSpinner');
   const adminCodeBackupEmptyState = document.getElementById('adminCodeBackupEmptyState');
   const adminCodeBackupItemsList = document.getElementById('adminCodeBackupItemsList');
+  const adminSaveCurrentVersionBtn = document.getElementById('adminSaveCurrentVersionBtn');
+  const adminSaveVersionModal = document.getElementById('adminSaveVersionModal');
+  const adminSaveVersionCloseBtn = document.getElementById('adminSaveVersionCloseBtn');
+  const adminSaveVersionCancelBtn = document.getElementById('adminSaveVersionCancelBtn');
+  const adminSaveVersionConfirmBtn = document.getElementById('adminSaveVersionConfirmBtn');
+  const adminSaveVersionTitleInput = document.getElementById('adminSaveVersionTitleInput');
+  const adminSaveVersionTagInput = document.getElementById('adminSaveVersionTagInput');
+  const adminSaveVersionNoteInput = document.getElementById('adminSaveVersionNoteInput');
 
   const adminHistoryTakeSnapshotBtn = document.getElementById('adminHistoryTakeSnapshotBtn');
   const adminHistoryRefreshDatesBtn = document.getElementById('adminHistoryRefreshDatesBtn');
@@ -9018,6 +9040,22 @@ async function initColorSortApp() {
   // ============================================================
   const DEFAULT_CODE_CHECKPOINTS = [
     {
+      id: 'colorsort_checkpoint_20261003_162500',
+      createdAtTimestamp: 1791033900000,
+      kyivFormattedDate: '03.10.2026, 16:25:00 (Киев)',
+      title: 'Версия v1.0.7 — Анонимные подарки и приватность игроков (доступ юзернеймов только админу)',
+      note: 'Метка Git: v1.0.7-anonymous-gifts-admin-usernames. Лидерборд полностью восстановлен на GitHub Pages и Vercel. Юзернеймы (@username) и Telegram ID скрыты у всех обычных игроков и доступны строго администратору (Alligator / Romanchik / ?admin=true). Получение подарков сделано 100% анонимным («Вам прислан полезный подарок!» без раскрытия отправителя). Полные данные аудита отправителей сохранены в базе для администратора.',
+      tag: 'v1.0.7-anonymous-gifts-admin-usernames'
+    },
+    {
+      id: 'colorsort_checkpoint_20261003_033500',
+      createdAtTimestamp: 1790987700000,
+      kyivFormattedDate: '03.10.2026, 03:35:00 (Киев)',
+      title: 'Версия v1.0.6 — Стабильная рабочая версия (мгновенный старт, touchstart, чистые колбочки)',
+      note: 'Метка Git: v1.0.6-stable-instant-start-checkpoint. Полностью устранён зависающий экран заставки, убрана проблемная шкала 99%. Экран старта и кнопка START открываются мгновенно, добавлены обработчики touchstart для сверхбыстрого отклика на смартфонах в Telegram WebApp. Колбочки чистые, без полос над красками. Снимки лидерборда в 23:59 по Киеву. Безлимитные подарки администратора. 100% тестов пройдены.',
+      tag: 'v1.0.6-stable-instant-start-checkpoint'
+    },
+    {
       id: 'colorsort_checkpoint_20261003_004200',
       createdAtTimestamp: 1790977320000,
       kyivFormattedDate: '03.10.2026, 00:42:00 (Киев)',
@@ -9120,11 +9158,11 @@ async function initColorSortApp() {
     if (!adminCodeBackupItemsList) return;
     adminCodeBackupItemsList.innerHTML = '';
 
-    backups.forEach(b => {
+    backups.forEach((b, idx) => {
       const card = document.createElement('div');
       card.className = 'admin-snapshot-card';
       card.id = `code-backup-item-${b.id}`;
-      card.style.borderLeft = '3px solid #10b981';
+      card.style.borderLeft = idx === 0 ? '3px solid #10b981' : '3px solid #38bdf8';
       card.style.padding = '12px 14px';
 
       const tagHtml = b.tag ? `
@@ -9230,6 +9268,171 @@ async function initColorSortApp() {
       }
 
       adminCodeBackupItemsList.appendChild(card);
+    });
+  }
+
+  function formatKyivDateTimeStr(ts) {
+    try {
+      const d = new Date(ts || Date.now());
+      const datePart = d.toLocaleDateString('ru-RU', {
+        timeZone: 'Europe/Kyiv',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      const timePart = d.toLocaleTimeString('ru-RU', {
+        timeZone: 'Europe/Kyiv',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      return `${datePart}, ${timePart} (Киев)`;
+    } catch (e) {
+      const d = new Date();
+      return `${d.toLocaleDateString()}, ${d.toLocaleTimeString()} (Киев)`;
+    }
+  }
+
+  function formatKyivCheckpointId(ts) {
+    try {
+      const now = new Date(ts || Date.now());
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Kyiv',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(now);
+      const p = (type) => (parts.find(x => x.type === type) || {}).value || '00';
+      return `colorsort_checkpoint_${p('year')}${p('month')}${p('day')}_${p('hour')}${p('minute')}${p('second')}`;
+    } catch (e) {
+      return `colorsort_checkpoint_${Date.now()}`;
+    }
+  }
+
+  const DEFAULT_SAVE_VERSION_TITLE = 'Версия v1.0.7 — Анонимные подарки и приватность игроков (Киев)';
+  const DEFAULT_SAVE_VERSION_TAG = 'v1.0.7-anonymous-gifts-admin-usernames';
+  const DEFAULT_SAVE_VERSION_NOTE = 'Метка Git: v1.0.7-anonymous-gifts-admin-usernames. Лидерборд полностью восстановлен на GitHub Pages и Vercel. Юзернеймы (@username) и Telegram ID скрыты у всех обычных игроков и доступны строго администратору (Alligator / Romanchik / ?admin=true). Получение подарков сделано 100% анонимным («Вам прислан полезный подарок!» без раскрытия отправителя). Полные данные аудита отправителей сохранены в базе для администратора.';
+
+  if (adminSaveCurrentVersionBtn) {
+    adminSaveCurrentVersionBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (adminSaveVersionTitleInput) adminSaveVersionTitleInput.value = DEFAULT_SAVE_VERSION_TITLE;
+      if (adminSaveVersionTagInput) adminSaveVersionTagInput.value = DEFAULT_SAVE_VERSION_TAG;
+      if (adminSaveVersionNoteInput) adminSaveVersionNoteInput.value = DEFAULT_SAVE_VERSION_NOTE;
+      if (adminSaveVersionConfirmBtn) {
+        adminSaveVersionConfirmBtn.disabled = false;
+        adminSaveVersionConfirmBtn.innerHTML = '<span>💾</span> <span>Зафиксировать версию</span>';
+      }
+      if (adminSaveVersionModal) openModal(adminSaveVersionModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+    });
+  }
+
+  if (adminSaveVersionCloseBtn) {
+    adminSaveVersionCloseBtn.addEventListener('click', () => {
+      if (adminSaveVersionModal) closeModal(adminSaveVersionModal);
+    });
+  }
+
+  if (adminSaveVersionCancelBtn) {
+    adminSaveVersionCancelBtn.addEventListener('click', () => {
+      if (adminSaveVersionModal) closeModal(adminSaveVersionModal);
+    });
+  }
+
+  if (adminSaveVersionConfirmBtn) {
+    adminSaveVersionConfirmBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const title = (adminSaveVersionTitleInput ? adminSaveVersionTitleInput.value.trim() : '') || DEFAULT_SAVE_VERSION_TITLE;
+      const tag = (adminSaveVersionTagInput ? adminSaveVersionTagInput.value.trim() : '') || DEFAULT_SAVE_VERSION_TAG;
+      const note = (adminSaveVersionNoteInput ? adminSaveVersionNoteInput.value.trim() : '') || DEFAULT_SAVE_VERSION_NOTE;
+
+      const now = Date.now();
+      const kyivFormattedDate = formatKyivDateTimeStr(now);
+      const checkpointId = formatKyivCheckpointId(now);
+
+      const newCheckpoint = {
+        id: checkpointId,
+        createdAtTimestamp: now,
+        kyivFormattedDate: kyivFormattedDate,
+        title: title,
+        note: note,
+        tag: tag
+      };
+
+      adminSaveVersionConfirmBtn.disabled = true;
+      adminSaveVersionConfirmBtn.innerHTML = '<span class="spinner" style="display:inline-block; width:12px; height:12px; margin-right:4px;"></span> <span>Сохранение...</span>';
+
+      let savedOk = false;
+
+      // 1. Try server API
+      try {
+        const authParams = {
+          telegramId: currentUser ? currentUser.telegramId : undefined,
+          firstName: currentUser ? currentUser.firstName : undefined,
+          username: currentUser ? currentUser.username : undefined
+        };
+        const apiUrl = (NEWS_API_BASE || API_BASE || '') + '/api/admin/code-backups';
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', ...newCheckpoint, ...authParams })
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          if (resData && resData.success) savedOk = true;
+        }
+      } catch (err) {
+        console.warn('[Code Backup Create] API notice:', err.message);
+      }
+
+      // 2. Direct KVDB synchronization
+      try {
+        const kvdbGet = await fetch(`https://kvdb.io/82kzJTUxZwwFNvg7kUSqgM/colorsort_code_checkpoints?_cb=${Date.now()}`, { cache: 'no-store' });
+        let list = [];
+        if (kvdbGet.ok) {
+          list = await kvdbGet.json();
+        }
+        if (!Array.isArray(list) || list.length === 0) list = [...DEFAULT_CODE_CHECKPOINTS];
+        list = [newCheckpoint, ...list.filter(item => item.id !== newCheckpoint.id)];
+        await fetch('https://kvdb.io/82kzJTUxZwwFNvg7kUSqgM/colorsort_code_checkpoints', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(list)
+        });
+        savedOk = true;
+      } catch (kvErr) {
+        console.warn('[Code Backup Create] KVDB notice:', kvErr);
+      }
+
+      // 3. Update local cache immediately
+      try {
+        let cached = JSON.parse(localStorage.getItem('colorsort_code_checkpoints_cache') || '[]');
+        if (!Array.isArray(cached) || cached.length === 0) cached = [...DEFAULT_CODE_CHECKPOINTS];
+        cached = [newCheckpoint, ...cached.filter(item => item.id !== newCheckpoint.id)];
+        localStorage.setItem('colorsort_code_checkpoints_cache', JSON.stringify(cached));
+        renderAdminCodeBackupsList(cached);
+      } catch (e) {}
+
+      if (adminSaveVersionModal) closeModal(adminSaveVersionModal);
+      if (adminSaveVersionConfirmBtn) {
+        adminSaveVersionConfirmBtn.disabled = false;
+        adminSaveVersionConfirmBtn.innerHTML = '<span>💾</span> <span>Зафиксировать версию</span>';
+      }
+
+      // Feedback
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+
+      showInfoModal('💾', 'Версия зафиксирована!', `Контрольная точка «${title}» успешно сохранена в панели администратора.`);
+
+      await loadAdminCodeBackups();
     });
   }
 
