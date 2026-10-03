@@ -401,15 +401,22 @@
       const amount = gift.amount || 1;
       const titleText = t('giftReceivedCardTitle', localizedName, amount);
 
-      let senderInfo = '';
-      if (gift.fromUsername) {
-        senderInfo = `@${String(gift.fromUsername).replace(/^@/, '')}`;
-      } else if (gift.fromName) {
-        senderInfo = gift.fromName;
+      const isAdmin = isUserAdmin(currentUserRef);
+      let descText = escapeHtml(t('giftReceivedCardDesc'));
+      if (isAdmin) {
+        let senderInfo = '';
+        if (gift.fromUsername) {
+          senderInfo = `@${String(gift.fromUsername).replace(/^@/, '')}`;
+        } else if (gift.fromName) {
+          senderInfo = gift.fromName;
+        }
+        if (gift.fromId) {
+          senderInfo = senderInfo ? `${senderInfo} (ID: ${gift.fromId})` : `ID: ${gift.fromId}`;
+        }
+        if (senderInfo) {
+          descText = `${escapeHtml(t('giftReceivedCardDesc'))} <small style="display:block; color:#94a3b8; font-size:0.75rem; margin-top:2px;">[${t('giftFromLabel') || 'От'}: ${escapeHtml(senderInfo)}]</small>`;
+        }
       }
-      const descText = senderInfo 
-        ? `${t('giftFromLabel') || 'От'}: <strong>${escapeHtml(senderInfo)}</strong>`
-        : escapeHtml(t('giftReceivedCardDesc'));
 
       const timeText = dateFormatted ? t('giftReceivedTimeKyiv', dateFormatted) : '';
       const claimBtnText = t('giftsClaimBtn');
@@ -574,6 +581,10 @@
     } else {
       if (stepRecipient) stepRecipient.classList.remove('hidden');
       if (stepItem) stepItem.classList.add('hidden');
+      const searchInput = document.getElementById('giftsPlayerSearchInput');
+      if (searchInput) {
+        searchInput.placeholder = isAdmin ? t('giftsSearchPlaceholder') : (t('giftsSearchPlaceholderUser') || '🔍 Найти игрока...');
+      }
       loadAndRenderPlayersList();
     }
   }
@@ -663,11 +674,13 @@
       return;
     }
 
+    const isAdmin = isUserAdmin(currentUserRef);
+
     filtered.forEach((player, idx) => {
       const name = player.firstName || player.first_name || player.name || t('defaultPlayerName') || 'Игрок';
       const rawUsername = player.username || player.user_name || '';
       const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
-      const usernameDisplay = cleanUsername ? `@${cleanUsername}` : '';
+      const usernameDisplay = (isAdmin && cleanUsername) ? `@${cleanUsername}` : '';
       const lvl = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
       const crown = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
 
@@ -1062,7 +1075,10 @@
     if (recipientStepTitle) recipientStepTitle.textContent = t('giftsStepRecipientTitle');
 
     const searchInput = document.getElementById('giftsPlayerSearchInput');
-    if (searchInput) searchInput.placeholder = t('giftsSearchPlaceholder');
+    if (searchInput) {
+      const isAdmin = isUserAdmin(currentUserRef);
+      searchInput.placeholder = isAdmin ? t('giftsSearchPlaceholder') : (t('giftsSearchPlaceholderUser') || '🔍 Найти игрока...');
+    }
 
     const pLoading = document.getElementById('giftsPlayersLoading');
     if (pLoading && pLoading.querySelector('span')) {
