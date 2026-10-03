@@ -1124,6 +1124,23 @@
             </span>
           </div>
 
+          <!-- Action Box: Сохранить текущую версию -->
+          <div class="admin-code-backup-action-box" style="margin-top: 10px; padding: 12px 14px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.3rem;">⚡</span>
+                <div>
+                  <strong style="color: #f8fafc; font-size: 0.92rem; display: block;" id="adminSaveVersionActionTitle">Фиксация рабочей версии кода</strong>
+                  <span style="font-size: 0.75rem; color: #94a3b8;" id="adminSaveVersionActionSub">Сохранить текущее состояние игры в контрольные точки</span>
+                </div>
+              </div>
+              <button type="button" id="adminSaveCurrentVersionBtn" class="btn-save-current-version" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; border: none; border-radius: 9px; padding: 9px 16px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); transition: transform 0.15s, opacity 0.15s;">
+                <span>💾</span>
+                <span id="adminSaveCurrentVersionBtnText">Сохранить текущую версию</span>
+              </button>
+            </div>
+          </div>
+
           <div class="admin-history-list-bar" style="margin-top: 10px;">
             <div class="admin-history-list-title">
               📅 <span>Зафиксированные версии кода игры (Киев):</span>
@@ -1140,7 +1157,31 @@
               <span>Копии кода еще не создавались</span>
             </div>
             <div id="adminCodeBackupItemsList" class="admin-history-items-list">
-              <div class="admin-snapshot-card" id="code-backup-item-colorsort_checkpoint_20261003_033500" style="border-left: 3px solid #10b981; padding: 12px 14px; margin-bottom: 8px;">
+              <div class="admin-snapshot-card" id="code-backup-item-colorsort_checkpoint_20261003_162500" style="border-left: 3px solid #10b981; padding: 12px 14px; margin-bottom: 8px;">
+                <div class="admin-snapshot-info" style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span style="font-size: 1.1rem;">💾</span>
+                    <span class="admin-snapshot-datetime" style="color: #67e8f9; font-size: 0.95rem;">Версия v1.0.7 — Анонимные подарки и приватность игроков (доступ юзернеймов только админу)</span>
+                  </div>
+                  <div class="admin-snapshot-meta" style="gap: 6px;">
+                    <span class="admin-snapshot-badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-weight: 700;">
+                      🕒 03.10.2026, 16:25:00 (Киев)
+                    </span>
+                    <span class="admin-snapshot-badge" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-weight: 600;">
+                      🏷️ v1.0.7-anonymous-gifts-admin-usernames
+                    </span>
+                  </div>
+                  <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.35; margin-top: 4px;">
+                    📝 Метка Git: v1.0.7-anonymous-gifts-admin-usernames. Лидерборд полностью восстановлен на GitHub Pages и Vercel. Юзернеймы (@username) и Telegram ID скрыты у всех обычных игроков и доступны строго администратору (Alligator / Romanchik / ?admin=true). Получение подарков сделано 100% анонимным («Вам прислан полезный подарок!» без раскрытия отправителя). Полные данные аудита отправителей сохранены в базе для администратора.
+                  </div>
+                </div>
+                <div class="admin-snapshot-actions">
+                  <button type="button" class="btn-snapshot-delete delete-code-backup-btn" data-id="colorsort_checkpoint_20261003_162500" data-date="03.10.2026, 16:25:00 (Киев)" title="Удалить версию">
+                    🗑️ <span>Удалить</span>
+                  </button>
+                </div>
+              </div>
+              <div class="admin-snapshot-card" id="code-backup-item-colorsort_checkpoint_20261003_033500" style="border-left: 3px solid #38bdf8; padding: 12px 14px; margin-bottom: 8px;">
                 <div class="admin-snapshot-info" style="flex: 1;">
                   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                     <span style="font-size: 1.1rem;">💾</span>
@@ -1380,6 +1421,46 @@
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
         <button id="cancelResetSeasonBtn" class="btn-cancel" style="flex: 1;">Отмена</button>
         <button id="confirmResetSeasonBtn" class="btn-confirm-danger" style="flex: 1;">🔥 Сбросить всё</button>
+      </div>
+  </div>
+
+  <!-- Modal: Сохранить текущую версию кода игры -->
+  <div id="adminSaveVersionModal" class="modal-overlay hidden">
+    <div class="glass-modal" style="max-width: 440px; width: 92%; padding: 20px 18px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">💾</span>
+          <div>
+            <strong style="color: #f8fafc; font-size: 1.05rem; display: block;" id="adminSaveVersionModalTitle">Сохранение версии кода</strong>
+            <span style="font-size: 0.76rem; color: #38bdf8;">Фиксация контрольной точки в панели</span>
+          </div>
+        </div>
+        <button type="button" id="adminSaveVersionCloseBtn" class="modal-close-btn" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;" title="Закрыть">✕</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;" id="adminSaveVersionTitleLabel">Название версии:</label>
+          <input type="text" id="adminSaveVersionTitleInput" class="admin-news-input" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); color: #f8fafc; padding: 8px 10px; border-radius: 8px; font-size: 0.85rem;" placeholder="Версия v1.0.7 — ...">
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;" id="adminSaveVersionTagLabel">Метка Git (тег):</label>
+          <input type="text" id="adminSaveVersionTagInput" class="admin-news-input" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); color: #f8fafc; padding: 8px 10px; border-radius: 8px; font-size: 0.85rem;" placeholder="v1.0.7-checkpoint">
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;" id="adminSaveVersionNoteLabel">Описание изменений и состояния:</label>
+          <textarea id="adminSaveVersionNoteInput" class="admin-news-textarea" rows="3" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); color: #f8fafc; padding: 8px 10px; border-radius: 8px; font-size: 0.8rem; resize: vertical;" placeholder="Описание изменений..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 16px;">
+        <button type="button" id="adminSaveVersionCancelBtn" class="btn-cancel" style="flex: 1; padding: 10px 14px; border-radius: 8px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; cursor: pointer; font-size: 0.85rem;">Отмена</button>
+        <button type="button" id="adminSaveVersionConfirmBtn" class="btn-confirm-primary" style="flex: 1.4; padding: 10px 16px; border-radius: 8px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; color: #ffffff; cursor: pointer; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);">
+          <span>💾</span>
+          <span id="adminSaveVersionConfirmBtnText">Зафиксировать версию</span>
+        </button>
       </div>
     </div>
   </div>

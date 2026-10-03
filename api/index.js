@@ -1187,6 +1187,22 @@ app.get('/api/admin/code-backups', async (req, res) => {
     if (checkpoints.length === 0) {
       checkpoints = [
         {
+          id: 'colorsort_checkpoint_20261003_162500',
+          createdAtTimestamp: 1791033900000,
+          kyivFormattedDate: '03.10.2026, 16:25:00 (Киев)',
+          title: 'Версия v1.0.7 — Анонимные подарки и приватность игроков (доступ юзернеймов только админу)',
+          note: 'Метка Git: v1.0.7-anonymous-gifts-admin-usernames. Лидерборд полностью восстановлен на GitHub Pages и Vercel. Юзернеймы (@username) и Telegram ID скрыты у всех обычных игроков и доступны строго администратору (Alligator / Romanchik / ?admin=true). Получение подарков сделано 100% анонимным («Вам прислан полезный подарок!» без раскрытия отправителя). Полные данные аудита отправителей сохранены в базе для администратора.',
+          tag: 'v1.0.7-anonymous-gifts-admin-usernames'
+        },
+        {
+          id: 'colorsort_checkpoint_20261003_033500',
+          createdAtTimestamp: 1790987700000,
+          kyivFormattedDate: '03.10.2026, 03:35:00 (Киев)',
+          title: 'Версия v1.0.6 — Стабильная рабочая версия (мгновенный старт, touchstart, чистые колбочки)',
+          note: 'Метка Git: v1.0.6-stable-instant-start-checkpoint. Полностью устранён зависающий экран заставки, убрана проблемная шкала 99%. Экран старта и кнопка START открываются мгновенно, добавлены обработчики touchstart для сверхбыстрого отклика на смартфонах в Telegram WebApp. Колбочки чистые, без полос над красками. Снимки лидерборда в 23:59 по Киеву. Безлимитные подарки администратора. 100% тестов пройдены.',
+          tag: 'v1.0.6-stable-instant-start-checkpoint'
+        },
+        {
           id: 'colorsort_checkpoint_20261003_004200',
           createdAtTimestamp: 1790977320000,
           kyivFormattedDate: '03.10.2026, 00:42:00 (Киев)',
