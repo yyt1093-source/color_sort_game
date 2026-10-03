@@ -9,6 +9,33 @@
   const GLOBAL_CLOUD_BASE = 'https://kvdb.io/' + GLOBAL_CLOUD_BUCKET;
   const MAX_DAILY_GIFTS = 10;
 
+  function getApiBase() {
+    if (typeof window !== 'undefined' && window.COLOR_SORT_API_URL) {
+      return window.COLOR_SORT_API_URL;
+    }
+    if (typeof window !== 'undefined' && (window.location.hostname.includes('github.io') || window.location.protocol === 'file:')) {
+      return 'https://colorsortgame.vercel.app';
+    }
+    return '';
+  }
+
+  async function giftApiCall(endpoint, method = 'GET', body = null) {
+    const base = getApiBase();
+    try {
+      const options = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(3500) : undefined
+      };
+      if (body) options.body = JSON.stringify(body);
+      const res = await fetch(base + endpoint, options);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  }
+
   // 4 allowed gift types and their config
   const GIFT_CONFIG = {
     undos: {
@@ -194,29 +221,67 @@
     return false;
   }
 
-  // KVDB Cloud Endpoints for Gifts
+  // Cloud & Server Endpoints for Gifts
   async function fetchCloudInbox(userId) {
     if (!userId) return [];
+    let inbox = [];
+    const seenIds = new Set();
+
+    // 1. Try server API first (fast, reliable SQLite storage, no 429 rate limit)
+    try {
+      const serverRes = await giftApiCall(`/api/gifts/inbox?telegramId=${encodeURIComponent(userId)}`);
+      if (serverRes && serverRes.success && Array.isArray(serverRes.gifts)) {
+        serverRes.gifts.forEach(g => {
+          if (g && g.id && !seenIds.has(String(g.id))) {
+            seenIds.add(String(g.id));
+            inbox.push(g);
+          }
+        });
+      }
+    } catch (e) {}
+
+    // 2. Also check KVDB cloud storage
     try {
       const res = await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(userId)}?_cb=${Date.now()}`, {
-        cache: 'no-store'
+        cache: 'no-store',
+        signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2500) : undefined
       });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) return data;
+        if (Array.isArray(data)) {
+          data.forEach(g => {
+            if (g && g.id && !seenIds.has(String(g.id))) {
+              seenIds.add(String(g.id));
+              inbox.push(g);
+            }
+          });
+        }
       }
-    } catch (err) {
-      console.warn('[GiftsModule] Cloud inbox fetch notice:', err.message);
-    }
-    // Fallback to local storage
+    } catch (err) {}
+
+    // 3. Fallback / merge local storage
     try {
       const local = localStorage.getItem(`colorsort_gifts_inbox_${userId}`);
       if (local) {
         const parsed = JSON.parse(local);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          parsed.forEach(g => {
+            if (g && g.id && !seenIds.has(String(g.id))) {
+              seenIds.add(String(g.id));
+              inbox.push(g);
+            }
+          });
+        }
       }
     } catch (e) {}
-    return [];
+
+    // Sort newest first
+    inbox.sort((a, b) => (Number(b.createdAt || 0) - Number(a.createdAt || 0)));
+
+    try {
+      localStorage.setItem(`colorsort_gifts_inbox_${userId}`, JSON.stringify(inbox));
+    } catch (e) {}
+    return inbox;
   }
 
   async function saveCloudInbox(userId, inbox) {
@@ -225,14 +290,12 @@
       localStorage.setItem(`colorsort_gifts_inbox_${userId}`, JSON.stringify(inbox));
     } catch (e) {}
     try {
-      await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(userId)}`, {
+      fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(userId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(inbox)
-      });
-    } catch (err) {
-      console.warn('[GiftsModule] Cloud inbox save notice:', err.message);
-    }
+      }).catch(() => {});
+    } catch (err) {}
   }
 
   // Check Pending Gifts & Update Pulsing Indicators
@@ -337,7 +400,17 @@
       const localizedName = getGiftName(gift.giftType);
       const amount = gift.amount || 1;
       const titleText = t('giftReceivedCardTitle', localizedName, amount);
-      const descText = t('giftReceivedCardDesc');
+
+      let senderInfo = '';
+      if (gift.fromUsername) {
+        senderInfo = `@${String(gift.fromUsername).replace(/^@/, '')}`;
+      } else if (gift.fromName) {
+        senderInfo = gift.fromName;
+      }
+      const descText = senderInfo 
+        ? `${t('giftFromLabel') || 'От'}: <strong>${escapeHtml(senderInfo)}</strong>`
+        : escapeHtml(t('giftReceivedCardDesc'));
+
       const timeText = dateFormatted ? t('giftReceivedTimeKyiv', dateFormatted) : '';
       const claimBtnText = t('giftsClaimBtn');
 
@@ -346,7 +419,7 @@
           <span class="gift-received-icon">${gift.giftIcon || '🎁'}</span>
           <div class="gift-received-texts">
             <strong class="gift-received-title">${escapeHtml(titleText)}</strong>
-            <span class="gift-received-desc">${escapeHtml(descText)}</span>
+            <span class="gift-received-desc">${descText}</span>
             ${timeText ? `<span class="gift-received-date">${escapeHtml(timeText)}</span>` : ''}
           </div>
         </div>
@@ -420,7 +493,12 @@
         t('giftClaimedSuccessDesc', gift.giftIcon || '🎁', localizedName, addAmount)
       );
 
-      // 7. Save cloud inbox
+      // 7. Claim on server and save cloud inbox
+      giftApiCall('/api/gifts/claim', 'POST', {
+        giftId: String(gift.id),
+        recipientId: userId
+      }).catch(() => {});
+
       await saveCloudInbox(userId, cachedInbox);
     } catch (err) {
       console.error('[GiftsModule] Claim gift error:', err);
@@ -507,6 +585,8 @@
 
     if (cachedPlayers.length === 0) {
       if (loadingEl) loadingEl.classList.remove('hidden');
+
+      // 1. Try callback from parent app
       try {
         if (typeof getLeaderboardPlayersCallback === 'function') {
           const players = await getLeaderboardPlayersCallback();
@@ -516,15 +596,40 @@
         }
       } catch (e) {}
 
-      // Fallback: Fetch from cloud if callback returned empty
+      // 2. Fallback: Fetch directly from server API
       if (cachedPlayers.length === 0) {
         try {
-          const res = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
+          const serverRes = await giftApiCall('/api/leaderboard');
+          if (serverRes && serverRes.success && Array.isArray(serverRes.topPlayers) && serverRes.topPlayers.length > 0) {
+            cachedPlayers = serverRes.topPlayers.map(sp => ({
+              telegramId: String(sp.telegram_id),
+              firstName: sp.first_name,
+              username: sp.username || '',
+              photoUrl: sp.photo_url || '',
+              maxLevel: Number(sp.max_level || 1),
+              level: Number(sp.max_level || 1),
+              stars: Number(sp.stars || 0)
+            }));
+          }
+        } catch (e) {}
+      }
+
+      // 3. Fallback: Fetch from cloud KVDB
+      if (cachedPlayers.length === 0) {
+        try {
+          const res = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
+            signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(3000) : undefined
+          });
           if (res.ok) {
             const pairs = await res.json();
             if (Array.isArray(pairs)) {
               cachedPlayers = pairs
-                .map(([k, p]) => p)
+                .map(([k, p]) => {
+                  if (typeof p === 'string') {
+                    try { return JSON.parse(p); } catch (e) { return null; }
+                  }
+                  return p;
+                })
                 .filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev') && /^\d+$/.test(String(p.telegramId)))
                 .sort((a, b) => (Number(b.maxLevel || b.level || 1) - Number(a.maxLevel || a.level || 1)));
             }
@@ -536,13 +641,15 @@
 
     const myId = currentUserRef ? String(currentUserRef.telegramId) : '';
     // Exclude current user and filter by search query
-    let filtered = cachedPlayers.filter(p => String(p.telegramId) !== myId);
+    let filtered = cachedPlayers.filter(p => String(p.telegramId || p.telegram_id) !== myId);
 
     if (searchQuery && searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
+      const q = searchQuery.trim().toLowerCase().replace(/^@/, '');
       filtered = filtered.filter(p => {
         const name = (p.firstName || p.first_name || p.name || '').toLowerCase();
-        return name.includes(q);
+        const uname = (p.username || p.user_name || '').toLowerCase().replace(/^@/, '');
+        const tid = String(p.telegramId || p.telegram_id || '');
+        return name.includes(q) || uname.includes(q) || tid.includes(q);
       });
     }
 
@@ -556,15 +663,24 @@
       return;
     }
 
-    filtered.forEach((player) => {
-      const name = player.firstName || player.first_name || player.name || t('defaultPlayerName');
+    filtered.forEach((player, idx) => {
+      const name = player.firstName || player.first_name || player.name || t('defaultPlayerName') || 'Игрок';
+      const rawUsername = player.username || player.user_name || '';
+      const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
+      const usernameDisplay = cleanUsername ? `@${cleanUsername}` : '';
       const lvl = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
+      const crown = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
 
       const row = document.createElement('div');
       row.className = 'gift-player-row';
       row.innerHTML = `
-        <div class="gift-player-left">
-          <strong class="gift-player-name">${escapeHtml(name)}</strong>
+        <div class="gift-player-left" style="display: flex; align-items: center; gap: 8px;">
+          <span class="gift-player-rank" style="font-size: 0.95rem; font-weight: 700; width: 26px; text-align: center;">${crown}</span>
+          <div style="display: flex; flex-direction: column; gap: 1px;">
+            <strong class="gift-player-name" style="font-size: 0.9rem; font-weight: 700; color: #f8fafc;">${escapeHtml(name)}</strong>
+            ${usernameDisplay ? `<small class="player-handle" style="font-size: 0.75rem; color: #38bdf8; font-weight: 600; display: block;">${escapeHtml(usernameDisplay)}</small>` : ''}
+          </div>
+          <span class="gift-player-lvl" style="font-size: 0.75rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 6px; margin-left: 6px;">${t('levelPrefix') || 'Ур.'} ${lvl}</span>
         </div>
         <div style="display: flex; align-items: center;">
           <button type="button" class="gift-player-select-btn">${escapeHtml(t('giftsSelectPlayerBtn'))}</button>
@@ -573,8 +689,10 @@
 
       row.addEventListener('click', () => {
         selectedRecipient = {
-          telegramId: String(player.telegramId),
-          displayName: name,
+          telegramId: String(player.telegramId || player.telegram_id),
+          displayName: usernameDisplay ? `${name} (${usernameDisplay})` : name,
+          firstName: name,
+          username: cleanUsername,
           level: lvl
         };
         renderSendView();
@@ -722,17 +840,26 @@
         updateCloudBoosterCallback(config.boosterField, currentUserRef[config.boosterField]);
       }
 
-      // 4. Push gift to recipient's inbox in KVDB
+      // 4. Push gift to recipient's inbox (Server API + Cloud KVDB)
+      const senderUsername = currentUserRef.username ? String(currentUserRef.username).replace(/^@/, '').trim() : '';
       const newGift = {
         id: 'gift_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
         giftType: giftType,
         giftName: getGiftName(giftType),
         giftIcon: config.icon,
         amount: sendQty,
+        recipientId: targetId,
+        fromId: myId,
+        fromName: currentUserRef.firstName || 'Игрок',
+        fromUsername: senderUsername,
         createdAt: Date.now(),
         claimed: false
       };
 
+      // Send to server API
+      giftApiCall('/api/gifts/send', 'POST', newGift).catch(() => {});
+
+      // Sync to cloud KVDB and local storage
       const recipientInbox = await fetchCloudInbox(targetId);
       recipientInbox.push(newGift);
       await saveCloudInbox(targetId, recipientInbox);

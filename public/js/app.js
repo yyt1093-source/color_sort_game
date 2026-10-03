@@ -482,13 +482,14 @@ async function initColorSortApp() {
       giftsClaimBtn: "Забрать",
       giftReceivedCardTitle: (name, amount) => `🎁 Подарок: ${name} (+${amount})`,
       giftReceivedCardDesc: "Вам прислан полезный подарок!",
+      giftFromLabel: "От",
       giftReceivedTimeKyiv: (time) => `🕒 ${time} (Киев)`,
       giftsDailySentLabel: "Отправлено сегодня:",
       giftsLimitFootnote: "Лимит: максимум 10 подарков в сутки. Сброс в 23:59 (Киев).",
       giftsAdminUnlimitedFootnote: "👑 Режим администратора: отправка подарков без ограничений (безлимит).",
       giftsUnlimitedTag: "∞ (Безлимит)",
       giftsStepRecipientTitle: "👥 Выберите получателя из игроков:",
-      giftsSearchPlaceholder: "🔍 Найти игрока...",
+      giftsSearchPlaceholder: "🔍 Поиск по имени или @username...",
       giftsPlayersLoading: "Загрузка списка игроков...",
       giftsPlayersNotFound: "Игроки по запросу не найдены",
       giftsPlayersEmpty: "Список игроков пуст",
@@ -815,13 +816,14 @@ async function initColorSortApp() {
       giftsClaimBtn: "Забрати",
       giftReceivedCardTitle: (name, amount) => `🎁 Подарунок: ${name} (+${amount})`,
       giftReceivedCardDesc: "Вам надіслано корисний подарунок!",
+      giftFromLabel: "Від",
       giftReceivedTimeKyiv: (time) => `🕒 ${time} (Київ)`,
       giftsDailySentLabel: "Надіслано сьогодні:",
       giftsLimitFootnote: "Ліміт: максимум 10 подарунків на добу. Скидання о 23:59 (Київ).",
       giftsAdminUnlimitedFootnote: "👑 Режим адміністратора: надсилання подарунків без обмежень (безліміт).",
       giftsUnlimitedTag: "∞ (Безліміт)",
       giftsStepRecipientTitle: "👥 Виберіть одержувача з гравців:",
-      giftsSearchPlaceholder: "🔍 Знайти гравця...",
+      giftsSearchPlaceholder: "🔍 Пошук за ім'ям або @username...",
       giftsPlayersLoading: "Завантаження списку гравців...",
       giftsPlayersNotFound: "Гравців за запитом не знайдено",
       giftsPlayersEmpty: "Список гравців порожній",
@@ -1154,13 +1156,14 @@ async function initColorSortApp() {
       giftsClaimBtn: "Claim",
       giftReceivedCardTitle: (name, amount) => `🎁 Gift: ${name} (+${amount})`,
       giftReceivedCardDesc: "You received a useful gift!",
+      giftFromLabel: "From",
       giftReceivedTimeKyiv: (time) => `🕒 ${time} (Kyiv)`,
       giftsDailySentLabel: "Sent today:",
       giftsLimitFootnote: "Limit: maximum 10 gifts per day. Reset at 23:59 (Kyiv).",
       giftsAdminUnlimitedFootnote: "👑 Admin mode: unlimited gift sending.",
       giftsUnlimitedTag: "∞ (Unlimited)",
       giftsStepRecipientTitle: "👥 Select recipient from players:",
-      giftsSearchPlaceholder: "🔍 Find player...",
+      giftsSearchPlaceholder: "🔍 Find player (name or @username)...",
       giftsPlayersLoading: "Loading players list...",
       giftsPlayersNotFound: "No players found matching search",
       giftsPlayersEmpty: "Players list is empty",
@@ -1485,13 +1488,14 @@ async function initColorSortApp() {
       giftsClaimBtn: "Abholen",
       giftReceivedCardTitle: (name, amount) => `🎁 Geschenk: ${name} (+${amount})`,
       giftReceivedCardDesc: "Sie haben ein nützliches Geschenk erhalten!",
+      giftFromLabel: "Von",
       giftReceivedTimeKyiv: (time) => `🕒 ${time} (Kiew)`,
       giftsDailySentLabel: "Heute gesendet:",
       giftsLimitFootnote: "Limit: maximal 10 Geschenke pro Tag. Zurücksetzen um 23:59 (Kiew).",
       giftsAdminUnlimitedFootnote: "👑 Admin-Modus: unbegrenzter Geschenkversand.",
       giftsUnlimitedTag: "∞ (Unbegrenzt)",
       giftsStepRecipientTitle: "👥 Empfänger aus Spielern wählen:",
-      giftsSearchPlaceholder: "🔍 Spieler suchen...",
+      giftsSearchPlaceholder: "🔍 Spieler suchen (Name oder @Username)...",
       giftsPlayersLoading: "Spielerliste wird geladen...",
       giftsPlayersNotFound: "Keine Spieler gefunden",
       giftsPlayersEmpty: "Spielerliste ist leer",
@@ -1824,13 +1828,14 @@ async function initColorSortApp() {
       giftsClaimBtn: "Atsiimti",
       giftReceivedCardTitle: (name, amount) => `🎁 Dovana: ${name} (+${amount})`,
       giftReceivedCardDesc: "Gavote naudingą dovaną!",
+      giftFromLabel: "Nuo",
       giftReceivedTimeKyiv: (time) => `🕒 ${time} (Kijevas)`,
       giftsDailySentLabel: "Išsiųsta šiandien:",
       giftsLimitFootnote: "Limitas: iki 10 dovanų per dieną. Atstatymas 23:59 (Kijevo laiku).",
       giftsAdminUnlimitedFootnote: "👑 Administratoriaus režimas: neribotas dovanų siuntimas.",
       giftsUnlimitedTag: "∞ (Neribota)",
       giftsStepRecipientTitle: "👥 Pasirinkite gavėją iš žaidėjų:",
-      giftsSearchPlaceholder: "🔍 Ieškoti žaidėjo...",
+      giftsSearchPlaceholder: "🔍 Ieškoti žaidėjo (vardas arba @username)...",
       giftsPlayersLoading: "Kraunamas žaidėjų sąrašas...",
       giftsPlayersNotFound: "Žaidėjų pagal užklausą nerasta",
       giftsPlayersEmpty: "Žaidėjų sąrašas tuščias",
@@ -2725,12 +2730,12 @@ async function initColorSortApp() {
   // Server Communication & 24/7 Global Cloud Database
   const GLOBAL_CLOUD_BUCKET = '82kzJTUxZwwFNvg7kUSqgM';
   const GLOBAL_CLOUD_BASE = 'https://kvdb.io/' + GLOBAL_CLOUD_BUCKET;
-  const API_BASE = (typeof window !== 'undefined' && window.COLOR_SORT_API_URL) ? window.COLOR_SORT_API_URL : '';
-  const NEWS_API_BASE = (typeof window !== 'undefined' && window.COLOR_SORT_API_URL)
+  const API_BASE = (typeof window !== 'undefined' && window.COLOR_SORT_API_URL)
     ? window.COLOR_SORT_API_URL
-    : (typeof window !== 'undefined' && window.location.hostname.includes('github.io')
+    : (typeof window !== 'undefined' && (window.location.hostname.includes('github.io') || window.location.protocol === 'file:')
         ? 'https://colorsortgame.vercel.app'
         : '');
+  const NEWS_API_BASE = API_BASE;
 
   function normalizeUserObject(user) {
     if (!user || typeof user !== 'object') return user;
@@ -4072,7 +4077,28 @@ async function initColorSortApp() {
 
     let players = [];
 
-    // 1. Fetch from single global 24/7 cloud database (never sleeps, works with PC off)
+    // 1. Fetch from Server API first (fast, reliable, SQLite backed, not blocked by 429 rate limit)
+    try {
+      const serverData = await apiCall(`/api/leaderboard?telegramId=${encodeURIComponent(currentUser.telegramId || '')}`);
+      if (serverData && serverData.success && Array.isArray(serverData.topPlayers)) {
+        serverData.topPlayers.forEach(sp => {
+          players.push({
+            telegramId: String(sp.telegram_id),
+            firstName: sp.first_name,
+            username: sp.username || '',
+            photoUrl: sp.photo_url || '',
+            maxLevel: Number(sp.max_level || 1),
+            level: Number(sp.max_level || 1),
+            stars: Number(sp.stars || 0),
+            isServer: true
+          });
+        });
+      }
+    } catch (e) {
+      console.warn('[Leaderboard] Server API fetch notice:', e.message);
+    }
+
+    // 2. Also try single global cloud database (KVDB) to merge online/offline players
     try {
       const cloudRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`, {
         cache: 'no-store',
@@ -4081,7 +4107,7 @@ async function initColorSortApp() {
       if (cloudRes.ok) {
         const pairs = await cloudRes.json();
         if (Array.isArray(pairs)) {
-          players = pairs
+          const cloudPlayers = pairs
             .map(([k, p]) => {
               if (typeof p === 'string') {
                 try { return JSON.parse(p); } catch (e) { return null; }
@@ -4089,31 +4115,40 @@ async function initColorSortApp() {
               return p;
             })
             .filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev') && /^\d+$/.test(String(p.telegramId)));
+
+          cloudPlayers.forEach(cp => {
+            const idx = players.findIndex(p => String(p.telegramId) === String(cp.telegramId));
+            const cpLvl = Number(cp.maxLevel !== undefined ? cp.maxLevel : (cp.level || 0));
+            if (idx === -1) {
+              players.push({
+                telegramId: String(cp.telegramId),
+                firstName: cp.firstName || cp.first_name || 'Игрок',
+                username: cp.username || '',
+                photoUrl: cp.photoUrl || cp.photo_url || '',
+                maxLevel: cpLvl,
+                level: cpLvl,
+                stars: Number(cp.stars || 0),
+                seasonResetAt: Number(cp.seasonResetAt || cp.season_reset_at || 0),
+                updatedAt: Number(cp.updatedAt || 0)
+              });
+            } else {
+              if (cpLvl > players[idx].maxLevel) {
+                players[idx].maxLevel = cpLvl;
+                players[idx].level = cpLvl;
+              }
+              if (cp.username && !players[idx].username) {
+                players[idx].username = cp.username;
+              }
+              if (cp.photoUrl && !players[idx].photoUrl) {
+                players[idx].photoUrl = cp.photoUrl;
+              }
+            }
+          });
         }
       }
     } catch (e) {
       console.warn('[Leaderboard] Cloud DB fetch notice:', e.message);
     }
-
-    // 2. Also try Express API if available
-    try {
-      const serverData = await apiCall(`/api/leaderboard?telegramId=${encodeURIComponent(currentUser.telegramId)}`);
-      if (serverData && serverData.success && Array.isArray(serverData.topPlayers)) {
-        serverData.topPlayers.forEach(sp => {
-          if (!players.some(p => String(p.telegramId) === String(sp.telegram_id))) {
-            players.push({
-              telegramId: sp.telegram_id,
-              firstName: sp.first_name,
-              username: sp.username,
-              photoUrl: sp.photo_url,
-              maxLevel: sp.max_level,
-              level: sp.max_level,
-              stars: sp.stars || 0
-            });
-          }
-        });
-      }
-    } catch (e) {}
 
     // 3. Ensure current user is included in the unified leaderboard ONLY if maxLevel >= 1
     const SEASON_RESET_FLOOR = 1789324758606;
@@ -4157,7 +4192,8 @@ async function initColorSortApp() {
           level: currentMaxLvl,
           stars: currentStars,
           seasonResetAt: effectiveSeasonReset,
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
+          isServer: true
         });
       } else {
         const existingLvl = Number(players[selfIndex].maxLevel !== undefined ? players[selfIndex].maxLevel : (players[selfIndex].level || 0));
@@ -4166,6 +4202,9 @@ async function initColorSortApp() {
           players[selfIndex].level = currentMaxLvl;
           players[selfIndex].seasonResetAt = effectiveSeasonReset;
           players[selfIndex].updatedAt = Date.now();
+        }
+        if (currentUser.username && !players[selfIndex].username) {
+          players[selfIndex].username = currentUser.username;
         }
       }
     }
@@ -4176,19 +4215,16 @@ async function initColorSortApp() {
       const id = String(p.telegramId);
       if (!id || id.startsWith('guest') || id.startsWith('dev') || !/^\d+$/.test(id)) return;
 
-      const pSeason = Number(p.seasonResetAt || 0);
-      const pUpdated = Number(p.updatedAt || 0);
-      const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
-
-      // Player belongs to current season if pSeason >= effectiveSeasonReset OR pUpdated >= effectiveSeasonReset
-      const isCurrentSeason = (pSeason >= effectiveSeasonReset) || (pUpdated >= effectiveSeasonReset);
-
-      if (!isCurrentSeason) {
-        return;
+      // Server players are verified active players from database
+      if (!p.isServer) {
+        const pSeason = Number(p.seasonResetAt || 0);
+        const pUpdated = Number(p.updatedAt || 0);
+        const isCurrentSeason = (pSeason >= effectiveSeasonReset) || (pUpdated >= effectiveSeasonReset);
+        if (!isCurrentSeason) return;
       }
 
       // STRICT RULE: Only players who have won at least 1 round (maxLevel >= 1) appear in leaderboard!
-      // Players with Level 0 do NOT appear in the leaderboard!
+      const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
       if (lvl < 1) return;
 
       const stars = Number(p.stars || 0);
@@ -4204,7 +4240,7 @@ async function initColorSortApp() {
           maxLevel: lvl,
           level: lvl,
           stars: stars,
-          updatedAt: pUpdated
+          updatedAt: p.updatedAt || Date.now()
         });
       }
     });
@@ -4241,12 +4277,15 @@ async function initColorSortApp() {
           ? `${escapeHtml(player.firstName || 'Игрок')} <span class="self-tag">${t('youTag')}</span>` 
           : escapeHtml(player.firstName || 'Игрок');
         const levelDisplayVal = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
+        const rawUsername = player.username || '';
+        const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
 
         li.innerHTML = `
           <div class="player-meta">
             <span class="rank-num">${crown}</span>
             <div class="player-info-cell">
               <strong>${nameDisplay}</strong>
+              ${cleanUsername ? `<small class="player-handle" style="font-size: 0.72rem; color: #94a3b8; display: block;">@${escapeHtml(cleanUsername)}</small>` : ''}
             </div>
           </div>
           <span class="user-rank">${t('levelPrefix')} ${levelDisplayVal}</span>

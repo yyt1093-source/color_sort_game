@@ -43,6 +43,12 @@
       } catch (e) {}
     })();
   </script>
+  <script>
+    /* Server API endpoint for GitHub Pages */
+    if (!window.COLOR_SORT_API_URL && (window.location.hostname.includes('github.io') || window.location.protocol === 'file:')) {
+      window.COLOR_SORT_API_URL = 'https://colorsortgame.vercel.app';
+    }
+  </script>
   
   <!-- Preload critical game assets for instant boot -->
   <link rel="preload" href="referral_art_clean.jpg?v=48986" as="image">
