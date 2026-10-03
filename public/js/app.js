@@ -9040,6 +9040,14 @@ async function initColorSortApp() {
   // ============================================================
   const DEFAULT_CODE_CHECKPOINTS = [
     {
+      id: 'colorsort_checkpoint_20261003_171000',
+      createdAtTimestamp: 1791036600000,
+      kyivFormattedDate: '03.10.2026, 17:10:00 (Киев)',
+      title: 'Версия v1.0.8 — Восстановление модалок лидерборда и рекламы, уровень игроков в подарках (без кнопки)',
+      note: 'Метка Git: v1.0.8-leaderboard-ad-modals-gifts-level-badge. Устранена вложенность модальных окон в public/index.html — кнопки Лидерборда и Рекламы открываются мгновенно и безотказно. В списке получателей подарков убрана кнопка «Выбрать» / «Отправить», а текущий уровень игрока из лидерборда аккуратно отображается в правом углу каждой строки с кликабельным выбором карточки. Полная приватность юзернеймов и анонимность подарков для игроков сохранена. Все тесты пройдены.',
+      tag: 'v1.0.8-leaderboard-ad-modals-gifts-level-badge'
+    },
+    {
       id: 'colorsort_checkpoint_20261003_162500',
       createdAtTimestamp: 1791033900000,
       kyivFormattedDate: '03.10.2026, 16:25:00 (Киев)',
@@ -9315,9 +9323,9 @@ async function initColorSortApp() {
     }
   }
 
-  const DEFAULT_SAVE_VERSION_TITLE = 'Версия v1.0.7 — Анонимные подарки и приватность игроков (Киев)';
-  const DEFAULT_SAVE_VERSION_TAG = 'v1.0.7-anonymous-gifts-admin-usernames';
-  const DEFAULT_SAVE_VERSION_NOTE = 'Метка Git: v1.0.7-anonymous-gifts-admin-usernames. Лидерборд полностью восстановлен на GitHub Pages и Vercel. Юзернеймы (@username) и Telegram ID скрыты у всех обычных игроков и доступны строго администратору (Alligator / Romanchik / ?admin=true). Получение подарков сделано 100% анонимным («Вам прислан полезный подарок!» без раскрытия отправителя). Полные данные аудита отправителей сохранены в базе для администратора.';
+  const DEFAULT_SAVE_VERSION_TITLE = 'Версия v1.0.8 — Восстановление модалок лидерборда и рекламы, уровень игроков в подарках (Киев)';
+  const DEFAULT_SAVE_VERSION_TAG = 'v1.0.8-leaderboard-ad-modals-gifts-level-badge';
+  const DEFAULT_SAVE_VERSION_NOTE = 'Метка Git: v1.0.8-leaderboard-ad-modals-gifts-level-badge. Устранена вложенность модальных окон в public/index.html — кнопки Лидерборда и Рекламы открываются мгновенно и безотказно. В списке получателей подарков убрана кнопка «Выбрать» / «Отправить», а текущий уровень игрока из лидерборда аккуратно отображается в правом углу каждой строки с кликабельным выбором карточки. Полная приватность юзернеймов и анонимность подарков для игроков сохранена. Все тесты пройдены.';
 
   if (adminSaveCurrentVersionBtn) {
     adminSaveCurrentVersionBtn.addEventListener('click', (e) => {
