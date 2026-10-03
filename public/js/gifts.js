@@ -693,10 +693,9 @@
             <strong class="gift-player-name" style="font-size: 0.9rem; font-weight: 700; color: #f8fafc;">${escapeHtml(name)}</strong>
             ${usernameDisplay ? `<small class="player-handle" style="font-size: 0.75rem; color: #38bdf8; font-weight: 600; display: block;">${escapeHtml(usernameDisplay)}</small>` : ''}
           </div>
-          <span class="gift-player-lvl" style="font-size: 0.75rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 6px; margin-left: 6px;">${t('levelPrefix') || 'Ур.'} ${lvl}</span>
         </div>
-        <div style="display: flex; align-items: center;">
-          <button type="button" class="gift-player-select-btn">${escapeHtml(t('giftsSelectPlayerBtn'))}</button>
+        <div class="gift-player-right" style="display: flex; align-items: center;">
+          <span class="gift-player-lvl" style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.25); padding: 3px 8px; border-radius: 8px; white-space: nowrap;">${t('levelPrefix') || 'Ур.'} ${lvl}</span>
         </div>
       `;
 
