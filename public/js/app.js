@@ -3124,11 +3124,11 @@ async function initColorSortApp() {
 
         const cloudForceTs = Number(existingCloud ? (existingCloud.forceResetAt || existingCloud.accountResetAt || 0) : 0);
         const localForceTs = Number(localStorage.getItem(`color_sort_force_reset_${id}`) || user.forceResetAt || user.accountResetAt || 0);
-        const isForceResetActive = cloudForceTs > 0 && cloudForceTs >= localForceTs;
+        const isForceResetActive = cloudForceTs > 0 && cloudForceTs > localForceTs;
 
         const cloudRestoreTs = Number(existingCloud ? (existingCloud.snapshotRestoredAt || 0) : 0);
         const localRestoreTs = Number(localStorage.getItem(`color_sort_restored_at_${id}`) || user.lastSnapshotRestoredAt || 0);
-        const isRestoreActive = cloudRestoreTs > 0 && cloudRestoreTs >= localRestoreTs;
+        const isRestoreActive = cloudRestoreTs > 0 && cloudRestoreTs > localRestoreTs;
 
         // Never allow a lower maxLevel to overwrite a higher maxLevel from the cloud unless force reset or snapshot rollback
         if (existingCloud && !window.__seasonResetKicking) {
@@ -3189,6 +3189,9 @@ async function initColorSortApp() {
             if (maxLvl > 0 && curLvl < maxLvl) {
               curLvl = maxLvl;
               user.currentLevel = curLvl;
+            }
+            if (maxLvl > 0) {
+              localStorage.setItem(`color_sort_db_level_${id}`, String(maxLvl));
             }
           }
         }
@@ -3350,6 +3353,10 @@ async function initColorSortApp() {
     currentUser.updatedAt = Date.now();
     normalizeUserObject(currentUser);
     localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
+    if (Number(currentUser.maxLevel || 0) > 0) {
+      localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(currentUser.maxLevel));
+      localStorage.setItem('cs_cached_display_level', String(currentUser.maxLevel));
+    }
     if (Number(currentUser.daily_boosters_days_left || 0) > 0) {
       localStorage.setItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`, String(currentUser.daily_boosters_days_left));
       localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, String(currentUser.daily_boosters_last_date || ''));
@@ -3773,8 +3780,10 @@ async function initColorSortApp() {
 
           // Authoritative Cloud Sync: Single unified database across all devices and rollbacks
           const cloudRestoreTs = Number(cloudData.snapshotRestoredAt || 0);
+          const localRestoreTs = Number(localStorage.getItem(`color_sort_restored_at_${myIdStr}`) || currentUser.lastSnapshotRestoredAt || 0);
+          const isNewSnapshotRestore = cloudRestoreTs > 0 && cloudRestoreTs > localRestoreTs;
 
-          if (cloudRestoreTs > 0) {
+          if (isNewSnapshotRestore) {
             currentUser.maxLevel = cloudMax;
             currentUser.level = cloudMax;
             currentUser.currentLevel = cloudCur > 0 ? cloudCur : (cloudMax > 0 ? cloudMax : 1);
@@ -3784,12 +3793,28 @@ async function initColorSortApp() {
             currentUser.lastSnapshotRestoredAt = cloudRestoreTs;
             changed = true;
           } else if (cloudMax > 0) {
-            currentUser.maxLevel = cloudMax;
-            currentUser.level = cloudMax;
-            currentUser.currentLevel = cloudCur > 0 ? cloudCur : cloudMax;
-            currentUser.stars = cloudStars;
-            localStorage.setItem(`color_sort_db_level_${myIdStr}`, String(cloudMax));
-            changed = true;
+            if (cloudMax > Number(currentUser.maxLevel || 0)) {
+              currentUser.maxLevel = cloudMax;
+              currentUser.level = cloudMax;
+              changed = true;
+            }
+            if (cloudCur > Number(currentUser.currentLevel || 1)) {
+              currentUser.currentLevel = cloudCur;
+              changed = true;
+            }
+            if (cloudStars > Number(currentUser.stars || 0)) {
+              currentUser.stars = cloudStars;
+              changed = true;
+            }
+            if (currentUser.maxLevel > 0 && currentUser.currentLevel < currentUser.maxLevel) {
+              currentUser.currentLevel = currentUser.maxLevel;
+              changed = true;
+            }
+            localStorage.setItem(`color_sort_db_level_${myIdStr}`, String(currentUser.maxLevel));
+            if (cloudRestoreTs > 0) {
+              localStorage.setItem(`color_sort_restored_at_${myIdStr}`, String(cloudRestoreTs));
+              currentUser.lastSnapshotRestoredAt = cloudRestoreTs;
+            }
           }
           if (cloudSeason > 0 && cloudSeason > Number(currentUser.seasonResetAt || 0)) {
             currentUser.seasonResetAt = cloudSeason;
@@ -4051,7 +4076,9 @@ async function initColorSortApp() {
       if (serverUser.user.max_level !== undefined) {
         const srvMax = Number(serverUser.user.max_level || 0);
         const srvRestore = Number(serverUser.user.snapshotRestoredAt || serverUser.restoredAt || 0);
-        if (srvRestore > 0) {
+        const localRestore = Number(localStorage.getItem(`color_sort_restored_at_${currentUser.telegramId}`) || currentUser.lastSnapshotRestoredAt || 0);
+        const isNewSrvRestore = srvRestore > 0 && srvRestore > localRestore;
+        if (isNewSrvRestore) {
           currentUser.maxLevel = srvMax;
           currentUser.level = srvMax;
           currentUser.lastSnapshotRestoredAt = srvRestore;
@@ -4061,7 +4088,7 @@ async function initColorSortApp() {
             currentUser.currentLevel = 1;
             currentUser.stars = 0;
           }
-        } else if (srvMax > 0) {
+        } else if (srvMax > Number(currentUser.maxLevel || 0)) {
           currentUser.maxLevel = srvMax;
           currentUser.level = srvMax;
           localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(srvMax));
@@ -4924,7 +4951,7 @@ async function initColorSortApp() {
       if (selfIndex !== -1) {
         // Player exists in central database: adopt their exact database level in profile and memory!
         const dbLvl = Number(players[selfIndex].maxLevel !== undefined ? players[selfIndex].maxLevel : (players[selfIndex].level || 0));
-        if (dbLvl !== currentUser.maxLevel) {
+        if (dbLvl > Number(currentUser.maxLevel || 0)) {
           currentUser.maxLevel = dbLvl;
           currentUser.level = dbLvl;
           currentUser.currentLevel = dbLvl > 0 ? dbLvl : 1;
@@ -4932,6 +4959,10 @@ async function initColorSortApp() {
           localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(dbLvl));
           saveLocalUser();
           updateHeaderUI();
+        } else if (Number(currentUser.maxLevel || 0) > dbLvl) {
+          players[selfIndex].maxLevel = currentUser.maxLevel;
+          players[selfIndex].level = currentUser.maxLevel;
+          syncPlayerToCloud(currentUser);
         }
       } else {
         // Player is NOT in the central database snapshot: do NOT add to leaderboard, sync local level to 0
@@ -5047,7 +5078,7 @@ async function initColorSortApp() {
       if (userRank) userRank.textContent = `#${myRankNum}`;
 
       // Single source of truth: Profile level MUST match leaderboard level!
-      if (playerLvl > 0 && playerLvl !== currentUser.maxLevel) {
+      if (playerLvl > Number(currentUser.maxLevel || 0)) {
         currentUser.maxLevel = playerLvl;
         currentUser.level = playerLvl;
         currentUser.currentLevel = playerLvl;
@@ -5058,6 +5089,11 @@ async function initColorSortApp() {
         if (!currentLevelData || currentLevelData.levelNumber !== currentUser.currentLevel) {
           loadCurrentLevel();
         }
+      } else if (Number(currentUser.maxLevel || 0) > playerLvl) {
+        sortedPlayers[myRankIdx].maxLevel = currentUser.maxLevel;
+        sortedPlayers[myRankIdx].level = currentUser.maxLevel;
+        if (modalUserLevel) modalUserLevel.textContent = t('levelDisplayVal', currentUser.maxLevel);
+        syncPlayerToCloud(currentUser);
       }
     } else if (isRealUser) {
       if (modalUserPos) modalUserPos.textContent = '#—';

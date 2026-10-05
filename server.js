@@ -179,14 +179,17 @@ app.post('/api/user/init', async (req, res) => {
             } else {
               const kvRestore = Number(kvData.snapshotRestoredAt || 0);
               const kvMaxLvl = kvData.max_level !== undefined ? kvData.max_level : kvData.maxLevel;
-              if (kvRestore > 0) {
+              const kvUpdated = Number(kvData.updatedAt || 0);
+              const isRestoredSnapshotState = kvRestore > 0 && kvUpdated <= kvRestore;
+              if (isRestoredSnapshotState) {
                 user.max_level = Number(kvMaxLvl || 0);
                 user.snapshotRestoredAt = kvRestore;
               } else if (kvMaxLvl !== undefined) {
                 user.max_level = Math.max(Number(user.max_level || 0), Number(kvMaxLvl || 0));
+                if (kvRestore > 0) user.snapshotRestoredAt = kvRestore;
               }
               const kvCurLvl = kvData.current_level !== undefined ? kvData.current_level : kvData.currentLevel;
-              if (kvRestore > 0) {
+              if (isRestoredSnapshotState) {
                 user.current_level = Number(kvCurLvl || (user.max_level > 0 ? user.max_level : 1));
               } else if (kvCurLvl !== undefined) {
                 user.current_level = Math.max(Number(user.current_level || 1), Number(kvCurLvl || 1));
@@ -195,7 +198,7 @@ app.post('/api/user/init', async (req, res) => {
                 user.current_level = user.max_level;
               }
               if (kvData.stars !== undefined) {
-                user.stars = kvRestore > 0 ? Number(kvData.stars || 0) : Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
+                user.stars = isRestoredSnapshotState ? Number(kvData.stars || 0) : Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
               }
               user.hints = Math.max(Number(user.hints || 0), Number(kvData.hints || 0));
               user.undos = Math.max(Number(user.undos || 0), Number(kvData.undos || 0));
