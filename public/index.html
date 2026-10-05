@@ -899,6 +899,23 @@
               <span class="admin-boost-icon">⚡</span>
               <span id="adminAddAllLabel">Пополнить ВСЁ сразу (+10 ко всем бонусам)</span>
             </button>
+
+            <!-- Section: Set Exact Level (Admin Only) -->
+            <div style="margin-top: 10px; padding: 12px; background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.25); border-radius: 12px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: #facc15; margin-bottom: 8px;">
+                <span>🎯</span> <span id="adminSetExactLevelTitle">Установить точный уровень (1-500)</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; gap: 8px;">
+                  <input type="number" id="adminExactLevelInput" min="1" max="500" placeholder="Уровень (1-500)" style="flex: 1; min-width: 0; padding: 10px 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 14px; font-weight: 700; outline: none;">
+                  <button type="button" id="adminSetExactLevelBtn" style="padding: 10px 16px; background: linear-gradient(135deg, #eab308, #ca8a04); border: none; border-radius: 8px; color: #000; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgba(234,179,8,0.25);">
+                    <span id="adminSetExactLevelBtnLabel">Установить</span>
+                  </button>
+                </div>
+                <input type="text" id="adminExactLevelUserId" placeholder="Telegram ID игрока (пусто = себе)" style="width: 100%; box-sizing: border-box; padding: 8px 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #94a3b8; font-size: 12px; outline: none;">
+              </div>
+            </div>
+
             <div id="adminFeedbackMsg" class="admin-feedback-msg hidden"></div>
           </div>
 

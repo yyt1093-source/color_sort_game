@@ -271,6 +271,9 @@ async function initColorSortApp() {
       adminRevealsAddedMsg: (count) => `🔮 +5 Открытий добавлено (Всего: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON добавлено (Баланс: ${Number(count || 0).toFixed(2)} TON)`,
       adminLevelsAddedMsg: (lvl) => `🏆 +5 Уровней добавлено! (Текущий уровень: ${lvl})`,
+      adminSetExactLevelTitle: "🎯 Установить точный уровень (1-500)",
+      adminSetExactLevelBtnLabel: "Установить",
+      adminExactLevelSuccessMsg: (lvl) => `🎯 Уровень ${lvl} успешно установлен!`,
       adminAllAddedMsg: "⚡ Все бонусы пополнены (+10 к каждому)!",
       adminResetPurchasesTitle: "💎 Управление покупками за TON (Только Admin)",
       adminResetPurchasesDesc: "Аннулировать действующие покупки преимуществ за TON (например, «Все краски открыты») без списания баланса с кошельков игроков.",
@@ -658,6 +661,9 @@ async function initColorSortApp() {
       adminRevealsAddedMsg: (count) => `🔮 +5 Відкриттів додано (Всього: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON додано (Баланс: ${Number(count || 0).toFixed(2)} TON)`,
       adminLevelsAddedMsg: (lvl) => `🏆 +5 Рівнів додано! (Поточний рівень: ${lvl})`,
+      adminSetExactLevelTitle: "🎯 Встановити точний рівень (1-500)",
+      adminSetExactLevelBtnLabel: "Встановити",
+      adminExactLevelSuccessMsg: (lvl) => `🎯 Рівень ${lvl} успішно встановлено!`,
       adminAllAddedMsg: "⚡ Всі бонуси поповнено (+10 до кожного)!",
       adminResetPurchasesTitle: "💎 Управління покупками за TON (Тільки Admin)",
       adminResetPurchasesDesc: "Анулювати діючі покупки переваг за TON без списання балансу з гаманців гравців.",
@@ -1021,6 +1027,9 @@ async function initColorSortApp() {
       adminRevealsAddedMsg: (count) => `🔮 +5 Reveals added (Total: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON added (Balance: ${Number(count || 0).toFixed(2)} TON)`,
       adminLevelsAddedMsg: (lvl) => `🏆 +5 Levels added! (Current level: ${lvl})`,
+      adminSetExactLevelTitle: "🎯 Set Exact Level (1-500)",
+      adminSetExactLevelBtnLabel: "Set Level",
+      adminExactLevelSuccessMsg: (lvl) => `🎯 Level ${lvl} successfully set!`,
       adminAllAddedMsg: "⚡ All boosters replenished (+10 to each)!",
       adminResetPurchasesTitle: "💎 Manage TON Purchases (Admin Only)",
       adminResetPurchasesDesc: "Annul active TON perks (e.g. All Colors Unlocked) without touching player wallet balances.",
@@ -1384,6 +1393,9 @@ async function initColorSortApp() {
       adminRevealsAddedMsg: (count) => `🔮 +5 Aufdeckungen hinzugefügt (Gesamt: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON hinzugefügt (Guthaben: ${Number(count || 0).toFixed(2)} TON)`,
       adminLevelsAddedMsg: (lvl) => `🏆 +5 Stufen hinzugefügt! (Aktuelle Stufe: ${lvl})`,
+      adminSetExactLevelTitle: "🎯 Genaue Stufe festlegen (1-500)",
+      adminSetExactLevelBtnLabel: "Einstellen",
+      adminExactLevelSuccessMsg: (lvl) => `🎯 Stufe ${lvl} erfolgreich festgelegt!`,
       adminAllAddedMsg: "⚡ Alle Boni aufgefüllt (+10 auf alle)!",
       adminResetPurchasesTitle: "💎 TON-Käufe verwalten (Nur Admin)",
       adminResetPurchasesDesc: "Aktive TON-Vorteile annullieren, ohne das Wallet-Guthaben der Spieler zu berühren.",
@@ -1747,6 +1759,9 @@ async function initColorSortApp() {
       adminRevealsAddedMsg: (count) => `🔮 +5 Atskleidimai pridėti (Iš viso: ${count})`,
       adminCoinsAddedMsg: (count) => `💎 +5 TON pridėta (Likutis: ${Number(count || 0).toFixed(2)} TON)`,
       adminLevelsAddedMsg: (lvl) => `🏆 +5 Lygiai pridėti! (Dabartinis lygis: ${lvl})`,
+      adminSetExactLevelTitle: "🎯 Nustatyti tikslų lygį (1-500)",
+      adminSetExactLevelBtnLabel: "Nustatyti",
+      adminExactLevelSuccessMsg: (lvl) => `🎯 Lygis ${lvl} sėkmingai nustatytas!`,
       adminAllAddedMsg: "⚡ Visi bonusai papildyti (+10 kiekvienam)!",
       adminResetPurchasesTitle: "💎 Valdyti TON pirkimus (Tik Admin)",
       adminResetPurchasesDesc: "Anuliuoti aktyvius TON pirkimus nepalietus žaidėjų piniginės balanso.",
@@ -2193,6 +2208,11 @@ async function initColorSortApp() {
   const adminAddLevelsLabel = document.getElementById('adminAddLevelsLabel');
   const adminAddAllBtn = document.getElementById('adminAddAllBtn');
   const adminAddAllLabel = document.getElementById('adminAddAllLabel');
+  const adminSetExactLevelTitle = document.getElementById('adminSetExactLevelTitle');
+  const adminSetExactLevelBtn = document.getElementById('adminSetExactLevelBtn');
+  const adminSetExactLevelBtnLabel = document.getElementById('adminSetExactLevelBtnLabel');
+  const adminExactLevelInput = document.getElementById('adminExactLevelInput');
+  const adminExactLevelUserId = document.getElementById('adminExactLevelUserId');
   const adminFeedbackMsg = document.getElementById('adminFeedbackMsg');
   const adminResetSelfPurchasesBtn = document.getElementById('adminResetSelfPurchasesBtn');
 
@@ -2448,6 +2468,8 @@ async function initColorSortApp() {
     if (adminAddLevelsLabel) adminAddLevelsLabel.textContent = t('adminAddLevels');
     const adminAddAllLabel = document.getElementById('adminAddAllLabel');
     if (adminAddAllLabel) adminAddAllLabel.textContent = t('adminAddAll');
+    if (adminSetExactLevelTitle) adminSetExactLevelTitle.textContent = t('adminSetExactLevelTitle');
+    if (adminSetExactLevelBtnLabel) adminSetExactLevelBtnLabel.textContent = t('adminSetExactLevelBtnLabel');
     const adminPurchasesHeader = document.getElementById('adminPurchasesHeader');
     if (adminPurchasesHeader) adminPurchasesHeader.textContent = t('adminPurchasesHeader');
     const adminResetPurchasesDesc = document.getElementById('adminResetPurchasesDesc');
@@ -2956,6 +2978,13 @@ async function initColorSortApp() {
     user.dailyBoostersDaysLeft = user.daily_boosters_days_left;
     user.daily_boosters_last_date = String(user.daily_boosters_last_date || user.dailyBoostersLastDate || '').trim();
     user.daily_boosters_purchased_at = Number(user.daily_boosters_purchased_at || user.dailyBoostersPurchasedAt || 0);
+    if (user.maxLevel !== undefined && Number(user.maxLevel) > 0) {
+      user.currentLevel = Math.max(Number(user.currentLevel || 1), Number(user.maxLevel));
+      user.level = Math.max(Number(user.level || 0), Number(user.maxLevel));
+    } else if (user.currentLevel !== undefined && Number(user.currentLevel) > 1) {
+      user.maxLevel = Math.max(Number(user.maxLevel || 0), Number(user.currentLevel));
+      user.level = user.maxLevel;
+    }
     return user;
   }
 
@@ -3072,6 +3101,10 @@ async function initColorSortApp() {
               stars = exCloudStars;
               user.stars = stars;
             }
+            if (maxLvl > 0 && curLvl < maxLvl) {
+              curLvl = maxLvl;
+              user.currentLevel = curLvl;
+            }
           }
         }
 
@@ -3104,8 +3137,10 @@ async function initColorSortApp() {
           username: user.username || '',
           photoUrl: user.photoUrl || '',
           maxLevel: maxLvl,
+          max_level: maxLvl,
           level: maxLvl,
           currentLevel: curLvl,
+          current_level: curLvl,
           stars: stars,
           hints: finalHints,
           undos: finalUndos,
@@ -3233,6 +3268,10 @@ async function initColorSortApp() {
       try {
         const parsed = JSON.parse(data);
         currentUser = { ...currentUser, ...parsed };
+        if (currentUser.maxLevel > 0) {
+          currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));
+          currentUser.level = currentUser.maxLevel;
+        }
         currentUser._localLoaded = true;
       } catch (e) {}
     }
@@ -3572,8 +3611,8 @@ async function initColorSortApp() {
             changed = true;
           }
 
-          const cloudMax = Number(cloudData.maxLevel !== undefined ? cloudData.maxLevel : (cloudData.level !== undefined ? cloudData.level : 0));
-          const cloudCur = Number(cloudData.currentLevel || (cloudMax > 0 ? cloudMax + 1 : 1));
+          const cloudMax = Number(cloudData.maxLevel !== undefined ? cloudData.maxLevel : (cloudData.level !== undefined ? cloudData.level : (cloudData.max_level || 0)));
+          const cloudCur = Number(cloudData.currentLevel || cloudData.current_level || (cloudMax > 0 ? cloudMax : 1));
           const cloudStars = Number(cloudData.stars || 0);
 
           if (cloudMax > (currentUser.maxLevel || 0)) {
@@ -3583,6 +3622,10 @@ async function initColorSortApp() {
           }
           if (cloudCur > (currentUser.currentLevel || 1)) {
             currentUser.currentLevel = cloudCur;
+            changed = true;
+          }
+          if (currentUser.maxLevel > 0 && (currentUser.currentLevel || 1) < currentUser.maxLevel) {
+            currentUser.currentLevel = currentUser.maxLevel;
             changed = true;
           }
           if (cloudStars > (currentUser.stars || 0)) {
@@ -3601,6 +3644,9 @@ async function initColorSortApp() {
             updateHeaderUI();
             if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
             if (typeof updateShopUI === 'function') updateShopUI();
+            if (!currentLevelData || currentLevelData.levelNumber !== currentUser.currentLevel) {
+              loadCurrentLevel();
+            }
           }
         }
       }).catch(() => {});
@@ -3697,7 +3743,8 @@ async function initColorSortApp() {
     
     // Simple victory progression: advance level without coins, stars, or experience
     currentUser.currentLevel = levelNumber + 1;
-    currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, levelNumber);
+    currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, currentUser.currentLevel);
+    currentUser.level = currentUser.maxLevel;
     currentUser.seasonResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
     
     saveLocalUser();
@@ -3731,9 +3778,18 @@ async function initColorSortApp() {
 
   async function loadCurrentLevel() {
     if (typeof checkServerStatus === 'function') checkServerStatus(false);
-    if (levelDisplay) levelDisplay.textContent = Number(currentUser.maxLevel || 0);
+    
+    // Always guarantee currentLevel and maxLevel match so bottle count strictly corresponds to level
+    const targetLvl = Math.max(1, Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel || 1));
+    currentUser.currentLevel = targetLvl;
+    if (Number(currentUser.maxLevel || 0) < targetLvl) {
+      currentUser.maxLevel = targetLvl;
+      currentUser.level = targetLvl;
+    }
+
+    if (levelDisplay) levelDisplay.textContent = Number(currentUser.maxLevel || targetLvl);
     if (LG && LG.generateLevel) {
-      currentLevelData = LG.generateLevel(currentUser.currentLevel);
+      currentLevelData = LG.generateLevel(targetLvl);
       engine.startLevel(currentLevelData);
 
       // Explicitly render board to guarantee DOM is populated immediately
@@ -3838,6 +3894,9 @@ async function initColorSortApp() {
         currentUser.maxLevel = Math.max(Number(currentUser.maxLevel || 0), Number(serverUser.user.max_level || 0));
         currentUser.level = Math.max(Number(currentUser.level || 0), currentUser.maxLevel);
       }
+      if (currentUser.maxLevel > 0 && currentUser.currentLevel < currentUser.maxLevel) {
+        currentUser.currentLevel = currentUser.maxLevel;
+      }
       if (serverUser.user.stars !== undefined) {
         currentUser.stars = Math.max(Number(currentUser.stars || 0), Number(serverUser.user.stars || 0));
       }
@@ -3847,7 +3906,7 @@ async function initColorSortApp() {
       saveLocalUser();
       updateHeaderUI();
       checkAndApplyClientDailyBoosters();
-      if (currentUser.currentLevel !== oldLevel) {
+      if (!currentLevelData || currentLevelData.levelNumber !== currentUser.currentLevel || currentUser.currentLevel !== oldLevel) {
         loadCurrentLevel();
       }
     }
@@ -6960,8 +7019,10 @@ async function initColorSortApp() {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
       const added = 5;
-      currentUser.currentLevel = (currentUser.currentLevel || 1) + added;
-      currentUser.maxLevel = (currentUser.maxLevel || 0) + added;
+      const targetLvl = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel || 0)) + added;
+      currentUser.currentLevel = targetLvl;
+      currentUser.maxLevel = targetLvl;
+      currentUser.level = targetLvl;
       normalizeUserObject(currentUser);
       saveLocalUser();
       updateHeaderUI();
@@ -6975,12 +7036,16 @@ async function initColorSortApp() {
         levels: added
       }).then(res => {
         if (res && res.success && res.user) {
-          if (res.user.current_level !== undefined) {
-            currentUser.currentLevel = Math.max(currentUser.currentLevel || 1, Number(res.user.current_level));
-            currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, Number(res.user.max_level || 0));
+          if (res.user.current_level !== undefined || res.user.max_level !== undefined) {
+            currentUser.currentLevel = Math.max(currentUser.currentLevel || 1, Number(res.user.current_level || 1), Number(res.user.max_level || 1));
+            currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, currentUser.currentLevel);
+            currentUser.level = currentUser.maxLevel;
             normalizeUserObject(currentUser);
             saveLocalUser();
             updateHeaderUI();
+            if (!currentLevelData || currentLevelData.levelNumber !== currentUser.currentLevel) {
+              loadCurrentLevel();
+            }
           }
         }
       }).catch(() => {});
@@ -7035,6 +7100,63 @@ async function initColorSortApp() {
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
       showAdminFeedback(t('adminAllAddedMsg'));
+    });
+  }
+
+  // Admin Set Exact Level Handler
+  if (adminSetExactLevelBtn) {
+    adminSetExactLevelBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+
+      const rawVal = adminExactLevelInput ? adminExactLevelInput.value : '';
+      const targetLvl = parseInt(rawVal, 10);
+      if (isNaN(targetLvl) || targetLvl < 1 || targetLvl > 500) {
+        showAdminFeedback('⚠️ Введите корректный уровень от 1 до 500');
+        return;
+      }
+
+      const targetUserId = (adminExactLevelUserId && adminExactLevelUserId.value) ? adminExactLevelUserId.value.trim() : '';
+      const isForSelf = !targetUserId || targetUserId === String(currentUser.telegramId);
+
+      if (isForSelf) {
+        currentUser.currentLevel = targetLvl;
+        currentUser.maxLevel = targetLvl;
+        currentUser.level = targetLvl;
+        normalizeUserObject(currentUser);
+        saveLocalUser();
+        updateHeaderUI();
+        syncPlayerToCloud(currentUser);
+        loadCurrentLevel();
+
+        apiCall('/api/admin/set-level', 'POST', {
+          telegramId: currentUser.telegramId,
+          targetTelegramId: currentUser.telegramId,
+          isAdmin: true,
+          level: targetLvl
+        }).catch(() => {});
+
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+        showAdminFeedback(typeof t('adminExactLevelSuccessMsg') === 'function' ? t('adminExactLevelSuccessMsg')(targetLvl) : `🎯 Уровень ${targetLvl} установлен!`);
+      } else {
+        // Set exact level for another player
+        apiCall('/api/admin/set-level', 'POST', {
+          telegramId: currentUser.telegramId,
+          targetTelegramId: targetUserId,
+          isAdmin: true,
+          level: targetLvl
+        }).then(res => {
+          if (res && res.success) {
+            showAdminFeedback(`🎯 Игроку ${targetUserId} установлен уровень ${targetLvl}!`);
+          } else {
+            showAdminFeedback(`❌ Ошибка: ${res ? res.error : 'Не удалось установить'}`);
+          }
+        }).catch(err => {
+          showAdminFeedback(`❌ Ошибка сети: ${err.message}`);
+        });
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      }
     });
   }
 
