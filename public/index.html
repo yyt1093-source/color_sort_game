@@ -195,6 +195,40 @@
   </style>
 </head>
 <body>
+  <!-- Maintenance Mode Fullscreen Modal (Only Alligator and Maria allowed) -->
+  <div id="maintenanceScreen" class="maintenance-screen" style="display:none;">
+    <div class="maintenance-card">
+      <div class="maintenance-icon-wrap">
+        <span class="maintenance-icon-main">⚙️</span>
+      </div>
+      <div class="maintenance-badge">
+        <span class="maintenance-status-dot"></span>
+        <span>Технический перерыв</span>
+      </div>
+      <h1 class="maintenance-title">Идут технические работы</h1>
+      <p class="maintenance-text">
+        В настоящее время в игре проводятся плановые технические работы. Доступ временно ограничен.
+      </p>
+      <div class="maintenance-info-box">
+        <div class="maintenance-info-item">
+          <span>🛠️</span>
+          <span>Статус: <strong>Идут технические работы</strong></span>
+        </div>
+        <div class="maintenance-info-item">
+          <span>🔒</span>
+          <span>Доступ: <strong>Временно ограничен</strong></span>
+        </div>
+        <div class="maintenance-info-item">
+          <span>⏳</span>
+          <span>Ожидание: <strong>Пожалуйста, зайдите позже</strong></span>
+        </div>
+      </div>
+      <p class="maintenance-footer-hint">
+        Мы скоро вернемся! Приносим извинения за временные неудобства.
+      </p>
+    </div>
+  </div>
+
   <!-- Fullscreen Start Splash Screen -->
   <div id="startScreen" class="start-screen" style="cursor:pointer;" title="START">
     <div class="start-screen-bg">
@@ -224,13 +258,18 @@
       var badge = document.getElementById('splashPlayerBadge');
       var nameEl = document.getElementById('splashPlayerName');
       var lvlEl = document.getElementById('splashPlayerLevel');
+      var maintScr = document.getElementById('maintenanceScreen');
+
+      // Maintenance whitelist: Only Alligator (5761685341) and Maria (7116446051)
+      var ALLOWED_IDS = ['5761685341', '7116446051'];
+      var ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
       // Instant pre-population of badge from localStorage on frame 0
       try {
         var rawInit = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || 
                       (window.location.hash ? window.location.hash.replace(/^#/, '') : '') || 
                       (window.location.search ? window.location.search.replace(/^\?/, '') : '');
-        var myTid = null, myName = null;
+        var myTid = null, myName = null, myUsername = null;
         if (rawInit) {
           var p = new URLSearchParams(rawInit);
           var tgData = p.get('tgWebAppData') || rawInit;
@@ -241,13 +280,41 @@
             if (parsedU && parsedU.id) {
               myTid = String(parsedU.id);
               myName = parsedU.first_name;
+              myUsername = parsedU.username;
             }
+          }
+          if (!myTid) {
+            var directId = p.get('telegramId') || p.get('id') || innerP.get('telegramId') || innerP.get('id');
+            if (directId) myTid = String(directId);
           }
         }
         if (!myTid) {
           myTid = localStorage.getItem('cs_last_telegram_id');
           myName = localStorage.getItem('cs_last_first_name');
+          myUsername = localStorage.getItem('cs_last_username');
         }
+
+        var isAccessAllowed = false;
+        if (myTid && ALLOWED_IDS.indexOf(String(myTid)) !== -1) {
+          isAccessAllowed = true;
+        } else if (myUsername && ALLOWED_USERNAMES.indexOf(String(myUsername).toLowerCase().replace(/^@/, '')) !== -1) {
+          isAccessAllowed = true;
+        }
+
+        window.__isMaintenanceAllowed = isAccessAllowed;
+
+        if (!isAccessAllowed) {
+          window.__maintenanceBlocked = true;
+          if (maintScr) maintScr.style.display = 'flex';
+          if (scr) scr.style.display = 'none';
+          var appCont = document.getElementById('appContainer');
+          if (appCont) appCont.style.display = 'none';
+          return;
+        } else {
+          window.__maintenanceBlocked = false;
+          if (maintScr) maintScr.style.display = 'none';
+        }
+
         var lvl = null;
         if (myTid) {
           var userRaw = localStorage.getItem('color_sort_user_' + myTid);
@@ -269,6 +336,7 @@
       window.__userWantsStart = false;
 
       var dismiss = function(e) {
+        if (window.__maintenanceBlocked) return;
         if (e && e.cancelable) {
           e.preventDefault();
           e.stopPropagation();
@@ -301,6 +369,7 @@
       window.dismissStartScreen = dismiss;
 
       window.__unlockStartScreen = function(userLevel, userName) {
+        if (window.__maintenanceBlocked) return;
         window.__startSyncReady = true;
         if (btn) {
           btn.disabled = false;

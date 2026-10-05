@@ -1782,6 +1782,152 @@ body {
 }
 
 /* ============================================================
+   🚧 Maintenance Mode Screen Styles
+   ============================================================ */
+.maintenance-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999999;
+  background: radial-gradient(circle at 50% 25%, #1e1b4b 0%, #090a16 60%, #030408 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  color: #fff;
+  user-select: none;
+  -webkit-user-select: none;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.maintenance-card {
+  max-width: 380px;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85), 0 0 35px rgba(245, 158, 11, 0.2);
+  border-radius: 24px;
+  padding: 34px 24px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: maintenancePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes maintenancePop {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.maintenance-icon-wrap {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(239, 68, 68, 0.2));
+  border: 2px solid rgba(245, 158, 11, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.4);
+}
+
+.maintenance-icon-main {
+  font-size: 2.8rem;
+  animation: maintenanceSpin 8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes maintenanceSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.maintenance-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #fbbf24;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+}
+
+.maintenance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 16px;
+}
+
+.maintenance-text {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+  margin: 0 0 20px 0;
+}
+
+.maintenance-info-box {
+  width: 100%;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.maintenance-info-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.maintenance-info-item strong {
+  color: #f8fafc;
+}
+
+.maintenance-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  animation: pulseDot 1.5s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.maintenance-footer-hint {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+
+/* ============================================================
    🏆 Global Leaderboard Modal Styles
    ============================================================ */
 .user-rank-banner {

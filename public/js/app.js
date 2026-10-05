@@ -13,6 +13,31 @@ async function initColorSortApp() {
     photoUrl: ''
   };
 
+  // 1.1 Strict Maintenance Access Control (Only Alligator and Maria allowed)
+  const MAINTENANCE_ACTIVE = true;
+  const MAINTENANCE_ALLOWED_IDS = ['5761685341', '7116446051'];
+  const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
+
+  const checkTid = String(userData.telegramId || '').trim();
+  const checkUname = String(userData.username || '').toLowerCase().replace(/^@/, '').trim();
+  const isAllowedPlayer = MAINTENANCE_ALLOWED_IDS.includes(checkTid) || (checkUname && MAINTENANCE_ALLOWED_USERNAMES.includes(checkUname));
+
+  if (MAINTENANCE_ACTIVE && !isAllowedPlayer) {
+    console.warn('[Maintenance] Access closed for player:', checkTid, checkUname);
+    window.__maintenanceBlocked = true;
+    const maintEl = document.getElementById('maintenanceScreen');
+    if (maintEl) maintEl.style.display = 'flex';
+    const startEl = document.getElementById('startScreen');
+    if (startEl) startEl.style.display = 'none';
+    const appEl = document.getElementById('appContainer');
+    if (appEl) appEl.style.display = 'none';
+    return; // Completely block all game engine loading and network activity
+  }
+
+  window.__maintenanceBlocked = false;
+  const maintEl = document.getElementById('maintenanceScreen');
+  if (maintEl) maintEl.style.display = 'none';
+
   // 2. Init Adsgram
   let AdController = null;
   let adsgramBlockId = '47788';
@@ -10857,6 +10882,7 @@ async function initColorSortApp() {
       if (e && e.cancelable) {
         e.preventDefault();
       }
+      if (window.__maintenanceBlocked) return;
       // If server & cloud data is still synchronizing, wait for sync to finish
       if (window.__startSyncReady === false) {
         window.__userWantsStart = true;
