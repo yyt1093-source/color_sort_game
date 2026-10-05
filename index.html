@@ -59,7 +59,7 @@
   <link rel="preload" href="js/levelGenerator.js?v=49007" as="script">
   <link rel="preload" href="js/tonconnect-ui.min.js?v=49007" as="script">
   <link rel="preload" href="js/gifts.js?v=49007" as="script">
-  <link rel="preload" href="js/app.js?v=49011" as="script">
+  <link rel="preload" href="js/app.js?v=49015" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -70,7 +70,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=49011">
+  <link rel="stylesheet" href="style.css?v=49015">
   <style>
     /* Direct Fail-Safe Tile Grid for Admin Navigation (Шахматный порядок 2x2 + 1) */
     .admin-nav-tabs {
@@ -421,6 +421,10 @@
             }
             var lvl = null;
             if (myTid) {
+              var dbCached = localStorage.getItem('color_sort_db_level_' + myTid);
+              if (dbCached && Number(dbCached) > 0) {
+                lvl = Number(dbCached);
+              }
               if (String(myTid) === '5761685341') {
                 var cached = localStorage.getItem('cs_cached_display_level');
                 if (cached === '175') localStorage.setItem('cs_cached_display_level', '48');
@@ -434,7 +438,7 @@
                   uObj.currentLevel = 48;
                   try { localStorage.setItem('color_sort_user_' + myTid, JSON.stringify(uObj)); } catch(e){}
                 }
-                lvl = uObj.maxLevel || uObj.level || uObj.currentLevel;
+                if (!lvl) lvl = uObj.maxLevel || uObj.level || uObj.currentLevel;
                 if (!myName && uObj.firstName) myName = uObj.firstName;
               }
             }
@@ -2386,6 +2390,6 @@
   <script src="js/renderer.js?v=49007"></script>
   <script src="js/tonconnect-ui.min.js?v=49007"></script>
   <script src="js/gifts.js?v=49007"></script>
-  <script src="js/app.js?v=49011"></script>
+  <script src="js/app.js?v=49015"></script>
 </body>
 </html>
