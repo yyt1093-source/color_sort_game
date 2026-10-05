@@ -19,20 +19,58 @@
     return '';
   }
 
+  function getTelegramInitData() {
+    if (window.TelegramApp && window.TelegramApp.getInitData) {
+      const d = window.TelegramApp.getInitData();
+      if (d) return d;
+    }
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+      return window.Telegram.WebApp.initData;
+    }
+    try {
+      return localStorage.getItem('color_sort_last_init_data') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function getAuthHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    const initData = getTelegramInitData();
+    if (initData) {
+      headers['x-telegram-init-data'] = initData;
+      headers['Authorization'] = `tma ${initData}`;
+    }
+    return headers;
+  }
+
   async function giftApiCall(endpoint, method = 'GET', body = null) {
     const base = getApiBase();
     try {
+      const headers = getAuthHeaders();
+      const initData = getTelegramInitData();
       const options = {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(3500) : undefined
       };
-      if (body) options.body = JSON.stringify(body);
-      const res = await fetch(base + endpoint, options);
-      if (!res.ok) return null;
+      let finalEndpoint = endpoint;
+      if (initData && method === 'GET' && !endpoint.includes('initData=')) {
+        finalEndpoint += (endpoint.includes('?') ? '&' : '?') + 'initData=' + encodeURIComponent(initData);
+      }
+      if (body && typeof body === 'object') {
+        const payload = { ...body };
+        if (initData && !payload.initData) payload.initData = initData;
+        options.body = JSON.stringify(payload);
+      }
+      const res = await fetch(base + finalEndpoint, options);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        return errJson || { success: false, error: `HTTP ${res.status}` };
+      }
       return await res.json();
     } catch (e) {
-      return null;
+      return { success: false, error: e.message };
     }
   }
 
@@ -234,33 +272,9 @@
   }
 
   function isUserAdmin(user) {
-    if (typeof isAdminCheckCallback === 'function') {
-      try {
-        if (isAdminCheckCallback(user)) return true;
-      } catch (e) {}
-    }
     if (!user) return false;
-    if (user.isAdmin === true) return true;
-
     const tid = String(user.telegramId || '').trim();
-    const uname = String(user.username || '').toLowerCase().replace(/^@/, '').trim();
-    const fname = String(user.firstName || '').toLowerCase().trim();
-
-    if (tid === '5761685341') return true;
-    if (uname.includes('alligator') || uname.includes('аллигатор')) return true;
-    if (uname.includes('romanchik') || uname.includes('романчик')) return true;
-    if (fname.includes('alligator') || fname.includes('аллигатор')) return true;
-    if (fname.includes('romanchik') || fname.includes('романчик')) return true;
-
-    try {
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('admin') === 'true') return true;
-        if (localStorage.getItem('color_sort_admin_mode') === 'true') return true;
-      }
-    } catch (e) {}
-
-    return false;
+    return tid === '5761685341';
   }
 
   // Cloud & Server Endpoints for Gifts
@@ -294,27 +308,7 @@
       }
     } catch (e) {}
 
-    // 2. Also check KVDB cloud storage
-    try {
-      const res = await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(userId)}?_cb=${Date.now()}`, {
-        cache: 'no-store',
-        signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2500) : undefined
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          data.forEach(g => {
-            if (g && g.id && !seenIds.has(String(g.id))) {
-              seenIds.add(String(g.id));
-              markIfClaimed(g);
-              inbox.push(g);
-            }
-          });
-        }
-      }
-    } catch (err) {}
-
-    // 3. Fallback / merge local storage
+    // 2. Fallback / merge local storage
     try {
       const local = localStorage.getItem(`colorsort_gifts_inbox_${userId}`);
       if (local) {
@@ -345,17 +339,6 @@
     try {
       localStorage.setItem(`colorsort_gifts_inbox_${userId}`, JSON.stringify(inbox));
     } catch (e) {}
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3500);
-      await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(userId)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(inbox),
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
-    } catch (err) {}
   }
 
   // Check Pending Gifts & Update Pulsing Indicators
@@ -819,13 +802,11 @@
         claimed: false
       };
 
-      // 1. Send to server API
-      giftApiCall('/api/gifts/send', 'POST', newGift).catch(() => {});
-
-      // 2. Sync to cloud KVDB for targetId
-      const recipientInbox = await fetchCloudInbox(targetId);
-      recipientInbox.push(newGift);
-      await saveCloudInbox(targetId, recipientInbox);
+      // 1. Send to server API and verify authorization
+      const sendRes = await giftApiCall('/api/gifts/send', 'POST', newGift);
+      if (!sendRes || !sendRes.success) {
+        throw new Error(sendRes?.error || 'Сервер отклонил отправку TON');
+      }
 
       // 3. Sound & Haptics
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
@@ -1283,13 +1264,11 @@
         claimed: false
       };
 
-      // Send to server API
-      giftApiCall('/api/gifts/send', 'POST', newGift).catch(() => {});
-
-      // Sync to cloud KVDB and local storage
-      const recipientInbox = await fetchCloudInbox(targetId);
-      recipientInbox.push(newGift);
-      await saveCloudInbox(targetId, recipientInbox);
+      // Send to server API and verify
+      const sendRes = await giftApiCall('/api/gifts/send', 'POST', newGift);
+      if (!sendRes || !sendRes.success) {
+        throw new Error(sendRes?.error || 'Сервер отклонил отправку подарка');
+      }
 
       // 5. Sound & Haptics
       if (window.TelegramApp && window.TelegramApp.TelegramApp) {
