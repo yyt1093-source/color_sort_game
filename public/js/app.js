@@ -2851,6 +2851,15 @@ async function initColorSortApp() {
         currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));
         currentUser.level = currentUser.maxLevel;
       }
+      if (String(userData.telegramId) === '5761685341' && Number(currentUser.maxLevel) === 175) {
+        currentUser.maxLevel = 48;
+        currentUser.level = 48;
+        currentUser.currentLevel = 48;
+        try {
+          localStorage.setItem(`color_sort_user_${userData.telegramId}`, JSON.stringify(currentUser));
+          localStorage.setItem('cs_cached_display_level', '48');
+        } catch (e) {}
+      }
     }
   } catch (e) {}
 
@@ -3119,7 +3128,7 @@ async function initColorSortApp() {
 
         const cloudRestoreTs = Number(existingCloud ? (existingCloud.snapshotRestoredAt || 0) : 0);
         const localRestoreTs = Number(localStorage.getItem(`color_sort_restored_at_${id}`) || user.lastSnapshotRestoredAt || 0);
-        const isRestoreActive = cloudRestoreTs > 0 && cloudRestoreTs > localRestoreTs;
+        const isRestoreActive = cloudRestoreTs > 0 && cloudRestoreTs >= localRestoreTs;
 
         // Never allow a lower maxLevel to overwrite a higher maxLevel from the cloud unless force reset or snapshot rollback
         if (existingCloud && !window.__seasonResetKicking) {
@@ -3347,6 +3356,15 @@ async function initColorSortApp() {
         if (currentUser.maxLevel > 0) {
           currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));
           currentUser.level = currentUser.maxLevel;
+        }
+        if (String(currentUser.telegramId) === '5761685341' && Number(currentUser.maxLevel) === 175) {
+          currentUser.maxLevel = 48;
+          currentUser.level = 48;
+          currentUser.currentLevel = 48;
+          try {
+            localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
+            localStorage.setItem('cs_cached_display_level', '48');
+          } catch (e) {}
         }
         currentUser._localLoaded = true;
       } catch (e) {}

@@ -59,7 +59,7 @@
   <link rel="preload" href="js/levelGenerator.js?v=49007" as="script">
   <link rel="preload" href="js/tonconnect-ui.min.js?v=49007" as="script">
   <link rel="preload" href="js/gifts.js?v=49007" as="script">
-  <link rel="preload" href="js/app.js?v=49007" as="script">
+  <link rel="preload" href="js/app.js?v=49010" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -70,7 +70,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=48986">
+  <link rel="stylesheet" href="style.css?v=49010">
   <style>
     /* Direct Fail-Safe Tile Grid for Admin Navigation (Шахматный порядок 2x2 + 1) */
     .admin-nav-tabs {
@@ -238,15 +238,15 @@
 
     <div class="start-screen-content">
       <div class="start-footer">
-        <div id="splashPlayerBadge" class="splash-player-badge" style="opacity: 0; transition: opacity 0.3s ease;">
-          <span id="splashPlayerName" class="splash-player-badge-name">Игрок</span>
-          <span class="splash-player-badge-dot">•</span>
-          <span id="splashPlayerLevel" class="splash-player-badge-level">Уровень 1</span>
+        <div class="start-btn-wrapper">
+          <button id="startGameBtn" class="start-btn start-btn-blue-progress" aria-label="Start Game">
+            <div id="startBtnFill" class="start-btn-blue-fill"></div>
+            <div class="start-btn-content">
+              <span id="startBtnIcon" class="start-btn-icon">⚡</span>
+              <span id="startBtnLabel" class="start-btn-label">ЗАГРУЗКА...</span>
+            </div>
+          </button>
         </div>
-        <button id="startGameBtn" class="start-btn start-btn-syncing" disabled>
-          <span id="startBtnIcon" class="start-btn-icon start-btn-spinner">⏳</span>
-          <span id="startBtnLabel" class="start-btn-label">СИНХРОНИЗАЦИЯ...</span>
-        </button>
       </div>
     </div>
   </div>
@@ -255,16 +255,18 @@
     (function() {
       var btn = document.getElementById('startGameBtn');
       var scr = document.getElementById('startScreen');
-      var badge = document.getElementById('splashPlayerBadge');
-      var nameEl = document.getElementById('splashPlayerName');
-      var lvlEl = document.getElementById('splashPlayerLevel');
       var maintScr = document.getElementById('maintenanceScreen');
 
       // Maintenance whitelist: Only Alligator (5761685341) and Maria (7116446051)
       var ALLOWED_IDS = ['5761685341', '7116446051'];
       var ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
-      // Instant pre-population of badge from localStorage on frame 0
+      // Start blue progress fill immediately on load
+      setTimeout(function() {
+        var f = document.getElementById('startBtnFill');
+        if (f) f.style.width = '100%';
+      }, 50);
+
       try {
         var rawInit = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || 
                       (window.location.hash ? window.location.hash.replace(/^#/, '') : '') || 
@@ -314,21 +316,6 @@
           window.__maintenanceBlocked = false;
           if (maintScr) maintScr.style.display = 'none';
         }
-
-        var lvl = null;
-        if (myTid) {
-          var userRaw = localStorage.getItem('color_sort_user_' + myTid);
-          if (userRaw) {
-            var uObj = JSON.parse(userRaw);
-            lvl = uObj.maxLevel || uObj.level || uObj.currentLevel;
-            if (!myName && uObj.firstName) myName = uObj.firstName;
-          }
-        }
-        if (!lvl) lvl = localStorage.getItem('cs_cached_display_level');
-
-        if (nameEl && myName) nameEl.textContent = String(myName);
-        if (lvlEl && lvl && Number(lvl) > 0) lvlEl.textContent = 'Уровень ' + String(lvl);
-        if (badge && (myName || (lvl && Number(lvl) > 0))) badge.style.opacity = '1';
       } catch(e) {}
 
       window.__startDismissed = false;
@@ -356,7 +343,7 @@
           setTimeout(function() {
             scr.style.display = 'none';
             if (scr.parentNode) scr.parentNode.removeChild(scr);
-          }, 180);
+          }, 200);
         }
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
           try { window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); } catch(e) {}
@@ -371,26 +358,20 @@
       window.__unlockStartScreen = function(userLevel, userName) {
         if (window.__maintenanceBlocked) return;
         window.__startSyncReady = true;
+        var f = document.getElementById('startBtnFill');
+        if (f) f.style.width = '100%';
         if (btn) {
           btn.disabled = false;
-          btn.classList.remove('start-btn-syncing');
-          btn.classList.add('pulse-glow');
+          btn.classList.add('start-ready');
           var iconEl = document.getElementById('startBtnIcon');
           var labelEl = document.getElementById('startBtnLabel');
-          if (iconEl) {
-            iconEl.textContent = '▶';
-            iconEl.classList.remove('start-btn-spinner');
-          }
-          if (labelEl) labelEl.textContent = 'START';
+          if (iconEl) iconEl.textContent = '▶';
+          if (labelEl) labelEl.textContent = 'СТАРТ!';
         }
-        if (badge) {
-          if (nameEl && userName) nameEl.textContent = String(userName);
-          if (lvlEl && userLevel) lvlEl.textContent = 'Уровень ' + String(userLevel);
-          badge.style.opacity = '1';
-        }
-        if (window.__userWantsStart) {
+        // Auto-launch the game smoothly once filled
+        setTimeout(function() {
           dismiss();
-        }
+        }, 220);
       };
 
       if (btn) {
@@ -449,15 +430,31 @@
             }
             var lvl = null;
             if (myTid) {
+              if (String(myTid) === '5761685341') {
+                var cached = localStorage.getItem('cs_cached_display_level');
+                if (cached === '175') localStorage.setItem('cs_cached_display_level', '48');
+              }
               var userRaw = localStorage.getItem('color_sort_user_' + myTid);
               if (userRaw) {
                 var uObj = JSON.parse(userRaw);
+                if (String(myTid) === '5761685341' && (uObj.maxLevel === 175 || uObj.level === 175 || uObj.currentLevel === 175)) {
+                  uObj.maxLevel = 48;
+                  uObj.level = 48;
+                  uObj.currentLevel = 48;
+                  try { localStorage.setItem('color_sort_user_' + myTid, JSON.stringify(uObj)); } catch(e){}
+                }
                 lvl = uObj.maxLevel || uObj.level || uObj.currentLevel;
                 if (!myName && uObj.firstName) myName = uObj.firstName;
               }
             }
             if (!lvl) {
               lvl = localStorage.getItem('cs_cached_display_level');
+            }
+            if (String(myTid) === '5761685341' && Number(lvl) === 175) {
+              lvl = 48;
+            }
+            if (String(myTid) === '7116446051' && (!lvl || Number(lvl) <= 1)) {
+              lvl = 15;
             }
             if (lvl && Number(lvl) > 0) {
               var lEl = document.getElementById('levelDisplay');
@@ -2398,6 +2395,6 @@
   <script src="js/renderer.js?v=49007"></script>
   <script src="js/tonconnect-ui.min.js?v=49007"></script>
   <script src="js/gifts.js?v=49007"></script>
-  <script src="js/app.js?v=49007"></script>
+  <script src="js/app.js?v=49010"></script>
 </body>
 </html>

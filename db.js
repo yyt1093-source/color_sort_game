@@ -1921,12 +1921,12 @@ function ensureSeedLeaderboardSnapshot() {
   } catch (e) {}
 
   const seedConfigs = [
-    { id: 1, date: '2026-07-10', time: '12:00:00', type: 'manual', count: 85, maxLvl: 120, ts: 1783587600000 },
-    { id: 2, date: '2026-07-10', time: '23:55:00', type: 'auto', count: 90, maxLvl: 125, ts: 1783630500000 },
-    { id: 3, date: '2026-07-11', time: '23:55:00', type: 'auto', count: 94, maxLvl: 128, ts: 1783716900000 },
-    { id: 4, date: '2026-09-04', time: '23:55:00', type: 'auto', count: 85, maxLvl: 130, ts: 1788470100000 },
-    { id: 5, date: '2026-09-06', time: '23:55:00', type: 'auto', count: 15, maxLvl: 150, ts: 1788642900000 },
-    { id: 6, date: '2026-09-10', time: '23:55:00', type: 'auto', count: 110, maxLvl: 175, ts: 1788988500000 }
+    { id: 1, date: '2026-07-10', time: '12:00:00', type: 'manual', count: 85, maxLvl: 30, ts: 1783587600000 },
+    { id: 2, date: '2026-07-10', time: '23:55:00', type: 'auto', count: 90, maxLvl: 35, ts: 1783630500000 },
+    { id: 3, date: '2026-07-11', time: '23:55:00', type: 'auto', count: 94, maxLvl: 38, ts: 1783716900000 },
+    { id: 4, date: '2026-09-04', time: '23:55:00', type: 'auto', count: 85, maxLvl: 40, ts: 1788470100000 },
+    { id: 5, date: '2026-09-06', time: '23:55:00', type: 'auto', count: 15, maxLvl: 45, ts: 1788642900000 },
+    { id: 6, date: '2026-09-10', time: '23:55:00', type: 'auto', count: 110, maxLvl: 48, ts: 1788988500000 }
   ];
 
   const firstNames = ['Alligator', 'Александр', 'Мария', 'Дмитрий', 'Елена', 'Сергей', 'Анна', 'Максим', 'Ольга', 'Богдан', 'Катерина', 'Владимир', 'Татьяна', 'Денис', 'Игорь', 'Наталья', 'Виктор', 'Юлия', 'Артем', 'Светлана', 'Роман', 'Алина', 'Павел', 'Виктория', 'Михаил'];
@@ -1993,9 +1993,14 @@ function ensureActiveSnapshotApplied() {
   try {
     let activeId = getActiveSnapshotId();
     if (!activeId) {
-      const latest = db.prepare(`SELECT id FROM leaderboard_snapshots ORDER BY created_at_ts DESC, id DESC LIMIT 1`).get();
-      if (latest && latest.id) {
-        activeId = String(latest.id);
+      const realSnap = db.prepare(`SELECT id FROM leaderboard_snapshots WHERE id = '1791149202825' OR id > 1000000000 ORDER BY created_at_ts DESC, id DESC LIMIT 1`).get();
+      if (realSnap && realSnap.id) {
+        activeId = String(realSnap.id);
+      } else {
+        const latest = db.prepare(`SELECT id FROM leaderboard_snapshots ORDER BY created_at_ts DESC, id DESC LIMIT 1`).get();
+        if (latest && latest.id) activeId = String(latest.id);
+      }
+      if (activeId) {
         db.prepare(`
           INSERT INTO system_settings (key, value)
           VALUES ('active_snapshot_id', ?)

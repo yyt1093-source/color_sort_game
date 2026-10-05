@@ -337,6 +337,7 @@ app.post('/api/user/sync', (req, res) => {
             daily_boosters_days_left: updatedUser.daily_boosters_days_left !== undefined ? updatedUser.daily_boosters_days_left : (req.body.daily_boosters_days_left || (existing ? existing.daily_boosters_days_left : 0) || 0),
             daily_boosters_last_date: updatedUser.daily_boosters_last_date || req.body.daily_boosters_last_date || (existing ? existing.daily_boosters_last_date : '') || '',
             daily_boosters_purchased_at: updatedUser.daily_boosters_purchased_at || req.body.daily_boosters_purchased_at || (existing ? existing.daily_boosters_purchased_at : 0) || 0,
+            snapshotRestoredAt: Number(updatedUser.snapshotRestoredAt || updatedUser.snapshot_restored_at || (existing ? existing.snapshotRestoredAt : 0) || 0),
             updatedAt: Date.now()
           };
           fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {

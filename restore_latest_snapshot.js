@@ -140,8 +140,7 @@ async function run() {
     if (!localUser) {
       localUser = db.getUser(tid); // creates default if not exists
     }
-    const currentLocalMax = localUser ? Number(localUser.max_level || 0) : 0;
-    const finalLevel = Math.max(currentLocalMax, snapLvl);
+    const finalLevel = snapLvl;
 
     db.db.prepare(`
       UPDATE users 
@@ -158,8 +157,7 @@ async function run() {
       }
     } catch (e) {}
 
-    const kvCurrentMax = kvUser ? Number(kvUser.maxLevel || kvUser.level || 0) : 0;
-    const targetCloudLevel = Math.max(kvCurrentMax, snapLvl);
+    const targetCloudLevel = snapLvl;
 
     const updatedKvPayload = {
       ...(kvUser || {}),
@@ -167,9 +165,12 @@ async function run() {
       firstName: (kvUser && kvUser.firstName) ? kvUser.firstName : snapName,
       username: (kvUser && kvUser.username) ? kvUser.username : snapUsername,
       maxLevel: targetCloudLevel,
+      max_level: targetCloudLevel,
       level: targetCloudLevel,
       currentLevel: targetCloudLevel,
-      stars: Math.max(kvUser ? Number(kvUser.stars || 0) : 0, snapStars),
+      current_level: targetCloudLevel,
+      stars: (snapStars > 0 ? snapStars : snapLvl * 3),
+      snapshotRestoredAt: now,
       updatedAt: now
     };
 
