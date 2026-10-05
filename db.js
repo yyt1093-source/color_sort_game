@@ -1662,6 +1662,247 @@ function getDeletedSnapshotIds() {
 }
 
 /**
+ * Restore a leaderboard snapshot as the active leaderboard:
+ * 1. Resets all players NOT in the snapshot to max_level = 0, current_level = 1, stars = 0 (completely wiping them from active leaderboard).
+ * 2. Updates/inserts all players IN the snapshot to their exact snapshot level, stars, and rank.
+ * 3. Sets system_settings 'leaderboard_restored_at' and 'active_snapshot_id'.
+ * 4. Synchronizes to KVDB cloud (meta_leaderboard_restored_at, meta_active_snapshot_id, and player_* keys).
+ * 5. Preserves user TON balances, wallets, memo codes, and boosters untouched.
+ */
+async function restoreLeaderboardSnapshot(snapshotId) {
+  if (!snapshotId) throw new Error('snapshotId is required');
+  const idStr = String(snapshotId);
+
+  // 1. Fetch snapshot from SQLite or KVDB
+  let snapshot = getLeaderboardSnapshotById(idStr);
+  if (!snapshot || !Array.isArray(snapshot.players) || snapshot.players.length === 0) {
+    try {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      const snapRes = await fetch(`https://kvdb.io/${bucket}/leaderboard_snapshot_${idStr}?_cb=${Date.now()}`);
+      if (snapRes.ok) {
+        const snapJson = await snapRes.json();
+        if (snapJson && Array.isArray(snapJson.players) && snapJson.players.length > 0) {
+          snapshot = insertExternalLeaderboardSnapshot(snapJson);
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (!snapshot || !Array.isArray(snapshot.players) || snapshot.players.length === 0) {
+    throw new Error(`Снимок #${snapshotId} не найден или не содержит данных игроков.`);
+  }
+
+  const nowTs = Date.now();
+  const snapPlayers = snapshot.players;
+  const snapMap = new Map();
+
+  for (const p of snapPlayers) {
+    const tid = String(p.telegram_id || p.telegramId || '').trim();
+    if (!tid) continue;
+    const lvl = Number(p.level !== undefined ? p.level : (p.max_level || p.maxLevel || 1));
+    const stars = Number(p.stars || 0);
+    const name = p.name || p.first_name || p.firstName || 'Игрок';
+    const username = p.username || '';
+    const rank = Number(p.rank || 0);
+    snapMap.set(tid, { tid, lvl, stars, name, username, rank });
+  }
+
+  // 2. Transactional SQLite update
+  db.exec('BEGIN TRANSACTION');
+  try {
+    // A. Reset any user in SQLite who is NOT in this snapshot
+    const allUsers = db.prepare(`SELECT telegram_id, max_level FROM users`).all();
+    const resetUserStmt = db.prepare(`
+      UPDATE users 
+      SET max_level = 0, current_level = 1, stars = 0, updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+
+    for (const u of allUsers) {
+      const tid = String(u.telegram_id);
+      if (!snapMap.has(tid)) {
+        if (Number(u.max_level || 0) > 0) {
+          resetUserStmt.run(tid);
+        }
+      }
+    }
+
+    // B. Set exact level and stars for snapshot players
+    const updateUserStmt = db.prepare(`
+      UPDATE users 
+      SET max_level = ?, current_level = ?, stars = ?,
+          first_name = COALESCE(NULLIF(?, ''), first_name),
+          username = COALESCE(NULLIF(?, ''), username),
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+
+    const insertUserStmt = db.prepare(`
+      INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const [tid, sp] of snapMap.entries()) {
+      const existing = db.prepare(`SELECT telegram_id FROM users WHERE telegram_id = ?`).get(tid);
+      if (existing) {
+        updateUserStmt.run(sp.lvl, sp.lvl, sp.stars, sp.name, sp.username, tid);
+      } else {
+        insertUserStmt.run(tid, sp.name, sp.username, sp.lvl, sp.lvl, sp.stars);
+      }
+    }
+
+    db.prepare(`
+      INSERT INTO system_settings (key, value)
+      VALUES ('leaderboard_restored_at', ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+    `).run(String(nowTs));
+
+    db.prepare(`
+      INSERT INTO system_settings (key, value)
+      VALUES ('active_snapshot_id', ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+    `).run(idStr);
+
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+
+  // 3. Synchronize to KVDB
+  try {
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    const baseUrl = `https://kvdb.io/${bucket}`;
+
+    const restoreMeta = {
+      restoredAt: nowTs,
+      snapshotId: idStr,
+      snapshotDate: snapshot.snapshot_date,
+      snapshotTime: snapshot.snapshot_time,
+      totalPlayers: snapMap.size
+    };
+
+    await fetch(`${baseUrl}/meta_leaderboard_restored_at`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(restoreMeta)
+    });
+
+    await fetch(`${baseUrl}/meta_active_snapshot_id`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(idStr)
+    });
+
+    const cloudRes = await fetch(`${baseUrl}/?prefix=player_&values=true&format=json&_cb=${nowTs}`);
+    let existingPairs = [];
+    if (cloudRes.ok) {
+      try { existingPairs = await cloudRes.json(); } catch (e) {}
+    }
+
+    const seenTids = new Set();
+    for (const [key, rawVal] of existingPairs) {
+      let val = rawVal;
+      if (typeof val === 'string') {
+        try { val = JSON.parse(val); } catch (e) { val = null; }
+      }
+      if (!val || !val.telegramId) continue;
+      const tid = String(val.telegramId).trim();
+      seenTids.add(tid);
+
+      if (snapMap.has(tid)) {
+        const sp = snapMap.get(tid);
+        const updatedPayload = {
+          ...val,
+          telegramId: tid,
+          firstName: val.firstName || sp.name,
+          username: val.username || sp.username,
+          maxLevel: sp.lvl,
+          level: sp.lvl,
+          currentLevel: sp.lvl,
+          stars: sp.stars,
+          snapshotRestoredAt: nowTs,
+          updatedAt: nowTs
+        };
+        await fetch(`${baseUrl}/player_${encodeURIComponent(tid)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedPayload)
+        });
+      } else {
+        if (Number(val.maxLevel || val.level || 0) > 0 || Number(val.stars || 0) > 0) {
+          const resetPayload = {
+            ...val,
+            telegramId: tid,
+            maxLevel: 0,
+            level: 0,
+            currentLevel: 1,
+            stars: 0,
+            snapshotRestoredAt: nowTs,
+            updatedAt: nowTs
+          };
+          await fetch(`${baseUrl}/player_${encodeURIComponent(tid)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(resetPayload)
+          });
+        }
+      }
+    }
+
+    for (const [tid, sp] of snapMap.entries()) {
+      if (!seenTids.has(tid)) {
+        const newPlayerPayload = {
+          telegramId: tid,
+          firstName: sp.name,
+          username: sp.username,
+          maxLevel: sp.lvl,
+          level: sp.lvl,
+          currentLevel: sp.lvl,
+          stars: sp.stars,
+          snapshotRestoredAt: nowTs,
+          updatedAt: nowTs
+        };
+        await fetch(`${baseUrl}/player_${encodeURIComponent(tid)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newPlayerPayload)
+        });
+      }
+    }
+  } catch (kvErr) {
+    console.warn('[DB Restore Snapshot] KVDB sync error:', kvErr.message);
+  }
+
+  return {
+    success: true,
+    snapshotId: idStr,
+    restoredAt: nowTs,
+    date: snapshot.snapshot_date,
+    time: snapshot.snapshot_time,
+    totalPlayers: snapMap.size
+  };
+}
+
+function getLeaderboardRestoredTimestamp() {
+  try {
+    const row = db.prepare(`SELECT value FROM system_settings WHERE key = 'leaderboard_restored_at'`).get();
+    return row ? Number(row.value) : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function getActiveSnapshotId() {
+  try {
+    const row = db.prepare(`SELECT value FROM system_settings WHERE key = 'active_snapshot_id'`).get();
+    return row ? String(row.value) : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
  * Seed historical snapshots for 2026-09-04 (85 players), 2026-09-06 (15 players),
  * 2026-09-10 (110 players), and 2026-09-15 (140 players) at 23:55 Kyiv time
  */
@@ -1877,6 +2118,9 @@ module.exports = {
   getKyivDateTime,
   saveLeaderboardSnapshot,
   deleteLeaderboardSnapshot,
+  restoreLeaderboardSnapshot,
+  getLeaderboardRestoredTimestamp,
+  getActiveSnapshotId,
   getDeletedSnapshotIds,
   getLeaderboardSnapshotDates,
   getAutoLeaderboardSnapshotByDate,

@@ -287,9 +287,10 @@ app.get('/api/leaderboard', async (req, res) => {
     const telegramId = req.query.telegramId || '';
     const leaderboard = db.getLeaderboard(telegramId, 50);
     let seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
+    let restoredAt = db.getLeaderboardRestoredTimestamp ? db.getLeaderboardRestoredTimestamp() : 0;
     const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
 
-    // Query global cloud KVDB meta_season_reset_at
+    // Query global cloud KVDB meta_season_reset_at & meta_leaderboard_restored_at
     try {
       const metaRes = await fetch(`https://kvdb.io/${bucket}/meta_season_reset_at?_cb=${Date.now()}`, {
         signal: AbortSignal.timeout(1500)
@@ -298,6 +299,17 @@ app.get('/api/leaderboard', async (req, res) => {
         const metaData = await metaRes.json();
         const kvResetAt = Number(metaData.resetAt || metaData) || 0;
         if (kvResetAt > seasonResetAt) seasonResetAt = kvResetAt;
+      }
+    } catch (e) {}
+
+    try {
+      const restRes = await fetch(`https://kvdb.io/${bucket}/meta_leaderboard_restored_at?_cb=${Date.now()}`, {
+        signal: AbortSignal.timeout(1500)
+      });
+      if (restRes.ok) {
+        const restData = await restRes.json();
+        const kvRestAt = Number(restData.restoredAt || 0);
+        if (kvRestAt > restoredAt) restoredAt = kvRestAt;
       }
     } catch (e) {}
 
@@ -332,21 +344,30 @@ app.get('/api/leaderboard', async (req, res) => {
           const id = String(cp.telegramId);
           const existing = playersMap.get(id);
           const cpSeason = Number(cp.seasonResetAt || 0);
+          const cpUpdated = Number(cp.updatedAt || 0);
           const cpMaxLevel = Number(cp.maxLevel || cp.level || 0);
 
           // Exclude cloud players from old season or players who haven't completed round 1 (maxLevel < 1)
-          if (seasonResetAt > 0 && cpSeason < seasonResetAt && Number(cp.updatedAt || 0) < seasonResetAt) return;
+          if (seasonResetAt > 0 && cpSeason < seasonResetAt && cpUpdated < seasonResetAt) return;
+          // If a snapshot was restored, omit any KVDB player older than the restore
+          if (restoredAt > 0 && cpUpdated < restoredAt) return;
           if (cpMaxLevel < 1) return;
 
-          if (!existing || cpMaxLevel > existing.max_level) {
+          // If SQLite already has this player, SQLite is authoritative unless cp is newer than restore
+          if (!existing) {
             playersMap.set(id, {
               telegram_id: id,
-              first_name: cp.firstName || (existing ? existing.first_name : 'Игрок'),
-              username: cp.username || (existing ? existing.username : ''),
-              photo_url: cp.photoUrl || (existing ? existing.photo_url : ''),
+              first_name: cp.firstName || 'Игрок',
+              username: cp.username || '',
+              photo_url: cp.photoUrl || '',
               max_level: cpMaxLevel,
-              stars: cp.stars || (existing ? existing.stars : 0)
+              stars: cp.stars || 0
             });
+          } else if (cpUpdated >= restoredAt && cpMaxLevel > existing.max_level) {
+            existing.max_level = cpMaxLevel;
+            if (cp.stars !== undefined) existing.stars = cp.stars;
+            if (cp.firstName) existing.first_name = cp.firstName;
+            if (cp.username) existing.username = cp.username;
           }
         });
         
@@ -1193,6 +1214,30 @@ app.post('/api/admin/leaderboard-history/delete', (req, res) => {
     res.json({ success: true, message: `Снимок #${id} успешно удалён!` });
   } catch (err) {
     console.error('[API ERROR] POST /api/admin/leaderboard-history/delete:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: Restore leaderboard snapshot to active database (roll back or restore backup)
+ */
+app.post('/api/admin/leaderboard-history/restore', async (req, res) => {
+  try {
+    if (!checkIsAdmin(req.body)) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+    const id = req.body && (req.body.id || req.body.snapshotId);
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Не указан ID снимка для восстановления' });
+    }
+    const result = await db.restoreLeaderboardSnapshot(id);
+    res.json({
+      success: true,
+      message: `Снимок #${id} успешно загружен в активный лидерборд! Синхронизировано ${result.totalPlayers} игроков.`,
+      ...result
+    });
+  } catch (err) {
+    console.error('[API ERROR] POST /api/admin/leaderboard-history/restore:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
