@@ -59,7 +59,7 @@
   <link rel="preload" href="js/levelGenerator.js?v=49007" as="script">
   <link rel="preload" href="js/tonconnect-ui.min.js?v=49007" as="script">
   <link rel="preload" href="js/gifts.js?v=49007" as="script">
-  <link rel="preload" href="js/app.js?v=49010" as="script">
+  <link rel="preload" href="js/app.js?v=49011" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -70,7 +70,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=49010">
+  <link rel="stylesheet" href="style.css?v=49011">
   <style>
     /* Direct Fail-Safe Tile Grid for Admin Navigation (Шахматный порядок 2x2 + 1) */
     .admin-nav-tabs {
@@ -239,13 +239,9 @@
     <div class="start-screen-content">
       <div class="start-footer">
         <div class="start-btn-wrapper">
-          <button id="startGameBtn" class="start-btn start-btn-blue-progress" aria-label="Start Game">
+          <div id="startGameBtn" class="start-btn start-btn-blue-progress" aria-label="Game Starting">
             <div id="startBtnFill" class="start-btn-blue-fill"></div>
-            <div class="start-btn-content">
-              <span id="startBtnIcon" class="start-btn-icon">⚡</span>
-              <span id="startBtnLabel" class="start-btn-label">ЗАГРУЗКА...</span>
-            </div>
-          </button>
+          </div>
         </div>
       </div>
     </div>
@@ -361,12 +357,7 @@
         var f = document.getElementById('startBtnFill');
         if (f) f.style.width = '100%';
         if (btn) {
-          btn.disabled = false;
           btn.classList.add('start-ready');
-          var iconEl = document.getElementById('startBtnIcon');
-          var labelEl = document.getElementById('startBtnLabel');
-          if (iconEl) iconEl.textContent = '▶';
-          if (labelEl) labelEl.textContent = 'СТАРТ!';
         }
         // Auto-launch the game smoothly once filled
         setTimeout(function() {
@@ -2395,6 +2386,6 @@
   <script src="js/renderer.js?v=49007"></script>
   <script src="js/tonconnect-ui.min.js?v=49007"></script>
   <script src="js/gifts.js?v=49007"></script>
-  <script src="js/app.js?v=49010"></script>
+  <script src="js/app.js?v=49011"></script>
 </body>
 </html>
