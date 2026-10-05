@@ -1556,11 +1556,12 @@ setInterval(() => {
 let activeTunnelProc = null;
 
 function initTunnel() {
-  if (process.env.WEB_APP_URL && process.env.WEB_APP_URL.includes('github.io')) {
-    console.log(`🚀 Постоянная облачная ссылка активна: ${process.env.WEB_APP_URL}`);
+  const targetUrl = process.env.WEB_APP_URL || 'https://yyt1093-source.github.io/color_sort_game/';
+  if (targetUrl.includes('github.io') || targetUrl.includes('vercel.app')) {
+    console.log(`🚀 Постоянная облачная ссылка активна: ${targetUrl}`);
     try {
       const { updateBotMenuButton } = require('./bot');
-      updateBotMenuButton(process.env.WEB_APP_URL);
+      updateBotMenuButton(targetUrl);
     } catch (e) {}
     return;
   }
