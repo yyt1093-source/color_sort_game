@@ -97,6 +97,18 @@ async function run() {
         Number(p.stars || 0)
       );
     });
+    db.db.prepare(`
+      INSERT INTO system_settings (key, value)
+      VALUES ('active_snapshot_id', ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+    `).run(String(targetSnapshotId));
+
+    db.db.prepare(`
+      INSERT INTO system_settings (key, value)
+      VALUES ('leaderboard_restored_at', ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+    `).run(String(snapshotData.created_at_ts || Date.now()));
+
     console.log(`✅ Saved snapshot ${targetSnapshotId} and ${snapshotData.players.length} entries into SQLite!`);
   } catch (dbErr) {
     console.error('❌ Error saving snapshot to SQLite:', dbErr.message);

@@ -1991,7 +1991,18 @@ function ensureSeedLeaderboardSnapshot() {
 
 function ensureActiveSnapshotApplied() {
   try {
-    const activeId = getActiveSnapshotId();
+    let activeId = getActiveSnapshotId();
+    if (!activeId) {
+      const latest = db.prepare(`SELECT id FROM leaderboard_snapshots ORDER BY created_at_ts DESC, id DESC LIMIT 1`).get();
+      if (latest && latest.id) {
+        activeId = String(latest.id);
+        db.prepare(`
+          INSERT INTO system_settings (key, value)
+          VALUES ('active_snapshot_id', ?)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        `).run(activeId);
+      }
+    }
     if (!activeId) return;
     const snap = getLeaderboardSnapshotById(activeId);
     if (!snap || !snap.players || snap.players.length === 0) return;
