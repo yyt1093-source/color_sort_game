@@ -419,7 +419,7 @@ app.get('/api/leaderboard', async (req, res) => {
                 ON CONFLICT(telegram_id) DO UPDATE SET max_level = excluded.max_level, stars = excluded.stars
               `).run(id, cp.firstName || 'Игрок', cp.username || '', cpMaxLevel, cpMaxLevel, cp.stars || 0);
             } catch(e) {}
-          } else if (cpUpdated >= restoredAt && cpMaxLevel > existing.max_level) {
+          } else if (cpUpdated >= restoredAt && cpMaxLevel !== existing.max_level) {
             existing.max_level = cpMaxLevel;
             if (cp.stars !== undefined) existing.stars = cp.stars;
             if (cp.firstName) existing.first_name = cp.firstName;

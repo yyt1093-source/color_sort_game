@@ -1711,22 +1711,11 @@ async function restoreLeaderboardSnapshot(snapshotId) {
   // 2. Transactional SQLite update
   db.exec('BEGIN TRANSACTION');
   try {
-    // A. Reset any user in SQLite who is NOT in this snapshot
-    const allUsers = db.prepare(`SELECT telegram_id, max_level FROM users`).all();
-    const resetUserStmt = db.prepare(`
+    // A. Total clean wipe: completely zero out all current levels, stars, and moves across all players
+    db.prepare(`
       UPDATE users 
-      SET max_level = 0, current_level = 1, stars = 0, updated_at = datetime('now')
-      WHERE telegram_id = ?
-    `);
-
-    for (const u of allUsers) {
-      const tid = String(u.telegram_id);
-      if (!snapMap.has(tid)) {
-        if (Number(u.max_level || 0) > 0) {
-          resetUserStmt.run(tid);
-        }
-      }
-    }
+      SET max_level = 0, current_level = 1, stars = 0, total_moves = 0, updated_at = datetime('now')
+    `).run();
 
     // B. Set exact level and stars for snapshot players
     const updateUserStmt = db.prepare(`
@@ -1819,8 +1808,10 @@ async function restoreLeaderboardSnapshot(snapshotId) {
           firstName: val.firstName || sp.name,
           username: val.username || sp.username,
           maxLevel: sp.lvl,
+          max_level: sp.lvl,
           level: sp.lvl,
           currentLevel: sp.lvl,
+          current_level: sp.lvl,
           stars: sp.stars,
           snapshotRestoredAt: nowTs,
           updatedAt: nowTs
@@ -1831,23 +1822,23 @@ async function restoreLeaderboardSnapshot(snapshotId) {
           body: JSON.stringify(updatedPayload)
         });
       } else {
-        if (Number(val.maxLevel || val.level || 0) > 0 || Number(val.stars || 0) > 0) {
-          const resetPayload = {
-            ...val,
-            telegramId: tid,
-            maxLevel: 0,
-            level: 0,
-            currentLevel: 1,
-            stars: 0,
-            snapshotRestoredAt: nowTs,
-            updatedAt: nowTs
-          };
-          await fetch(`${baseUrl}/player_${encodeURIComponent(tid)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(resetPayload)
-          });
-        }
+        const resetPayload = {
+          ...val,
+          telegramId: tid,
+          maxLevel: 0,
+          max_level: 0,
+          level: 0,
+          currentLevel: 1,
+          current_level: 1,
+          stars: 0,
+          snapshotRestoredAt: nowTs,
+          updatedAt: nowTs
+        };
+        await fetch(`${baseUrl}/player_${encodeURIComponent(tid)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(resetPayload)
+        });
       }
     }
 
@@ -1858,8 +1849,10 @@ async function restoreLeaderboardSnapshot(snapshotId) {
           firstName: sp.name,
           username: sp.username,
           maxLevel: sp.lvl,
+          max_level: sp.lvl,
           level: sp.lvl,
           currentLevel: sp.lvl,
+          current_level: sp.lvl,
           stars: sp.stars,
           snapshotRestoredAt: nowTs,
           updatedAt: nowTs
@@ -1871,6 +1864,14 @@ async function restoreLeaderboardSnapshot(snapshotId) {
         });
       }
     }
+
+    try {
+      await fetch(`${baseUrl}/meta_active_snapshot_players`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Array.from(snapMap.values()))
+      });
+    } catch(e) {}
   } catch (kvErr) {
     console.warn('[DB Restore Snapshot] KVDB sync error:', kvErr.message);
   }
@@ -2009,6 +2010,7 @@ function ensureActiveSnapshotApplied() {
 
     const uCount = db.prepare(`SELECT COUNT(*) as c FROM users WHERE max_level >= 1`).get();
     if (uCount && uCount.c <= 1) {
+      db.prepare(`UPDATE users SET max_level = 0, current_level = 1, stars = 0, total_moves = 0, updated_at = datetime('now')`).run();
       const updateUserStmt = db.prepare(`
         UPDATE users 
         SET max_level = ?, current_level = ?, stars = ?,
