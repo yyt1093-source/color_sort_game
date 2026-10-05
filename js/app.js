@@ -3038,39 +3038,69 @@ async function initColorSortApp() {
           if (eRes.ok) existingCloud = await eRes.json();
         } catch (e) {}
 
-        // Never allow a lower maxLevel to overwrite a higher maxLevel from the cloud
+        const cloudForceTs = Number(existingCloud ? (existingCloud.forceResetAt || existingCloud.accountResetAt || 0) : 0);
+        const localForceTs = Number(localStorage.getItem(`color_sort_force_reset_${id}`) || user.forceResetAt || user.accountResetAt || 0);
+        const isForceResetActive = cloudForceTs > 0 && cloudForceTs >= localForceTs;
+
+        // Never allow a lower maxLevel to overwrite a higher maxLevel from the cloud unless force reset
         if (existingCloud && !window.__seasonResetKicking) {
-          const exCloudMax = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : (existingCloud.level || 0));
-          const exCloudCur = Number(existingCloud.currentLevel || 1);
-          const exCloudStars = Number(existingCloud.stars || 0);
-          if (exCloudMax > maxLvl) {
-            maxLvl = exCloudMax;
-            user.maxLevel = maxLvl;
-            user.level = maxLvl;
-          }
-          if (exCloudCur > curLvl) {
-            curLvl = exCloudCur;
-            user.currentLevel = curLvl;
-          }
-          if (exCloudStars > stars) {
-            stars = exCloudStars;
-            user.stars = stars;
+          if (isForceResetActive) {
+            localStorage.setItem(`color_sort_force_reset_${id}`, String(cloudForceTs));
+            user.forceResetAt = cloudForceTs;
+            user.accountResetAt = cloudForceTs;
+            user.maxLevel = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : 10);
+            user.level = user.maxLevel;
+            user.currentLevel = Number(existingCloud.currentLevel !== undefined ? existingCloud.currentLevel : 10);
+            user.stars = Number(existingCloud.stars || 0);
+            user.hints = Number(existingCloud.hints || 0);
+            user.undos = Number(existingCloud.undos || 0);
+            user.reveals = Number(existingCloud.reveals || 0);
+            const exB = Number(existingCloud.extra_bottles !== undefined ? existingCloud.extra_bottles : (existingCloud.extraBottles || 0));
+            user.extraBottles = exB;
+            user.extra_bottles = exB;
+            user.shuffles = Number(existingCloud.shuffles || 0);
+            user.all_colors_until = Number(existingCloud.all_colors_until || 0);
+            user.all_colors_purchased_at = 0;
+            user.daily_boosters_days_left = 0;
+            user.dailyBoostersDaysLeft = 0;
+            user.ton_wallet = '';
+            maxLvl = user.maxLevel;
+            curLvl = user.currentLevel;
+            stars = user.stars;
+          } else {
+            const exCloudMax = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : (existingCloud.level || 0));
+            const exCloudCur = Number(existingCloud.currentLevel || 1);
+            const exCloudStars = Number(existingCloud.stars || 0);
+            if (exCloudMax > maxLvl) {
+              maxLvl = exCloudMax;
+              user.maxLevel = maxLvl;
+              user.level = maxLvl;
+            }
+            if (exCloudCur > curLvl) {
+              curLvl = exCloudCur;
+              user.currentLevel = curLvl;
+            }
+            if (exCloudStars > stars) {
+              stars = exCloudStars;
+              user.stars = stars;
+            }
           }
         }
 
-        const finalHints = Math.max(Number(user.hints || 0), existingCloud ? Number(existingCloud.hints || 0) : 0);
-        const finalUndos = Math.max(Number(user.undos || 0), existingCloud ? Number(existingCloud.undos || 0) : 0);
-        const finalReveals = Math.max(Number(user.reveals || 0), existingCloud ? Number(existingCloud.reveals || 0) : 0);
+        const finalHints = isForceResetActive ? Number(existingCloud.hints || 0) : Math.max(Number(user.hints || 0), existingCloud ? Number(existingCloud.hints || 0) : 0);
+        const finalUndos = isForceResetActive ? Number(existingCloud.undos || 0) : Math.max(Number(user.undos || 0), existingCloud ? Number(existingCloud.undos || 0) : 0);
+        const finalReveals = isForceResetActive ? Number(existingCloud.reveals || 0) : Math.max(Number(user.reveals || 0), existingCloud ? Number(existingCloud.reveals || 0) : 0);
         const existingB = existingCloud ? (existingCloud.extra_bottles !== undefined ? existingCloud.extra_bottles : existingCloud.extraBottles) : 0;
-        const finalBottles = Math.max(Number(user.extraBottles || 0), Number(existingB || 0));
+        const finalBottles = isForceResetActive ? Number(existingB || 0) : Math.max(Number(user.extraBottles || 0), Number(existingB || 0));
         const finalBalance = Number(user.ton_balance !== undefined ? user.ton_balance : (existingCloud ? existingCloud.ton_balance : 0));
-        const finalAllColors = Math.max(Number(user.all_colors_until || 0), existingCloud ? Number(existingCloud.all_colors_until || 0) : 0);
+        const finalAllColors = isForceResetActive ? Number(existingCloud.all_colors_until || 0) : Math.max(Number(user.all_colors_until || 0), existingCloud ? Number(existingCloud.all_colors_until || 0) : 0);
 
-        if (finalHints > (user.hints || 0)) user.hints = finalHints;
-        if (finalUndos > (user.undos || 0)) user.undos = finalUndos;
-        if (finalReveals > (user.reveals || 0)) user.reveals = finalReveals;
-        if (finalBottles > (user.extraBottles || 0)) { user.extraBottles = finalBottles; user.extra_bottles = finalBottles; }
-        if (finalAllColors > (user.all_colors_until || 0)) user.all_colors_until = finalAllColors;
+        user.hints = finalHints;
+        user.undos = finalUndos;
+        user.reveals = finalReveals;
+        user.extraBottles = finalBottles;
+        user.extra_bottles = finalBottles;
+        user.all_colors_until = finalAllColors;
 
         const finalDailyDays = Math.max(Number(user.daily_boosters_days_left || 0), existingCloud ? Number(existingCloud.daily_boosters_days_left || existingCloud.dailyBoostersDaysLeft || 0) : 0);
         const finalDailyLastDate = user.daily_boosters_last_date || (existingCloud ? (existingCloud.daily_boosters_last_date || existingCloud.dailyBoostersLastDate) : '') || '';
@@ -3436,6 +3466,37 @@ async function initColorSortApp() {
             updateHeaderUI();
             loadCurrentLevel();
           }
+
+          const forceResetTs = Number(cloudData.forceResetAt || cloudData.accountResetAt || 0);
+          const localForceResetTs = Number(localStorage.getItem(`color_sort_force_reset_${currentUser.telegramId}`) || currentUser.forceResetAt || currentUser.accountResetAt || 0);
+          if (forceResetTs > 0 && forceResetTs > localForceResetTs) {
+            localStorage.setItem(`color_sort_force_reset_${currentUser.telegramId}`, String(forceResetTs));
+            currentUser.forceResetAt = forceResetTs;
+            currentUser.accountResetAt = forceResetTs;
+            currentUser.maxLevel = Number(cloudData.maxLevel !== undefined ? cloudData.maxLevel : 10);
+            currentUser.level = Number(cloudData.level !== undefined ? cloudData.level : 10);
+            currentUser.currentLevel = Number(cloudData.currentLevel !== undefined ? cloudData.currentLevel : 10);
+            currentUser.stars = Number(cloudData.stars || 0);
+            currentUser.hints = Number(cloudData.hints || 0);
+            currentUser.undos = Number(cloudData.undos || 0);
+            currentUser.reveals = Number(cloudData.reveals || 0);
+            currentUser.extraBottles = Number(cloudData.extraBottles !== undefined ? cloudData.extraBottles : (cloudData.extra_bottles || 0));
+            currentUser.extra_bottles = currentUser.extraBottles;
+            currentUser.shuffles = Number(cloudData.shuffles || 0);
+            currentUser.all_colors_until = Number(cloudData.all_colors_until || 0);
+            currentUser.all_colors_purchased_at = 0;
+            currentUser.daily_boosters_days_left = 0;
+            currentUser.dailyBoostersDaysLeft = 0;
+            currentUser.daily_boosters_last_date = '';
+            currentUser.daily_boosters_purchased_at = 0;
+            currentUser.ton_wallet = '';
+            normalizeUserObject(currentUser);
+            saveLocalUser();
+            updateHeaderUI();
+            loadCurrentLevel();
+            return;
+          }
+
           let changed = false;
 
           if (cloudData.hints !== undefined) {
