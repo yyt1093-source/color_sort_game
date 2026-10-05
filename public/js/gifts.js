@@ -173,6 +173,38 @@
     return Number(currentUserRef[field] || 0);
   }
 
+  // Persistent Claimed Gift IDs tracking to eliminate delays and prevent stale network overwrite
+  const CLAIMED_GIFTS_KEY = 'colorsort_claimed_gift_ids';
+
+  function getClaimedGiftIds(userId) {
+    if (!userId) return new Set();
+    try {
+      const raw = localStorage.getItem(`${CLAIMED_GIFTS_KEY}_${userId}`);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return new Set(arr.map(String));
+      }
+    } catch (e) {}
+    return new Set();
+  }
+
+  function markGiftIdAsClaimed(userId, giftId) {
+    if (!userId || !giftId) return;
+    try {
+      const set = getClaimedGiftIds(userId);
+      set.add(String(giftId));
+      const arr = Array.from(set);
+      const trimmed = arr.length > 500 ? arr.slice(-500) : arr;
+      localStorage.setItem(`${CLAIMED_GIFTS_KEY}_${userId}`, JSON.stringify(trimmed));
+    } catch (e) {}
+  }
+
+  function isGiftIdClaimed(userId, giftId) {
+    if (!userId || !giftId) return false;
+    const set = getClaimedGiftIds(userId);
+    return set.has(String(giftId));
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -226,6 +258,17 @@
     if (!userId) return [];
     let inbox = [];
     const seenIds = new Set();
+    const claimedSet = getClaimedGiftIds(userId);
+
+    const markIfClaimed = (g) => {
+      if (!g || !g.id) return;
+      if (claimedSet.has(String(g.id)) || g.claimed) {
+        g.claimed = true;
+        g.claimedAt = g.claimedAt || Date.now();
+        // ensure persistent set has it too
+        markGiftIdAsClaimed(userId, g.id);
+      }
+    };
 
     // 1. Try server API first (fast, reliable SQLite storage, no 429 rate limit)
     try {
@@ -234,6 +277,7 @@
         serverRes.gifts.forEach(g => {
           if (g && g.id && !seenIds.has(String(g.id))) {
             seenIds.add(String(g.id));
+            markIfClaimed(g);
             inbox.push(g);
           }
         });
@@ -252,6 +296,7 @@
           data.forEach(g => {
             if (g && g.id && !seenIds.has(String(g.id))) {
               seenIds.add(String(g.id));
+              markIfClaimed(g);
               inbox.push(g);
             }
           });
@@ -268,6 +313,7 @@
           parsed.forEach(g => {
             if (g && g.id && !seenIds.has(String(g.id))) {
               seenIds.add(String(g.id));
+              markIfClaimed(g);
               inbox.push(g);
             }
           });
@@ -290,11 +336,15 @@
       localStorage.setItem(`colorsort_gifts_inbox_${userId}`, JSON.stringify(inbox));
     } catch (e) {}
     try {
-      fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(userId)}`, {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
+      await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(userId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(inbox)
-      }).catch(() => {});
+        body: JSON.stringify(inbox),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
     } catch (err) {}
   }
 
@@ -304,7 +354,7 @@
     const userId = String(currentUserRef.telegramId);
     const inbox = await fetchCloudInbox(userId);
     cachedInbox = inbox;
-    const unclaimed = inbox.filter(g => !g.claimed);
+    const unclaimed = inbox.filter(g => !g.claimed && !isGiftIdClaimed(userId, g.id));
 
     updateIndicatorStyles(unclaimed.length);
     return unclaimed;
@@ -359,7 +409,8 @@
 
     if (loadingEl) loadingEl.classList.add('hidden');
 
-    const unclaimed = (cachedInbox || []).filter(g => !g.claimed);
+    const userId = currentUserRef ? String(currentUserRef.telegramId) : '';
+    const unclaimed = (cachedInbox || []).filter(g => !g.claimed && !isGiftIdClaimed(userId, g.id));
     updateIndicatorStyles(unclaimed.length);
 
     if (unclaimed.length === 0) {
@@ -375,7 +426,16 @@
     }
 
     if (emptyEl) emptyEl.classList.add('hidden');
+    renderReceivedGifts(cachedInbox);
+  }
+
+  function renderReceivedGifts(inbox) {
+    const listEl = document.getElementById('giftsReceiveList');
+    if (!listEl) return;
     listEl.innerHTML = '';
+
+    const userId = currentUserRef ? String(currentUserRef.telegramId) : '';
+    const unclaimed = (inbox || []).filter(g => !g.claimed && !isGiftIdClaimed(userId, g.id));
 
     unclaimed.forEach(gift => {
       const card = document.createElement('div');
@@ -401,32 +461,50 @@
       const amount = gift.amount || 1;
       const titleText = t('giftReceivedCardTitle', localizedName, amount);
 
-      const isAdmin = isUserAdmin(currentUserRef);
-      let descText = escapeHtml(t('giftReceivedCardDesc'));
-      if (isAdmin) {
-        let senderInfo = '';
-        if (gift.fromUsername) {
-          senderInfo = `@${String(gift.fromUsername).replace(/^@/, '')}`;
-        } else if (gift.fromName) {
-          senderInfo = gift.fromName;
-        }
-        if (gift.fromId) {
-          senderInfo = senderInfo ? `${senderInfo} (ID: ${gift.fromId})` : `ID: ${gift.fromId}`;
-        }
-        if (senderInfo) {
-          descText = `${escapeHtml(t('giftReceivedCardDesc'))} <small style="display:block; color:#94a3b8; font-size:0.75rem; margin-top:2px;">[${t('giftFromLabel') || 'От'}: ${escapeHtml(senderInfo)}]</small>`;
+      // Determine sender display: Show to ALL players (and admin)
+      const isColorSort = (gift.senderType === 'colorsort') || 
+                          (String(gift.fromName || '').trim().toLowerCase() === 'color sort') ||
+                          (String(gift.fromUsername || '').trim().toLowerCase() === 'colorsortgame');
+
+      let senderDisplayName = '';
+      if (isColorSort) {
+        senderDisplayName = 'Color Sort';
+      } else {
+        const namePart = (gift.fromName && gift.fromName !== 'Игрок' && gift.fromName !== 'Player') 
+          ? String(gift.fromName).trim() 
+          : '';
+        const userPart = gift.fromUsername 
+          ? `@${String(gift.fromUsername).replace(/^@/, '').trim()}` 
+          : '';
+
+        if (namePart && userPart && namePart.toLowerCase() !== userPart.toLowerCase().replace('@', '')) {
+          senderDisplayName = `${namePart} (${userPart})`;
+        } else if (namePart) {
+          senderDisplayName = namePart;
+        } else if (userPart) {
+          senderDisplayName = userPart;
+        } else {
+          senderDisplayName = t('defaultPlayerName') || 'Игрок';
         }
       }
 
+      const isAdmin = isUserAdmin(currentUserRef);
+      let adminExtra = '';
+      if (isAdmin && gift.fromId) {
+        adminExtra = ` <small style="color:#94a3b8; font-size:0.72rem;">(ID: ${escapeHtml(gift.fromId)})</small>`;
+      }
+
       const timeText = dateFormatted ? t('giftReceivedTimeKyiv', dateFormatted) : '';
-      const claimBtnText = t('giftsClaimBtn');
+      const claimBtnText = t('giftsClaimBtn') || 'Забрать';
 
       card.innerHTML = `
-        <div class="gift-received-left">
+        <div class="gift-received-top">
           <span class="gift-received-icon">${gift.giftIcon || '🎁'}</span>
-          <div class="gift-received-texts">
-            <strong class="gift-received-title">${escapeHtml(titleText)}</strong>
-            <span class="gift-received-desc">${descText}</span>
+        </div>
+        <div class="gift-received-body">
+          <strong class="gift-received-title">${escapeHtml(titleText)}</strong>
+          <div class="gift-received-desc-block">
+            <span class="gift-received-sender">${t('giftFromLabel') || 'От'}: <strong>${escapeHtml(senderDisplayName)}</strong>${adminExtra}</span>
             ${timeText ? `<span class="gift-received-date">${escapeHtml(timeText)}</span>` : ''}
           </div>
         </div>
@@ -448,23 +526,25 @@
   async function claimGift(gift) {
     if (isClaiming || !currentUserRef || !gift) return;
     isClaiming = true;
+    const userId = String(currentUserRef.telegramId);
+    const giftIdStr = String(gift.id);
 
     try {
-      const field = gift.giftType;
-      const addAmount = Number(gift.amount) || 1;
+      // 1. Mark permanently in local persistent set immediately (no delay, no stale network overwrite)
+      markGiftIdAsClaimed(userId, giftIdStr);
 
-      // 1. Add to player balance
-      if (field === 'extraBottles') {
-        const cur = Math.max(Number(currentUserRef.extraBottles || 0), Number(currentUserRef.extra_bottles || 0));
-        currentUserRef.extraBottles = cur + addAmount;
-        currentUserRef.extra_bottles = currentUserRef.extraBottles;
-      } else {
-        currentUserRef[field] = (Number(currentUserRef[field]) || 0) + addAmount;
+      // 2. Immediate visual button update on card
+      const card = document.getElementById(`gift-card-${gift.id}`);
+      const claimBtn = card ? card.querySelector('.btn-claim-gift') : null;
+      if (claimBtn) {
+        claimBtn.disabled = true;
+        claimBtn.textContent = '✓ ' + (t('giftClaimedDone') || 'Забрано!');
+        claimBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        claimBtn.style.color = '#ffffff';
       }
 
-      // 2. Mark gift as claimed in local inbox immediately
-      const userId = String(currentUserRef.telegramId);
-      const giftIdx = cachedInbox.findIndex(g => String(g.id) === String(gift.id));
+      // 3. Mark gift as claimed in local cachedInbox immediately
+      const giftIdx = cachedInbox.findIndex(g => String(g.id) === giftIdStr);
       if (giftIdx !== -1) {
         cachedInbox[giftIdx].claimed = true;
         cachedInbox[giftIdx].claimedAt = Date.now();
@@ -473,18 +553,29 @@
         localStorage.setItem(`colorsort_gifts_inbox_${userId}`, JSON.stringify(cachedInbox));
       } catch (e) {}
 
-      // 3. Immediately refresh views and indicator animations
-      renderReceiveView();
-      renderSendView();
+      // 4. Update indicators and badge counts immediately
+      const remainingUnclaimed = cachedInbox.filter(g => !g.claimed && !isGiftIdClaimed(userId, g.id));
+      updateIndicatorStyles(remainingUnclaimed.length);
 
-      // 4. Save local and cloud player progress
+      // 5. Add to player balance
+      const field = gift.giftType;
+      const addAmount = Number(gift.amount) || 1;
+      if (field === 'extraBottles') {
+        const cur = Math.max(Number(currentUserRef.extraBottles || 0), Number(currentUserRef.extra_bottles || 0));
+        currentUserRef.extraBottles = cur + addAmount;
+        currentUserRef.extra_bottles = currentUserRef.extraBottles;
+      } else {
+        currentUserRef[field] = (Number(currentUserRef[field]) || 0) + addAmount;
+      }
+
+      // 6. Save player progress
       if (typeof saveUserCallback === 'function') saveUserCallback();
       if (typeof updateUICallback === 'function') updateUICallback();
       if (typeof updateCloudBoosterCallback === 'function') {
         updateCloudBoosterCallback(field, currentUserRef[field]);
       }
 
-      // 5. Sound & Haptics
+      // 7. Sound & Haptics
       if (window.SoundEngine && window.SoundEngine.SoundEngine) {
         window.SoundEngine.SoundEngine.playComplete();
       }
@@ -492,7 +583,23 @@
         window.TelegramApp.TelegramApp.haptic('success');
       }
 
-      // 6. Success Modal
+      // 8. Smoothly fade out card and remove from list
+      if (card) {
+        card.style.transition = 'all 0.25s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.96)';
+        setTimeout(() => {
+          if (card.parentNode) card.parentNode.removeChild(card);
+          const listEl = document.getElementById('giftsReceiveList');
+          if (listEl && listEl.children.length === 0) {
+            renderReceiveView();
+          }
+        }, 260);
+      } else {
+        renderReceiveView();
+      }
+
+      // 9. Success Modal
       const localizedName = getGiftName(gift.giftType);
       showNotification(
         gift.giftIcon || '🎁',
@@ -500,9 +607,9 @@
         t('giftClaimedSuccessDesc', gift.giftIcon || '🎁', localizedName, addAmount)
       );
 
-      // 7. Claim on server and save cloud inbox
+      // 10. Background sync to server and KVDB
       giftApiCall('/api/gifts/claim', 'POST', {
-        giftId: String(gift.id),
+        giftId: giftIdStr,
         recipientId: userId
       }).catch(() => {});
 
@@ -512,6 +619,43 @@
       showNotification('⚠️', t('errorTitle'), (t('errorClaimGift') || 'Не удалось забрать подарок:') + ' ' + err.message);
     } finally {
       isClaiming = false;
+    }
+  }
+
+  // Admin Sender Identity: 'self' (e.g. Alligator) or 'colorsort' (Game Color Sort)
+  let adminSenderMode = 'self';
+
+  function updateAdminSenderToggleUI() {
+    const btnSelf = document.getElementById('btnSenderAdminSelf');
+    const btnGame = document.getElementById('btnSenderColorSort');
+    const selfLabel = document.getElementById('adminSenderSelfLabel');
+
+    if (selfLabel && currentUserRef) {
+      let adminName = 'Alligator';
+      if (currentUserRef.username) {
+        adminName = `@${String(currentUserRef.username).replace(/^@/, '')}`;
+      } else if (currentUserRef.firstName && currentUserRef.firstName !== 'Игрок') {
+        adminName = currentUserRef.firstName;
+      }
+      selfLabel.textContent = `${t('giftFromLabel') || 'От'} ${adminName}`;
+    }
+
+    if (btnSelf) btnSelf.classList.toggle('active', adminSenderMode === 'self');
+    if (btnGame) btnGame.classList.toggle('active', adminSenderMode === 'colorsort');
+
+    // Also update sender preview in quantity modal if it is rendered
+    const previewEl = document.getElementById('giftQtySenderPreviewName');
+    const previewRow = document.getElementById('giftQtySenderPreviewRow');
+    if (previewRow && previewEl) {
+      const isAdmin = isUserAdmin(currentUserRef);
+      if (isAdmin) {
+        previewRow.classList.remove('hidden');
+        previewEl.textContent = adminSenderMode === 'colorsort'
+          ? 'Color Sort'
+          : (currentUserRef.username ? `@${String(currentUserRef.username).replace(/^@/, '')}` : (currentUserRef.firstName || 'Alligator'));
+      } else {
+        previewRow.classList.add('hidden');
+      }
     }
   }
 
@@ -577,6 +721,15 @@
       const targetNameEl = document.getElementById('giftsTargetPlayerName');
       if (targetNameEl) {
         targetNameEl.textContent = selectedRecipient.displayName;
+      }
+      const adminChoiceBox = document.getElementById('adminSenderChoiceBox');
+      if (adminChoiceBox) {
+        if (isAdmin) {
+          adminChoiceBox.classList.remove('hidden');
+          updateAdminSenderToggleUI();
+        } else {
+          adminChoiceBox.classList.add('hidden');
+        }
       }
     } else {
       if (stepRecipient) stepRecipient.classList.remove('hidden');
@@ -779,6 +932,24 @@
       statsElements[1].innerHTML = `${t('giftQtyAvailableTodayLabel')} <b id="giftQtyLimitValue">${limitText}</b> ${t('giftQtyPcs') || 'шт.'}`;
     }
 
+    // Admin sender preview row in modal
+    const senderPreviewEl = document.getElementById('giftQtySenderPreviewName');
+    const senderPreviewRow = document.getElementById('giftQtySenderPreviewRow');
+    if (senderPreviewRow && senderPreviewEl) {
+      if (isAdmin) {
+        senderPreviewRow.classList.remove('hidden');
+        let selfName = 'Alligator';
+        if (currentUserRef.username) {
+          selfName = `@${String(currentUserRef.username).replace(/^@/, '')}`;
+        } else if (currentUserRef.firstName && currentUserRef.firstName !== 'Игрок') {
+          selfName = currentUserRef.firstName;
+        }
+        senderPreviewEl.textContent = adminSenderMode === 'colorsort' ? 'Color Sort' : selfName;
+      } else {
+        senderPreviewRow.classList.add('hidden');
+      }
+    }
+
     updateQtyStepperUI();
     modal.classList.remove('hidden');
   }
@@ -853,7 +1024,30 @@
       }
 
       // 4. Push gift to recipient's inbox (Server API + Cloud KVDB)
-      const senderUsername = currentUserRef.username ? String(currentUserRef.username).replace(/^@/, '').trim() : '';
+      let senderName = '';
+      let senderUsername = '';
+      let senderType = 'player';
+
+      if (isAdmin) {
+        if (adminSenderMode === 'colorsort') {
+          senderName = 'Color Sort';
+          senderUsername = 'ColorSortGame';
+          senderType = 'colorsort';
+        } else {
+          senderName = (currentUserRef.firstName && currentUserRef.firstName !== 'Игрок')
+            ? currentUserRef.firstName
+            : (currentUserRef.username || 'Alligator');
+          senderUsername = currentUserRef.username ? String(currentUserRef.username).replace(/^@/, '').trim() : 'Alligator';
+          senderType = 'admin';
+        }
+      } else {
+        senderName = (currentUserRef.firstName && currentUserRef.firstName !== 'Игрок')
+          ? currentUserRef.firstName
+          : (t('defaultPlayerName') || 'Игрок');
+        senderUsername = currentUserRef.username ? String(currentUserRef.username).replace(/^@/, '').trim() : '';
+        senderType = 'player';
+      }
+
       const newGift = {
         id: 'gift_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
         giftType: giftType,
@@ -862,8 +1056,9 @@
         amount: sendQty,
         recipientId: targetId,
         fromId: myId,
-        fromName: currentUserRef.firstName || 'Игрок',
+        fromName: senderName,
         fromUsername: senderUsername,
+        senderType: senderType,
         createdAt: Date.now(),
         claimed: false
       };
@@ -1039,6 +1234,30 @@
         closeQuantityModal();
       });
     }
+
+    // Admin Sender Mode Toggles (From Alligator / From Color Sort)
+    const btnSenderSelf = document.getElementById('btnSenderAdminSelf');
+    const btnSenderColorSort = document.getElementById('btnSenderColorSort');
+    if (btnSenderSelf) {
+      btnSenderSelf.addEventListener('click', (e) => {
+        e.stopPropagation();
+        adminSenderMode = 'self';
+        updateAdminSenderToggleUI();
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('selection');
+        }
+      });
+    }
+    if (btnSenderColorSort) {
+      btnSenderColorSort.addEventListener('click', (e) => {
+        e.stopPropagation();
+        adminSenderMode = 'colorsort';
+        updateAdminSenderToggleUI();
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('selection');
+        }
+      });
+    }
   }
 
   function setLanguage(lang, translateFn) {
@@ -1055,6 +1274,15 @@
     if (sendBtn) {
       sendBtn.innerHTML = `<span>${t('giftsSubnavSend')}</span>`;
     }
+
+    // Admin sender choice strings
+    const adminChoiceTitle = document.querySelector('#adminSenderChoiceBox .admin-sender-choice-title span');
+    if (adminChoiceTitle) adminChoiceTitle.textContent = t('adminSenderOptionLabel') || '👑 От чьего имени отправить:';
+
+    const adminSenderGameLabel = document.getElementById('adminSenderGameLabel');
+    if (adminSenderGameLabel) adminSenderGameLabel.textContent = t('adminSenderFromGame') || 'От Color Sort';
+
+    updateAdminSenderToggleUI();
 
     // 2. Receive view static strings
     const rLoading = document.getElementById('giftsReceiveLoading');
