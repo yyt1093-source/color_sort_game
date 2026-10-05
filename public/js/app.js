@@ -225,8 +225,7 @@ async function initColorSortApp() {
       confirmRestartBtn: "Рестарт",
       securityAlertTitle: "Система безопасности Color Sort",
       securityAlertSubtitle: "Замечены хакерские действия",
-      securityAlertDesc: "Прохождение с 5-го уровня без использования подсказок заблокировано. Начните этот уровень заново и используйте подсказки.",
-      securityAlertRestartBtn: (lvl) => `Пройти заново уровень ${lvl}`,
+      securityAlertRestartBtn: (lvl) => `Начать уровень ${lvl} заново`,
       adModalTitle: "🎁 Реклама",
       adModalDesc: "Посмотрите короткие видео и получите бесплатные бонусы",
       adModalBottleTitle: "Пустая колба",
@@ -609,8 +608,7 @@ async function initColorSortApp() {
       confirmRestartBtn: "Рестарт",
       securityAlertTitle: "Система безпеки Color Sort",
       securityAlertSubtitle: "Помічені хакерські дії",
-      securityAlertDesc: "Проходження з 5-го рівня без використання підказок заблоковано. Почніть цей рівень заново та використовуйте підказки.",
-      securityAlertRestartBtn: (lvl) => `Пройти заново рівень ${lvl}`,
+      securityAlertRestartBtn: (lvl) => `Почати рівень ${lvl} заново`,
       adModalTitle: "🎁 Реклама",
       adModalDesc: "Подивіться коротке відео та отримайте безкоштовні бонуси",
       adModalBottleTitle: "Порожня колба",
@@ -969,7 +967,6 @@ async function initColorSortApp() {
       confirmRestartBtn: "Restart",
       securityAlertTitle: "Color Sort Security System",
       securityAlertSubtitle: "Hacking activity detected",
-      securityAlertDesc: "Completing levels from level 5 onwards without using hints is blocked. Restart this level and use hints.",
       securityAlertRestartBtn: (lvl) => `Restart level ${lvl}`,
       adModalTitle: "🎁 Rewards",
       adModalDesc: "Watch short video ads to claim free boosters",
@@ -1329,7 +1326,6 @@ async function initColorSortApp() {
       confirmRestartBtn: "Neustart",
       securityAlertTitle: "Color Sort Sicherheitssystem",
       securityAlertSubtitle: "Hacking-Aktivität erkannt",
-      securityAlertDesc: "Das Abschließen ab Level 5 ohne Nutzung von Hinweisen ist blockiert. Starten Sie dieses Level neu und nutzen Sie Hinweise.",
       securityAlertRestartBtn: (lvl) => `Level ${lvl} neu starten`,
       adModalTitle: "🎁 Belohnungen",
       adModalDesc: "Schau kurze Videos an, um kostenlose Boni zu erhalten",
@@ -1689,7 +1685,6 @@ async function initColorSortApp() {
       confirmRestartBtn: "Iš naujo",
       securityAlertTitle: "Color Sort saugumo sistema",
       securityAlertSubtitle: "Pastebėta įsilaužimo veikla",
-      securityAlertDesc: "Lygio įveikimas nuo 5 lygio nenaudojant užuominų yra užblokuotas. Pradėkite šį lygį iš naujo ir naudokite užuominas.",
       securityAlertRestartBtn: (lvl) => `Pradėti ${lvl} lygį iš naujo`,
       adModalTitle: "🎁 Premijos",
       adModalDesc: "Žiūrėkite trumpus vaizdo įrašus ir gaukite nemokamas premijas",
@@ -2653,8 +2648,6 @@ async function initColorSortApp() {
     if (secTitle) secTitle.textContent = t('securityAlertTitle');
     const secSubtitle = document.getElementById('securityAlertSubtitle');
     if (secSubtitle) secSubtitle.textContent = t('securityAlertSubtitle');
-    const secDesc = document.getElementById('securityAlertDesc');
-    if (secDesc) secDesc.textContent = t('securityAlertDesc');
     const secBtn = document.getElementById('securityAlertRestartBtn');
     if (secBtn && typeof currentUser !== 'undefined') {
       const curLvl = Number(currentUser.currentLevel || 1);
@@ -3575,7 +3568,6 @@ async function initColorSortApp() {
 
       if (securityAlertTitle) securityAlertTitle.textContent = t('securityAlertTitle');
       if (securityAlertSubtitle) securityAlertSubtitle.textContent = t('securityAlertSubtitle');
-      if (securityAlertDesc) securityAlertDesc.textContent = t('securityAlertDesc');
       if (securityAlertRestartBtn) {
         const btnText = typeof t('securityAlertRestartBtn') === 'function'
           ? t('securityAlertRestartBtn')(lvlNum)
@@ -3586,7 +3578,7 @@ async function initColorSortApp() {
       if (securityAlertModal) {
         openModal(securityAlertModal);
       } else {
-        alert(`🛑 Система безопасности Color Sort\nЗамечены хакерские действия!\nПрохождение с 5-го уровня без использования подсказок заблокировано. Начните уровень ${lvlNum} заново.`);
+        alert(`🛑 Система безопасности Color Sort\nЗамечены хакерские действия!`);
         if (currentLevelData) {
           engine.startLevel(currentLevelData);
         } else {
