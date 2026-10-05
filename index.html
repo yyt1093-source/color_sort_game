@@ -1804,6 +1804,23 @@
               </div>
             </div>
 
+            <!-- Admin Sender Choice Box (Visible only to Admin) -->
+            <div id="adminSenderChoiceBox" class="admin-sender-choice-box hidden">
+              <div class="admin-sender-choice-title">
+                <span>👑 От чьего имени отправить:</span>
+              </div>
+              <div class="admin-sender-toggle-row">
+                <button type="button" class="btn-sender-toggle active" id="btnSenderAdminSelf" data-sender-mode="self">
+                  <span class="sender-toggle-icon">🐊</span>
+                  <span class="sender-toggle-text" id="adminSenderSelfLabel">От Alligator</span>
+                </button>
+                <button type="button" class="btn-sender-toggle" id="btnSenderColorSort" data-sender-mode="colorsort">
+                  <span class="sender-toggle-icon">🎨</span>
+                  <span class="sender-toggle-text" id="adminSenderGameLabel">От Color Sort</span>
+                </button>
+              </div>
+            </div>
+
             <div class="gifts-step-title">🎁 Выберите подарок для отправки:</div>
             <div class="gifts-catalog-grid">
               <!-- Item 1: Undos -->
@@ -1869,6 +1886,7 @@
           <div>
             <h2 id="giftQtyModalTitle">Сколько подарить?</h2>
             <p class="modal-desc" id="giftQtyRecipientDesc">Получатель: <strong id="giftQtyRecipientName">—</strong></p>
+            <p class="modal-desc gift-qty-sender-preview hidden" id="giftQtySenderPreviewRow" style="font-size: 0.8rem; color: #fbbf24; margin-top: 2px;">Отправитель: <strong id="giftQtySenderPreviewName">Alligator</strong></p>
           </div>
         </div>
         <button id="closeGiftQtyModalBtn" class="close-btn-circle" title="Закрыть">&times;</button>
