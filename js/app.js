@@ -223,6 +223,10 @@ async function initColorSortApp() {
       restartDesc: "Весь прогресс на этом уровне будет сброшен.",
       cancelBtn: "Отмена",
       confirmRestartBtn: "Рестарт",
+      securityAlertTitle: "Система безопасности Color Sort",
+      securityAlertSubtitle: "Замечены хакерские действия",
+      securityAlertDesc: "Прохождение с 5-го уровня без использования подсказок заблокировано. Начните этот уровень заново и используйте подсказки.",
+      securityAlertRestartBtn: (lvl) => `Пройти заново уровень ${lvl}`,
       adModalTitle: "🎁 Реклама",
       adModalDesc: "Посмотрите короткие видео и получите бесплатные бонусы",
       adModalBottleTitle: "Пустая колба",
@@ -603,6 +607,10 @@ async function initColorSortApp() {
       restartDesc: "Весь прогрес на цьому рівні буде скинуто.",
       cancelBtn: "Скасувати",
       confirmRestartBtn: "Рестарт",
+      securityAlertTitle: "Система безпеки Color Sort",
+      securityAlertSubtitle: "Помічені хакерські дії",
+      securityAlertDesc: "Проходження з 5-го рівня без використання підказок заблоковано. Почніть цей рівень заново та використовуйте підказки.",
+      securityAlertRestartBtn: (lvl) => `Пройти заново рівень ${lvl}`,
       adModalTitle: "🎁 Реклама",
       adModalDesc: "Подивіться коротке відео та отримайте безкоштовні бонуси",
       adModalBottleTitle: "Порожня колба",
@@ -959,6 +967,10 @@ async function initColorSortApp() {
       restartDesc: "All progress on this level will be reset.",
       cancelBtn: "Cancel",
       confirmRestartBtn: "Restart",
+      securityAlertTitle: "Color Sort Security System",
+      securityAlertSubtitle: "Hacking activity detected",
+      securityAlertDesc: "Completing levels from level 5 onwards without using hints is blocked. Restart this level and use hints.",
+      securityAlertRestartBtn: (lvl) => `Restart level ${lvl}`,
       adModalTitle: "🎁 Rewards",
       adModalDesc: "Watch short video ads to claim free boosters",
       adModalBottleTitle: "Empty Bottle",
@@ -1315,6 +1327,10 @@ async function initColorSortApp() {
       restartDesc: "Der Fortschritt in diesem Level wird zurückgesetzt.",
       cancelBtn: "Abbrechen",
       confirmRestartBtn: "Neustart",
+      securityAlertTitle: "Color Sort Sicherheitssystem",
+      securityAlertSubtitle: "Hacking-Aktivität erkannt",
+      securityAlertDesc: "Das Abschließen ab Level 5 ohne Nutzung von Hinweisen ist blockiert. Starten Sie dieses Level neu und nutzen Sie Hinweise.",
+      securityAlertRestartBtn: (lvl) => `Level ${lvl} neu starten`,
       adModalTitle: "🎁 Belohnungen",
       adModalDesc: "Schau kurze Videos an, um kostenlose Boni zu erhalten",
       adModalBottleTitle: "Zusatz-Flasche",
@@ -1671,6 +1687,10 @@ async function initColorSortApp() {
       restartDesc: "Šio lygio progresas bus nustatytas iš naujo.",
       cancelBtn: "Atšaukti",
       confirmRestartBtn: "Iš naujo",
+      securityAlertTitle: "Color Sort saugumo sistema",
+      securityAlertSubtitle: "Pastebėta įsilaužimo veikla",
+      securityAlertDesc: "Lygio įveikimas nuo 5 lygio nenaudojant užuominų yra užblokuotas. Pradėkite šį lygį iš naujo ir naudokite užuominas.",
+      securityAlertRestartBtn: (lvl) => `Pradėti ${lvl} lygį iš naujo`,
       adModalTitle: "🎁 Premijos",
       adModalDesc: "Žiūrėkite trumpus vaizdo įrašus ir gaukite nemokamas premijas",
       adModalBottleTitle: "Papildomas buteliukas",
@@ -2121,6 +2141,11 @@ async function initColorSortApp() {
   const cancelRestartBtn = document.getElementById('cancelRestartBtn');
   const confirmRestartBtn = document.getElementById('confirmRestartBtn');
   const infoModal = document.getElementById('infoModal');
+  const securityAlertModal = document.getElementById('securityAlertModal');
+  const securityAlertTitle = document.getElementById('securityAlertTitle');
+  const securityAlertSubtitle = document.getElementById('securityAlertSubtitle');
+  const securityAlertDesc = document.getElementById('securityAlertDesc');
+  const securityAlertRestartBtn = document.getElementById('securityAlertRestartBtn');
 
   // Admin & Season Reset Elements
   const profileAdminBadge = document.getElementById('profileAdminBadge');
@@ -2622,6 +2647,21 @@ async function initColorSortApp() {
     if (cancelRestartBtn) cancelRestartBtn.textContent = t('cancelBtn');
     const confirmRestartBtn = document.getElementById('confirmRestartBtn');
     if (confirmRestartBtn) confirmRestartBtn.textContent = t('confirmRestartBtn');
+
+    // Security Alert Modal
+    const secTitle = document.getElementById('securityAlertTitle');
+    if (secTitle) secTitle.textContent = t('securityAlertTitle');
+    const secSubtitle = document.getElementById('securityAlertSubtitle');
+    if (secSubtitle) secSubtitle.textContent = t('securityAlertSubtitle');
+    const secDesc = document.getElementById('securityAlertDesc');
+    if (secDesc) secDesc.textContent = t('securityAlertDesc');
+    const secBtn = document.getElementById('securityAlertRestartBtn');
+    if (secBtn && typeof currentUser !== 'undefined') {
+      const curLvl = Number(currentUser.currentLevel || 1);
+      secBtn.textContent = typeof t('securityAlertRestartBtn') === 'function'
+        ? t('securityAlertRestartBtn')(curLvl)
+        : `${t('securityAlertRestartBtn')} ${curLvl}`;
+    }
 
     // Ad Bonus Modal
     const adModalTitle = document.getElementById('adModalTitle');
@@ -3496,6 +3536,11 @@ async function initColorSortApp() {
 
   async function advanceToNextLevel() {
     if (isNextLevelLoading) return;
+    const currentLvl = Number(currentUser.currentLevel || 1);
+    if (currentLvl >= 5 && Number(engine.boostersUsedInLevel || 0) <= 0) {
+      console.warn('[Security] advanceToNextLevel blocked: level >= 5 without boosters');
+      return;
+    }
     isNextLevelLoading = true;
     if (winAutoAdvanceTimer) {
       clearTimeout(winAutoAdvanceTimer);
@@ -3506,7 +3551,7 @@ async function initColorSortApp() {
     isNextLevelLoading = false;
   }
 
-  engine.onWin = ({ levelNumber, moves }) => {
+  engine.onWin = ({ levelNumber, moves, boostersUsed, isSecurityViolation }) => {
     if (window.__seasonResetKicking || (typeof isSeasonResetKicked !== 'undefined' && isSeasonResetKicked)) {
       return;
     }
@@ -3515,6 +3560,40 @@ async function initColorSortApp() {
     if (localReset > 0 && userReset < localReset) {
       if (typeof triggerSeasonResetKick === 'function') {
         triggerSeasonResetKick(localReset);
+      }
+      return;
+    }
+
+    const lvlNum = Number(levelNumber || currentUser.currentLevel || 1);
+    const totalBoosters = Number(boostersUsed !== undefined ? boostersUsed : (engine.boostersUsedInLevel || 0));
+
+    // Security Anti-Cheat Check: Starting from Level 5, completing a level without hints/boosters is strictly forbidden!
+    if (lvlNum >= 5 && (isSecurityViolation || totalBoosters <= 0)) {
+      console.warn(`[Security Alert] Completion of level ${lvlNum} blocked: 0 hints/boosters used!`);
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playError();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
+
+      if (securityAlertTitle) securityAlertTitle.textContent = t('securityAlertTitle');
+      if (securityAlertSubtitle) securityAlertSubtitle.textContent = t('securityAlertSubtitle');
+      if (securityAlertDesc) securityAlertDesc.textContent = t('securityAlertDesc');
+      if (securityAlertRestartBtn) {
+        const btnText = typeof t('securityAlertRestartBtn') === 'function'
+          ? t('securityAlertRestartBtn')(lvlNum)
+          : `${t('securityAlertRestartBtn')} ${lvlNum}`;
+        securityAlertRestartBtn.textContent = btnText;
+      }
+
+      if (securityAlertModal) {
+        openModal(securityAlertModal);
+      } else {
+        alert(`🛑 Система безопасности Color Sort\nЗамечены хакерские действия!\nПрохождение с 5-го уровня без использования подсказок заблокировано. Начните уровень ${lvlNum} заново.`);
+        if (currentLevelData) {
+          engine.startLevel(currentLevelData);
+        } else {
+          loadCurrentLevel();
+        }
+        if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
+        updateHeaderUI();
       }
       return;
     }
@@ -4019,6 +4098,33 @@ async function initColorSortApp() {
     });
   }
 
+  function restartCurrentLevelSecurity() {
+    if (securityAlertModal) closeModal(securityAlertModal);
+    if (currentLevelData) {
+      engine.startLevel(currentLevelData);
+    } else {
+      loadCurrentLevel();
+    }
+    if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
+    updateHeaderUI();
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+  }
+
+  if (securityAlertRestartBtn) {
+    securityAlertRestartBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      restartCurrentLevelSecurity();
+    });
+  }
+
+  if (securityAlertModal) {
+    securityAlertModal.addEventListener('click', (e) => {
+      if (e.target === securityAlertModal) {
+        restartCurrentLevelSecurity();
+      }
+    });
+  }
+
   if (undoBtn) {
     undoBtn.addEventListener('click', async (e) => {
       if (justStartedGame || modalJustClosed) {
@@ -4064,6 +4170,7 @@ async function initColorSortApp() {
 
       const success = engine.undo();
       if (success) {
+        engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentUser.undos = Math.max(0, (currentUser.undos || 0) - 1);
         updateHeaderUI();
         saveLocalUser();
@@ -4118,6 +4225,7 @@ async function initColorSortApp() {
 
       const hint = engine.getHint();
       if (hint) {
+        engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentUser.hints = Math.max(0, (currentUser.hints || 0) - 1);
         updateHeaderUI();
         saveLocalUser();
@@ -4180,6 +4288,7 @@ async function initColorSortApp() {
 
       const res = engine.revealRandomBottle();
       if (res) {
+        engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentUser.reveals = Math.max(0, (currentUser.reveals || 0) - 1);
         updateCloudBoosterDirectly('reveals', currentUser.reveals);
         if (renderer && renderer.highlightBottleReveal) renderer.highlightBottleReveal(res.bottleIndex);
@@ -4243,6 +4352,7 @@ async function initColorSortApp() {
 
       const added = engine.addExtraBottle();
       if (added) {
+        engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
         currentUser.extra_bottles = currentUser.extraBottles;
         updateCloudBoosterDirectly('extraBottles', currentUser.extraBottles);
