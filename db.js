@@ -1996,11 +1996,6 @@ function ensureActiveSnapshotApplied() {
       const realSnap = db.prepare(`SELECT id FROM leaderboard_snapshots WHERE id = '1791149202825' OR id > 1000000000 ORDER BY created_at_ts DESC, id DESC LIMIT 1`).get();
       if (realSnap && realSnap.id) {
         activeId = String(realSnap.id);
-      } else {
-        const latest = db.prepare(`SELECT id FROM leaderboard_snapshots ORDER BY created_at_ts DESC, id DESC LIMIT 1`).get();
-        if (latest && latest.id) activeId = String(latest.id);
-      }
-      if (activeId) {
         db.prepare(`
           INSERT INTO system_settings (key, value)
           VALUES ('active_snapshot_id', ?)

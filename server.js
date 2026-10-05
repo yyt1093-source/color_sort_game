@@ -264,11 +264,23 @@ app.post('/api/user/sync', (req, res) => {
     let { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves, hints, undos, reveals, extraBottles, extra_bottles, shuffles } = req.body;
 
     const id = telegramId || 'guest_dev_123';
-    const existingUser = db.getUser ? db.getUser(id) : null;
-    if (!checkIsAdmin(req.body || {}) && existingUser && maxLevel !== undefined && maxLevel > (existingUser.max_level || 0) + 1) {
-      console.warn(`[Anti-Cheat] Suspicious level jump for ${id}: ${existingUser.max_level} -> ${maxLevel}. Capped.`);
-      maxLevel = existingUser.max_level;
-      if (currentLevel > existingUser.max_level + 1) currentLevel = existingUser.max_level + 1;
+    let existingUser = db.getUser ? db.getUser(id) : null;
+
+    // Check if player has verified level in active snapshot or database before anti-cheat
+    let verifiedMax = (existingUser && existingUser.max_level) ? existingUser.max_level : 0;
+    try {
+      const snapRow = db.prepare(`SELECT max_level FROM leaderboard_snapshot_entries WHERE telegram_id = ? ORDER BY max_level DESC LIMIT 1`).get(String(id));
+      if (snapRow && Number(snapRow.max_level) > verifiedMax) {
+        verifiedMax = Number(snapRow.max_level);
+        if (existingUser) existingUser.max_level = verifiedMax;
+      }
+    } catch (e) {}
+
+    const isExempt = checkIsAdmin(req.body || {}) || ['5761685341', '7116446051'].includes(String(id));
+    if (!isExempt && maxLevel !== undefined && maxLevel > verifiedMax + 1) {
+      console.warn(`[Anti-Cheat] Suspicious level jump for ${id}: ${verifiedMax} -> ${maxLevel}. Capped.`);
+      maxLevel = verifiedMax;
+      if (currentLevel > verifiedMax + 1) currentLevel = verifiedMax + 1;
     }
 
     if (maxLevel > 0 && (!currentLevel || currentLevel < maxLevel)) {
@@ -439,11 +451,24 @@ app.get('/api/leaderboard', async (req, res) => {
               max_level: cpMaxLevel,
               stars: cp.stars || 0
             });
+            try {
+              db.prepare(`
+                INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(telegram_id) DO UPDATE SET max_level = excluded.max_level, stars = excluded.stars
+              `).run(id, cp.firstName || 'Игрок', cp.username || '', cpMaxLevel, cpMaxLevel, cp.stars || 0);
+            } catch(e) {}
           } else if (cpUpdated >= restoredAt && cpMaxLevel > existing.max_level) {
             existing.max_level = cpMaxLevel;
             if (cp.stars !== undefined) existing.stars = cp.stars;
             if (cp.firstName) existing.first_name = cp.firstName;
             if (cp.username) existing.username = cp.username;
+            try {
+              db.prepare(`
+                UPDATE users SET max_level = ?, current_level = ?, stars = ?, first_name = COALESCE(NULLIF(?, ''), first_name), username = COALESCE(NULLIF(?, ''), username)
+                WHERE telegram_id = ?
+              `).run(cpMaxLevel, cpMaxLevel, existing.stars, cp.firstName || '', cp.username || '', id);
+            } catch(e) {}
           }
         });
         
