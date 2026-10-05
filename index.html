@@ -1858,55 +1858,109 @@
               </div>
             </div>
 
-            <div class="gifts-step-title">🎁 Выберите подарок для отправки:</div>
-            <div class="gifts-catalog-grid">
-              <!-- Item 1: Undos -->
-              <div class="gift-choice-card" data-gift-type="undos">
-                <div class="gift-choice-top">
-                  <span class="gift-choice-icon">↩️</span>
-                  <div class="gift-choice-meta">
-                    <strong class="gift-choice-title">Отмена хода</strong>
-                    <span class="gift-choice-balance">В наличии: <b id="giftBalUndos">0</b></span>
+            <!-- Admin Category Tabs (Visible only to Admin): Подсказки | Монеты TON (Подсвечена синим) -->
+            <div id="adminGiftCategoryTabs" class="admin-gift-category-tabs hidden" style="display: flex; gap: 8px; margin: 12px 0 14px 0;">
+              <button type="button" class="btn-admin-cat-tab active" id="adminTabBoosters" style="flex: 1; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(30, 41, 59, 0.85); border: 1.5px solid rgba(148, 163, 184, 0.35); color: #cbd5e1;">
+                <span>🎁</span>
+                <span id="adminTabBoostersLabel">Подсказки</span>
+              </button>
+              <button type="button" class="btn-admin-cat-tab" id="adminTabTon" style="flex: 1; padding: 10px 14px; border-radius: 12px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px; background: linear-gradient(135deg, rgba(14, 165, 233, 0.3) 0%, rgba(30, 58, 138, 0.6) 100%); border: 2px solid #38bdf8; color: #38bdf8; box-shadow: 0 0 16px rgba(56, 189, 248, 0.45);">
+                <span>💎</span>
+                <span id="adminTabTonLabel">Монеты TON</span>
+              </button>
+            </div>
+
+            <!-- Pane 1: Boosters Catalog -->
+            <div id="giftsBoostersPane">
+              <div class="gifts-step-title" id="giftsBoostersTitle">🎁 Выберите подарок для отправки:</div>
+              <div class="gifts-catalog-grid">
+                <!-- Item 1: Undos -->
+                <div class="gift-choice-card" data-gift-type="undos">
+                  <div class="gift-choice-top">
+                    <span class="gift-choice-icon">↩️</span>
+                    <div class="gift-choice-meta">
+                      <strong class="gift-choice-title">Отмена хода</strong>
+                      <span class="gift-choice-balance">В наличии: <b id="giftBalUndos">0</b></span>
+                    </div>
                   </div>
+                  <button type="button" class="gift-send-btn" data-gift-type="undos">Подарить</button>
                 </div>
-                <button type="button" class="gift-send-btn" data-gift-type="undos">Подарить</button>
+
+                <!-- Item 2: Hints -->
+                <div class="gift-choice-card" data-gift-type="hints">
+                  <div class="gift-choice-top">
+                    <span class="gift-choice-icon">💡</span>
+                    <div class="gift-choice-meta">
+                      <strong class="gift-choice-title">Подсказка</strong>
+                      <span class="gift-choice-balance">В наличии: <b id="giftBalHints">0</b></span>
+                    </div>
+                  </div>
+                  <button type="button" class="gift-send-btn" data-gift-type="hints">Подарить</button>
+                </div>
+
+                <!-- Item 3: Reveals -->
+                <div class="gift-choice-card" data-gift-type="reveals">
+                  <div class="gift-choice-top">
+                    <span class="gift-choice-icon">🔮</span>
+                    <div class="gift-choice-meta">
+                      <strong class="gift-choice-title">Открыть цвет</strong>
+                      <span class="gift-choice-balance">В наличии: <b id="giftBalReveals">0</b></span>
+                    </div>
+                  </div>
+                  <button type="button" class="gift-send-btn" data-gift-type="reveals">Подарить</button>
+                </div>
+
+                <!-- Item 4: Extra Bottles -->
+                <div class="gift-choice-card" data-gift-type="extraBottles">
+                  <div class="gift-choice-top">
+                    <span class="gift-choice-icon">🧪</span>
+                    <div class="gift-choice-meta">
+                      <strong class="gift-choice-title">Пустая колба</strong>
+                      <span class="gift-choice-balance">В наличии: <b id="giftBalBottles">0</b></span>
+                    </div>
+                  </div>
+                  <button type="button" class="gift-send-btn" data-gift-type="extraBottles">Подарить</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pane 2: TON Coins Sending Pane (Visible to Admin in TON tab) -->
+            <div id="giftsTonPane" class="gifts-ton-pane hidden" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.16) 0%, rgba(15, 23, 42, 0.9) 100%); border: 2px solid #38bdf8; border-radius: 16px; padding: 16px; box-shadow: 0 0 22px rgba(56, 189, 248, 0.3); margin-top: 6px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <span style="font-size: 2rem; filter: drop-shadow(0 0 8px #38bdf8);">💎</span>
+                <div>
+                  <strong style="display: block; font-size: 1.05rem; font-weight: 800; color: #f8fafc;" id="adminTonGiftHeading">Отправить монеты TON</strong>
+                  <span style="font-size: 0.78rem; color: #38bdf8; font-weight: 700;" id="adminTonGiftFromBadge">🎨 Подарок от имени: Color Sort</span>
+                </div>
               </div>
 
-              <!-- Item 2: Hints -->
-              <div class="gift-choice-card" data-gift-type="hints">
-                <div class="gift-choice-top">
-                  <span class="gift-choice-icon">💡</span>
-                  <div class="gift-choice-meta">
-                    <strong class="gift-choice-title">Подсказка</strong>
-                    <span class="gift-choice-balance">В наличии: <b id="giftBalHints">0</b></span>
-                  </div>
+              <div style="background: rgba(30, 41, 59, 0.65); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #94a3b8; margin-bottom: 8px;" id="adminTonGiftAmountLabel">Выберите или введите сумму (GRAM):</label>
+                
+                <!-- Quick Amount Presets -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px;" id="adminTonPresetsGroup">
+                  <button type="button" class="btn-ton-preset" data-amount="1.0" style="padding: 8px 4px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #e2e8f0; font-weight: 700; font-size: 0.84rem; cursor: pointer;">1 GRAM</button>
+                  <button type="button" class="btn-ton-preset active" data-amount="5.0" style="padding: 8px 4px; border-radius: 8px; background: #0284c7; border: 1.5px solid #38bdf8; color: #ffffff; font-weight: 800; font-size: 0.84rem; cursor: pointer; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);">5 GRAM</button>
+                  <button type="button" class="btn-ton-preset" data-amount="10.0" style="padding: 8px 4px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #e2e8f0; font-weight: 700; font-size: 0.84rem; cursor: pointer;">10 GRAM</button>
+                  <button type="button" class="btn-ton-preset" data-amount="20.0" style="padding: 8px 4px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #e2e8f0; font-weight: 700; font-size: 0.84rem; cursor: pointer;">20 GRAM</button>
                 </div>
-                <button type="button" class="gift-send-btn" data-gift-type="hints">Подарить</button>
+
+                <!-- Custom Input -->
+                <div style="display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.55); border-radius: 10px; padding: 6px 12px;">
+                  <span style="font-size: 1.15rem;">💎</span>
+                  <input type="number" id="adminTonGiftCustomInput" min="0.1" step="0.5" value="5.00" style="flex: 1; background: transparent; border: none; outline: none; color: #ffffff; font-size: 1.15rem; font-weight: 800; font-family: inherit;">
+                  <span style="color: #38bdf8; font-weight: 800; font-size: 0.9rem;">GRAM</span>
+                </div>
               </div>
 
-              <!-- Item 3: Reveals -->
-              <div class="gift-choice-card" data-gift-type="reveals">
-                <div class="gift-choice-top">
-                  <span class="gift-choice-icon">🔮</span>
-                  <div class="gift-choice-meta">
-                    <strong class="gift-choice-title">Открыть цвет</strong>
-                    <span class="gift-choice-balance">В наличии: <b id="giftBalReveals">0</b></span>
-                  </div>
-                </div>
-                <button type="button" class="gift-send-btn" data-gift-type="reveals">Подарить</button>
+              <div style="font-size: 0.74rem; color: #94a3b8; line-height: 1.4; margin-bottom: 14px;" id="adminTonGiftNotice">
+                💡 Игрок получит этот подарок в синем оформлении как <b style="color: #38bdf8;">«Подарок от Color Sort»</b>. При нажатии «Забрать» сумма сразу зачислится на текущий баланс TON, и игрок сможет покупать предметы и улучшения в Сундуке преимуществ.
               </div>
 
-              <!-- Item 4: Extra Bottles -->
-              <div class="gift-choice-card" data-gift-type="extraBottles">
-                <div class="gift-choice-top">
-                  <span class="gift-choice-icon">🧪</span>
-                  <div class="gift-choice-meta">
-                    <strong class="gift-choice-title">Пустая колба</strong>
-                    <span class="gift-choice-balance">В наличии: <b id="giftBalBottles">0</b></span>
-                  </div>
-                </div>
-                <button type="button" class="gift-send-btn" data-gift-type="extraBottles">Подарить</button>
-              </div>
+              <button type="button" id="btnAdminSendTonConfirm" style="width: 100%; padding: 13px; border-radius: 12px; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); border: 1.5px solid #38bdf8; color: #ffffff; font-weight: 800; font-size: 0.98rem; cursor: pointer; box-shadow: 0 4px 18px rgba(14, 165, 233, 0.45); display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.15s ease;">
+                <span>🚀</span>
+                <span id="btnAdminSendTonConfirmText">Отправить 5.00 GRAM от Color Sort</span>
+              </button>
             </div>
           </div>
         </div>
