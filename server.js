@@ -224,9 +224,16 @@ app.post('/api/user/init', async (req, res) => {
  */
 app.post('/api/user/sync', (req, res) => {
   try {
-    const { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves, hints, undos, reveals, extraBottles, extra_bottles, shuffles } = req.body;
+    let { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves, hints, undos, reveals, extraBottles, extra_bottles, shuffles } = req.body;
 
     const id = telegramId || 'guest_dev_123';
+    const existingUser = db.getUser ? db.getUser(id) : null;
+    if (existingUser && maxLevel !== undefined && maxLevel > (existingUser.max_level || 0) + 1) {
+      console.warn(`[Anti-Cheat] Suspicious level jump for ${id}: ${existingUser.max_level} -> ${maxLevel}. Capped.`);
+      maxLevel = existingUser.max_level;
+      if (currentLevel > existingUser.max_level + 1) currentLevel = existingUser.max_level + 1;
+    }
+
     const updatedUser = db.updateUserProgress(id, {
       firstName,
       username,

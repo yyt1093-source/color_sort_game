@@ -18,6 +18,7 @@
       this.onWin = null;
       this.hintHighlight = null;
       this.revealed = [];
+      this.boostersUsedInLevel = 0;
     }
 
     startLevel(levelData) {
@@ -29,6 +30,7 @@
       this.selectedBottleIndex = null;
       this.history = [];
       this.movesCount = 0;
+      this.boostersUsedInLevel = 0;
       this.isAnimating = false;
       this.hintHighlight = null;
       this.isWon = false;
@@ -227,14 +229,19 @@
       const isWin = this.isLevelWon();
 
       if (isWin && !this.isWon) {
-        this.isWon = true;
-        if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playVictory();
-        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+        const isSecurityViolation = (this.currentLevel >= 5 && (this.boostersUsedInLevel || 0) <= 0);
+        if (!isSecurityViolation) {
+          this.isWon = true;
+          if (typeof window !== 'undefined' && window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playVictory();
+          if (typeof window !== 'undefined' && window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+        }
         if (this.onWin) {
           this.onWin({ 
             levelNumber: this.currentLevel, 
             moves: this.movesCount, 
-            stars: this.getStarRating() 
+            stars: this.getStarRating(),
+            boostersUsed: this.boostersUsedInLevel || 0,
+            isSecurityViolation: isSecurityViolation
           });
         }
       }
@@ -244,6 +251,7 @@
 
     undo() {
       if (this.isAnimating || this.history.length === 0) return false;
+      this.boostersUsedInLevel = (this.boostersUsedInLevel || 0) + 1;
       
       const previousState = this.history.pop();
       this.bottles = previousState.bottles.map(b => {
@@ -267,6 +275,7 @@
 
     addExtraBottle() {
       if (this.isAnimating || this.isWon) return false;
+      this.boostersUsedInLevel = (this.boostersUsedInLevel || 0) + 1;
       this.bottles.push([]);
       if (this.revealed) this.revealed.push([]);
       if (this.history && this.history.length > 0) {
@@ -335,6 +344,7 @@
       }
 
       if (hint) {
+        this.boostersUsedInLevel = (this.boostersUsedInLevel || 0) + 1;
         this.hintHighlight = { from: hint.from, to: hint.to };
         if (typeof window !== 'undefined' && window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
         if (typeof window !== 'undefined' && window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
@@ -352,6 +362,7 @@
 
     revealAllColors() {
       if (!this.bottles) return;
+      this.boostersUsedInLevel = (this.boostersUsedInLevel || 0) + 1;
       this.revealed = this.bottles.map(b => new Array(b.length).fill(true));
       if (this.onStateChange) this.onStateChange();
     }
@@ -366,6 +377,7 @@
       }
       if (candidates.length === 0) return null;
 
+      this.boostersUsedInLevel = (this.boostersUsedInLevel || 0) + 1;
       const targetIdx = candidates[Math.floor(Math.random() * candidates.length)];
       this.revealed[targetIdx] = this.revealed[targetIdx].map(() => true);
 
@@ -387,6 +399,7 @@
       }
 
       if (eligibleIndices.length < 2) return false;
+      this.boostersUsedInLevel = (this.boostersUsedInLevel || 0) + 1;
 
       // Save undo history
       this.history.push({
