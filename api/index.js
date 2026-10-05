@@ -41,12 +41,42 @@ app.use('/api/gifts', authMiddleware);
 // Protect all administrative routes with strict admin authorization
 app.use('/api/admin', adminAuthMiddleware);
 
+// Strict Maintenance Mode: Only Alligator and Maria allowed
+const MAINTENANCE_MODE = true;
+const MAINTENANCE_ALLOWED_IDS = ['5761685341', '7116446051'];
+const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
+
+function maintenanceMiddleware(req, res, next) {
+  if (!MAINTENANCE_MODE) return next();
+  if (req.path === '/api/config' || req.path.startsWith('/api/admin')) {
+    return next();
+  }
+
+  const tid = String((req.user && req.user.id) || (req.body && req.body.telegramId) || (req.query && req.query.telegramId) || '').trim();
+  const uname = String((req.user && req.user.username) || (req.body && req.body.username) || (req.query && req.query.username) || '').toLowerCase().replace(/^@/, '').trim();
+
+  if (MAINTENANCE_ALLOWED_IDS.includes(tid) || (uname && MAINTENANCE_ALLOWED_USERNAMES.includes(uname))) {
+    return next();
+  }
+
+  return res.status(200).json({
+    success: false,
+    maintenance: true,
+    error: 'Идут технические работы. Доступ временно ограничен.'
+  });
+}
+
+app.use('/api', maintenanceMiddleware);
+
 /**
  * Public client config (Adsgram block ID, TON deposit address, etc.)
  */
 app.get('/api/config', (req, res) => {
   res.json({
     success: true,
+    maintenance: MAINTENANCE_MODE,
+    maintenanceMessage: 'Идут технические работы',
+    allowedIds: MAINTENANCE_ALLOWED_IDS,
     adsgramBlockId: process.env.ADSGRAM_BLOCK_ID || '47788',
     tonDepositAddress: process.env.TON_DEPOSIT_ADDRESS || 'UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5'
   });

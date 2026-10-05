@@ -119,6 +119,15 @@ async function run() {
   const now = Date.now();
   let updatedCount = 0;
 
+  // Zero out users not in snapshot from active leaderboard
+  const snapTids = new Set(snapshotData.players.map(p => String(p.telegram_id)));
+  const allDbUsers = db.db.prepare(`SELECT telegram_id, max_level FROM users`).all();
+  for (const u of allDbUsers) {
+    if (!snapTids.has(String(u.telegram_id)) && Number(u.max_level || 0) > 0) {
+      db.db.prepare(`UPDATE users SET max_level = 0, current_level = 1, stars = 0 WHERE telegram_id = ?`).run(u.telegram_id);
+    }
+  }
+
   for (const p of snapshotData.players) {
     const tid = String(p.telegram_id);
     const snapLvl = Number(p.level || 1);
