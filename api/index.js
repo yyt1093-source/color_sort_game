@@ -48,7 +48,7 @@ const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
 function maintenanceMiddleware(req, res, next) {
   if (!MAINTENANCE_MODE) return next();
-  if (req.path === '/api/config' || req.path.startsWith('/api/admin')) {
+  if (req.path === '/config' || req.path === '/api/config' || req.path.startsWith('/admin') || req.path.startsWith('/api/admin')) {
     return next();
   }
 
