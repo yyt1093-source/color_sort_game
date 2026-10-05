@@ -61,6 +61,12 @@
       name: 'Пустая колба',
       icon: '🧪',
       boosterField: 'extraBottles'
+    },
+    ton: {
+      type: 'ton',
+      name: 'Монеты TON',
+      icon: '💎',
+      boosterField: 'ton_balance'
     }
   };
 
@@ -68,6 +74,7 @@
   let saveUserCallback = null;
   let updateUICallback = null;
   let updateCloudBoosterCallback = null;
+  let syncPlayerToCloudCallback = null;
   let showInfoModalCallback = null;
   let getLeaderboardPlayersCallback = null;
   let isAdminCheckCallback = null;
@@ -96,6 +103,7 @@
     if (type === 'hints') return t('giftItemHint') || 'Подсказка';
     if (type === 'reveals') return t('giftItemReveal') || 'Открыть цвет';
     if (type === 'extraBottles') return t('giftItemBottle') || 'Пустая колба';
+    if (type === 'ton' || type === 'gram' || type === 'ton_balance') return t('giftItemTon') || 'Монеты TON';
     return (GIFT_CONFIG[type] && GIFT_CONFIG[type].name) || type;
   }
 
@@ -108,6 +116,8 @@
   let pollingInterval = null;
   let pendingGiftType = null;
   let pendingMaxQty = 1;
+  let adminActiveCategoryTab = 'boosters'; // 'boosters' or 'ton'
+  let selectedTonAmount = 5.0;
   let currentGiftQty = 1;
 
   // Time & Daily Limit Helpers
@@ -457,12 +467,20 @@
         } catch (e) {}
       }
 
+      const isTon = (gift.giftType === 'ton' || gift.giftType === 'gram');
+      if (isTon) {
+        card.classList.add('gift-received-card-ton');
+      }
+
       const localizedName = getGiftName(gift.giftType);
       const amount = gift.amount || 1;
-      const titleText = t('giftReceivedCardTitle', localizedName, amount);
+      const titleText = isTon
+        ? `💎 +${amount} GRAM (TON)`
+        : t('giftReceivedCardTitle', localizedName, amount);
 
       // Determine sender display: Show to ALL players (and admin)
-      const isColorSort = (gift.senderType === 'colorsort') || 
+      const isColorSort = isTon ||
+                          (gift.senderType === 'colorsort') || 
                           (String(gift.fromName || '').trim().toLowerCase() === 'color sort') ||
                           (String(gift.fromUsername || '').trim().toLowerCase() === 'colorsortgame');
 
@@ -497,14 +515,18 @@
       const timeText = dateFormatted ? t('giftReceivedTimeKyiv', dateFormatted) : '';
       const claimBtnText = t('giftsClaimBtn') || 'Забрать';
 
+      const senderHtml = isColorSort
+        ? `<span class="gift-received-sender" style="color: #38bdf8; font-weight: 700;">🎁 Подарок от Color Sort${adminExtra}</span>`
+        : `<span class="gift-received-sender">${t('giftFromLabel') || 'От'}: <strong>${escapeHtml(senderDisplayName)}</strong>${adminExtra}</span>`;
+
       card.innerHTML = `
         <div class="gift-received-top">
-          <span class="gift-received-icon">${gift.giftIcon || '🎁'}</span>
+          <span class="gift-received-icon">${isTon ? '💎' : (gift.giftIcon || '🎁')}</span>
         </div>
         <div class="gift-received-body">
           <strong class="gift-received-title">${escapeHtml(titleText)}</strong>
           <div class="gift-received-desc-block">
-            <span class="gift-received-sender">${t('giftFromLabel') || 'От'}: <strong>${escapeHtml(senderDisplayName)}</strong>${adminExtra}</span>
+            ${senderHtml}
             ${timeText ? `<span class="gift-received-date">${escapeHtml(timeText)}</span>` : ''}
           </div>
         </div>
@@ -560,7 +582,22 @@
       // 5. Add to player balance
       const field = gift.giftType;
       const addAmount = Number(gift.amount) || 1;
-      if (field === 'extraBottles') {
+      const isTon = (field === 'ton' || field === 'gram' || field === 'ton_balance');
+
+      if (isTon) {
+        const curTon = Number(currentUserRef.ton_balance || currentUserRef.tonBalance || 0);
+        currentUserRef.ton_balance = Math.round((curTon + addAmount) * 100) / 100;
+        currentUserRef.tonBalance = currentUserRef.ton_balance;
+        if (typeof window.updateTonWalletUI === 'function') {
+          window.updateTonWalletUI();
+        }
+        if (typeof window.updateShopUI === 'function') {
+          window.updateShopUI();
+        }
+        if (typeof syncPlayerToCloudCallback === 'function') {
+          syncPlayerToCloudCallback();
+        }
+      } else if (field === 'extraBottles') {
         const cur = Math.max(Number(currentUserRef.extraBottles || 0), Number(currentUserRef.extra_bottles || 0));
         currentUserRef.extraBottles = cur + addAmount;
         currentUserRef.extra_bottles = currentUserRef.extraBottles;
@@ -571,7 +608,7 @@
       // 6. Save player progress
       if (typeof saveUserCallback === 'function') saveUserCallback();
       if (typeof updateUICallback === 'function') updateUICallback();
-      if (typeof updateCloudBoosterCallback === 'function') {
+      if (!isTon && typeof updateCloudBoosterCallback === 'function') {
         updateCloudBoosterCallback(field, currentUserRef[field]);
       }
 
@@ -600,12 +637,20 @@
       }
 
       // 9. Success Modal
-      const localizedName = getGiftName(gift.giftType);
-      showNotification(
-        gift.giftIcon || '🎁',
-        t('giftClaimedSuccessTitle'),
-        t('giftClaimedSuccessDesc', gift.giftIcon || '🎁', localizedName, addAmount)
-      );
+      if (isTon) {
+        showNotification(
+          '💎',
+          t('giftClaimedSuccessTitle') || 'Подарок получен!',
+          `💎 Вы получили +${addAmount} GRAM (TON) на баланс в кошельке! Теперь вы можете приобретать предметы и улучшения в Сундуке преимуществ.`
+        );
+      } else {
+        const localizedName = getGiftName(gift.giftType);
+        showNotification(
+          gift.giftIcon || '🎁',
+          t('giftClaimedSuccessTitle'),
+          t('giftClaimedSuccessDesc', gift.giftIcon || '🎁', localizedName, addAmount)
+        );
+      }
 
       // 10. Background sync to server and KVDB
       giftApiCall('/api/gifts/claim', 'POST', {
@@ -655,6 +700,159 @@
           : (currentUserRef.username ? `@${String(currentUserRef.username).replace(/^@/, '')}` : (currentUserRef.firstName || 'Alligator'));
       } else {
         previewRow.classList.add('hidden');
+      }
+    }
+  }
+
+  function updateAdminCategoryTabUI() {
+    const tabBoosters = document.getElementById('adminTabBoosters');
+    const tabTon = document.getElementById('adminTabTon');
+    const boostersPane = document.getElementById('giftsBoostersPane');
+    const tonPane = document.getElementById('giftsTonPane');
+
+    if (adminActiveCategoryTab === 'ton') {
+      if (tabTon) {
+        tabTon.classList.add('active');
+        tabTon.style.background = 'linear-gradient(135deg, rgba(14, 165, 233, 0.45) 0%, rgba(30, 58, 138, 0.85) 100%)';
+        tabTon.style.borderColor = '#38bdf8';
+        tabTon.style.boxShadow = '0 0 18px rgba(56, 189, 248, 0.6)';
+        tabTon.style.color = '#38bdf8';
+      }
+      if (tabBoosters) {
+        tabBoosters.classList.remove('active');
+        tabBoosters.style.background = 'rgba(30, 41, 59, 0.85)';
+        tabBoosters.style.borderColor = 'rgba(148, 163, 184, 0.35)';
+        tabBoosters.style.boxShadow = 'none';
+        tabBoosters.style.color = '#cbd5e1';
+      }
+      if (boostersPane) boostersPane.classList.add('hidden');
+      if (tonPane) tonPane.classList.remove('hidden');
+      updateAdminTonPaneUI();
+    } else {
+      if (tabBoosters) {
+        tabBoosters.classList.add('active');
+        tabBoosters.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.35) 0%, rgba(30, 58, 138, 0.7) 100%)';
+        tabBoosters.style.borderColor = '#60a5fa';
+        tabBoosters.style.boxShadow = '0 0 14px rgba(96, 165, 250, 0.4)';
+        tabBoosters.style.color = '#ffffff';
+      }
+      if (tabTon) {
+        tabTon.classList.remove('active');
+        tabTon.style.background = 'linear-gradient(135deg, rgba(14, 165, 233, 0.25) 0%, rgba(30, 58, 138, 0.5) 100%)';
+        tabTon.style.borderColor = '#38bdf8';
+        tabTon.style.boxShadow = '0 0 12px rgba(56, 189, 248, 0.4)';
+        tabTon.style.color = '#38bdf8';
+      }
+      if (boostersPane) boostersPane.classList.remove('hidden');
+      if (tonPane) tonPane.classList.add('hidden');
+    }
+  }
+
+  function updateAdminTonPaneUI() {
+    const input = document.getElementById('adminTonGiftCustomInput');
+    if (input && selectedTonAmount > 0) {
+      input.value = selectedTonAmount.toFixed(2);
+    }
+    const presetBtns = document.querySelectorAll('.btn-ton-preset');
+    presetBtns.forEach(btn => {
+      const val = parseFloat(btn.getAttribute('data-amount') || '0');
+      const isActive = Math.abs(val - selectedTonAmount) < 0.001;
+      btn.classList.toggle('active', isActive);
+      if (isActive) {
+        btn.style.background = '#0284c7';
+        btn.style.border = '1.5px solid #38bdf8';
+        btn.style.color = '#ffffff';
+        btn.style.boxShadow = '0 0 10px rgba(56, 189, 248, 0.4)';
+      } else {
+        btn.style.background = 'rgba(56, 189, 248, 0.15)';
+        btn.style.border = '1px solid rgba(56, 189, 248, 0.4)';
+        btn.style.color = '#e2e8f0';
+        btn.style.boxShadow = 'none';
+      }
+    });
+  }
+
+  async function executeSendTonGift(amount) {
+    if (isSending || !currentUserRef || !selectedRecipient) return;
+
+    const isAdmin = isUserAdmin(currentUserRef);
+    if (!isAdmin) {
+      showNotification('⚠️', t('errorTitle'), 'Только администратор может отправлять TON монеты.');
+      return;
+    }
+
+    const sendAmount = Math.round((parseFloat(amount) || 0) * 100) / 100;
+    if (isNaN(sendAmount) || sendAmount <= 0) {
+      showNotification('⚠️', t('errorTitle'), 'Укажите корректную сумму для отправки (больше 0).');
+      return;
+    }
+
+    const myId = String(currentUserRef.telegramId);
+    const targetId = String(selectedRecipient.telegramId);
+    const targetName = selectedRecipient.displayName || selectedRecipient.firstName || 'Игрок';
+
+    if (myId === targetId) {
+      showNotification('⚠️', t('errorTitle'), t('giftSelfSendError') || 'Вы не можете отправить подарок самому себе.');
+      return;
+    }
+
+    isSending = true;
+    const confirmBtn = document.getElementById('btnAdminSendTonConfirm');
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.style.opacity = '0.6';
+    }
+
+    try {
+      const newGift = {
+        id: 'gift_ton_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+        giftType: 'ton',
+        giftName: 'Монеты TON',
+        giftIcon: '💎',
+        amount: sendAmount,
+        recipientId: targetId,
+        fromId: myId,
+        fromName: 'Color Sort',
+        fromUsername: 'ColorSortGame',
+        senderType: 'colorsort',
+        createdAt: Date.now(),
+        claimed: false
+      };
+
+      // 1. Send to server API
+      giftApiCall('/api/gifts/send', 'POST', newGift).catch(() => {});
+
+      // 2. Sync to cloud KVDB for targetId
+      const recipientInbox = await fetchCloudInbox(targetId);
+      recipientInbox.push(newGift);
+      await saveCloudInbox(targetId, recipientInbox);
+
+      // 3. Sound & Haptics
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('success');
+      }
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) {
+        window.SoundEngine.SoundEngine.playComplete();
+      }
+
+      // 4. Success feedback
+      showNotification(
+        '💎',
+        'Подарок отправлен!',
+        `💎 Игроку «${targetName}» успешно отправлено ${sendAmount} GRAM (TON) от имени «Color Sort».`
+      );
+
+      // 5. Reset selection and return to player list
+      selectedRecipient = null;
+      renderSendView();
+    } catch (err) {
+      console.error('[GiftsModule] Send TON gift error:', err);
+      showNotification('⚠️', t('errorTitle'), 'Не удалось доставить подарок: ' + err.message);
+    } finally {
+      isSending = false;
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
       }
     }
   }
@@ -731,9 +929,31 @@
           adminChoiceBox.classList.add('hidden');
         }
       }
+
+      // Admin Category Tabs: Boosters vs TON
+      const catTabsEl = document.getElementById('adminGiftCategoryTabs');
+      if (catTabsEl) {
+        if (isAdmin) {
+          catTabsEl.classList.remove('hidden');
+          updateAdminCategoryTabUI();
+        } else {
+          catTabsEl.classList.add('hidden');
+          const boostersPane = document.getElementById('giftsBoostersPane');
+          const tonPane = document.getElementById('giftsTonPane');
+          if (boostersPane) boostersPane.classList.remove('hidden');
+          if (tonPane) tonPane.classList.add('hidden');
+        }
+      }
     } else {
       if (stepRecipient) stepRecipient.classList.remove('hidden');
       if (stepItem) stepItem.classList.add('hidden');
+      const catTabsEl = document.getElementById('adminGiftCategoryTabs');
+      if (catTabsEl) catTabsEl.classList.add('hidden');
+      const boostersPane = document.getElementById('giftsBoostersPane');
+      const tonPane = document.getElementById('giftsTonPane');
+      if (boostersPane) boostersPane.classList.add('hidden');
+      if (tonPane) tonPane.classList.add('hidden');
+
       const searchInput = document.getElementById('giftsPlayerSearchInput');
       if (searchInput) {
         searchInput.placeholder = isAdmin ? t('giftsSearchPlaceholder') : (t('giftsSearchPlaceholderUser') || '🔍 Найти игрока...');
@@ -1258,6 +1478,75 @@
         }
       });
     }
+
+    // Admin Category Tabs: Boosters vs TON
+    const tabBoosters = document.getElementById('adminTabBoosters');
+    const tabTon = document.getElementById('adminTabTon');
+    if (tabBoosters) {
+      tabBoosters.addEventListener('click', (e) => {
+        e.stopPropagation();
+        adminActiveCategoryTab = 'boosters';
+        updateAdminCategoryTabUI();
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('selection');
+        }
+      });
+    }
+    if (tabTon) {
+      tabTon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        adminActiveCategoryTab = 'ton';
+        updateAdminCategoryTabUI();
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('selection');
+        }
+      });
+    }
+
+    // TON Preset Amount Buttons
+    const presetBtns = document.querySelectorAll('.btn-ton-preset');
+    presetBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const amt = parseFloat(btn.getAttribute('data-amount') || '5.0');
+        if (!isNaN(amt) && amt > 0) {
+          selectedTonAmount = amt;
+          updateAdminTonPaneUI();
+          if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+            window.TelegramApp.TelegramApp.haptic('selection');
+          }
+        }
+      });
+    });
+
+    // TON Custom Amount Input
+    const tonInput = document.getElementById('adminTonGiftCustomInput');
+    if (tonInput) {
+      tonInput.addEventListener('input', () => {
+        const amt = parseFloat(tonInput.value);
+        if (!isNaN(amt) && amt > 0) {
+          selectedTonAmount = amt;
+          const allPresets = document.querySelectorAll('.btn-ton-preset');
+          allPresets.forEach(b => {
+            const v = parseFloat(b.getAttribute('data-amount') || '0');
+            b.classList.toggle('active', Math.abs(v - amt) < 0.001);
+          });
+          const btnText = document.getElementById('btnAdminSendTonConfirmText');
+          if (btnText) {
+            btnText.textContent = `Отправить ${selectedTonAmount.toFixed(2)} GRAM от Color Sort`;
+          }
+        }
+      });
+    }
+
+    // Admin Send TON Confirm Button
+    const btnSendTon = document.getElementById('btnAdminSendTonConfirm');
+    if (btnSendTon) {
+      btnSendTon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        executeSendTonGift(selectedTonAmount);
+      });
+    }
   }
 
   function setLanguage(lang, translateFn) {
@@ -1368,6 +1657,20 @@
     }
     updateQtyStepperUI();
 
+    // Admin category tabs & TON pane labels
+    const tabBoostersLabel = document.getElementById('adminTabBoostersLabel');
+    if (tabBoostersLabel) tabBoostersLabel.textContent = t('adminTabBoostersLabel') || 'Подсказки';
+    const tabTonLabel = document.getElementById('adminTabTonLabel');
+    if (tabTonLabel) tabTonLabel.textContent = t('adminTabTonLabel') || 'Монеты TON';
+    const tonHeading = document.getElementById('adminTonGiftHeading');
+    if (tonHeading) tonHeading.textContent = t('adminTonGiftHeading') || 'Отправить монеты TON';
+    const tonFromBadge = document.getElementById('adminTonGiftFromBadge');
+    if (tonFromBadge) tonFromBadge.textContent = t('adminTonGiftFromBadge') || '🎨 Подарок от имени: Color Sort';
+    const tonAmountLabel = document.getElementById('adminTonGiftAmountLabel');
+    if (tonAmountLabel) tonAmountLabel.textContent = t('adminTonGiftAmountLabel') || 'Выберите или введите сумму (GRAM):';
+    const tonNotice = document.getElementById('adminTonGiftNotice');
+    if (tonNotice) tonNotice.innerHTML = t('adminTonGiftNotice') || '💡 Игрок получит этот подарок в синем оформлении как <b style="color: #38bdf8;">«Подарок от Color Sort»</b>. При нажатии «Забрать» сумма сразу зачислится на текущий баланс TON, и игрок сможет покупать предметы и улучшения в Сундуке преимуществ.';
+
     // 5. Re-render active view
     if (activeSubnav === 'receive') {
       renderReceiveView();
@@ -1383,6 +1686,7 @@
       saveUserCallback = callbacks.saveUser;
       updateUICallback = callbacks.updateUI;
       updateCloudBoosterCallback = callbacks.updateCloudBooster;
+      syncPlayerToCloudCallback = callbacks.syncPlayerToCloud;
       showInfoModalCallback = callbacks.showInfoModal;
       getLeaderboardPlayersCallback = callbacks.getLeaderboardPlayers;
       isAdminCheckCallback = callbacks.isAdmin;

@@ -1328,7 +1328,8 @@ app.post('/api/gifts/claim', (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing parameters' });
     }
     db.claimGift(giftId, recipientId);
-    res.json({ success: true });
+    const user = db.getUser(recipientId);
+    res.json({ success: true, user });
   } catch (err) {
     console.error('[API ERROR] /api/gifts/claim:', err);
     res.status(500).json({ success: false, error: err.message });

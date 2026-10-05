@@ -527,6 +527,14 @@ async function initColorSortApp() {
       giftItemHint: "Подсказка",
       giftItemReveal: "Открыть цвет",
       giftItemBottle: "Пустая колба",
+      giftItemTon: "Монеты TON",
+      adminTabBoostersLabel: "Подсказки",
+      adminTabTonLabel: "Монеты TON",
+      adminTonGiftHeading: "Отправить монеты TON",
+      adminTonGiftFromBadge: "🎨 Подарок от имени: Color Sort",
+      adminTonGiftAmountLabel: "Выберите или введите сумму (GRAM):",
+      adminTonGiftNotice: "💡 Игрок получит этот подарок в синем оформлении как <b style=\"color: #38bdf8;\">«Подарок от Color Sort»</b>. При нажатии «Забрать» сумма сразу зачислится на текущий баланс TON, и игрок сможет покупать предметы и улучшения в Сундуке преимуществ.",
+      btnAdminSendTonConfirm: "Отправить подарок игроку",
       giftQtyModalTitle: "Сколько подарить?",
       giftQtyRecipientDesc: "Получатель:",
       giftQtyInStockLabel: "В наличии:",
@@ -3568,7 +3576,14 @@ async function initColorSortApp() {
     try {
       window.GiftsModule.init(currentUser, {
         saveUser: saveLocalUser,
-        updateUI: updateHeaderUI,
+        updateUI: () => {
+          updateHeaderUI();
+          if (typeof updateTonWalletUI === 'function') updateTonWalletUI();
+          if (typeof updateShopUI === 'function') updateShopUI();
+        },
+        updateTonWalletUI: updateTonWalletUI,
+        updateShopUI: updateShopUI,
+        syncPlayerToCloud: () => syncPlayerToCloud(currentUser),
         updateCloudBooster: updateCloudBoosterDirectly,
         showInfoModal: showInfoModal,
         isAdmin: (u) => isAlligatorAdmin(u || currentUser),
@@ -4922,6 +4937,7 @@ async function initColorSortApp() {
 
     updateTonAmountsUI();
   }
+  window.updateTonWalletUI = updateTonWalletUI;
 
   function openTonModal() {
     updateTonWalletUI();
@@ -5485,6 +5501,7 @@ async function initColorSortApp() {
       buyDailyBoostersBtnText.textContent = dailyDays > 0 ? t('dailyBoostersBtnExtend', 5) : t('dailyBoostersBtnBuy', 5);
     }
   }
+  window.updateShopUI = updateShopUI;
 
   function openShopModal() {
     checkAndApplyClientDailyBoosters();

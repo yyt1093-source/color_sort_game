@@ -6423,6 +6423,32 @@ body {
   transform: none;
 }
 
+/* TON Coins Gift Received Card (Blue Theme) */
+.gift-received-card-ton {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(30, 58, 138, 0.55) 100%) !important;
+  border: 1.5px solid #38bdf8 !important;
+  border-top: 3.5px solid #38bdf8 !important;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.45), 0 0 20px rgba(56, 189, 248, 0.35) !important;
+}
+.gift-received-card-ton .gift-received-top {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(14, 165, 233, 0.1) 70%, transparent 100%) !important;
+  border: 1.5px solid #38bdf8 !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4) !important;
+}
+.gift-received-card-ton .gift-received-title {
+  color: #38bdf8 !important;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.5) !important;
+}
+.gift-received-card-ton .gift-received-sender {
+  color: #38bdf8 !important;
+}
+.gift-received-card-ton .btn-claim-gift {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
+  border: 1.5px solid #38bdf8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.5) !important;
+}
+
 /* Admin Sender Identity Choice Box */
 .admin-sender-choice-box {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95));

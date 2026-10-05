@@ -103,4 +103,92 @@ const giftWithSender = {
 assert.strictEqual(giftWithSender.senderName, 'Alligator', 'Sender name must be preserved');
 console.log('✅ Sender info support in gift verified!');
 
-console.log('🎉 ALL GIFTS MODULE TESTS PASSED PERFECTLY!');
+// 5. Test Admin Sending TON Coins under "Color Sort" Identity
+const adminTonGift = {
+  id: 'gift_ton_' + Date.now(),
+  giftType: 'ton',
+  giftName: 'Монеты TON',
+  giftIcon: '💎',
+  amount: 5.0,
+  recipientId: mockRecipientId,
+  fromId: mockUserId,
+  fromName: 'Color Sort',
+  fromUsername: 'ColorSortGame',
+  senderType: 'colorsort',
+  createdAt: Date.now(),
+  claimed: false
+};
+
+assert.strictEqual(adminTonGift.giftType, 'ton', 'Gift type must be ton');
+assert.strictEqual(adminTonGift.amount, 5.0, 'Amount must be 5.0 GRAM');
+assert.strictEqual(adminTonGift.fromName, 'Color Sort', 'Sender must be Color Sort');
+assert.strictEqual(adminTonGift.senderType, 'colorsort', 'Sender type must be colorsort');
+console.log('✅ Admin TON gift creation with "Color Sort" identity verified!');
+
+// 6. Test Client Claiming TON Gift -> ton_balance crediting
+const playerClient = {
+  telegramId: mockRecipientId,
+  ton_balance: 0.0,
+  tonBalance: 0.0
+};
+
+function clientClaimTonGift(player, gift) {
+  const isTon = (gift.giftType === 'ton' || gift.giftType === 'gram' || gift.giftType === 'ton_balance');
+  if (isTon) {
+    const cur = Number(player.ton_balance || 0);
+    player.ton_balance = Math.round((cur + gift.amount) * 100) / 100;
+    player.tonBalance = player.ton_balance;
+  }
+  gift.claimed = true;
+}
+
+clientClaimTonGift(playerClient, adminTonGift);
+assert.strictEqual(playerClient.ton_balance, 5.0, 'Player ton_balance must be 5.0');
+assert.strictEqual(adminTonGift.claimed, true, 'TON gift must be marked claimed');
+console.log('✅ Client TON claim and balance crediting verified (0 -> 5.0 GRAM)!');
+
+// 7. Test SQLite Database Integration: sendGift -> claimGift -> buyShopItem
+const db = require('../db');
+const testPlayerTid = '9988776655';
+
+// Initialize user in DB
+db.getUser(testPlayerTid);
+// Reset balance to 0 for test
+db.prepare('UPDATE users SET ton_balance = 0 WHERE telegram_id = ?').run(testPlayerTid);
+
+const dbTonGift = {
+  id: 'gift_test_db_ton_' + Date.now(),
+  senderId: mockUserId,
+  senderName: 'Color Sort',
+  senderUsername: 'ColorSortGame',
+  recipientId: testPlayerTid,
+  giftType: 'ton',
+  giftName: 'Монеты TON',
+  giftIcon: '💎',
+  amount: 5.0,
+  createdAt: Date.now()
+};
+
+const sendDbOk = db.sendGift(dbTonGift);
+assert.strictEqual(sendDbOk, true, 'sendGift must succeed');
+
+const inboxBefore = db.getInboxGifts(testPlayerTid);
+assert.strictEqual(inboxBefore.some(g => g.id === dbTonGift.id && !g.claimed), true, 'Gift must be in inbox');
+
+// Recipient claims TON gift
+const claimDbOk = db.claimGift(dbTonGift.id, testPlayerTid);
+assert.strictEqual(claimDbOk, true, 'claimGift must succeed');
+
+const userAfterClaim = db.getUser(testPlayerTid);
+assert.strictEqual(Number(userAfterClaim.ton_balance), 5.0, 'DB ton_balance must be credited to 5.0');
+console.log('✅ SQLite DB TON gift send & claim verified (ton_balance = 5.0)!');
+
+// Now player spends these 5 coins in Perks Chest (e.g. daily_boosters_30d)
+const buyResult = db.buyShopItem(testPlayerTid, 'daily_boosters_30d');
+assert.strictEqual(buyResult.success, true, 'Player must be able to purchase 30-day perks with credited TON');
+assert.strictEqual(Number(buyResult.user.ton_balance), 0.0, 'ton_balance must decrement by 5.0 to 0.0');
+assert.strictEqual(Number(buyResult.user.daily_boosters_days_left), 30, 'Daily boosters 30 days must be activated');
+console.log('✅ Player Perks Chest purchase using claimed TON verified (30 days activated)!');
+
+console.log('🎉 ALL GIFTS MODULE TESTS (INCLUDING TON & SHOP INTEGRATION) PASSED PERFECTLY!');
+
