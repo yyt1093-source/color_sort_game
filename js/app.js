@@ -404,6 +404,17 @@ async function initColorSortApp() {
       shopHintsDesc: "Показывает лучший следующий ход при затруднении.",
       shopUndosTitle: "+20 Отмен хода",
       shopUndosDesc: "Возвращает ход назад в любой критической ситуации.",
+      dailyBoostersTitle: "Подсказки каждый день (30 дней)",
+      dailyBoostersDesc: "Каждый день ровно в 23:59 по Киеву начисляется по 10 шт. каждой подсказки: отмена хода, подсказка, открыть цвет и пустая колба.",
+      dailyBoostersTag: "30 дней",
+      dailyBoostersCounterLabel: "⏳ Осталось дней:",
+      dailyBoostersNextInfo: "⏰ Начисление по 10 подсказок в 23:59 (Киев)",
+      dailyBoostersBtnBuy: (price) => `Купить за ${price} GRAM`,
+      dailyBoostersBtnExtend: (price) => `Продлить (+30 дн.) за ${price} GRAM`,
+      dailyBoostersSuccessTitle: "✨ Набор на 30 дней активирован!",
+      dailyBoostersSuccessMsg: "Вы успешно приобрели функцию за 5 GRAM!\n\nКаждый день ровно в 23:59 по Киеву вам будет начисляться по 10 подсказок каждого вида (отмена хода, подсказка, открыть цвет, пустая колба).\n\nВсего 30 дней подряд!",
+      dailyBoostersClaimTitle: "🎁 Ежедневный набор подсказок!",
+      dailyBoostersClaimMsg: (amount, daysLeft) => `Наступило 23:59 (Киев)!\n\nВам начислено по ${amount} подсказок каждого вида:\n• ↩️ Отмена хода: +${amount}\n• 💡 Подсказка: +${amount}\n• 🔮 Открыть цвет: +${amount}\n• 🧪 Пустая колба: +${amount}\n\nОсталось дней: ${daysLeft}`,
       shopBuyGram: (price) => `Купить за ${price} GRAM`,
       shopActivateGram: (price) => `Активировать (${price} GRAM)`,
       shopExtendGram: (price) => `Продлить (+15 дн.) — ${price} GRAM`,
@@ -743,6 +754,17 @@ async function initColorSortApp() {
       shopHintsDesc: "Показує кращий наступний хід при складнощах.",
       shopUndosTitle: "+20 Відмін ходу",
       shopUndosDesc: "Повертає хід назад у будь-якій критичній ситуації.",
+      dailyBoostersTitle: "Підказки щодня (30 днів)",
+      dailyBoostersDesc: "Щодня рівно о 23:59 за Києвом нараховується по 10 шт. кожної підказки: скасування ходу, підказка, відкрити колір і порожня колба.",
+      dailyBoostersTag: "30 днів",
+      dailyBoostersCounterLabel: "⏳ Залишилося днів:",
+      dailyBoostersNextInfo: "⏰ Нарахування по 10 підказок о 23:59 (Київ)",
+      dailyBoostersBtnBuy: (price) => `Купити за ${price} GRAM`,
+      dailyBoostersBtnExtend: (price) => `Продовжити (+30 дн.) за ${price} GRAM`,
+      dailyBoostersSuccessTitle: "✨ Набір на 30 днів активовано!",
+      dailyBoostersSuccessMsg: "Ви успішно придбали функцію за 5 GRAM!\n\nЩодня рівно о 23:59 за Києвом вам нараховуватиметься по 10 підказок кожного виду (скасування ходу, підказка, відкрити колір, порожня колба).\n\nУсього 30 днів поспіль!",
+      dailyBoostersClaimTitle: "🎁 Щоденний набір підказок!",
+      dailyBoostersClaimMsg: (amount, daysLeft) => `Настало 23:59 (Київ)!\n\nВам нараховано по ${amount} підказок кожного виду:\n• ↩️ Скасування ходу: +${amount}\n• 💡 Підказка: +${amount}\n• 🔮 Відкрити колір: +${amount}\n• 🧪 Порожня колба: +${amount}\n\nЗалишилося днів: ${daysLeft}`,
       shopBuyGram: (price) => `Купити за ${price} GRAM`,
       shopActivateGram: (price) => `Активувати (${price} GRAM)`,
       shopExtendGram: (price) => `Продовжити (+15 дн.) — ${price} GRAM`,
@@ -1088,6 +1110,17 @@ async function initColorSortApp() {
       shopHintsDesc: "Shows the best next move when stuck.",
       shopUndosTitle: "+20 Undos",
       shopUndosDesc: "Rewinds a move back in any tricky situation.",
+      dailyBoostersTitle: "Daily Hints Pack (30 Days)",
+      dailyBoostersDesc: "Every day strictly at 23:59 Kyiv time, receive 10 of each booster: undo move, hint, reveal color, and empty bottle for 30 consecutive days.",
+      dailyBoostersTag: "30 days",
+      dailyBoostersCounterLabel: "⏳ Days remaining:",
+      dailyBoostersNextInfo: "⏰ 10 of each booster awarded at 23:59 (Kyiv)",
+      dailyBoostersBtnBuy: (price) => `Buy for ${price} GRAM`,
+      dailyBoostersBtnExtend: (price) => `Extend (+30 d.) for ${price} GRAM`,
+      dailyBoostersSuccessTitle: "✨ 30-Day Pack Activated!",
+      dailyBoostersSuccessMsg: "You have successfully purchased the feature for 5 GRAM!\n\nEvery day strictly at 23:59 Kyiv time you will receive 10 of each booster (undo, hint, reveal color, empty bottle).\n\nFor 30 consecutive days!",
+      dailyBoostersClaimTitle: "🎁 Daily Boosters Awarded!",
+      dailyBoostersClaimMsg: (amount, daysLeft) => `It is 23:59 (Kyiv)!\n\nYou have received ${amount} of each booster:\n• ↩️ Undo: +${amount}\n• 💡 Hint: +${amount}\n• 🔮 Reveal color: +${amount}\n• 🧪 Empty bottle: +${amount}\n\nDays left: ${daysLeft}`,
       shopBuyGram: (price) => `Buy for ${price} GRAM`,
       shopActivateGram: (price) => `Activate (${price} GRAM)`,
       shopExtendGram: (price) => `Extend (+15 days) — ${price} GRAM`,
@@ -1425,6 +1458,17 @@ async function initColorSortApp() {
       shopHintsDesc: "Zeigt den besten nächsten Zug bei Schwierigkeiten.",
       shopUndosTitle: "+20 Züge zurück",
       shopUndosDesc: "Macht einen Zug in jeder Situation rückgängig.",
+      dailyBoostersTitle: "Tägliches Hinweis-Paket (30 Tage)",
+      dailyBoostersDesc: "Jeden Tag pünktlich um 23:59 Uhr Kiewer Zeit werden je 10 Stück jedes Hinweises gutgeschrieben: Zug zurück, Hinweis, Farbe aufdecken und leere Flasche.",
+      dailyBoostersTag: "30 Tage",
+      dailyBoostersCounterLabel: "⏳ Verbleibende Tage:",
+      dailyBoostersNextInfo: "⏰ Gutschrift von je 10 Hinweisen um 23:59 (Kiew)",
+      dailyBoostersBtnBuy: (price) => `Kaufen für ${price} GRAM`,
+      dailyBoostersBtnExtend: (price) => `Verlängern (+30 T.) für ${price} GRAM`,
+      dailyBoostersSuccessTitle: "✨ 30-Tage-Paket aktiviert!",
+      dailyBoostersSuccessMsg: "Sie haben das Paket erfolgreich für 5 GRAM gekauft!\n\nJeden Tag genau um 23:59 Uhr Kiewer Zeit erhalten Sie je 10 Booster jeder Art (Zug zurück, Hinweis, Farbe aufdecken, leere Flasche).\n\nFür 30 aufeinanderfolgende Tage!",
+      dailyBoostersClaimTitle: "🎁 Tägliches Booster-Paket erhalten!",
+      dailyBoostersClaimMsg: (amount, daysLeft) => `Es ist 23:59 (Kiew)!\n\nSie haben je ${amount} Booster jeder Art erhalten:\n• ↩️ Zug zurück: +${amount}\n• 💡 Hinweis: +${amount}\n• 🔮 Farbe aufdecken: +${amount}\n• 🧪 Leere Flasche: +${amount}\n\nVerbleibende Tage: ${daysLeft}`,
       shopBuyGram: (price) => `Kaufen für ${price} GRAM`,
       shopActivateGram: (price) => `Aktivieren (${price} GRAM)`,
       shopExtendGram: (price) => `Verlängern (+15 Tage) — ${price} GRAM`,
@@ -1770,6 +1814,17 @@ async function initColorSortApp() {
       shopHintsDesc: "Rodo geriausią kitą ėjimą užstrigus.",
       shopUndosTitle: "+20 Atšaukimų",
       shopUndosDesc: "Grąžina ėjimą atgal bet kokioje situacijoje.",
+      dailyBoostersTitle: "Kasdienis užuominų rinkinys (30 dienų)",
+      dailyBoostersDesc: "Kiekvieną dieną tiksliai 23:59 Kijevo laiku priskaičiuojama po 10 vnt. kiekvieno patobulinimo: ėjimo atšaukimas, užuomina, spalvos atskleidimas ir tuščias buteliukas.",
+      dailyBoostersTag: "30 dienų",
+      dailyBoostersCounterLabel: "⏳ Liko dienų:",
+      dailyBoostersNextInfo: "⏰ Priskaičiavimas po 10 užuominų 23:59 (Kijevas)",
+      dailyBoostersBtnBuy: (price) => `Pirkti už ${price} GRAM`,
+      dailyBoostersBtnExtend: (price) => `Pratęsti (+30 d.) už ${price} GRAM`,
+      dailyBoostersSuccessTitle: "✨ 30 dienų rinkinys aktyvuotas!",
+      dailyBoostersSuccessMsg: "Sėkmingai įsigijote funkciją už 5 GRAM!\n\nKiekvieną dieną tiksliai 23:59 Kijevo laiku gausite po 10 kiekvienos rūšies užuominų (atšaukimas, užuomina, atskleidimas, buteliukas).\n\nIš viso 30 dienų iš eilės!",
+      dailyBoostersClaimTitle: "🎁 Kasdienis rinkinys suteiktas!",
+      dailyBoostersClaimMsg: (amount, daysLeft) => `Atėjo 23:59 (Kijevas)!\n\nJums suteikta po ${amount} kiekvienos rūšies užuominų:\n• ↩️ Atšaukimas: +${amount}\n• 💡 Užuomina: +${amount}\n• 🔮 Atskleidimas: +${amount}\n• 🧪 Buteliukas: +${amount}\n\nLiko dienų: ${daysLeft}`,
       shopBuyGram: (price) => `Pirkti už ${price} GRAM`,
       shopActivateGram: (price) => `Aktivuoti (${price} GRAM)`,
       shopExtendGram: (price) => `Pratęsti (+15 d.) — ${price} GRAM`,
@@ -2260,6 +2315,16 @@ async function initColorSortApp() {
     if (shopFeaturedPriceLabel) shopFeaturedPriceLabel.textContent = t('shopPriceLabel');
     const shopSectionDividerText = document.getElementById('shopSectionDividerText');
     if (shopSectionDividerText) shopSectionDividerText.textContent = t('shopSectionDivider');
+    const dailyBoostersTitle = document.getElementById('dailyBoostersTitle');
+    if (dailyBoostersTitle) dailyBoostersTitle.textContent = t('dailyBoostersTitle');
+    const dailyBoostersDesc = document.getElementById('dailyBoostersDesc');
+    if (dailyBoostersDesc) dailyBoostersDesc.textContent = t('dailyBoostersDesc');
+    const dailyBoostersTag = document.getElementById('dailyBoostersTag');
+    if (dailyBoostersTag) dailyBoostersTag.textContent = t('dailyBoostersTag');
+    const dailyBoostersCounterLabel = document.getElementById('dailyBoostersCounterLabel');
+    if (dailyBoostersCounterLabel) dailyBoostersCounterLabel.textContent = t('dailyBoostersCounterLabel');
+    const dailyBoostersNextInfo = document.getElementById('dailyBoostersNextInfo');
+    if (dailyBoostersNextInfo) dailyBoostersNextInfo.textContent = t('dailyBoostersNextInfo');
     const shopBottlesTitle = document.getElementById('shopBottlesTitle');
     if (shopBottlesTitle) shopBottlesTitle.textContent = t('shopBottlesTitle');
     const shopBottlesDesc = document.getElementById('shopBottlesDesc');
@@ -2671,7 +2736,10 @@ async function initColorSortApp() {
     ton_wallet: '',
     memo_code: '',
     all_colors_until: 0,
-    all_colors_purchased_at: 0
+    all_colors_purchased_at: 0,
+    daily_boosters_days_left: 0,
+    daily_boosters_last_date: '',
+    daily_boosters_purchased_at: 0
   };
 
   window.isAllColorsActive = function () {
@@ -2679,6 +2747,40 @@ async function initColorSortApp() {
     if (!currentUser.all_colors_until) return false;
     return Number(currentUser.all_colors_until) > Date.now();
   };
+
+  window.isDailyBoostersActive = function () {
+    if (!currentUser) return false;
+    return Number(currentUser.daily_boosters_days_left || 0) > 0;
+  };
+
+  function getKyivDateTimeBrowser(dateInput = new Date()) {
+    const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Kyiv',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(d);
+    const obj = {};
+    parts.forEach(p => obj[p.type] = p.value);
+    const dateStr = `${obj.year}-${obj.month}-${obj.day}`;
+    const timeStr = `${obj.hour}:${obj.minute}:${obj.second}`;
+    return {
+      dateStr,
+      timeStr,
+      year: parseInt(obj.year, 10),
+      month: parseInt(obj.month, 10),
+      day: parseInt(obj.day, 10),
+      hour: parseInt(obj.hour, 10),
+      minute: parseInt(obj.minute, 10),
+      second: parseInt(obj.second, 10)
+    };
+  }
 
   let currentLevelData = null;
   let justStartedGame = false;
@@ -2798,6 +2900,10 @@ async function initColorSortApp() {
     user.ton_deposits_count = Number(user.ton_deposits_count || 0);
     user.purchasesResetAt = Number(user.purchasesResetAt || user.purchases_reset_at || 0);
     user.purchases_reset_at = user.purchasesResetAt;
+    user.daily_boosters_days_left = Math.max(0, Number(user.daily_boosters_days_left !== undefined ? user.daily_boosters_days_left : (user.dailyBoostersDaysLeft || 0)));
+    user.dailyBoostersDaysLeft = user.daily_boosters_days_left;
+    user.daily_boosters_last_date = String(user.daily_boosters_last_date || user.dailyBoostersLastDate || '').trim();
+    user.daily_boosters_purchased_at = Number(user.daily_boosters_purchased_at || user.dailyBoostersPurchasedAt || 0);
     return user;
   }
 
@@ -2895,6 +3001,14 @@ async function initColorSortApp() {
         if (finalBottles > (user.extraBottles || 0)) { user.extraBottles = finalBottles; user.extra_bottles = finalBottles; }
         if (finalAllColors > (user.all_colors_until || 0)) user.all_colors_until = finalAllColors;
 
+        const finalDailyDays = Math.max(Number(user.daily_boosters_days_left || 0), existingCloud ? Number(existingCloud.daily_boosters_days_left || existingCloud.dailyBoostersDaysLeft || 0) : 0);
+        const finalDailyLastDate = user.daily_boosters_last_date || (existingCloud ? (existingCloud.daily_boosters_last_date || existingCloud.dailyBoostersLastDate) : '') || '';
+        const finalDailyPurchasedAt = user.daily_boosters_purchased_at || (existingCloud ? (existingCloud.daily_boosters_purchased_at || existingCloud.dailyBoostersPurchasedAt) : 0) || 0;
+
+        if (finalDailyDays > (user.daily_boosters_days_left || 0)) user.daily_boosters_days_left = finalDailyDays;
+        if (finalDailyLastDate && !user.daily_boosters_last_date) user.daily_boosters_last_date = finalDailyLastDate;
+        if (finalDailyPurchasedAt && !user.daily_boosters_purchased_at) user.daily_boosters_purchased_at = finalDailyPurchasedAt;
+
         const payload = {
           telegramId: id,
           firstName: user.firstName || 'Игрок',
@@ -2916,6 +3030,9 @@ async function initColorSortApp() {
           ton_deposits_count: Number(user.ton_deposits_count || 0),
           all_colors_until: finalAllColors,
           all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
+          daily_boosters_days_left: finalDailyDays,
+          daily_boosters_last_date: finalDailyLastDate,
+          daily_boosters_purchased_at: finalDailyPurchasedAt,
           seasonResetAt: localSeasonReset,
           purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
           updatedAt: Date.now()
@@ -2940,6 +3057,9 @@ async function initColorSortApp() {
       ton_balance: user.ton_balance,
       ton_wallet: user.ton_wallet,
       ton_wallet_type: user.ton_wallet_type,
+      daily_boosters_days_left: user.daily_boosters_days_left,
+      daily_boosters_last_date: user.daily_boosters_last_date,
+      daily_boosters_purchased_at: user.daily_boosters_purchased_at,
       seasonResetAt: localSeasonReset,
       purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
       starsAdded: 0,
@@ -2988,6 +3108,11 @@ async function initColorSortApp() {
     currentUser.updatedAt = Date.now();
     normalizeUserObject(currentUser);
     localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
+    if (Number(currentUser.daily_boosters_days_left || 0) > 0) {
+      localStorage.setItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`, String(currentUser.daily_boosters_days_left));
+      localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, String(currentUser.daily_boosters_last_date || ''));
+      localStorage.setItem(`color_sort_daily_boosters_at_${currentUser.telegramId}`, String(currentUser.daily_boosters_purchased_at || ''));
+    }
   }
   function loadLocalUser() {
     const data = localStorage.getItem(`color_sort_user_${currentUser.telegramId}`);
@@ -2997,6 +3122,20 @@ async function initColorSortApp() {
         currentUser = { ...currentUser, ...parsed };
         currentUser._localLoaded = true;
       } catch (e) {}
+    }
+    // Safety check for daily boosters backup keys
+    const backupDays = Number(localStorage.getItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`) || 0);
+    if (backupDays > Number(currentUser.daily_boosters_days_left || 0)) {
+      currentUser.daily_boosters_days_left = backupDays;
+      currentUser.dailyBoostersDaysLeft = backupDays;
+      const backupDate = localStorage.getItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`);
+      if (backupDate && !currentUser.daily_boosters_last_date) {
+        currentUser.daily_boosters_last_date = backupDate;
+      }
+      const backupAt = Number(localStorage.getItem(`color_sort_daily_boosters_at_${currentUser.telegramId}`) || 0);
+      if (backupAt && !currentUser.daily_boosters_purchased_at) {
+        currentUser.daily_boosters_purchased_at = backupAt;
+      }
     }
     if (!currentUser.purchasesResetAt) {
       const storedReset = Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || localStorage.getItem('color_sort_gram_reset_at') || 0);
@@ -3253,6 +3392,22 @@ async function initColorSortApp() {
             const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
             if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
           }
+          if (cloudData.daily_boosters_days_left !== undefined || cloudData.dailyBoostersDaysLeft !== undefined) {
+            const cDays = Number(cloudData.daily_boosters_days_left !== undefined ? cloudData.daily_boosters_days_left : cloudData.dailyBoostersDaysLeft);
+            if (cDays > Number(currentUser.daily_boosters_days_left || 0)) {
+              currentUser.daily_boosters_days_left = cDays;
+              currentUser.dailyBoostersDaysLeft = cDays;
+              changed = true;
+            }
+          }
+          if (cloudData.daily_boosters_last_date && !currentUser.daily_boosters_last_date) {
+            currentUser.daily_boosters_last_date = cloudData.daily_boosters_last_date;
+            changed = true;
+          }
+          if (cloudData.daily_boosters_purchased_at && !currentUser.daily_boosters_purchased_at) {
+            currentUser.daily_boosters_purchased_at = Number(cloudData.daily_boosters_purchased_at);
+            changed = true;
+          }
 
           if (cloudData.ton_balance !== undefined) {
             const cb = Number(cloudData.ton_balance || 0);
@@ -3462,6 +3617,21 @@ async function initColorSortApp() {
       }
       if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, Number(serverUser.user.all_colors_until || 0));
       if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, Number(serverUser.user.all_colors_purchased_at || 0));
+      if (serverUser.user.daily_boosters_days_left !== undefined) {
+        if (serverUser.user.daily_boosters_last_date && serverUser.user.daily_boosters_last_date > (currentUser.daily_boosters_last_date || '')) {
+          currentUser.daily_boosters_days_left = Number(serverUser.user.daily_boosters_days_left || 0);
+          currentUser.daily_boosters_last_date = serverUser.user.daily_boosters_last_date;
+        } else {
+          currentUser.daily_boosters_days_left = Math.max(Number(currentUser.daily_boosters_days_left || 0), Number(serverUser.user.daily_boosters_days_left || 0));
+        }
+        currentUser.dailyBoostersDaysLeft = currentUser.daily_boosters_days_left;
+      }
+      if (serverUser.user.daily_boosters_last_date && !currentUser.daily_boosters_last_date) {
+        currentUser.daily_boosters_last_date = serverUser.user.daily_boosters_last_date;
+      }
+      if (serverUser.user.daily_boosters_purchased_at && !currentUser.daily_boosters_purchased_at) {
+        currentUser.daily_boosters_purchased_at = Number(serverUser.user.daily_boosters_purchased_at);
+      }
       if (serverUser.user.ton_balance !== undefined) {
         const sb = Number(serverUser.user.ton_balance || 0);
         if (!currentUser._localLoaded || currentUser.ton_balance === undefined || currentUser.ton_balance === null) {
@@ -3485,6 +3655,7 @@ async function initColorSortApp() {
       updateShopUI();
       saveLocalUser();
       updateHeaderUI();
+      checkAndApplyClientDailyBoosters();
       if (currentUser.currentLevel !== oldLevel) {
         loadCurrentLevel();
       }
@@ -5192,6 +5363,82 @@ async function initColorSortApp() {
   // ==========================================
   // Chest / Upgrades Shop Modal Logic
   // ==========================================
+  function checkAndApplyClientDailyBoosters() {
+    if (!currentUser || !currentUser.telegramId) return;
+    const daysLeft = Number(currentUser.daily_boosters_days_left || 0);
+    if (daysLeft <= 0) return;
+
+    const now = new Date();
+    const kyiv = getKyivDateTimeBrowser(now);
+
+    let latestEligibleDate = null;
+    if (kyiv.hour === 23 && kyiv.minute >= 59) {
+      latestEligibleDate = kyiv.dateStr;
+    } else {
+      const yesterday = new Date(now.getTime() - 24 * 3600 * 1000);
+      latestEligibleDate = getKyivDateTimeBrowser(yesterday).dateStr;
+    }
+
+    const lastDate = (currentUser.daily_boosters_last_date || '').trim();
+    if (!lastDate) {
+      currentUser.daily_boosters_last_date = latestEligibleDate;
+      currentUser.dailyBoostersLastDate = latestEligibleDate;
+      saveLocalUser();
+      return;
+    }
+
+    if (lastDate >= latestEligibleDate) {
+      return;
+    }
+
+    const lastParts = lastDate.split('-').map(Number);
+    const eligParts = latestEligibleDate.split('-').map(Number);
+    const dLast = Date.UTC(lastParts[0], lastParts[1] - 1, lastParts[2]);
+    const dElig = Date.UTC(eligParts[0], eligParts[1] - 1, eligParts[2]);
+    const diffDays = Math.round((dElig - dLast) / (24 * 3600 * 1000));
+
+    if (diffDays <= 0) return;
+
+    const daysToAccrue = Math.min(diffDays, daysLeft);
+    if (daysToAccrue <= 0) return;
+
+    const bonusPerType = daysToAccrue * 10;
+    currentUser.undos = (currentUser.undos || 0) + bonusPerType;
+    currentUser.hints = (currentUser.hints || 0) + bonusPerType;
+    currentUser.reveals = (currentUser.reveals || 0) + bonusPerType;
+    currentUser.extraBottles = (currentUser.extraBottles || 0) + bonusPerType;
+    currentUser.extra_bottles = currentUser.extraBottles;
+
+    currentUser.daily_boosters_days_left = Math.max(0, daysLeft - daysToAccrue);
+    currentUser.dailyBoostersDaysLeft = currentUser.daily_boosters_days_left;
+    currentUser.daily_boosters_last_date = latestEligibleDate;
+    currentUser.dailyBoostersLastDate = latestEligibleDate;
+
+    localStorage.setItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`, String(currentUser.daily_boosters_days_left || 0));
+    localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, currentUser.daily_boosters_last_date || '');
+    localStorage.setItem(`color_sort_daily_boosters_at_${currentUser.telegramId}`, String(currentUser.daily_boosters_purchased_at || 0));
+
+    saveLocalUser();
+    updateHeaderUI();
+    updateShopUI();
+    syncPlayerToCloud(currentUser);
+
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('success');
+    }
+    if (window.SoundEngine && window.SoundEngine.SoundEngine) {
+      window.SoundEngine.SoundEngine.playWin();
+    }
+
+    showInfoModal(
+      '🎁',
+      t('dailyBoostersClaimTitle') || '🎁 Ежедневный набор начислен!',
+      (typeof t('dailyBoostersClaimMsg') === 'function'
+        ? t('dailyBoostersClaimMsg')(bonusPerType, currentUser.daily_boosters_days_left)
+        : `Наступило 23:59 (Киев)!\n\nВам начислено по ${bonusPerType} подсказок каждого вида:\n• ↩️ Отмена: +${bonusPerType}\n• 💡 Подсказка: +${bonusPerType}\n• 🔮 Открыть цвет: +${bonusPerType}\n• 🧪 Пустая колба: +${bonusPerType}\n\nОсталось дней: ${currentUser.daily_boosters_days_left}`)
+    );
+  }
+
   function updateShopUI() {
     const bal = parseFloat(currentUser.ton_balance || 0);
     if (shopUserBalance) {
@@ -5221,9 +5468,26 @@ async function initColorSortApp() {
         btnTextEl.textContent = isAllColors ? t('shopExtendGram', 5) : t('shopActivateGram', 5);
       }
     }
+
+    // Daily Boosters (30 Days) UI Update
+    const dailyDays = Number(currentUser.daily_boosters_days_left || 0);
+    const dailyBoostersStatusBox = document.getElementById('dailyBoostersStatusBox');
+    const dailyBoostersDaysLeft = document.getElementById('dailyBoostersDaysLeft');
+    const buyDailyBoostersBtnText = document.getElementById('buyDailyBoostersBtnText');
+
+    if (dailyBoostersStatusBox) {
+      dailyBoostersStatusBox.classList.toggle('hidden', dailyDays <= 0);
+    }
+    if (dailyBoostersDaysLeft) {
+      dailyBoostersDaysLeft.textContent = `${dailyDays} дн.`;
+    }
+    if (buyDailyBoostersBtnText) {
+      buyDailyBoostersBtnText.textContent = dailyDays > 0 ? t('dailyBoostersBtnExtend', 5) : t('dailyBoostersBtnBuy', 5);
+    }
   }
 
   function openShopModal() {
+    checkAndApplyClientDailyBoosters();
     updateShopUI();
     const modalContent = document.querySelector('.shop-modal-content');
     if (modalContent) modalContent.scrollTop = 0;
@@ -5258,6 +5522,7 @@ async function initColorSortApp() {
     const currentBal = parseFloat(currentUser.ton_balance || 0);
     const itemPrices = {
       all_colors_15d: 5.0,
+      daily_boosters_30d: 5.0,
       bottles_pack_15: 1.0,
       hints_pack_20: 1.0,
       undos_pack_20: 1.0,
@@ -5300,6 +5565,19 @@ async function initColorSortApp() {
         if (res.user.all_colors_until !== undefined) currentUser.all_colors_until = res.user.all_colors_until;
         if (res.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = res.user.all_colors_purchased_at;
         
+        if (res.user.daily_boosters_days_left !== undefined) {
+          currentUser.daily_boosters_days_left = Number(res.user.daily_boosters_days_left);
+          currentUser.dailyBoostersDaysLeft = currentUser.daily_boosters_days_left;
+        }
+        if (res.user.daily_boosters_last_date !== undefined) {
+          currentUser.daily_boosters_last_date = res.user.daily_boosters_last_date;
+          currentUser.dailyBoostersLastDate = res.user.daily_boosters_last_date;
+        }
+        if (res.user.daily_boosters_purchased_at !== undefined) {
+          currentUser.daily_boosters_purchased_at = Number(res.user.daily_boosters_purchased_at);
+          currentUser.dailyBoostersPurchasedAt = currentUser.daily_boosters_purchased_at;
+        }
+
         const serverExtraBottles = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
 
         if (itemId === 'bottles_pack_15') {
@@ -5330,7 +5608,25 @@ async function initColorSortApp() {
       } else {
         // Fallback for static GitHub Pages / client-side test
         currentUser.ton_balance = newBalance;
-        if (itemId === 'all_colors_15d') {
+        if (itemId === 'daily_boosters_30d') {
+          const now = Date.now();
+          currentUser.daily_boosters_days_left = (currentUser.daily_boosters_days_left || 0) + 30;
+          currentUser.dailyBoostersDaysLeft = currentUser.daily_boosters_days_left;
+          if (!currentUser.daily_boosters_last_date) {
+            const kyiv = getKyivDateTimeBrowser(new Date(now));
+            if (kyiv.hour < 23 || (kyiv.hour === 23 && kyiv.minute < 59)) {
+              const yesterday = new Date(now - 24 * 3600 * 1000);
+              currentUser.daily_boosters_last_date = getKyivDateTimeBrowser(yesterday).dateStr;
+            } else {
+              currentUser.daily_boosters_last_date = kyiv.dateStr;
+            }
+            currentUser.dailyBoostersLastDate = currentUser.daily_boosters_last_date;
+          }
+          if (!currentUser.daily_boosters_purchased_at) {
+            currentUser.daily_boosters_purchased_at = now;
+            currentUser.dailyBoostersPurchasedAt = now;
+          }
+        } else if (itemId === 'all_colors_15d') {
           const now = Date.now();
           const curr = Number(currentUser.all_colors_until || 0);
           const base = (curr > now) ? curr : now;
@@ -5346,6 +5642,12 @@ async function initColorSortApp() {
         } else if (itemId === 'reveals_pack_20') {
           currentUser.reveals = (currentUser.reveals || 0) + 20;
         }
+      }
+
+      if (currentUser.daily_boosters_days_left !== undefined) {
+        localStorage.setItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`, String(currentUser.daily_boosters_days_left || 0));
+        localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, currentUser.daily_boosters_last_date || '');
+        localStorage.setItem(`color_sort_daily_boosters_at_${currentUser.telegramId}`, String(currentUser.daily_boosters_purchased_at || 0));
       }
 
       normalizeUserObject(currentUser);
@@ -5394,7 +5696,11 @@ async function initColorSortApp() {
       let successMsg = 'Преимущество успешно зачислено на ваш аккаунт!';
       let successIcon = '✨';
 
-      if (itemId === 'all_colors_15d') {
+      if (itemId === 'daily_boosters_30d') {
+        successIcon = '🎁';
+        successTitle = t('dailyBoostersSuccessTitle') || '🎁 30 дней начислений активировано!';
+        successMsg = t('dailyBoostersSuccessMsg') || 'Вы успешно приобрели функцию за 5 GRAM!\n\nКаждый день ровно в 23:59 по Киеву вам будет начисляться по 10 подсказок каждого вида (отмена, подсказка, открытие, колба).\n\nВсего 30 дней подряд!';
+      } else if (itemId === 'all_colors_15d') {
         successIcon = '✨';
         successTitle = 'Все краски открыты!';
         successMsg = 'Функция активирована на 15 дней!\n\nВсе скрытые слои жидкостей во всех колбах теперь видны сразу с 1-й секунды каждого уровня!';
@@ -5437,13 +5743,12 @@ async function initColorSortApp() {
     });
   }
 
-  // Update shop timer periodically if active
+  // Update shop timer and check daily boosters periodically
   setInterval(() => {
-    if (window.isAllColorsActive && window.isAllColorsActive()) {
-      if (shopActiveTimerText && shopModal && !shopModal.classList.contains('hidden')) {
-        updateShopUI();
-      }
+    if (shopModal && !shopModal.classList.contains('hidden')) {
+      updateShopUI();
     }
+    checkAndApplyClientDailyBoosters();
   }, 10000);
 
   // Profile Tabs Navigation System (Ровно 2 вкладки: Профиль и Рефералы)
@@ -9741,6 +10046,12 @@ async function initColorSortApp() {
             ton_deposits_count: Number(currentUser.ton_deposits_count || 0),
             all_colors_until: Number(currentUser.all_colors_until || 0),
             all_colors_purchased_at: Number(currentUser.all_colors_purchased_at || 0),
+            daily_boosters_days_left: Number(currentUser.daily_boosters_days_left || 0),
+            dailyBoostersDaysLeft: Number(currentUser.daily_boosters_days_left || 0),
+            daily_boosters_last_date: currentUser.daily_boosters_last_date || '',
+            dailyBoostersLastDate: currentUser.daily_boosters_last_date || '',
+            daily_boosters_purchased_at: Number(currentUser.daily_boosters_purchased_at || 0),
+            dailyBoostersPurchasedAt: Number(currentUser.daily_boosters_purchased_at || 0),
             seasonResetAt: Number(localStorage.getItem('color_sort_season_reset_at') || 0),
             purchasesResetAt: Number(currentUser.purchasesResetAt || 0),
             updatedAt: Date.now()
