@@ -177,20 +177,38 @@ app.post('/api/user/init', async (req, res) => {
             }
             user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
             user.all_colors_purchased_at = Math.max(Number(user.all_colors_purchased_at || 0), Number(kvData.all_colors_purchased_at || 0));
+            if (kvData.daily_boosters_days_left !== undefined || kvData.dailyBoostersDaysLeft !== undefined) {
+              const kDays = Number(kvData.daily_boosters_days_left !== undefined ? kvData.daily_boosters_days_left : kvData.dailyBoostersDaysLeft);
+              user.daily_boosters_days_left = Math.max(Number(user.daily_boosters_days_left || 0), kDays);
+            }
+            if (kvData.daily_boosters_last_date && !user.daily_boosters_last_date) {
+              user.daily_boosters_last_date = kvData.daily_boosters_last_date;
+            }
+            if (kvData.daily_boosters_purchased_at && !user.daily_boosters_purchased_at) {
+              user.daily_boosters_purchased_at = kvData.daily_boosters_purchased_at;
+            }
             if (kvData.ton_wallet && !user.ton_wallet) user.ton_wallet = kvData.ton_wallet;
             if (kvData.memo_code && !user.memo_code) user.memo_code = kvData.memo_code;
 
             try {
               db.prepare(`
                 UPDATE users 
-                SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?
+                SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?, daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ?
                 WHERE telegram_id = ?
-              `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, String(id));
+              `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, Number(user.daily_boosters_days_left || 0), user.daily_boosters_last_date || '', Number(user.daily_boosters_purchased_at || 0), String(id));
             } catch (e) {}
           }
         }
       } catch (e) {}
     }
+
+    // Check and apply any due daily boosters accrual for this user
+    try {
+      const accrueRes = db.accrueDailyBoostersForUser(id, new Date());
+      if (accrueRes && accrueRes.accrued && accrueRes.user) {
+        user = accrueRes.user;
+      }
+    } catch (e) {}
 
     const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
     const purchasesResetAt = db.getPurchasesResetTimestamp ? db.getPurchasesResetTimestamp() : 0;
@@ -230,6 +248,11 @@ app.post('/api/user/sync', (req, res) => {
       shuffles
     });
 
+    // Also check and apply daily boosters if due
+    try {
+      db.accrueDailyBoostersForUser(id, new Date());
+    } catch (e) {}
+
     // Also forward sync to global cloud bucket if real player
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
@@ -259,6 +282,9 @@ app.post('/api/user/sync', (req, res) => {
             ton_balance: (req.body.ton_balance !== undefined) ? Number(req.body.ton_balance) : Number(updatedUser.ton_balance !== undefined ? updatedUser.ton_balance : (existing ? existing.ton_balance : 0)),
             all_colors_until: Math.max(Number(updatedUser.all_colors_until || 0), existing ? Number(existing.all_colors_until || 0) : 0),
             all_colors_purchased_at: Math.max(Number(updatedUser.all_colors_purchased_at || 0), existing ? Number(existing.all_colors_purchased_at || 0) : 0),
+            daily_boosters_days_left: updatedUser.daily_boosters_days_left !== undefined ? updatedUser.daily_boosters_days_left : (req.body.daily_boosters_days_left || (existing ? existing.daily_boosters_days_left : 0) || 0),
+            daily_boosters_last_date: updatedUser.daily_boosters_last_date || req.body.daily_boosters_last_date || (existing ? existing.daily_boosters_last_date : '') || '',
+            daily_boosters_purchased_at: updatedUser.daily_boosters_purchased_at || req.body.daily_boosters_purchased_at || (existing ? existing.daily_boosters_purchased_at : 0) || 0,
             updatedAt: Date.now()
           };
           fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
@@ -664,6 +690,10 @@ app.post('/api/shop/buy', async (req, res) => {
           val.undos = (Number(val.undos) || 0) + 20;
         } else if (itemId === 'reveals_pack_20') {
           val.reveals = (Number(val.reveals) || 0) + 20;
+        } else if (itemId === 'daily_boosters_30d') {
+          val.daily_boosters_days_left = result.user.daily_boosters_days_left;
+          val.daily_boosters_last_date = result.user.daily_boosters_last_date;
+          val.daily_boosters_purchased_at = result.user.daily_boosters_purchased_at;
         } else if (itemId === 'all_colors_15d') {
           const now = Date.now();
           const curr = Number(val.all_colors_until || 0);
@@ -1617,6 +1647,40 @@ function initLeaderboardDailyScheduler() {
         const snapshot = db.saveLeaderboardSnapshot({ additionalPlayers: kvdbPlayers, timeStr: '23:59:00', snapshotType: 'auto' });
         lastRecordedSnapshotDay = targetKyiv.dateStr;
         console.log(`[Daily Scheduler] ✅ Снимок за ${snapshot.snapshot_date} (23:59) успешно сохранён! Всего игроков: ${snapshot.total_players}`);
+
+        // Accrue daily boosters (+10 hints, undos, reveals, bottles) for active 30-day subscribers
+        try {
+          const boosterResults = db.accrueDailyBoostersForAll(new Date());
+          if (boosterResults.length > 0) {
+            console.log(`[Daily Scheduler] 🎁 Начисление по 10 подсказок в 23:59 Киев завершено для ${boosterResults.length} игроков.`);
+            const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+            for (const bItem of boosterResults) {
+              const bUser = db.getUser(bItem.telegramId);
+              if (bUser && !String(bItem.telegramId).startsWith('guest') && !String(bItem.telegramId).startsWith('dev')) {
+                fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(bItem.telegramId)}?_cb=${Date.now()}`)
+                  .then(r => r.ok ? r.json() : null)
+                  .then(kvObj => {
+                    if (!kvObj) kvObj = { telegramId: String(bItem.telegramId) };
+                    kvObj.hints = bUser.hints;
+                    kvObj.undos = bUser.undos;
+                    kvObj.reveals = bUser.reveals;
+                    kvObj.extraBottles = bUser.extra_bottles;
+                    kvObj.extra_bottles = bUser.extra_bottles;
+                    kvObj.daily_boosters_days_left = bUser.daily_boosters_days_left;
+                    kvObj.daily_boosters_last_date = bUser.daily_boosters_last_date;
+                    kvObj.updatedAt = Date.now();
+                    fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(bItem.telegramId)}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(kvObj)
+                    }).catch(() => {});
+                  }).catch(() => {});
+              }
+            }
+          }
+        } catch (bErr) {
+          console.error('[Daily Scheduler ERROR] Ошибка начисления подсказок 23:59:', bErr);
+        }
       } catch (err) {
         console.error('[Daily Scheduler ERROR] Ошибка сохранения снимка в 23:59:', err);
       } finally {
@@ -1639,6 +1703,8 @@ function initLeaderboardDailyScheduler() {
           lastRecordedSnapshotDay = nowKyiv.dateStr;
         }
       }
+      // Safety guard for daily boosters
+      db.accrueDailyBoostersForAll(new Date());
     } catch (e) {}
   }, 60000);
 
@@ -1658,6 +1724,11 @@ app.listen(PORT, '0.0.0.0', () => {
 
   // Connect tunnel asynchronously in background
   initTunnel();
+
+  // Run pending daily boosters catch-up
+  try {
+    db.accrueDailyBoostersForAll(new Date());
+  } catch (e) {}
 
   // Start daily 23:59 Kyiv leaderboard snapshot scheduler
   initLeaderboardDailyScheduler();

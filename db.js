@@ -156,6 +156,15 @@ function initDatabase() {
     db.exec(`ALTER TABLE users ADD COLUMN purchases_reset_at INTEGER DEFAULT 0;`);
   } catch (e) {}
   try {
+    db.exec(`ALTER TABLE users ADD COLUMN daily_boosters_days_left INTEGER DEFAULT 0;`);
+  } catch (e) {}
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN daily_boosters_last_date TEXT DEFAULT '';`);
+  } catch (e) {}
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN daily_boosters_purchased_at INTEGER DEFAULT 0;`);
+  } catch (e) {}
+  try {
     db.exec(`ALTER TABLE users ADD COLUMN referrer_id TEXT DEFAULT NULL;`);
   } catch (e) {}
   try {
@@ -236,8 +245,8 @@ function getUser(telegramId, defaultUserData = {}) {
 
   const memo = generateMemoCode(telegramId);
   const insertStmt = db.prepare(`
-    INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, extra_bottles, shuffles, total_moves, ton_balance, ton_wallet, memo_code, all_colors_until)
-    VALUES (?, ?, ?, ?, 0, 1, 0, 100, 0, 0, 0, 0, 0, 0, 0.0, '', ?, 0)
+    INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, extra_bottles, shuffles, total_moves, ton_balance, ton_wallet, memo_code, all_colors_until, daily_boosters_days_left, daily_boosters_last_date, daily_boosters_purchased_at)
+    VALUES (?, ?, ?, ?, 0, 1, 0, 100, 0, 0, 0, 0, 0, 0, 0.0, '', ?, 0, 0, '', 0)
   `);
   
   insertStmt.run(
@@ -604,6 +613,12 @@ function buyShopItem(telegramId, itemId) {
   if (!user) return null;
 
   const SHOP_ITEMS = {
+    daily_boosters_30d: {
+      name: 'Подсказки каждый день (30 дней)',
+      price: 5.0,
+      durationDays: 30,
+      daily_boosters: true
+    },
     all_colors_15d: {
       name: 'Все краски открыты (15 дней)',
       price: 5.0,
@@ -648,7 +663,33 @@ function buyShopItem(telegramId, itemId) {
   // Deduct price from ton_balance
   const newBalance = Number((currentBalance - item.price).toFixed(4));
 
-  if (itemId === 'all_colors_15d') {
+  if (itemId === 'daily_boosters_30d') {
+    const now = Date.now();
+    const kyiv = getKyivDateTime(new Date(now));
+    const isAtOrAfter2359 = (kyiv.hour === 23 && kyiv.minute >= 59);
+    let initialLastDate = user.daily_boosters_last_date || '';
+    if (!initialLastDate || Number(user.daily_boosters_days_left || 0) <= 0) {
+      if (isAtOrAfter2359) {
+        initialLastDate = kyiv.dateStr;
+      } else {
+        const prevDate = new Date(now - 24 * 3600 * 1000);
+        initialLastDate = getKyivDateTime(prevDate).dateStr;
+      }
+    }
+    const currentDays = Number(user.daily_boosters_days_left || 0);
+    const newDays = currentDays + 30;
+
+    const updateStmt = db.prepare(`
+      UPDATE users
+      SET ton_balance = ?,
+          daily_boosters_days_left = ?,
+          daily_boosters_last_date = ?,
+          daily_boosters_purchased_at = ?,
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+    updateStmt.run(newBalance, newDays, initialLastDate, now, String(telegramId));
+  } else if (itemId === 'all_colors_15d') {
     const now = Date.now();
     const currentExpiry = Number(user.all_colors_until || 0);
     const baseTime = (currentExpiry > now) ? currentExpiry : now;
@@ -719,8 +760,94 @@ function buyShopItem(telegramId, itemId) {
 }
 
 /**
+ * Accrue daily boosters (+10 hints, +10 undos, +10 reveals, +10 bottles)
+ * for a specific user if 23:59 Kyiv has arrived/passed.
+ * Strictly idempotent: tracks daily_boosters_last_date so each day is only credited once.
+ */
+function accrueDailyBoostersForUser(telegramId, nowInput = new Date()) {
+  const user = getUser(telegramId);
+  if (!user) return null;
+
+  const daysLeft = Number(user.daily_boosters_days_left || 0);
+  if (daysLeft <= 0) return { accrued: false, user };
+
+  const kyiv = getKyivDateTime(nowInput);
+  const isAtOrAfter2359 = (kyiv.hour === 23 && kyiv.minute >= 59);
+
+  let latestEligibleDate = kyiv.dateStr;
+  if (!isAtOrAfter2359) {
+    const prevDate = new Date(nowInput.getTime() - 24 * 3600 * 1000);
+    latestEligibleDate = getKyivDateTime(prevDate).dateStr;
+  }
+
+  let lastDate = user.daily_boosters_last_date || '';
+  if (!lastDate) {
+    const dBefore = new Date(new Date(latestEligibleDate + 'T12:00:00Z').getTime() - 24 * 3600 * 1000);
+    lastDate = getKyivDateTime(dBefore).dateStr;
+  }
+
+  if (lastDate >= latestEligibleDate) {
+    return { accrued: false, user };
+  }
+
+  const d1 = new Date(lastDate + 'T12:00:00Z');
+  const d2 = new Date(latestEligibleDate + 'T12:00:00Z');
+  const diffDays = Math.round((d2.getTime() - d1.getTime()) / (24 * 3600 * 1000));
+  const dueCount = Math.min(daysLeft, Math.max(0, diffDays));
+
+  if (dueCount <= 0) return { accrued: false, user };
+
+  const addAmount = 10 * dueCount;
+  const newDaysLeft = Math.max(0, daysLeft - dueCount);
+
+  db.prepare(`
+    UPDATE users
+    SET hints = COALESCE(hints, 0) + ?,
+        undos = COALESCE(undos, 0) + ?,
+        reveals = COALESCE(reveals, 0) + ?,
+        extra_bottles = COALESCE(extra_bottles, 0) + ?,
+        daily_boosters_days_left = ?,
+        daily_boosters_last_date = ?,
+        updated_at = datetime('now')
+    WHERE telegram_id = ?
+  `).run(addAmount, addAmount, addAmount, addAmount, newDaysLeft, latestEligibleDate, String(telegramId));
+
+  const updatedUser = getUser(telegramId);
+  return {
+    accrued: true,
+    dueCount,
+    addAmount,
+    newDaysLeft,
+    lastDate: latestEligibleDate,
+    user: updatedUser
+  };
+}
+
+/**
+ * Accrue daily boosters for all players with daily_boosters_days_left > 0.
+ * Called at 23:59:00 Kyiv and on startup/heartbeat.
+ */
+function accrueDailyBoostersForAll(nowInput = new Date()) {
+  try {
+    const users = db.prepare(`SELECT telegram_id FROM users WHERE daily_boosters_days_left > 0`).all();
+    const results = [];
+    for (const u of users) {
+      const res = accrueDailyBoostersForUser(u.telegram_id, nowInput);
+      if (res && res.accrued) {
+        results.push({ telegramId: u.telegram_id, dueCount: res.dueCount, newDaysLeft: res.newDaysLeft, addAmount: res.addAmount });
+      }
+    }
+    return results;
+  } catch (err) {
+    console.error('[DB Accrue Daily Boosters All Error]', err);
+    return [];
+  }
+}
+
+/**
  * Admin: Reset all active GRAM purchases in the chest for all players.
- * Annuls active advantages (all_colors_until) and boosters without touching wallet currency balances (ton_balance).
+ * Annuls active advantages (all_colors_until) and boosters without touching wallet currency balances (ton_balance)
+ * or active 30-day daily boosters subscription (daily_boosters_days_left).
  */
 function resetGramPurchases() {
   try {
@@ -738,7 +865,7 @@ function resetGramPurchases() {
           purchases_reset_at = ${nowTs},
           updated_at = datetime('now');
     `);
-    db.exec(`DELETE FROM shop_purchases;`);
+    db.exec(`DELETE FROM shop_purchases WHERE item_id != 'daily_boosters_30d';`);
     db.exec(`DELETE FROM ad_rewards_log;`);
     db.prepare(`
       INSERT INTO system_settings (key, value) VALUES ('gram_reset_timestamp', ?)
@@ -753,6 +880,7 @@ function resetGramPurchases() {
 
 /**
  * Admin: Reset active TON/GRAM purchases and purchased perks for a single specific player by Telegram ID.
+ * Strictly preserves active 30-day daily boosters subscription.
  */
 function resetGramPurchasesSingle(targetTelegramId) {
   const id = String(targetTelegramId || '').trim();
@@ -774,7 +902,7 @@ function resetGramPurchasesSingle(targetTelegramId) {
       WHERE telegram_id = ?
     `);
     const info = stmt.run(nowTs, id);
-    db.prepare(`DELETE FROM shop_purchases WHERE telegram_id = ?`).run(id);
+    db.prepare(`DELETE FROM shop_purchases WHERE telegram_id = ? AND item_id != 'daily_boosters_30d'`).run(id);
     db.prepare(`DELETE FROM ad_rewards_log WHERE telegram_id = ?`).run(id);
 
     return {
@@ -1618,5 +1746,8 @@ module.exports = {
   getPlayerDeposits,
   sendGift,
   getInboxGifts,
-  claimGift
+  claimGift,
+  addBonus,
+  accrueDailyBoostersForUser,
+  accrueDailyBoostersForAll
 };

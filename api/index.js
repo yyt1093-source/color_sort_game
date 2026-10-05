@@ -76,20 +76,38 @@ app.post('/api/user/init', async (req, res) => {
             }
             user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
             user.all_colors_purchased_at = Math.max(Number(user.all_colors_purchased_at || 0), Number(kvData.all_colors_purchased_at || 0));
+            if (kvData.daily_boosters_days_left !== undefined || kvData.dailyBoostersDaysLeft !== undefined) {
+              const kDays = Number(kvData.daily_boosters_days_left !== undefined ? kvData.daily_boosters_days_left : kvData.dailyBoostersDaysLeft);
+              user.daily_boosters_days_left = Math.max(Number(user.daily_boosters_days_left || 0), kDays);
+            }
+            if (kvData.daily_boosters_last_date && !user.daily_boosters_last_date) {
+              user.daily_boosters_last_date = kvData.daily_boosters_last_date;
+            }
+            if (kvData.daily_boosters_purchased_at && !user.daily_boosters_purchased_at) {
+              user.daily_boosters_purchased_at = kvData.daily_boosters_purchased_at;
+            }
             if (kvData.ton_wallet && !user.ton_wallet) user.ton_wallet = kvData.ton_wallet;
             if (kvData.memo_code && !user.memo_code) user.memo_code = kvData.memo_code;
 
             try {
               db.prepare(`
                 UPDATE users 
-                SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?
+                SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?, daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ?
                 WHERE telegram_id = ?
-              `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, String(id));
+              `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, Number(user.daily_boosters_days_left || 0), user.daily_boosters_last_date || '', Number(user.daily_boosters_purchased_at || 0), String(id));
             } catch (e) {}
           }
         }
       } catch (e) {}
     }
+
+    // Check and apply any due daily boosters accrual for this user
+    try {
+      const accrueRes = db.accrueDailyBoostersForUser(id, new Date());
+      if (accrueRes && accrueRes.accrued && accrueRes.user) {
+        user = accrueRes.user;
+      }
+    } catch (e) {}
 
     const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
     const purchasesResetAt = db.getPurchasesResetTimestamp ? db.getPurchasesResetTimestamp() : 0;
@@ -128,6 +146,11 @@ app.post('/api/user/sync', (req, res) => {
       extraBottles: extraBottles !== undefined ? extraBottles : extra_bottles,
       shuffles
     });
+
+    // Also check and apply daily boosters if due
+    try {
+      db.accrueDailyBoostersForUser(id, new Date());
+    } catch (e) {}
 
     res.json({ success: true, user: updatedUser });
   } catch (err) {
@@ -519,6 +542,10 @@ app.post('/api/shop/buy', async (req, res) => {
           val.undos = (Number(val.undos) || 0) + 20;
         } else if (itemId === 'reveals_pack_20') {
           val.reveals = (Number(val.reveals) || 0) + 20;
+        } else if (itemId === 'daily_boosters_30d') {
+          val.daily_boosters_days_left = result.user.daily_boosters_days_left;
+          val.daily_boosters_last_date = result.user.daily_boosters_last_date;
+          val.daily_boosters_purchased_at = result.user.daily_boosters_purchased_at;
         } else if (itemId === 'all_colors_15d') {
           const now = Date.now();
           const curr = Number(val.all_colors_until || 0);
