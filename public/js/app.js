@@ -2980,22 +2980,29 @@ async function initColorSortApp() {
 
   function updateCloudBoosterDirectly(field, value) {
     if (!currentUser || !currentUser.telegramId) return;
-    const id = String(currentUser.telegramId);
-    if (id.startsWith('guest') || id.startsWith('dev') || !/^\d+$/.test(id)) return;
-    fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(cloud => {
-        if (cloud && typeof cloud === 'object') {
-          cloud[field] = value;
-          if (field === 'extraBottles') cloud.extra_bottles = value;
-          cloud.updatedAt = Date.now();
-          fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(cloud)
-          }).catch(() => {});
-        }
-      }).catch(() => {});
+    currentUser[field] = value;
+    if (field === 'extraBottles') currentUser.extra_bottles = value;
+    saveLocalUser();
+
+    const syncPayload = {
+      telegramId: currentUser.telegramId,
+      firstName: currentUser.firstName,
+      username: currentUser.username,
+      photoUrl: currentUser.photoUrl,
+      currentLevel: currentUser.currentLevel,
+      maxLevel: currentUser.maxLevel,
+      hints: currentUser.hints,
+      undos: currentUser.undos,
+      reveals: currentUser.reveals,
+      extraBottles: currentUser.extraBottles,
+      extra_bottles: currentUser.extraBottles,
+      shuffles: currentUser.shuffles,
+      ton_balance: currentUser.ton_balance,
+      daily_boosters_days_left: currentUser.daily_boosters_days_left,
+      daily_boosters_last_date: currentUser.daily_boosters_last_date,
+      daily_boosters_purchased_at: currentUser.daily_boosters_purchased_at
+    };
+    apiCall('/api/user/sync', 'POST', syncPayload).catch(() => {});
   }
 
   async function syncPlayerToCloud(user, options = {}) {
@@ -3138,16 +3145,10 @@ async function initColorSortApp() {
           purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
           updatedAt: Date.now()
         };
-        fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          keepalive: options && options.keepalive ? true : undefined
-        }).catch(err => console.warn('[Cloud DB Sync]', err));
       } catch (e) {}
     }
 
-    // 2. Also send to Express API if available (only send boosters if > 0 to never overwrite server inventory with 0)
+    // 2. Send authenticated sync to backend (which persists to SQLite and forwards to KVDB)
     const syncPayload = {
       telegramId: user.telegramId,
       firstName: user.firstName,
@@ -3155,6 +3156,12 @@ async function initColorSortApp() {
       photoUrl: user.photoUrl,
       currentLevel: user.currentLevel,
       maxLevel: maxLvl,
+      hints: user.hints,
+      undos: user.undos,
+      reveals: user.reveals,
+      extraBottles: user.extraBottles,
+      extra_bottles: user.extraBottles,
+      shuffles: user.shuffles,
       ton_balance: user.ton_balance,
       ton_wallet: user.ton_wallet,
       ton_wallet_type: user.ton_wallet_type,
@@ -3166,33 +3173,57 @@ async function initColorSortApp() {
       starsAdded: 0,
       coinsAdded: 0
     };
-    if (user.hints > 0) syncPayload.hints = user.hints;
-    if (user.undos > 0) syncPayload.undos = user.undos;
-    if (user.reveals > 0) syncPayload.reveals = user.reveals;
-    if (user.extraBottles > 0) {
-      syncPayload.extraBottles = user.extraBottles;
-      syncPayload.extra_bottles = user.extraBottles;
-    }
-    apiCall('/api/user/sync', 'POST', syncPayload).catch(() => {});
+    apiCall('/api/user/sync', 'POST', syncPayload, { keepalive: options && options.keepalive ? true : undefined }).catch(() => {});
   }
 
-  async function apiCall(endpoint, method = 'GET', body = null) {
+  function getTelegramInitData() {
+    if (window.TelegramApp && window.TelegramApp.getInitData) {
+      const d = window.TelegramApp.getInitData();
+      if (d) return d;
+    }
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+      return window.Telegram.WebApp.initData;
+    }
+    try {
+      return localStorage.getItem('color_sort_last_init_data') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function getAuthHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    const initData = getTelegramInitData();
+    if (initData) {
+      headers['x-telegram-init-data'] = initData;
+      headers['Authorization'] = `tma ${initData}`;
+    }
+    return headers;
+  }
+
+  async function apiCall(endpoint, method = 'GET', body = null, extraOptions = {}) {
     if (!API_BASE && typeof window !== 'undefined' && window.location.hostname.includes('github.io')) {
       return null;
     }
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const headers = getAuthHeaders();
+      const initData = getTelegramInitData();
       const options = { 
         method, 
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal
+        headers,
+        signal: controller.signal,
+        ...extraOptions
       };
-      if (body) options.body = JSON.stringify(body);
-      
-      const tg = window.Telegram && window.Telegram.WebApp;
-      if (tg && tg.initData) {
-        options.headers['x-telegram-init-data'] = tg.initData;
+      if (body && typeof body === 'object') {
+        const payload = { ...body };
+        if (initData && !payload.initData) {
+          payload.initData = initData;
+        }
+        options.body = JSON.stringify(payload);
+      } else if (body) {
+        options.body = body;
       }
       
       const res = await fetch(API_BASE + endpoint, options);
@@ -7765,6 +7796,10 @@ async function initColorSortApp() {
       if (currentUser.firstName) params.append('firstName', currentUser.firstName);
       if (currentUser.username) params.append('username', currentUser.username);
     }
+    const initData = getTelegramInitData();
+    if (initData) {
+      params.append('initData', initData);
+    }
     return params.toString();
   }
 
@@ -9404,7 +9439,7 @@ async function initColorSortApp() {
 
       let data = null;
       try {
-        const res = await fetch(apiUrl, { cache: 'no-store' });
+        const res = await fetch(apiUrl, { headers: getAuthHeaders(), cache: 'no-store' });
         if (res.ok) {
           data = await res.json();
         }
@@ -9552,9 +9587,11 @@ async function initColorSortApp() {
       };
 
       // 2. Server call FIRST to recall Telegram bot messages for all players
+      const initData = getTelegramInitData();
+      if (initData && !payload.initData) payload.initData = initData;
       const res = await fetch((NEWS_API_BASE || API_BASE || '') + '/api/admin/news', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
 
@@ -9666,9 +9703,11 @@ async function initColorSortApp() {
         payload.imageUrl = adminNewsImageUrlInput.value.trim();
       }
 
+      const initData = getTelegramInitData();
+      if (initData && !payload.initData) payload.initData = initData;
       const res = await fetch((NEWS_API_BASE || API_BASE || '') + '/api/admin/news', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
 
@@ -9842,7 +9881,7 @@ async function initColorSortApp() {
     try {
       const authQuery = getAdminAuthQuery();
       const apiUrl = (NEWS_API_BASE || API_BASE || '') + `/api/admin/code-backups?${authQuery}`;
-      const res = await fetch(apiUrl, { cache: 'no-store' });
+      const res = await fetch(apiUrl, { headers: getAuthHeaders(), cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data && data.success && Array.isArray(data.backups) && data.backups.length > 0) {
@@ -9944,10 +9983,11 @@ async function initColorSortApp() {
               username: currentUser ? currentUser.username : undefined
             };
             const apiUrl = (NEWS_API_BASE || API_BASE || '') + '/api/admin/code-backups';
+            const initData = getTelegramInitData();
             const res = await fetch(apiUrl, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'delete', id: targetId, ...authParams })
+              headers: getAuthHeaders(),
+              body: JSON.stringify({ action: 'delete', id: targetId, initData, ...authParams })
             });
             if (res.ok) {
               const resData = await res.json();
@@ -10100,10 +10140,11 @@ async function initColorSortApp() {
           username: currentUser ? currentUser.username : undefined
         };
         const apiUrl = (NEWS_API_BASE || API_BASE || '') + '/api/admin/code-backups';
+        const initData = getTelegramInitData();
         const res = await fetch(apiUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'create', ...newCheckpoint, ...authParams })
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ action: 'create', ...newCheckpoint, initData, ...authParams })
         });
         if (res.ok) {
           const resData = await res.json();
@@ -10436,12 +10477,7 @@ async function initColorSortApp() {
             purchasesResetAt: Number(currentUser.purchasesResetAt || 0),
             updatedAt: Date.now()
           };
-          fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            keepalive: true
-          }).catch(() => {});
+          apiCall('/api/user/sync', 'POST', payload, { keepalive: true }).catch(() => {});
         }
       }
     } catch (e) {}

@@ -21,6 +21,26 @@ app.use((req, res, next) => {
   next();
 });
 
+const {
+  BOT_TOKEN,
+  ADMIN_TELEGRAM_IDS,
+  validateTelegramInitData,
+  authMiddleware,
+  adminAuthMiddleware,
+  checkIsAdmin
+} = require('../auth');
+
+// Protect user-state routes with authentication & authorization
+app.use('/api/user', authMiddleware);
+app.use('/api/ad-reward', authMiddleware);
+app.use('/api/wallet', authMiddleware);
+app.use('/api/shop', authMiddleware);
+app.use('/api/referral', authMiddleware);
+app.use('/api/gifts', authMiddleware);
+
+// Protect all administrative routes with strict admin authorization
+app.use('/api/admin', adminAuthMiddleware);
+
 /**
  * Public client config (Adsgram block ID, TON deposit address, etc.)
  */
@@ -150,7 +170,7 @@ app.post('/api/user/init', async (req, res) => {
 /**
  * Sync Progress after Level Completion or Move
  */
-app.post('/api/user/sync', (req, res) => {
+app.post('/api/user/sync', async (req, res) => {
   try {
     let { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves, hints, undos, reveals, extraBottles, extra_bottles, shuffles } = req.body;
 
@@ -187,6 +207,55 @@ app.post('/api/user/sync', (req, res) => {
     try {
       db.accrueDailyBoostersForUser(id, new Date());
     } catch (e) {}
+
+    // Also forward sync to global cloud bucket if real player
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
+      try {
+        const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+        const existingRes = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`, {
+          signal: AbortSignal.timeout(1500)
+        }).catch(() => null);
+        const existing = existingRes && existingRes.ok ? await existingRes.json().catch(() => null) : null;
+
+        const finalHints = hints !== undefined ? Number(hints) : Math.max(Number(updatedUser.hints || 0), existing ? Number(existing.hints || 0) : 0);
+        const finalUndos = undos !== undefined ? Number(undos) : Math.max(Number(updatedUser.undos || 0), existing ? Number(existing.undos || 0) : 0);
+        const finalReveals = reveals !== undefined ? Number(reveals) : Math.max(Number(updatedUser.reveals || 0), existing ? Number(existing.reveals || 0) : 0);
+        const exB = existing ? (existing.extra_bottles !== undefined ? existing.extra_bottles : existing.extraBottles) : 0;
+        const finalBottles = (extraBottles !== undefined || extra_bottles !== undefined)
+          ? Number(extraBottles !== undefined ? extraBottles : extra_bottles)
+          : Math.max(Number(updatedUser.extra_bottles || 0), Number(exB || 0));
+
+        const payload = {
+          telegramId: String(id),
+          firstName: updatedUser.first_name || firstName || 'Игрок',
+          username: updatedUser.username || username || '',
+          photoUrl: updatedUser.photo_url || photoUrl || '',
+          maxLevel: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
+          stars: updatedUser.stars || 0,
+          hints: finalHints,
+          undos: finalUndos,
+          reveals: finalReveals,
+          extraBottles: finalBottles,
+          extra_bottles: finalBottles,
+          ton_balance: (req.body.ton_balance !== undefined) ? Number(req.body.ton_balance) : Number(updatedUser.ton_balance !== undefined ? updatedUser.ton_balance : (existing ? existing.ton_balance : 0)),
+          all_colors_until: Math.max(Number(updatedUser.all_colors_until || 0), existing ? Number(existing.all_colors_until || 0) : 0),
+          all_colors_purchased_at: Math.max(Number(updatedUser.all_colors_purchased_at || 0), existing ? Number(existing.all_colors_purchased_at || 0) : 0),
+          daily_boosters_days_left: updatedUser.daily_boosters_days_left !== undefined ? updatedUser.daily_boosters_days_left : (req.body.daily_boosters_days_left || (existing ? existing.daily_boosters_days_left : 0) || 0),
+          daily_boosters_last_date: updatedUser.daily_boosters_last_date || req.body.daily_boosters_last_date || (existing ? existing.daily_boosters_last_date : '') || '',
+          daily_boosters_purchased_at: updatedUser.daily_boosters_purchased_at || req.body.daily_boosters_purchased_at || (existing ? existing.daily_boosters_purchased_at : 0) || 0,
+          updatedAt: Date.now()
+        };
+
+        await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(1500)
+        }).catch(() => {});
+      } catch (e) {
+        console.error('[KVDB SYNC ERROR]:', e.message);
+      }
+    }
 
     res.json({ success: true, user: updatedUser });
   } catch (err) {
@@ -619,24 +688,7 @@ app.post('/api/shop/buy', async (req, res) => {
   }
 });
 
-function checkIsAdmin(reqBody) {
-  if (!reqBody) return false;
-  const { telegramId, adminTelegramId, adminTid, adminId, firstName, adminFirstName, username, adminUsername } = reqBody;
-
-  const tid = String(adminTelegramId || adminTid || adminId || telegramId || '').trim();
-  const fname = String(adminFirstName || firstName || '').toLowerCase().trim();
-  const uname = String(adminUsername || username || '').toLowerCase().replace(/^@/, '').trim();
-
-  // The admin panel is strictly reserved for one administrator: Alligator
-  // Telegram ID: 5761685341 or exact/partial username/nickname "alligator" / "аллигатор"
-  if (tid === '5761685341') return true;
-  if (uname === 'alligator' || uname === 'аллигатор' || uname.includes('alligator') || uname.includes('аллигатор')) return true;
-  if (fname === 'alligator' || fname === 'аллигатор' || fname.includes('alligator') || fname.includes('аллигатор')) return true;
-  if (uname.includes('romanchik') || uname.includes('романчик')) return true;
-  if (fname.includes('romanchik') || fname.includes('романчик')) return true;
-
-  return false;
-}
+// checkIsAdmin is imported from ../auth
 
 /**
  * Admin Season Reset (Admin Only)

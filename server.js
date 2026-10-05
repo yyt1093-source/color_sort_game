@@ -19,10 +19,17 @@ if (fs.existsSync(envPath)) {
 }
 
 const newsService = require('./newsService');
+const {
+  BOT_TOKEN,
+  ADMIN_TELEGRAM_IDS,
+  validateTelegramInitData,
+  authMiddleware,
+  adminAuthMiddleware,
+  checkIsAdmin
+} = require('./auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BOT_TOKEN = process.env.BOT_TOKEN || '8837816458:AAGeBFs-ZOF56yro_QhZ7b-Wr6v8RaR6x0c';
 
 app.set('trust proxy', true);
 app.use(cors());
@@ -69,58 +76,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Telegram initData validation function
-function validateTelegramData(initData, botToken) {
-  if (!initData || !botToken) return false;
-  try {
-    const params = new URLSearchParams(initData);
-    const hash = params.get('hash');
-    if (!hash) return false;
-    
-    params.delete('hash');
-    const sortedKeys = Array.from(params.keys()).sort();
-    const dataCheckString = sortedKeys.map(key => `${key}=${params.get(key)}`).join('\n');
-    
-    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
-    const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
-    
-    return calculatedHash === hash;
-  } catch (err) {
-    console.error('Validation error:', err);
-    return false;
-  }
-}
-
-// Auth middleware
-const authMiddleware = (req, res, next) => {
-  const initData = req.headers['x-telegram-init-data'] || req.body?.initData;
-  const isLocalDev = process.env.NODE_ENV !== 'production' || 
-    req.hostname === 'localhost' || 
-    req.ip === '127.0.0.1' || 
-    req.ip === '::1' || 
-    req.ip === '::ffff:127.0.0.1';
-  
-  if (!BOT_TOKEN || isLocalDev || req.body?.telegramId || req.query?.telegramId) {
-    if (initData && BOT_TOKEN) {
-      if (!validateTelegramData(initData, BOT_TOKEN)) {
-        console.warn('[AUTH] Dev mode: provided initData did not match hash');
-      }
-    }
-    return next();
-  }
-  
-  if (!initData || !validateTelegramData(initData, BOT_TOKEN)) {
-    return res.status(401).json({ success: false, error: 'Unauthorized: Invalid initData' });
-  }
-  
-  next();
-};
-
-// Use auth middleware on all protected API routes
+// Protect user-state routes with authentication & authorization
 app.use('/api/user', authMiddleware);
 app.use('/api/ad-reward', authMiddleware);
 app.use('/api/wallet', authMiddleware);
 app.use('/api/shop', authMiddleware);
+app.use('/api/referral', authMiddleware);
+app.use('/api/gifts', authMiddleware);
+
+// Protect all administrative routes with strict admin authorization
+app.use('/api/admin', adminAuthMiddleware);
 
 /**
  * Public client config (Adsgram block ID, TON deposit address, etc.)
@@ -767,24 +732,7 @@ app.post('/api/shop/buy', async (req, res) => {
   }
 });
 
-function checkIsAdmin(reqBody) {
-  if (!reqBody) return false;
-  const { telegramId, adminTelegramId, adminTid, adminId, firstName, adminFirstName, username, adminUsername } = reqBody;
-
-  const tid = String(adminTelegramId || adminTid || adminId || telegramId || '').trim();
-  const fname = String(adminFirstName || firstName || '').toLowerCase().trim();
-  const uname = String(adminUsername || username || '').toLowerCase().replace(/^@/, '').trim();
-
-  // The admin panel is strictly reserved for one administrator: Alligator
-  // Telegram ID: 5761685341 or exact/partial username/nickname "alligator" / "аллигатор"
-  if (tid === '5761685341') return true;
-  if (uname === 'alligator' || uname === 'аллигатор' || uname.includes('alligator') || uname.includes('аллигатор')) return true;
-  if (fname === 'alligator' || fname === 'аллигатор' || fname.includes('alligator') || fname.includes('аллигатор')) return true;
-  if (uname.includes('romanchik') || uname.includes('романчик')) return true;
-  if (fname.includes('romanchik') || fname.includes('романчик')) return true;
-
-  return false;
-}
+// checkIsAdmin is imported from ./auth
 
 /**
  * Admin Season Reset (Admin Only)

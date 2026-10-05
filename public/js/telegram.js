@@ -33,6 +33,9 @@
       if (tg.enableClosingConfirmation) {
         try { tg.enableClosingConfirmation(); } catch (e) {}
       }
+      if (tg.initData) {
+        try { localStorage.setItem('color_sort_last_init_data', tg.initData); } catch (e) {}
+      }
       console.log('[Telegram WebApp] Initialized successfully.', tg.initDataUnsafe);
     } else {
       console.warn('[Telegram WebApp] Telegram SDK not detected. Running in standard web browser mode.');
@@ -104,9 +107,21 @@
     return !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData);
   }
 
+  function getInitData() {
+    if (tg && tg.initData) {
+      return tg.initData;
+    }
+    try {
+      return localStorage.getItem('color_sort_last_init_data') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   const telegramAPI = {
     initTelegram,
     getUserData,
+    getInitData,
     haptic,
     showAlert,
     requestFullscreen: () => {
