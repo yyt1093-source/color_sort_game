@@ -3971,12 +3971,8 @@ async function initColorSortApp() {
       }
 
       const localReloadAt = Number(localStorage.getItem('color_sort_server_reload_at') || 0);
-      if (reloadAt > 0) {
-        if (localReloadAt > 0 && reloadAt > localReloadAt) {
-          triggerServerReloadKick(reloadAt);
-        } else if (localReloadAt === 0) {
-          localStorage.setItem('color_sort_server_reload_at', String(reloadAt));
-        }
+      if (reloadAt > 0 && reloadAt > localReloadAt) {
+        triggerServerReloadKick(reloadAt);
       }
     } catch (err) {}
   }
