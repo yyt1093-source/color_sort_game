@@ -3638,6 +3638,7 @@ async function initColorSortApp() {
 
     // Мгновенная отправка сигнала на глобальный единственный сервер (24/7 Cloud DB + API)
     syncPlayerToCloud(currentUser);
+    if (typeof checkServerStatus === 'function') checkServerStatus(false);
 
     // Show victory modal
     setTimeout(() => {
@@ -3656,6 +3657,7 @@ async function initColorSortApp() {
   const LG = (window.LevelGenerator && window.LevelGenerator.LevelGenerator) ? window.LevelGenerator.LevelGenerator : window.LevelGenerator;
 
   async function loadCurrentLevel() {
+    if (typeof checkServerStatus === 'function') checkServerStatus(false);
     if (levelDisplay) levelDisplay.textContent = Number(currentUser.maxLevel || 0);
     if (LG && LG.generateLevel) {
       currentLevelData = LG.generateLevel(currentUser.currentLevel);
@@ -3933,12 +3935,32 @@ async function initColorSortApp() {
     }, 1000);
   }
 
-  let lastServerReloadCheck = 0;
+  // =========================================================================
+  // BATTERY & CPU OPTIMIZATION: ZERO BACKGROUND POLLING DURING GAMEPLAY
+  // No periodic intervals while solving levels.
+  // Checks execute ONLY on actual events: app launch, level win, tab focus.
+  // Strict 60-second cooldown guard prevents excessive network requests.
+  // =========================================================================
+  let lastServerStatusCheck = 0;
+  const SERVER_CHECK_COOLDOWN_MS = 60000; // 60s minimum throttle
+
+  async function checkServerStatus(force = false) {
+    if (isServerReloadKicked || isSeasonResetKicked) return;
+    const now = Date.now();
+    if (!force && (now - lastServerStatusCheck < SERVER_CHECK_COOLDOWN_MS)) return;
+    lastServerStatusCheck = now;
+
+    try {
+      await Promise.allSettled([
+        checkServerReloadWatchdog(),
+        checkLiveSeasonResetWatchdog()
+      ]);
+    } catch (e) {}
+  }
+
   async function checkServerReloadWatchdog() {
     if (isServerReloadKicked) return;
     const now = Date.now();
-    if (now - lastServerReloadCheck < 4000) return;
-    lastServerReloadCheck = now;
 
     try {
       let reloadAt = 0;
@@ -3947,7 +3969,7 @@ async function initColorSortApp() {
       try {
         const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_server_reload_at?_cb=${now}`, {
           cache: 'no-store',
-          signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2500) : undefined
+          signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2000) : undefined
         });
         if (res.ok) {
           const rawText = await res.text();
@@ -3977,66 +3999,20 @@ async function initColorSortApp() {
     } catch (err) {}
   }
 
-  let lastWatchdogCheck = 0;
   async function checkLiveSeasonResetWatchdog() {
     if (isSeasonResetKicked) return;
     const now = Date.now();
-    if (now - lastWatchdogCheck < 25000) return;
-    lastWatchdogCheck = now;
 
-    try {
-      const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at?_cb=${now}`, {
-        cache: 'no-store',
-        signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2500) : undefined
-      });
-      if (res.status === 429) {
-        lastWatchdogCheck = now + 45000; // Back off on rate limit
-        return;
-      }
-      if (res.ok) {
-        const rawText = await res.text();
-        let resetAt = 0;
-        try {
-          const data = JSON.parse(rawText);
-          resetAt = Number(data.resetAt || data) || 0;
-        } catch (e) {
-          resetAt = Number(rawText) || 0;
-        }
-
-        const localResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
-        const userSeasonReset = Number(currentUser.seasonResetAt || currentUser.season_reset_at || 0);
-        const userUpdated = Number(currentUser.updatedAt || 0);
-
-        if (resetAt > 0) {
-          if (userUpdated >= resetAt || userSeasonReset >= resetAt) {
-            currentUser.seasonResetAt = Math.max(userSeasonReset, resetAt);
-            currentUser.season_reset_at = currentUser.seasonResetAt;
-            localStorage.setItem('color_sort_season_reset_at', String(Math.max(localResetAt, resetAt)));
-            return;
-          }
-          if (localResetAt > 0 && resetAt > localResetAt && userSeasonReset < resetAt && userUpdated < resetAt) {
-            triggerSeasonResetKick(resetAt);
-          } else if (localResetAt === 0) {
-            localStorage.setItem('color_sort_season_reset_at', String(resetAt));
-            currentUser.seasonResetAt = resetAt;
-            currentUser.season_reset_at = resetAt;
-          }
-        }
-      }
-    } catch (e) {}
-  }
-
-  async function checkGlobalSeasonReset() {
-    let wasReset = false;
     try {
       let resetAt = 0;
-
-      // 1. Fetch from KVDB Cloud with cache buster!
       try {
-        const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at?_cb=${Date.now()}`, {
+        const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at?_cb=${now}`, {
           cache: 'no-store',
-          signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) ? AbortSignal.timeout(3500) : undefined
+          signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2000) : undefined
         });
+        if (res.status === 429) {
+          return;
+        }
         if (res.ok) {
           const rawText = await res.text();
           try {
@@ -4048,7 +4024,6 @@ async function initColorSortApp() {
         }
       } catch (e) {}
 
-      // 2. Fallback to server config
       if (!resetAt) {
         try {
           const sRes = await apiCall('/api/config/season-status');
@@ -4067,39 +4042,34 @@ async function initColorSortApp() {
           currentUser.seasonResetAt = Math.max(userSeasonReset, resetAt);
           currentUser.season_reset_at = currentUser.seasonResetAt;
           localStorage.setItem('color_sort_season_reset_at', String(Math.max(localResetAt, resetAt)));
-        } else if (localResetAt > 0 && resetAt > localResetAt && userSeasonReset < resetAt && userUpdated < resetAt) {
-          console.log(`[Season Reset] Global season reset detected (server: ${resetAt}, local: ${localResetAt}). Wiping all player progress!`);
+          return;
+        }
+        if (localResetAt > 0 && resetAt > localResetAt && userSeasonReset < resetAt && userUpdated < resetAt) {
           triggerSeasonResetKick(resetAt);
-          wasReset = true;
         } else if (localResetAt === 0) {
           localStorage.setItem('color_sort_season_reset_at', String(resetAt));
           currentUser.seasonResetAt = resetAt;
           currentUser.season_reset_at = resetAt;
         }
       }
-    } catch (err) {
-      console.warn('[Season Reset Check Error]', err);
-    }
-
-    return wasReset;
+    } catch (e) {}
   }
 
-  // Realtime active watchdog while playing (every 5 seconds for server reload, 30s for season reset)
-  setInterval(checkServerReloadWatchdog, 5000);
-  setTimeout(checkServerReloadWatchdog, 1500);
-  setInterval(checkLiveSeasonResetWatchdog, 30000);
+  async function checkGlobalSeasonReset() {
+    return checkLiveSeasonResetWatchdog();
+  }
+
+  // Event-driven triggers: Boot (1 time) + Returning from background (throttled)
+  setTimeout(() => checkServerStatus(true), 1500);
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      checkServerReloadWatchdog();
-      checkLiveSeasonResetWatchdog();
-      checkGlobalSeasonReset();
+      checkServerStatus(false);
     }
   });
 
   window.addEventListener('focus', () => {
-    checkServerReloadWatchdog();
-    checkLiveSeasonResetWatchdog();
+    checkServerStatus(false);
   });
 
   initAdsgram().catch(() => {});
@@ -5808,9 +5778,20 @@ async function initColorSortApp() {
   }
   window.updateShopUI = updateShopUI;
 
+  let shopTimer = null;
   function openShopModal() {
     checkAndApplyClientDailyBoosters();
     updateShopUI();
+    if (!shopTimer) {
+      shopTimer = setInterval(() => {
+        if (shopModal && !shopModal.classList.contains('hidden') && shopModal.style.display !== 'none') {
+          updateShopUI();
+        } else {
+          if (shopTimer) clearInterval(shopTimer);
+          shopTimer = null;
+        }
+      }, 1000);
+    }
     const modalContent = document.querySelector('.shop-modal-content');
     if (modalContent) modalContent.scrollTop = 0;
     if (shopModal) openModal(shopModal);
@@ -5829,6 +5810,10 @@ async function initColorSortApp() {
 
   if (closeShopModalBtn) {
     closeShopModalBtn.addEventListener('click', () => {
+      if (shopTimer) {
+        clearInterval(shopTimer);
+        shopTimer = null;
+      }
       if (shopModal) closeModal(shopModal);
     });
   }
@@ -6078,13 +6063,7 @@ async function initColorSortApp() {
     });
   }
 
-  // Update shop timer and check daily boosters periodically
-  setInterval(() => {
-    if (shopModal && !shopModal.classList.contains('hidden')) {
-      updateShopUI();
-    }
-    checkAndApplyClientDailyBoosters();
-  }, 10000);
+
 
   // Profile Tabs Navigation System (Ровно 2 вкладки: Профиль и Рефералы)
   function switchProfileTab(tabName) {
@@ -8284,12 +8263,9 @@ async function initColorSortApp() {
     }
   }
 
-  // Start catch-up monitor
-  setTimeout(checkAndTriggerAutoSnapshotCatchup, 3500);
-  setInterval(checkAndTriggerAutoSnapshotCatchup, 45000);
-
   async function loadAdminHistoryList() {
     if (!adminHistoryItemsList) return;
+    checkAndTriggerAutoSnapshotCatchup().catch(() => {});
     try {
       if (adminHistoryLoadingSpinner) adminHistoryLoadingSpinner.classList.remove('hidden');
       if (adminHistoryEmptyState) adminHistoryEmptyState.classList.add('hidden');
