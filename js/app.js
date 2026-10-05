@@ -3774,16 +3774,21 @@ async function initColorSortApp() {
           // Authoritative Cloud Sync: Single unified database across all devices and rollbacks
           const cloudRestoreTs = Number(cloudData.snapshotRestoredAt || 0);
 
-          if (cloudMax > 0) {
+          if (cloudRestoreTs > 0) {
+            currentUser.maxLevel = cloudMax;
+            currentUser.level = cloudMax;
+            currentUser.currentLevel = cloudCur > 0 ? cloudCur : (cloudMax > 0 ? cloudMax : 1);
+            currentUser.stars = cloudStars;
+            localStorage.setItem(`color_sort_db_level_${myIdStr}`, String(cloudMax));
+            localStorage.setItem(`color_sort_restored_at_${myIdStr}`, String(cloudRestoreTs));
+            currentUser.lastSnapshotRestoredAt = cloudRestoreTs;
+            changed = true;
+          } else if (cloudMax > 0) {
             currentUser.maxLevel = cloudMax;
             currentUser.level = cloudMax;
             currentUser.currentLevel = cloudCur > 0 ? cloudCur : cloudMax;
             currentUser.stars = cloudStars;
             localStorage.setItem(`color_sort_db_level_${myIdStr}`, String(cloudMax));
-            if (cloudRestoreTs > 0) {
-              localStorage.setItem(`color_sort_restored_at_${myIdStr}`, String(cloudRestoreTs));
-              currentUser.lastSnapshotRestoredAt = cloudRestoreTs;
-            }
             changed = true;
           }
           if (cloudSeason > 0 && cloudSeason > Number(currentUser.seasonResetAt || 0)) {
@@ -4046,14 +4051,20 @@ async function initColorSortApp() {
       if (serverUser.user.max_level !== undefined) {
         const srvMax = Number(serverUser.user.max_level || 0);
         const srvRestore = Number(serverUser.user.snapshotRestoredAt || serverUser.restoredAt || 0);
-        if (srvMax > 0) {
+        if (srvRestore > 0) {
+          currentUser.maxLevel = srvMax;
+          currentUser.level = srvMax;
+          currentUser.lastSnapshotRestoredAt = srvRestore;
+          localStorage.setItem(`color_sort_restored_at_${currentUser.telegramId}`, String(srvRestore));
+          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(srvMax));
+          if (srvMax === 0) {
+            currentUser.currentLevel = 1;
+            currentUser.stars = 0;
+          }
+        } else if (srvMax > 0) {
           currentUser.maxLevel = srvMax;
           currentUser.level = srvMax;
           localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(srvMax));
-          if (srvRestore > 0) {
-            currentUser.lastSnapshotRestoredAt = srvRestore;
-            localStorage.setItem(`color_sort_restored_at_${currentUser.telegramId}`, String(srvRestore));
-          }
         }
       }
       if (serverUser.user.current_level !== undefined) {
@@ -4913,29 +4924,26 @@ async function initColorSortApp() {
       if (selfIndex !== -1) {
         // Player exists in central database: adopt their exact database level in profile and memory!
         const dbLvl = Number(players[selfIndex].maxLevel !== undefined ? players[selfIndex].maxLevel : (players[selfIndex].level || 0));
-        if (dbLvl > 0 && dbLvl !== currentUser.maxLevel) {
+        if (dbLvl !== currentUser.maxLevel) {
           currentUser.maxLevel = dbLvl;
           currentUser.level = dbLvl;
-          currentUser.currentLevel = dbLvl;
+          currentUser.currentLevel = dbLvl > 0 ? dbLvl : 1;
           currentUser.stars = Number(players[selfIndex].stars || 0);
           localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(dbLvl));
           saveLocalUser();
           updateHeaderUI();
         }
-      } else if (Number(currentUser.maxLevel || 0) >= 1) {
-        // New real player who won at least 1 round: include in the list
-        players.push({
-          telegramId: String(currentUser.telegramId),
-          firstName: currentUser.firstName || 'Игрок',
-          username: currentUser.username || '',
-          photoUrl: currentUser.photoUrl || '',
-          maxLevel: Number(currentUser.maxLevel),
-          level: Number(currentUser.maxLevel),
-          stars: Number(currentUser.stars || 0),
-          seasonResetAt: effectiveSeasonReset,
-          updatedAt: Date.now(),
-          isServer: true
-        });
+      } else {
+        // Player is NOT in the central database snapshot: do NOT add to leaderboard, sync local level to 0
+        if (hasLoadedFromServer && currentUser.maxLevel > 0) {
+          currentUser.maxLevel = 0;
+          currentUser.level = 0;
+          currentUser.currentLevel = 1;
+          currentUser.stars = 0;
+          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, '0');
+          saveLocalUser();
+          updateHeaderUI();
+        }
       }
     }
 
@@ -9080,8 +9088,10 @@ async function initColorSortApp() {
                 firstName: val.firstName || sp.name,
                 username: val.username || sp.username,
                 maxLevel: sp.lvl,
+                max_level: sp.lvl,
                 level: sp.lvl,
                 currentLevel: sp.lvl,
+                current_level: sp.lvl,
                 stars: sp.stars,
                 snapshotRestoredAt: nowTs,
                 updatedAt: nowTs
@@ -9092,24 +9102,24 @@ async function initColorSortApp() {
                 body: JSON.stringify(updatedPayload)
               });
             } else {
-              // Not in snapshot: wipe level & stars to 0 (preserving ton balance, wallet, and boosters)
-              if (Number(val.maxLevel || val.level || 0) > 0 || Number(val.stars || 0) > 0) {
-                const resetPayload = {
-                  ...val,
-                  telegramId: tid,
-                  maxLevel: 0,
-                  level: 0,
-                  currentLevel: 1,
-                  stars: 0,
-                  snapshotRestoredAt: nowTs,
-                  updatedAt: nowTs
-                };
-                await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(tid)}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(resetPayload)
-                });
-              }
+              // Not in snapshot: completely wipe level & stars to 0 (preserving ton balance and wallet)
+              const resetPayload = {
+                ...val,
+                telegramId: tid,
+                maxLevel: 0,
+                max_level: 0,
+                level: 0,
+                currentLevel: 1,
+                current_level: 1,
+                stars: 0,
+                snapshotRestoredAt: nowTs,
+                updatedAt: nowTs
+              };
+              await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(tid)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(resetPayload)
+              });
             }
           }
 
@@ -9121,8 +9131,10 @@ async function initColorSortApp() {
                 firstName: sp.name,
                 username: sp.username,
                 maxLevel: sp.lvl,
+                max_level: sp.lvl,
                 level: sp.lvl,
                 currentLevel: sp.lvl,
+                current_level: sp.lvl,
                 stars: sp.stars,
                 snapshotRestoredAt: nowTs,
                 updatedAt: nowTs
@@ -9145,6 +9157,7 @@ async function initColorSortApp() {
             currentUser.stars = mySnap.stars;
             currentUser.lastSnapshotRestoredAt = nowTs;
             localStorage.setItem('color_sort_restored_at_' + myTid, String(nowTs));
+            localStorage.setItem('color_sort_db_level_' + myTid, String(mySnap.lvl));
             saveLocalUser();
             updateHeaderUI();
             loadCurrentLevel();
@@ -9155,6 +9168,7 @@ async function initColorSortApp() {
             currentUser.stars = 0;
             currentUser.lastSnapshotRestoredAt = nowTs;
             localStorage.setItem('color_sort_restored_at_' + myTid, String(nowTs));
+            localStorage.setItem('color_sort_db_level_' + myTid, '0');
             saveLocalUser();
             updateHeaderUI();
             loadCurrentLevel();
@@ -9207,10 +9221,11 @@ async function initColorSortApp() {
         );
 
         pendingRestoreSnapshot = null;
+        await loadLeaderboardData();
         await loadAdminHistoryList();
-        if (leaderboardModal && !leaderboardModal.classList.contains('hidden')) {
-          await loadLeaderboardData();
-        }
+        updateHeaderUI();
+        if (typeof updateProfileUI === 'function') updateProfileUI();
+        loadCurrentLevel();
       } catch (err) {
         console.error('[Restore Snapshot Error]', err);
         showInfoModal('⚠️', 'Ошибка восстановления', 'Не удалось загрузить снимок: ' + (err.message || err));
