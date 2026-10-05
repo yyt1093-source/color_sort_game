@@ -30,17 +30,6 @@ const {
   checkIsAdmin
 } = require('../auth');
 
-// Protect user-state routes with authentication & authorization
-app.use('/api/user', authMiddleware);
-app.use('/api/ad-reward', authMiddleware);
-app.use('/api/wallet', authMiddleware);
-app.use('/api/shop', authMiddleware);
-app.use('/api/referral', authMiddleware);
-app.use('/api/gifts', authMiddleware);
-
-// Protect all administrative routes with strict admin authorization
-app.use('/api/admin', adminAuthMiddleware);
-
 // Strict Maintenance Mode: Only Alligator and Maria allowed
 const MAINTENANCE_MODE = true;
 const MAINTENANCE_ALLOWED_IDS = ['5761685341', '7116446051'];
@@ -67,6 +56,17 @@ function maintenanceMiddleware(req, res, next) {
 }
 
 app.use('/api', maintenanceMiddleware);
+
+// Protect user-state routes with authentication & authorization
+app.use('/api/user', authMiddleware);
+app.use('/api/ad-reward', authMiddleware);
+app.use('/api/wallet', authMiddleware);
+app.use('/api/shop', authMiddleware);
+app.use('/api/referral', authMiddleware);
+app.use('/api/gifts', authMiddleware);
+
+// Protect all administrative routes with strict admin authorization
+app.use('/api/admin', adminAuthMiddleware);
 
 /**
  * Public client config (Adsgram block ID, TON deposit address, etc.)
