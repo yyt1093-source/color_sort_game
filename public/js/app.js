@@ -226,6 +226,10 @@ async function initColorSortApp() {
       securityAlertTitle: "Система безопасности Color Sort",
       securityAlertSubtitle: "Замечены хакерские действия",
       securityAlertRestartBtn: (lvl) => `Начать уровень ${lvl} заново`,
+      serverReloadTitle: "Перезагрузка сервера",
+      serverReloadDesc: "Выполняется обновление защиты и системы безопасности игры.<br>Пожалуйста, перезапустите игру для загрузки новой версии.",
+      serverReloadTimerLabel: "Авто-перезапуск через:",
+      serverReloadBtn: "Перезайти в игру",
       adModalTitle: "🎁 Реклама",
       adModalDesc: "Посмотрите короткие видео и получите бесплатные бонусы",
       adModalBottleTitle: "Пустая колба",
@@ -609,6 +613,10 @@ async function initColorSortApp() {
       securityAlertTitle: "Система безпеки Color Sort",
       securityAlertSubtitle: "Помічені хакерські дії",
       securityAlertRestartBtn: (lvl) => `Почати рівень ${lvl} заново`,
+      serverReloadTitle: "Перезавантаження сервера",
+      serverReloadDesc: "Виконується оновлення захисту та системи безпеки гри.<br>Будь ласка, перезапустіть гру для завантаження нової версії.",
+      serverReloadTimerLabel: "Авто-перезапуск через:",
+      serverReloadBtn: "Перезайти в гру",
       adModalTitle: "🎁 Реклама",
       adModalDesc: "Подивіться коротке відео та отримайте безкоштовні бонуси",
       adModalBottleTitle: "Порожня колба",
@@ -968,6 +976,10 @@ async function initColorSortApp() {
       securityAlertTitle: "Color Sort Security System",
       securityAlertSubtitle: "Hacking activity detected",
       securityAlertRestartBtn: (lvl) => `Restart level ${lvl}`,
+      serverReloadTitle: "Server Restart",
+      serverReloadDesc: "Game security and anti-cheat update in progress.<br>Please reload the game to get the latest version.",
+      serverReloadTimerLabel: "Auto-reloading in:",
+      serverReloadBtn: "Re-enter Game",
       adModalTitle: "🎁 Rewards",
       adModalDesc: "Watch short video ads to claim free boosters",
       adModalBottleTitle: "Empty Bottle",
@@ -1327,6 +1339,10 @@ async function initColorSortApp() {
       securityAlertTitle: "Color Sort Sicherheitssystem",
       securityAlertSubtitle: "Hacking-Aktivität erkannt",
       securityAlertRestartBtn: (lvl) => `Level ${lvl} neu starten`,
+      serverReloadTitle: "Server-Neustart",
+      serverReloadDesc: "Sicherheits- und Anti-Cheat-Update wird angewendet.<br>Bitte starten Sie das Spiel neu, um die neueste Version zu laden.",
+      serverReloadTimerLabel: "Automatischer Neustart in:",
+      serverReloadBtn: "Spiel neu betreten",
       adModalTitle: "🎁 Belohnungen",
       adModalDesc: "Schau kurze Videos an, um kostenlose Boni zu erhalten",
       adModalBottleTitle: "Zusatz-Flasche",
@@ -1686,6 +1702,10 @@ async function initColorSortApp() {
       securityAlertTitle: "Color Sort saugumo sistema",
       securityAlertSubtitle: "Pastebėta įsilaužimo veikla",
       securityAlertRestartBtn: (lvl) => `Pradėti ${lvl} lygį iš naujo`,
+      serverReloadTitle: "Serverio perkrovimas",
+      serverReloadDesc: "Vykdomas žaidimo saugumo ir apsaugos nuo sukčiavimo atnaujinimas.<br>Prašome paleisti žaidimą iš naujo, kad gautumėte naują versiją.",
+      serverReloadTimerLabel: "Automatinis perkrovimas po:",
+      serverReloadBtn: "Prisijungti iš naujo",
       adModalTitle: "🎁 Premijos",
       adModalDesc: "Žiūrėkite trumpus vaizdo įrašus ir gaukite nemokamas premijas",
       adModalBottleTitle: "Papildomas buteliukas",
@@ -2655,6 +2675,16 @@ async function initColorSortApp() {
         ? t('securityAlertRestartBtn')(curLvl)
         : `${t('securityAlertRestartBtn')} ${curLvl}`;
     }
+
+    // Server Reload Kick Modal
+    const srTitle = document.getElementById('serverReloadTitle');
+    if (srTitle) srTitle.textContent = t('serverReloadTitle');
+    const srDesc = document.getElementById('serverReloadDesc');
+    if (srDesc) srDesc.innerHTML = t('serverReloadDesc');
+    const srTimerLabel = document.getElementById('serverReloadTimerLabel');
+    if (srTimerLabel) srTimerLabel.textContent = t('serverReloadTimerLabel');
+    const srOkBtn = document.getElementById('serverReloadOkBtn');
+    if (srOkBtn) srOkBtn.textContent = t('serverReloadBtn');
 
     // Ad Bonus Modal
     const adModalTitle = document.getElementById('adModalTitle');
@@ -3851,6 +3881,106 @@ async function initColorSortApp() {
     }, 1000);
   }
 
+  // ==========================================
+  // SERVER MAINTENANCE / RELOAD REALTIME KICK
+  // ==========================================
+  let isServerReloadKicked = false;
+
+  function triggerServerReloadKick(reloadTimestamp) {
+    if (isServerReloadKicked) return;
+    isServerReloadKicked = true;
+    console.warn(`[Server Reload KICK] Server reload broadcast detected (${reloadTimestamp})! Kicking active players for security update...`);
+
+    // 1. Immediately halt audio and game inputs
+    try {
+      if (typeof audio !== 'undefined' && audio.stopAll) audio.stopAll();
+      if (window.SoundEngine && window.SoundEngine.SoundEngine && window.SoundEngine.SoundEngine.stopAll) {
+        window.SoundEngine.SoundEngine.stopAll();
+      }
+    } catch (e) {}
+    if (engine) {
+      engine.isAnimating = true; // Freeze game actions
+    }
+
+    // 2. Display the reload kick modal
+    const reloadModal = document.getElementById('serverReloadModal');
+    if (reloadModal) {
+      reloadModal.style.display = 'flex';
+    }
+
+    let timeLeft = 3;
+    const timerEl = document.getElementById('serverReloadTimer');
+    const reloadOkBtn = document.getElementById('serverReloadOkBtn');
+
+    function doReload() {
+      localStorage.setItem('color_sort_server_reload_at', String(reloadTimestamp));
+      const url = new URL(window.location.href);
+      url.searchParams.set('_v', String(Date.now()));
+      window.location.replace(url.toString());
+    }
+
+    if (reloadOkBtn) {
+      reloadOkBtn.onclick = () => doReload();
+    }
+
+    const countdownInterval = setInterval(() => {
+      timeLeft -= 1;
+      if (timerEl) timerEl.textContent = `${timeLeft} сек`;
+      if (timeLeft <= 0) {
+        clearInterval(countdownInterval);
+        doReload();
+      }
+    }, 1000);
+  }
+
+  let lastServerReloadCheck = 0;
+  async function checkServerReloadWatchdog() {
+    if (isServerReloadKicked) return;
+    const now = Date.now();
+    if (now - lastServerReloadCheck < 4000) return;
+    lastServerReloadCheck = now;
+
+    try {
+      let reloadAt = 0;
+
+      // 1. Check KVDB Cloud
+      try {
+        const res = await fetch(`${GLOBAL_CLOUD_BASE}/meta_server_reload_at?_cb=${now}`, {
+          cache: 'no-store',
+          signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') ? AbortSignal.timeout(2500) : undefined
+        });
+        if (res.ok) {
+          const rawText = await res.text();
+          try {
+            const data = JSON.parse(rawText);
+            reloadAt = Number(data.reloadAt || data) || 0;
+          } catch (e) {
+            reloadAt = Number(rawText) || 0;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Check API endpoint fallback
+      if (!reloadAt) {
+        try {
+          const sRes = await apiCall('/api/config/server-reload');
+          if (sRes && sRes.success && sRes.reloadAt) {
+            reloadAt = Number(sRes.reloadAt) || 0;
+          }
+        } catch (e) {}
+      }
+
+      const localReloadAt = Number(localStorage.getItem('color_sort_server_reload_at') || 0);
+      if (reloadAt > 0) {
+        if (localReloadAt > 0 && reloadAt > localReloadAt) {
+          triggerServerReloadKick(reloadAt);
+        } else if (localReloadAt === 0) {
+          localStorage.setItem('color_sort_server_reload_at', String(reloadAt));
+        }
+      }
+    } catch (err) {}
+  }
+
   let lastWatchdogCheck = 0;
   async function checkLiveSeasonResetWatchdog() {
     if (isSeasonResetKicked) return;
@@ -3958,17 +4088,21 @@ async function initColorSortApp() {
     return wasReset;
   }
 
-  // Realtime active watchdog while playing (every 30 seconds, throttled)
+  // Realtime active watchdog while playing (every 5 seconds for server reload, 30s for season reset)
+  setInterval(checkServerReloadWatchdog, 5000);
+  setTimeout(checkServerReloadWatchdog, 1500);
   setInterval(checkLiveSeasonResetWatchdog, 30000);
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
+      checkServerReloadWatchdog();
       checkLiveSeasonResetWatchdog();
       checkGlobalSeasonReset();
     }
   });
 
   window.addEventListener('focus', () => {
+    checkServerReloadWatchdog();
     checkLiveSeasonResetWatchdog();
   });
 
