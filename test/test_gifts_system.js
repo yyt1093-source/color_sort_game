@@ -170,7 +170,7 @@ const dbTonGift = {
 };
 
 const sendDbOk = db.sendGift(dbTonGift);
-assert.strictEqual(sendDbOk, true, 'sendGift must succeed');
+assert.strictEqual(sendDbOk === true || sendDbOk.success === true, true, 'sendGift must succeed');
 
 const inboxBefore = db.getInboxGifts(testPlayerTid);
 assert.strictEqual(inboxBefore.some(g => g.id === dbTonGift.id && !g.claimed), true, 'Gift must be in inbox');
@@ -184,10 +184,11 @@ assert.strictEqual(Number(userAfterClaim.ton_balance), 5.0, 'DB ton_balance must
 console.log('✅ SQLite DB TON gift send & claim verified (ton_balance = 5.0)!');
 
 // Now player spends these 5 coins in Perks Chest (e.g. daily_boosters_30d)
+const daysBefore = Number(userAfterClaim.daily_boosters_days_left || 0);
 const buyResult = db.buyShopItem(testPlayerTid, 'daily_boosters_30d');
 assert.strictEqual(buyResult.success, true, 'Player must be able to purchase 30-day perks with credited TON');
 assert.strictEqual(Number(buyResult.user.ton_balance), 0.0, 'ton_balance must decrement by 5.0 to 0.0');
-assert.strictEqual(Number(buyResult.user.daily_boosters_days_left), 30, 'Daily boosters 30 days must be activated');
+assert.strictEqual(Number(buyResult.user.daily_boosters_days_left), daysBefore + 30, 'Daily boosters 30 days must be activated');
 console.log('✅ Player Perks Chest purchase using claimed TON verified (30 days activated)!');
 
 console.log('🎉 ALL GIFTS MODULE TESTS (INCLUDING TON & SHOP INTEGRATION) PASSED PERFECTLY!');

@@ -1,5 +1,86 @@
 [
   {
+    "id": "news_1791025843775_pv1tx",
+    "title": "Новость Color Sort",
+    "message": "Всем привет! Были проведены технические работы, устранены некоторые ошибки в игре, добавлена новая функция подарков. Так что игра стала ещё более захватывающей. Заходите, играйте, дарите подарки и получайте море эмоций!",
+    "imageUrl": "[Прикрепленное фото]",
+    "buttonText": "🚀 Играть в Color Sort",
+    "createdAt": 1791025843775,
+    "kyivFormattedDate": "03.10.2026, 14:10:43 (Киев)",
+    "author": "@ALLIGATOR0709",
+    "targetCount": 43,
+    "deliveredCount": 16,
+    "failedCount": 27,
+    "messages": [
+      {
+        "chatId": "1081742748",
+        "messageId": 195
+      },
+      {
+        "chatId": "1152401670",
+        "messageId": 196
+      },
+      {
+        "chatId": "1296421588",
+        "messageId": 197
+      },
+      {
+        "chatId": "1803189688",
+        "messageId": 198
+      },
+      {
+        "chatId": "1890528535",
+        "messageId": 199
+      },
+      {
+        "chatId": "296239050",
+        "messageId": 200
+      },
+      {
+        "chatId": "5253063837",
+        "messageId": 201
+      },
+      {
+        "chatId": "5269257903",
+        "messageId": 202
+      },
+      {
+        "chatId": "5403252654",
+        "messageId": 203
+      },
+      {
+        "chatId": "5761685341",
+        "messageId": 204
+      },
+      {
+        "chatId": "6582657380",
+        "messageId": 205
+      },
+      {
+        "chatId": "7116446051",
+        "messageId": 206
+      },
+      {
+        "chatId": "7458436672",
+        "messageId": 207
+      },
+      {
+        "chatId": "8743109762",
+        "messageId": 208
+      },
+      {
+        "chatId": "8982516215",
+        "messageId": 209
+      },
+      {
+        "chatId": "961168117",
+        "messageId": 210
+      }
+    ],
+    "status": "partially_sent",
+    "isTest": false
+  },
+  {
     "id": "news_1790746276247_hery4",
     "title": "Новость Color Sort",
     "message": "Всем привет! Вот и настало время старта первого сезона. Пусть победит сильнейший.",
