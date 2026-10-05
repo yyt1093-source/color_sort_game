@@ -195,16 +195,37 @@
   </style>
 </head>
 <body>
-  <!-- Maintenance Mode Fullscreen Screen with Uploaded Splash Art -->
+  <!-- Maintenance Mode Fullscreen Modal (Only Alligator and Maria allowed) -->
   <div id="maintenanceScreen" class="maintenance-screen" style="display:none;">
-    <img src="maintenance_splash.jpg?v=1791235143" alt="Идут техработы" class="maintenance-bg-img" fetchpriority="high" decoding="sync">
-    <div class="maintenance-backdrop-glow"></div>
-    <div class="maintenance-badge-container">
-      <div class="maintenance-pill">
-        <span class="maintenance-gear-spin">⚙️</span>
-        <span class="maintenance-pill-text">ИДУТ ТЕХРАБОТЫ</span>
+    <div class="maintenance-card">
+      <div class="maintenance-icon-wrap">
+        <span class="maintenance-icon-main">⚙️</span>
       </div>
-      <p class="maintenance-subtext">Пожалуйста, зайдите позже</p>
+      <div class="maintenance-badge">
+        <span class="maintenance-status-dot"></span>
+        <span>Технический перерыв</span>
+      </div>
+      <h1 class="maintenance-title">Идут технические работы</h1>
+      <p class="maintenance-text">
+        В настоящее время в игре проводятся плановые технические работы. Доступ временно ограничен.
+      </p>
+      <div class="maintenance-info-box">
+        <div class="maintenance-info-item">
+          <span>🛠️</span>
+          <span>Статус: <strong>Идут технические работы</strong></span>
+        </div>
+        <div class="maintenance-info-item">
+          <span>🔒</span>
+          <span>Доступ: <strong>Временно ограничен</strong></span>
+        </div>
+        <div class="maintenance-info-item">
+          <span>⏳</span>
+          <span>Ожидание: <strong>Пожалуйста, зайдите позже</strong></span>
+        </div>
+      </div>
+      <p class="maintenance-footer-hint">
+        Мы скоро вернемся! Приносим извинения за временные неудобства.
+      </p>
     </div>
   </div>
 
