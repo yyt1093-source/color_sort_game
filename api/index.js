@@ -1187,6 +1187,14 @@ app.get('/api/admin/code-backups', async (req, res) => {
     if (checkpoints.length === 0) {
       checkpoints = [
         {
+          id: 'colorsort_checkpoint_20261005_093116',
+          createdAtTimestamp: 1791181876093,
+          kyivFormattedDate: '05.10.2026, 09:31:16 (Киев)',
+          title: 'Версия v1.0.9 — Отправитель подарков, выбор авторства для админа, новый дизайн карточек и мгновенный забор',
+          note: 'Метка Git: v1.0.9-gifts-sender-admin-mode-instant-claim. Отображение отправителя у входящих подарков («От: ...»). Панель выбора авторства для администратора («От Alligator» либо «От Color Sort»). Полностью переработана карточка подарка: центрированная иконка сверху, блок описания по центру и широкая кнопка «Забрать» внизу. Устранена задержка при заборе подарков — моментальный отклик и защита от рассинхронизации. Все тесты пройдены.',
+          tag: 'v1.0.9-gifts-sender-admin-mode-instant-claim'
+        },
+        {
           id: 'colorsort_checkpoint_20261003_171000',
           createdAtTimestamp: 1791036600000,
           kyivFormattedDate: '03.10.2026, 17:10:00 (Киев)',
