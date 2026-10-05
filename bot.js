@@ -563,46 +563,15 @@ async function updateBotMenuButton(url) {
   if (!BOT_TOKEN) return;
   const webAppUrl = url || getWebAppUrl();
 
-  // 1. Update default global menu button
-  await tgApi('setChatMenuButton', {
-    menu_button: {
-      type: 'web_app',
-      text: '🎮 Играть в Color Sort',
-      web_app: { url: webAppUrl }
-    }
-  });
-
-  // 2. Also update for all existing users explicitly & send fresh launch button
+  // Update default global menu button silently without sending any notifications
   try {
-    const userIds = db.getAllTelegramIds ? db.getAllTelegramIds() : [];
-    for (const uid of userIds) {
-      if (uid && !isNaN(Number(uid))) {
-        await tgApi('setChatMenuButton', {
-          chat_id: String(uid),
-          menu_button: {
-            type: 'web_app',
-            text: '🎮 Играть в Color Sort',
-            web_app: { url: webAppUrl }
-          }
-        });
-
-        await tgApi('sendMessage', {
-          chat_id: String(uid),
-          text: `🟢 **Игра Color Sort перезапущена!**\n\nВсе ошибки устранены, сервер онлайн. Нажмите кнопку ниже, чтобы войти в игру: 👇`,
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: '🎮 Играть в Color Sort',
-                  web_app: { url: webAppUrl }
-                }
-              ]
-            ]
-          }
-        });
+    await tgApi('setChatMenuButton', {
+      menu_button: {
+        type: 'web_app',
+        text: '🎮 Играть в Color Sort',
+        web_app: { url: webAppUrl }
       }
-    }
+    });
   } catch (err) {
     console.error('[MenuButton Error]', err.message);
   }
