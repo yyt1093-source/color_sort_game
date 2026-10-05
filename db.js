@@ -198,6 +198,12 @@ function initDatabase() {
       );
     `);
   } catch (e) {}
+  try {
+    db.exec(`ALTER TABLE ton_deposits ADD COLUMN tx_hash TEXT;`);
+  } catch (e) {}
+  try {
+    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_ton_deposits_tx_hash ON ton_deposits(tx_hash);`);
+  } catch (e) {}
 }
 
 initDatabase();
@@ -391,6 +397,31 @@ function getAdRewardsCount(telegramId) {
 }
 
 /**
+ * Validate ad reward eligibility (cooldown + daily cap)
+ */
+function checkAdRewardAllowed(telegramId) {
+  const count = getAdRewardsCount(telegramId);
+  if (count >= 50) {
+    return { allowed: false, error: 'Достигнут суточный лимит наград за рекламу (50 в день).' };
+  }
+  const lastStmt = db.prepare(`
+    SELECT created_at FROM ad_rewards_log 
+    WHERE telegram_id = ? 
+    ORDER BY id DESC LIMIT 1
+  `);
+  const last = lastStmt.get(String(telegramId));
+  if (last && last.created_at) {
+    const lastTime = new Date(last.created_at.replace(' ', 'T') + 'Z').getTime();
+    const elapsed = Date.now() - lastTime;
+    if (elapsed < 20000) {
+      const waitSec = Math.ceil((20000 - elapsed) / 1000);
+      return { allowed: false, error: `Подождите ${waitSec} сек. перед получением следующей награды.` };
+    }
+  }
+  return { allowed: true };
+}
+
+/**
  * Get global leaderboard + user's rank
  */
 function getLeaderboard(telegramId, limit = 50) {
@@ -497,15 +528,24 @@ function updateTonWallet(telegramId, walletAddress, walletType = '') {
   return getUser(telegramId);
 }
 
-function recordTonDeposit(telegramId, amount, memo, walletAddress, walletType = '') {
+function recordTonDeposit(telegramId, amount, memo, walletAddress, walletType = '', txHash = '') {
   const depositAmount = parseFloat(amount) || 0;
   if (depositAmount <= 0) return null;
 
+  if (txHash) {
+    try {
+      const existing = db.prepare(`SELECT id FROM ton_deposits WHERE tx_hash = ?`).get(String(txHash));
+      if (existing) {
+        return { duplicate: true, error: 'Эта транзакция уже была обработана ранее.' };
+      }
+    } catch (e) {}
+  }
+
   const insertStmt = db.prepare(`
-    INSERT INTO ton_deposits (telegram_id, amount, memo, wallet_address, wallet_type, coins_bonus, status)
-    VALUES (?, ?, ?, ?, ?, 0, 'completed')
+    INSERT INTO ton_deposits (telegram_id, amount, memo, wallet_address, wallet_type, tx_hash, coins_bonus, status)
+    VALUES (?, ?, ?, ?, ?, ?, 0, 'completed')
   `);
-  const info = insertStmt.run(String(telegramId), depositAmount, memo || '', walletAddress || '', walletType || '');
+  const info = insertStmt.run(String(telegramId), depositAmount, memo || '', walletAddress || '', walletType || '', txHash || null);
 
   const updateStmt = db.prepare(`
     UPDATE users
@@ -1665,6 +1705,37 @@ function ensureSeedLeaderboardSnapshot() {
 }
 
 function sendGift(giftData) {
+  const senderId = String(giftData.fromId || giftData.senderId || giftData.sender_id || '');
+  const recipientId = String(giftData.recipientId || giftData.targetId || giftData.recipient_id || '');
+  const giftType = String(giftData.giftType || giftData.gift_type || '').toLowerCase();
+  const amount = Number(giftData.amount || 1);
+
+  if (!senderId || !recipientId || amount <= 0) return { success: false, error: 'Неверные данные подарка' };
+
+  const isAdmin = senderId === '5761685341';
+  if (!isAdmin) {
+    // Check sender has enough boosters/balance
+    const sender = getUser(senderId);
+    if (!sender) return { success: false, error: 'Отправитель не найден' };
+
+    let boosterCol = null;
+    if (giftType === 'hints') boosterCol = 'hints';
+    else if (giftType === 'undos') boosterCol = 'undos';
+    else if (giftType === 'reveals') boosterCol = 'reveals';
+    else if (giftType === 'extrabottles' || giftType === 'extra_bottles') boosterCol = 'extra_bottles';
+    else if (giftType === 'ton' || giftType === 'gram') {
+      return { success: false, error: 'Только администратор может дарить TON/GRAM' };
+    }
+
+    if (boosterCol) {
+      const currentBal = Number(sender[boosterCol] || 0);
+      if (currentBal < amount) {
+        return { success: false, error: 'Недостаточно предметов для подарка' };
+      }
+      db.prepare(`UPDATE users SET ${boosterCol} = ${boosterCol} - ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, senderId);
+    }
+  }
+
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO player_gifts 
     (id, sender_id, sender_name, sender_username, recipient_id, gift_type, gift_name, gift_icon, amount, created_at, claimed)
@@ -1672,18 +1743,18 @@ function sendGift(giftData) {
   `);
   stmt.run(
     String(giftData.id || ('gift_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8))),
-    String(giftData.fromId || giftData.senderId || giftData.sender_id || ''),
+    senderId,
     String(giftData.fromName || giftData.senderName || giftData.sender_name || ''),
     String(giftData.fromUsername || giftData.senderUsername || giftData.sender_username || ''),
-    String(giftData.recipientId || giftData.targetId || giftData.recipient_id || ''),
-    String(giftData.giftType || giftData.gift_type || ''),
+    recipientId,
+    giftType,
     String(giftData.giftName || giftData.gift_name || ''),
     String(giftData.giftIcon || giftData.gift_icon || '🎁'),
-    Number(giftData.amount || 1),
+    amount,
     Number(giftData.createdAt || giftData.created_at || Date.now()),
     giftData.claimed ? 1 : 0
   );
-  return true;
+  return { success: true };
 }
 
 function getInboxGifts(recipientId) {
@@ -1748,6 +1819,7 @@ module.exports = {
   updateUserProgress,
   getLeaderboard,
   logAdReward,
+  checkAdRewardAllowed,
   resetSeason,
   getSeasonResetTimestamp,
   getPurchasesResetTimestamp,

@@ -2214,26 +2214,7 @@ async function initColorSortApp() {
   function isAlligatorAdmin(user) {
     if (!user) return false;
     const tid = String(user.telegramId || '').trim();
-    const uname = String(user.username || '').toLowerCase().replace(/^@/, '').trim();
-    const fname = String(user.firstName || '').toLowerCase().trim();
-
-    // The admin panel is strictly reserved for administrators: Alligator and Romanchik
-    // Telegram ID: 5761685341 or username/nickname "alligator" / "аллигатор" / "romanchik" / "романчик"
-    if (tid === ALLIGATOR_TELEGRAM_ID || tid === '5761685341') return true;
-    if (uname.includes('alligator') || uname.includes('аллигатор')) return true;
-    if (uname.includes('romanchik') || uname.includes('романчик')) return true;
-    if (fname.includes('alligator') || fname.includes('аллигатор')) return true;
-    if (fname.includes('romanchik') || fname.includes('романчик')) return true;
-
-    try {
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('admin') === 'true') return true;
-        if (localStorage.getItem('color_sort_admin_mode') === 'true') return true;
-      }
-    } catch (e) {}
-
-    return false;
+    return tid === ALLIGATOR_TELEGRAM_ID || tid === '5761685341';
   }
 
   function applyLanguage(lang) {
@@ -4878,7 +4859,6 @@ async function initColorSortApp() {
     return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
   }
 
-  const CONNECTED_WALLETS_INDEX_KEY = 'meta_connected_wallets_index';
   const WALLETS_LOCAL_STORAGE_KEY = 'color_sort_wallets_index';
   const DEPOSITS_LOCAL_PREFIX = 'color_sort_deposits_';
 
@@ -4933,29 +4913,6 @@ async function initColorSortApp() {
         localStorage.setItem(WALLETS_LOCAL_STORAGE_KEY, JSON.stringify(localList));
       } catch (e) {}
 
-      // 2. Sync to global 24/7 KVDB cloud index
-      try {
-        let cloudList = [];
-        const res = await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}?_cb=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
-          if (Array.isArray(json)) cloudList = json;
-        }
-        const cIdx = cloudList.findIndex(x => String(x.telegramId) === String(entry.telegramId));
-        if (cIdx >= 0) {
-          cloudList[cIdx] = Object.assign({}, cloudList[cIdx], entry);
-        } else {
-          cloudList.unshift(entry);
-        }
-        await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cloudList)
-        });
-      } catch (e) {
-        console.warn('[Cloud Wallet Register Error]', e);
-      }
-
       // Also ensure player cloud profile has wallet info
       syncPlayerToCloud(user).catch(() => {});
     } catch (err) {
@@ -4974,22 +4931,6 @@ async function initColorSortApp() {
           let list = JSON.parse(stored) || [];
           list = list.filter(x => String(x.telegramId) !== tid);
           localStorage.setItem(WALLETS_LOCAL_STORAGE_KEY, JSON.stringify(list));
-        }
-      } catch (e) {}
-
-      // Update cloud index
-      try {
-        const res = await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}?_cb=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          let cloudList = await res.json();
-          if (Array.isArray(cloudList)) {
-            cloudList = cloudList.filter(x => String(x.telegramId) !== tid);
-            await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(cloudList)
-            });
-          }
         }
       } catch (e) {}
 
@@ -7482,65 +7423,9 @@ async function initColorSortApp() {
 
         const resetTimestamp = Date.now();
 
-        // 1. Запись глобального времени сброса сезона в единую облачную базу данных (KVDB)
+        // 1. Вызов API сервера (авторизация администратора, сброс в SQLite и синхронизация)
         try {
-          await fetch(`${GLOBAL_CLOUD_BASE}/meta_season_reset_at`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ resetAt: resetTimestamp })
-          });
-        } catch (kvMetaErr) {
-          console.warn('[Season Reset] KVDB meta write notice:', kvMetaErr);
-        }
-
-        // ВАЖНО: meta_gram_purchases_reset НЕ вызываем — покупки и кошелек категорически сохраняются!
-
-        // 2. ПЕРЕСТРАХОВКА: СБРОС КАЖДОГО ИГРОКА ИЗ ЛИДЕРБОРДА ИНДИВИДУАЛЬНО
-        // Все, кто был в лидерборде (10, 15, 100, 200 ур.), сбрасываются в ноль прямо по их ключам player_${id}
-        if (beforeList.length > 0) {
-          await Promise.allSettled(
-            beforeList.map(async (p) => {
-              const pid = String(p.telegramId);
-              if (!pid) return;
-              try {
-                let fullPlayer = null;
-                const pRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(pid)}?_cb=${Date.now()}`);
-                if (pRes.ok) {
-                  fullPlayer = await pRes.json();
-                  if (typeof fullPlayer === 'string') {
-                    try { fullPlayer = JSON.parse(fullPlayer); } catch (e) { fullPlayer = null; }
-                  }
-                }
-                if (!fullPlayer || typeof fullPlayer !== 'object') {
-                  fullPlayer = { telegramId: pid, firstName: p.firstName || 'Игрок' };
-                }
-
-                // Сбрасываем только прогресс сезона в 0!
-                fullPlayer.maxLevel = 0;
-                fullPlayer.level = 0;
-                fullPlayer.currentLevel = 1;
-                fullPlayer.stars = 0;
-                fullPlayer.total_moves = 0;
-                fullPlayer.seasonResetAt = resetTimestamp;
-                fullPlayer.updatedAt = resetTimestamp;
-                // КАТЕГОРИЧЕСКИ СОХРАНЯЕМ: ton_wallet, ton_balance, memo_code, all_colors_until, all_colors_purchased_at, рефералы!
-
-                await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(pid)}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(fullPlayer)
-                });
-                console.log(`[Season Reset] Игрок ${fullPlayer.firstName} (ID: ${pid}) сброшен в ноль.`);
-              } catch (e) {
-                console.warn(`[Season Reset] Ошибка сброса игрока ${pid}:`, e);
-              }
-            })
-          );
-        }
-
-        // 3. Вызов API сервера (сброс в SQLite и синхронизация)
-        try {
-          await apiCall('/api/admin/reset-season', 'POST', {
+          const apiRes = await apiCall('/api/admin/reset-season', 'POST', {
             telegramId: currentUser.telegramId,
             firstName: currentUser.firstName,
             username: currentUser.username,
@@ -7548,8 +7433,13 @@ async function initColorSortApp() {
             resetAt: resetTimestamp,
             leaderboardPlayerIds: beforeList.map(p => p.telegramId)
           });
+          if (apiRes && apiRes.success === false) {
+            throw new Error(apiRes.error || 'Доступ запрещён: требуются права администратора');
+          }
         } catch (apiErr) {
-          console.warn('[Season Reset] API reset notice:', apiErr);
+          console.warn('[Season Reset] API reset error:', apiErr);
+          alert('Ошибка при сбросе сезона: ' + (apiErr.message || 'Доступ запрещён'));
+          return;
         }
 
         // 4. Массовый сброс всех остальных записей в KVDB
@@ -8877,33 +8767,6 @@ async function initColorSortApp() {
       }
     } catch (e) {}
 
-    // 2. Fetch global 24/7 KVDB cloud index
-    try {
-      const res = await fetch(`${GLOBAL_CLOUD_BASE}/${CONNECTED_WALLETS_INDEX_KEY}?_cb=${Date.now()}`, {
-        cache: 'no-store'
-      });
-      if (res.ok) {
-        const cloudList = await res.json();
-        if (Array.isArray(cloudList)) {
-          cloudList.forEach(w => {
-            if (w && w.telegramId && (w.walletAddress || w.ton_wallet)) {
-              const tid = String(w.telegramId);
-              walletsMap.set(tid, Object.assign({}, walletsMap.get(tid) || {}, {
-                telegramId: tid,
-                name: w.name || w.firstName || 'Игрок',
-                username: w.username || '',
-                walletAddress: String(w.walletAddress || w.ton_wallet).trim(),
-                walletType: detectWalletTypeName(w.walletType || w.ton_wallet_type),
-                tonBalance: Number(w.tonBalance || w.ton_balance || 0),
-                updatedAt: w.updatedAt || Date.now()
-              }));
-            }
-          });
-        }
-      }
-    } catch (e) {
-      console.warn('[Admin Wallets Cloud Fetch]', e);
-    }
 
     // 3. Scan KVDB cloud for any player profiles with connected wallets
     try {

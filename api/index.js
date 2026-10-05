@@ -119,9 +119,6 @@ app.post('/api/user/init', async (req, res) => {
               const finalB = Math.max(Number(user.extra_bottles || 0), Number(kvB || 0));
               user.extra_bottles = finalB;
               user.extraBottles = finalB;
-              if (kvData.ton_balance !== undefined) {
-                user.ton_balance = Number(kvData.ton_balance);
-              }
               user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
               user.all_colors_purchased_at = Math.max(Number(user.all_colors_purchased_at || 0), Number(kvData.all_colors_purchased_at || 0));
               if (kvData.daily_boosters_days_left !== undefined || kvData.dailyBoostersDaysLeft !== undefined) {
@@ -140,9 +137,9 @@ app.post('/api/user/init', async (req, res) => {
               try {
                 db.prepare(`
                   UPDATE users 
-                  SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?, daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ?
+                  SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, all_colors_until = ?, all_colors_purchased_at = ?, daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ?
                   WHERE telegram_id = ?
-                `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, Number(user.daily_boosters_days_left || 0), user.daily_boosters_last_date || '', Number(user.daily_boosters_purchased_at || 0), String(id));
+                `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, user.all_colors_until, user.all_colors_purchased_at, Number(user.daily_boosters_days_left || 0), user.daily_boosters_last_date || '', Number(user.daily_boosters_purchased_at || 0), String(id));
               } catch (e) {}
             }
           }
@@ -237,7 +234,7 @@ app.post('/api/user/sync', async (req, res) => {
           reveals: finalReveals,
           extraBottles: finalBottles,
           extra_bottles: finalBottles,
-          ton_balance: (req.body.ton_balance !== undefined) ? Number(req.body.ton_balance) : Number(updatedUser.ton_balance !== undefined ? updatedUser.ton_balance : (existing ? existing.ton_balance : 0)),
+          ton_balance: Number(updatedUser.ton_balance || 0),
           all_colors_until: Math.max(Number(updatedUser.all_colors_until || 0), existing ? Number(existing.all_colors_until || 0) : 0),
           all_colors_purchased_at: Math.max(Number(updatedUser.all_colors_purchased_at || 0), existing ? Number(existing.all_colors_purchased_at || 0) : 0),
           daily_boosters_days_left: updatedUser.daily_boosters_days_left !== undefined ? updatedUser.daily_boosters_days_left : (req.body.daily_boosters_days_left || (existing ? existing.daily_boosters_days_left : 0) || 0),
@@ -368,16 +365,12 @@ app.post('/api/ad-reward', async (req, res) => {
     const { telegramId, rewardType } = req.body;
     const id = telegramId || 'guest_dev_123';
 
-    let bonus = { coins: 0, hints: 0, undos: 0, reveals: 0, extra_bottles: 0, shuffles: 0 };
-    if (rewardType === 'hints') bonus.hints = 1;
-    else if (rewardType === 'undos') bonus.undos = 1;
-    else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') bonus.reveals = 1;
-    else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') bonus.extra_bottles = 1;
-    else if (rewardType === 'shuffle_colors' || rewardType === 'shuffles') bonus.shuffles = 1;
-    else if (rewardType === 'coins') bonus.coins = 150;
-    else bonus.coins = 100;
+    const check = db.checkAdRewardAllowed ? db.checkAdRewardAllowed(id) : { allowed: true };
+    if (!check.allowed) {
+      return res.status(429).json({ success: false, error: check.error });
+    }
 
-    let updatedUser = db.addBonus(id, bonus);
+    let updatedUser = db.logAdReward(id, rewardType);
 
     // Forward sync to global KVDB cloud for real players
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev') && updatedUser) {
@@ -566,9 +559,12 @@ app.post('/api/wallet/verify-deposit', async (req, res) => {
     }
 
     const creditedAmount = check.amount || depositAmount;
-    const result = db.recordTonDeposit(id, creditedAmount, memo, walletAddress);
+    const result = db.recordTonDeposit(id, creditedAmount, memo, walletAddress, '', check.txHash);
     if (!result) {
       return res.status(500).json({ success: false, error: 'Ошибка обработки пополнения' });
+    }
+    if (result.duplicate) {
+      return res.status(400).json({ success: false, error: result.error || 'Эта транзакция уже была обработана' });
     }
 
     res.json({
@@ -605,7 +601,6 @@ app.post('/api/shop/buy', async (req, res) => {
           if (kvData && typeof kvData === 'object') {
             const cur = db.getUser(id);
             if (cur) {
-              const currentBal = (kvData.ton_balance !== undefined) ? Number(kvData.ton_balance) : Number(cur.ton_balance || 0);
               const maxH = Math.max(Number(cur.hints || 0), Number(kvData.hints || 0));
               const maxU = Math.max(Number(cur.undos || 0), Number(kvData.undos || 0));
               const maxR = Math.max(Number(cur.reveals || 0), Number(kvData.reveals || 0));
@@ -613,9 +608,9 @@ app.post('/api/shop/buy', async (req, res) => {
               const maxB = Math.max(Number(cur.extra_bottles || 0), Number(kvB || 0));
               db.prepare(`
                 UPDATE users
-                SET ton_balance = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?
+                SET hints = ?, undos = ?, reveals = ?, extra_bottles = ?
                 WHERE telegram_id = ?
-              `).run(currentBal, maxH, maxU, maxR, maxB, String(id));
+              `).run(maxH, maxU, maxR, maxB, String(id));
             }
           }
         }
@@ -1261,7 +1256,14 @@ app.post('/api/gifts/send', (req, res) => {
     if (!gift || !gift.recipientId || !gift.giftType) {
       return res.status(400).json({ success: false, error: 'Invalid gift data' });
     }
-    db.sendGift(gift);
+    if (req.telegramId) {
+      gift.fromId = req.telegramId;
+      gift.senderId = req.telegramId;
+    }
+    const result = db.sendGift(gift);
+    if (!result || !result.success) {
+      return res.status(400).json(result || { success: false, error: 'Ошибка отправки подарка' });
+    }
     res.json({ success: true });
   } catch (err) {
     console.error('[API ERROR] /api/gifts/send:', err);
