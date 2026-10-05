@@ -43,9 +43,34 @@
   }
 
   function getUserData() {
-    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-      const u = tg.initDataUnsafe.user;
+    let u = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
+
+    // Fallback 1: Parse from tg.initData, window.location.hash, or window.location.search
+    if (!u) {
+      try {
+        const rawInit = (tg && tg.initData) || 
+                        (typeof window !== 'undefined' && window.location.hash ? window.location.hash.replace(/^#/, '') : '') || 
+                        (typeof window !== 'undefined' && window.location.search ? window.location.search.replace(/^\?/, '') : '');
+        if (rawInit) {
+          const params = new URLSearchParams(rawInit);
+          const tgWebAppData = params.get('tgWebAppData') || rawInit;
+          const innerParams = new URLSearchParams(tgWebAppData);
+          const userStr = innerParams.get('user') || params.get('user');
+          if (userStr) {
+            u = JSON.parse(decodeURIComponent(userStr));
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (u && u.id) {
       const id = String(u.id);
+      try {
+        localStorage.setItem('cs_last_telegram_id', id);
+        if (u.first_name) localStorage.setItem('cs_last_first_name', u.first_name);
+        if (u.username) localStorage.setItem('cs_last_username', u.username);
+        if (u.photo_url) localStorage.setItem('cs_last_photo_url', u.photo_url);
+      } catch (e) {}
       return {
         telegramId: id,
         firstName: u.first_name || 'Игрок',
@@ -53,6 +78,18 @@
         photoUrl: u.photo_url || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${id}`
       };
     }
+
+    // Fallback 2: Check cached Telegram ID from localStorage so reloads never downgrade to guest
+    const cachedId = localStorage.getItem('cs_last_telegram_id');
+    if (cachedId && /^\d+$/.test(cachedId)) {
+      return {
+        telegramId: cachedId,
+        firstName: localStorage.getItem('cs_last_first_name') || 'Игрок',
+        username: localStorage.getItem('cs_last_username') || '',
+        photoUrl: localStorage.getItem('cs_last_photo_url') || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${cachedId}`
+      };
+    }
+
     let guestId = localStorage.getItem('cs_guest_id');
     if (!guestId) {
       guestId = 'tg_user_' + Math.floor(Math.random() * 899999 + 100000);
