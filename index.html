@@ -1592,8 +1592,12 @@
         </div>
       </div>
 
-      <div style="margin-top: 14px; text-align: center;">
-        <button type="button" id="adminViewerBackBtn" class="admin-viewer-back-btn">← Назад к списку снимков</button>
+      <div style="margin-top: 14px; display: flex; gap: 10px; justify-content: center;">
+        <button type="button" id="adminViewerRestoreBtn" class="admin-viewer-restore-btn" style="flex: 1.2; padding: 10px 14px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border: 1px solid #3b82f6; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span>📥</span>
+          <span>Загрузить в лидерборд</span>
+        </button>
+        <button type="button" id="adminViewerBackBtn" class="admin-viewer-back-btn" style="flex: 1;">← Назад к списку</button>
       </div>
     </div>
   </div>
@@ -1711,6 +1715,27 @@
       <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
         <button type="button" id="cancelDeleteSnapshotBtn" class="btn-cancel" style="flex: 1;">Отмена</button>
         <button type="button" id="confirmDeleteSnapshotBtn" class="btn-confirm-danger" style="flex: 1;">🗑️ Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restore Snapshot Confirmation Modal -->
+  <div id="restoreSnapshotModal" class="modal-overlay hidden">
+    <div class="glass-modal reset-modal-content">
+      <div class="warning-icon-glow" style="color: #3b82f6;">📥</div>
+      <h2 id="restoreSnapshotModalTitle" class="reset-modal-title">Восстановление лидерборда</h2>
+      <div class="reset-warning-card">
+        <p class="reset-warning-lead" id="restoreSnapshotLead">Загрузить этот снимок в активный лидерборд?</p>
+        <p id="restoreSnapshotInfo" style="font-size: 13px; color: #60a5fa; font-weight: 700; margin-top: 6px;">—</p>
+        <p style="font-size: 11px; color: #cbd5e1; margin-top: 8px; line-height: 1.4;">
+          ⚠️ <strong>Внимание:</strong> Все текущие записи лидерборда будут полностью заменены данными из этого снимка. 
+          Игроки из снимка получат свои точные уровни, а лишние игроки будут аннулированы. 
+          (Баланс TON, кошельки и бустеры сохраняются).
+        </p>
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 10px; margin-top: 18px;">
+        <button type="button" id="cancelRestoreSnapshotBtn" class="btn-cancel" style="flex: 1;">Отмена</button>
+        <button type="button" id="confirmRestoreSnapshotBtn" class="btn-confirm-primary" style="flex: 1.2; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 700; border: none; border-radius: 12px; padding: 12px; cursor: pointer;">📥 Восстановить</button>
       </div>
     </div>
   </div>

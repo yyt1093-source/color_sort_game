@@ -3079,7 +3079,11 @@ async function initColorSortApp() {
         const localForceTs = Number(localStorage.getItem(`color_sort_force_reset_${id}`) || user.forceResetAt || user.accountResetAt || 0);
         const isForceResetActive = cloudForceTs > 0 && cloudForceTs >= localForceTs;
 
-        // Never allow a lower maxLevel to overwrite a higher maxLevel from the cloud unless force reset
+        const cloudRestoreTs = Number(existingCloud ? (existingCloud.snapshotRestoredAt || 0) : 0);
+        const localRestoreTs = Number(localStorage.getItem(`color_sort_restored_at_${id}`) || user.lastSnapshotRestoredAt || 0);
+        const isRestoreActive = cloudRestoreTs > 0 && cloudRestoreTs > localRestoreTs;
+
+        // Never allow a lower maxLevel to overwrite a higher maxLevel from the cloud unless force reset or snapshot rollback
         if (existingCloud && !window.__seasonResetKicking) {
           if (isForceResetActive) {
             localStorage.setItem(`color_sort_force_reset_${id}`, String(cloudForceTs));
@@ -3104,6 +3108,20 @@ async function initColorSortApp() {
             maxLvl = user.maxLevel;
             curLvl = user.currentLevel;
             stars = user.stars;
+          } else if (isRestoreActive) {
+            // Snapshot rollback active: strictly adopt cloud state without resurrecting stale local level
+            localStorage.setItem(`color_sort_restored_at_${id}`, String(cloudRestoreTs));
+            user.lastSnapshotRestoredAt = cloudRestoreTs;
+            const exCloudMax = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : (existingCloud.level || 0));
+            const exCloudCur = Number(existingCloud.currentLevel !== undefined ? existingCloud.currentLevel : (exCloudMax > 0 ? exCloudMax : 1));
+            const exCloudStars = Number(existingCloud.stars || 0);
+            maxLvl = exCloudMax;
+            user.maxLevel = maxLvl;
+            user.level = maxLvl;
+            curLvl = exCloudCur;
+            user.currentLevel = curLvl;
+            stars = exCloudStars;
+            user.stars = stars;
           } else {
             const exCloudMax = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : (existingCloud.level || 0));
             const exCloudCur = Number(existingCloud.currentLevel || 1);
@@ -3635,22 +3653,36 @@ async function initColorSortApp() {
           const cloudCur = Number(cloudData.currentLevel || cloudData.current_level || (cloudMax > 0 ? cloudMax : 1));
           const cloudStars = Number(cloudData.stars || 0);
 
-          if (cloudMax > (currentUser.maxLevel || 0)) {
+          // Authoritative Cloud Sync: Single unified database across all devices and rollbacks
+          const cloudRestoreTs = Number(cloudData.snapshotRestoredAt || 0);
+          const localRestoreTs = Number(localStorage.getItem(`color_sort_restored_at_${id}`) || currentUser.lastSnapshotRestoredAt || 0);
+
+          if (cloudRestoreTs > 0 && cloudRestoreTs >= localRestoreTs) {
+            localStorage.setItem(`color_sort_restored_at_${id}`, String(cloudRestoreTs));
+            currentUser.lastSnapshotRestoredAt = cloudRestoreTs;
             currentUser.maxLevel = cloudMax;
             currentUser.level = cloudMax;
-            changed = true;
-          }
-          if (cloudCur > (currentUser.currentLevel || 1)) {
             currentUser.currentLevel = cloudCur;
-            changed = true;
-          }
-          if (currentUser.maxLevel > 0 && (currentUser.currentLevel || 1) < currentUser.maxLevel) {
-            currentUser.currentLevel = currentUser.maxLevel;
-            changed = true;
-          }
-          if (cloudStars > (currentUser.stars || 0)) {
             currentUser.stars = cloudStars;
             changed = true;
+          } else {
+            if (cloudMax !== (currentUser.maxLevel || 0)) {
+              currentUser.maxLevel = cloudMax;
+              currentUser.level = cloudMax;
+              changed = true;
+            }
+            if (cloudCur !== (currentUser.currentLevel || 1)) {
+              currentUser.currentLevel = cloudCur;
+              changed = true;
+            }
+            if (currentUser.maxLevel > 0 && (currentUser.currentLevel || 1) < currentUser.maxLevel) {
+              currentUser.currentLevel = currentUser.maxLevel;
+              changed = true;
+            }
+            if (cloudStars !== (currentUser.stars || 0)) {
+              currentUser.stars = cloudStars;
+              changed = true;
+            }
           }
           if (cloudSeason > 0 && cloudSeason > Number(currentUser.seasonResetAt || 0)) {
             currentUser.seasonResetAt = cloudSeason;
@@ -3907,18 +3939,18 @@ async function initColorSortApp() {
       }
       if (serverUser.user.ton_wallet !== undefined) currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
       if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
-      if (serverUser.user.current_level !== undefined) {
-        currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(serverUser.user.current_level || 1));
-      }
       if (serverUser.user.max_level !== undefined) {
-        currentUser.maxLevel = Math.max(Number(currentUser.maxLevel || 0), Number(serverUser.user.max_level || 0));
-        currentUser.level = Math.max(Number(currentUser.level || 0), currentUser.maxLevel);
+        currentUser.maxLevel = Number(serverUser.user.max_level || 0);
+        currentUser.level = currentUser.maxLevel;
+      }
+      if (serverUser.user.current_level !== undefined) {
+        currentUser.currentLevel = Number(serverUser.user.current_level || (currentUser.maxLevel > 0 ? currentUser.maxLevel : 1));
       }
       if (currentUser.maxLevel > 0 && currentUser.currentLevel < currentUser.maxLevel) {
         currentUser.currentLevel = currentUser.maxLevel;
       }
       if (serverUser.user.stars !== undefined) {
-        currentUser.stars = Math.max(Number(currentUser.stars || 0), Number(serverUser.user.stars || 0));
+        currentUser.stars = Number(serverUser.user.stars || 0);
       }
       normalizeUserObject(currentUser);
       updateTonWalletUI();
@@ -4884,16 +4916,30 @@ async function initColorSortApp() {
       });
     }
 
-    // 6. Update user's personal banner
+    // 6. Update user's personal banner & strictly synchronize profile with leaderboard
     const myRankIdx = sortedPlayers.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
     if (myRankIdx !== -1) {
       const myRankNum = myRankIdx + 1;
       const myCrown = myRankNum === 1 ? '🥇' : myRankNum === 2 ? '🥈' : myRankNum === 3 ? '🥉' : `#${myRankNum}`;
       if (modalUserPos) modalUserPos.textContent = myCrown;
       if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
-      const playerLvl = sortedPlayers[myRankIdx].maxLevel !== undefined ? sortedPlayers[myRankIdx].maxLevel : (currentUser.maxLevel || 0);
+      const playerLvl = Number(sortedPlayers[myRankIdx].maxLevel !== undefined ? sortedPlayers[myRankIdx].maxLevel : (sortedPlayers[myRankIdx].level || 0));
+      const playerStars = Number(sortedPlayers[myRankIdx].stars || 0);
       if (modalUserLevel) modalUserLevel.textContent = t('levelDisplayVal', playerLvl);
       if (userRank) userRank.textContent = `#${myRankNum}`;
+
+      // Single source of truth: Profile level MUST match leaderboard level!
+      if (playerLvl > 0 && playerLvl !== currentUser.maxLevel) {
+        currentUser.maxLevel = playerLvl;
+        currentUser.level = playerLvl;
+        currentUser.currentLevel = playerLvl;
+        currentUser.stars = playerStars;
+        saveLocalUser();
+        updateHeaderUI();
+        if (!currentLevelData || currentLevelData.levelNumber !== currentUser.currentLevel) {
+          loadCurrentLevel();
+        }
+      }
     } else if (isRealUser) {
       if (modalUserPos) modalUserPos.textContent = '#—';
       if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
@@ -7817,6 +7863,14 @@ async function initColorSortApp() {
   const cancelDeleteSnapshotBtn = document.getElementById('cancelDeleteSnapshotBtn');
   const confirmDeleteSnapshotBtn = document.getElementById('confirmDeleteSnapshotBtn');
 
+  // Restore Confirmation Modal Elements
+  const restoreSnapshotModal = document.getElementById('restoreSnapshotModal');
+  const restoreSnapshotInfo = document.getElementById('restoreSnapshotInfo');
+  const cancelRestoreSnapshotBtn = document.getElementById('cancelRestoreSnapshotBtn');
+  const confirmRestoreSnapshotBtn = document.getElementById('confirmRestoreSnapshotBtn');
+  const adminViewerRestoreBtn = document.getElementById('adminViewerRestoreBtn');
+  let pendingRestoreSnapshot = null;
+
   let activeSnapshotData = null;
   let activeSnapshotPlayers = [];
   let pendingDeleteSnapshot = null;
@@ -8467,6 +8521,10 @@ async function initColorSortApp() {
             </div>
           </div>
           <div class="admin-snapshot-actions">
+            <button type="button" class="btn-snapshot-action btn-snapshot-restore" data-id="${s.id}" title="Загрузить в лидерборд" style="background: rgba(37, 99, 235, 0.2); border-color: rgba(59, 130, 246, 0.4); color: #60a5fa;">
+              <span>📥</span>
+              <span>Загрузить</span>
+            </button>
             <button type="button" class="btn-snapshot-action btn-snapshot-view" data-id="${s.id}" title="${viewLabel}">
               <span>👁️</span>
               <span>${viewLabel}</span>
@@ -8487,11 +8545,24 @@ async function initColorSortApp() {
     }
   }
 
-  // Delegated click handling on list buttons (View / Delete)
+  // Delegated click handling on list buttons (Restore / View / Delete)
   if (adminHistoryItemsList) {
     adminHistoryItemsList.addEventListener('click', (e) => {
+      const restoreBtn = e.target.closest('.btn-snapshot-restore');
       const viewBtn = e.target.closest('.btn-snapshot-view');
       const deleteBtn = e.target.closest('.btn-snapshot-delete');
+
+      if (restoreBtn) {
+        e.stopPropagation();
+        const id = restoreBtn.dataset.id;
+        const snapshot = cachedSnapshotsList.find(s => String(s.id) === String(id));
+        if (snapshot) {
+          openRestoreSnapshotDialog(snapshot);
+        } else if (id) {
+          openRestoreSnapshotDialog({ id, snapshot_date: '—', snapshot_time: '—', total_players: '?' });
+        }
+        return;
+      }
 
       if (viewBtn) {
         e.stopPropagation();
@@ -8761,6 +8832,280 @@ async function initColorSortApp() {
       } finally {
         confirmDeleteSnapshotBtn.disabled = false;
         confirmDeleteSnapshotBtn.innerHTML = origHtml;
+      }
+    });
+  }
+
+  // ==========================================================================
+  // Leaderboard Snapshot Restore Controller
+  // ==========================================================================
+  function openRestoreSnapshotDialog(snapshot) {
+    if (!snapshot) return;
+    pendingRestoreSnapshot = snapshot;
+    if (restoreSnapshotInfo) {
+      const dt = formatSnapshotDisplay(snapshot.snapshot_date, snapshot.snapshot_time);
+      const isManual = snapshot.snapshot_type === 'manual';
+      const typeLabel = isManual ? 'Ручной' : (snapshot.snapshot_time ? `Авто ${String(snapshot.snapshot_time).substring(0, 5)}` : 'Авто 23:59');
+      const count = snapshot.total_players !== undefined ? snapshot.total_players : '?';
+      restoreSnapshotInfo.textContent = `📅 ${dt} (${typeLabel}) — ${count} игроков`;
+    }
+    if (restoreSnapshotModal) {
+      openModal(restoreSnapshotModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('warning');
+      }
+    }
+  }
+
+  if (cancelRestoreSnapshotBtn) {
+    cancelRestoreSnapshotBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pendingRestoreSnapshot = null;
+      if (restoreSnapshotModal) closeModal(restoreSnapshotModal);
+    });
+  }
+
+  if (restoreSnapshotModal) {
+    restoreSnapshotModal.addEventListener('click', (e) => {
+      if (e.target === restoreSnapshotModal) {
+        pendingRestoreSnapshot = null;
+        closeModal(restoreSnapshotModal);
+      }
+    });
+  }
+
+  if (adminViewerRestoreBtn) {
+    adminViewerRestoreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (activeSnapshotData) {
+        openRestoreSnapshotDialog(activeSnapshotData);
+      }
+    });
+  }
+
+  async function restoreSnapshot(snapshotId) {
+    if (!snapshotId) throw new Error('ID снимка не указан');
+    const idStr = String(snapshotId);
+
+    // 1. Try server API first
+    let apiSuccess = false;
+    let apiResult = null;
+    try {
+      const res = await apiCall('/api/admin/leaderboard-history/restore', 'POST', {
+        id: idStr,
+        snapshotId: idStr,
+        telegramId: currentUser.telegramId,
+        authData: getTelegramInitData()
+      });
+      if (res && res.success) {
+        apiSuccess = true;
+        apiResult = res;
+      }
+    } catch (e) {
+      console.warn('[Restore Snapshot] Server API notice:', e.message);
+    }
+
+    // 2. Direct Cloud KVDB sync (ensures GitHub Pages / static client works 100%)
+    try {
+      const snapRes = await fetch(`${GLOBAL_CLOUD_BASE}/leaderboard_snapshot_${idStr}?_cb=${Date.now()}`);
+      if (snapRes.ok) {
+        const snapData = await snapRes.json();
+        if (snapData && Array.isArray(snapData.players) && snapData.players.length > 0) {
+          const nowTs = Date.now();
+          const snapPlayers = snapData.players;
+          const snapMap = new Map();
+
+          snapPlayers.forEach((p, idx) => {
+            const tid = String(p.telegram_id || p.telegramId || '').trim();
+            if (!tid) return;
+            const lvl = Number(p.level !== undefined ? p.level : (p.max_level || p.maxLevel || 1));
+            const stars = Number(p.stars || 0);
+            const name = p.name || p.first_name || p.firstName || 'Игрок';
+            const username = p.username || '';
+            snapMap.set(tid, { tid, lvl, stars, name, username, rank: p.rank || (idx + 1) });
+          });
+
+          // Write meta_leaderboard_restored_at and meta_active_snapshot_id
+          await fetch(`${GLOBAL_CLOUD_BASE}/meta_leaderboard_restored_at`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              restoredAt: nowTs,
+              snapshotId: idStr,
+              snapshotDate: snapData.snapshot_date,
+              snapshotTime: snapData.snapshot_time,
+              totalPlayers: snapMap.size
+            })
+          });
+
+          await fetch(`${GLOBAL_CLOUD_BASE}/meta_active_snapshot_id`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(idStr)
+          });
+
+          // Fetch all player_* keys to update/wipe
+          const playersRes = await fetch(`${GLOBAL_CLOUD_BASE}/?prefix=player_&values=true&format=json&_cb=${nowTs}`);
+          let existingPairs = [];
+          if (playersRes.ok) {
+            try { existingPairs = await playersRes.json(); } catch(e) {}
+          }
+
+          const seenTids = new Set();
+          for (const [key, rawVal] of existingPairs) {
+            let val = rawVal;
+            if (typeof val === 'string') {
+              try { val = JSON.parse(val); } catch(e) { val = null; }
+            }
+            if (!val || !val.telegramId) continue;
+            const tid = String(val.telegramId).trim();
+            seenTids.add(tid);
+
+            if (snapMap.has(tid)) {
+              const sp = snapMap.get(tid);
+              const updatedPayload = {
+                ...val,
+                telegramId: tid,
+                firstName: val.firstName || sp.name,
+                username: val.username || sp.username,
+                maxLevel: sp.lvl,
+                level: sp.lvl,
+                currentLevel: sp.lvl,
+                stars: sp.stars,
+                snapshotRestoredAt: nowTs,
+                updatedAt: nowTs
+              };
+              await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(tid)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedPayload)
+              });
+            } else {
+              // Not in snapshot: wipe level & stars to 0 (preserving ton balance, wallet, and boosters)
+              if (Number(val.maxLevel || val.level || 0) > 0 || Number(val.stars || 0) > 0) {
+                const resetPayload = {
+                  ...val,
+                  telegramId: tid,
+                  maxLevel: 0,
+                  level: 0,
+                  currentLevel: 1,
+                  stars: 0,
+                  snapshotRestoredAt: nowTs,
+                  updatedAt: nowTs
+                };
+                await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(tid)}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(resetPayload)
+                });
+              }
+            }
+          }
+
+          // Insert any snapshot players not in KVDB yet
+          for (const [tid, sp] of snapMap.entries()) {
+            if (!seenTids.has(tid)) {
+              const newPayload = {
+                telegramId: tid,
+                firstName: sp.name,
+                username: sp.username,
+                maxLevel: sp.lvl,
+                level: sp.lvl,
+                currentLevel: sp.lvl,
+                stars: sp.stars,
+                snapshotRestoredAt: nowTs,
+                updatedAt: nowTs
+              };
+              await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(tid)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newPayload)
+              });
+            }
+          }
+
+          // Strictly synchronize current user in RAM & LocalStorage
+          const myTid = String(currentUser.telegramId).trim();
+          if (snapMap.has(myTid)) {
+            const mySnap = snapMap.get(myTid);
+            currentUser.maxLevel = mySnap.lvl;
+            currentUser.level = mySnap.lvl;
+            currentUser.currentLevel = mySnap.lvl;
+            currentUser.stars = mySnap.stars;
+            currentUser.lastSnapshotRestoredAt = nowTs;
+            localStorage.setItem('color_sort_restored_at_' + myTid, String(nowTs));
+            saveLocalUser();
+            updateHeaderUI();
+            loadCurrentLevel();
+          } else {
+            currentUser.maxLevel = 0;
+            currentUser.level = 0;
+            currentUser.currentLevel = 1;
+            currentUser.stars = 0;
+            currentUser.lastSnapshotRestoredAt = nowTs;
+            localStorage.setItem('color_sort_restored_at_' + myTid, String(nowTs));
+            saveLocalUser();
+            updateHeaderUI();
+            loadCurrentLevel();
+          }
+
+          return { success: true, totalPlayers: snapMap.size, date: snapData.snapshot_date, time: snapData.snapshot_time };
+        }
+      }
+    } catch (kvErr) {
+      console.warn('[Restore Snapshot] KVDB direct sync warning:', kvErr.message);
+    }
+
+    if (!apiSuccess) {
+      throw new Error('Не удалось восстановить снимок лидерборда ни через API, ни через облачную базу данных.');
+    }
+
+    return apiResult;
+  }
+
+  if (confirmRestoreSnapshotBtn) {
+    confirmRestoreSnapshotBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!isAlligatorAdmin(currentUser)) return;
+      if (!pendingRestoreSnapshot || !pendingRestoreSnapshot.id) {
+        if (restoreSnapshotModal) closeModal(restoreSnapshotModal);
+        return;
+      }
+
+      const snapshotIdToRestore = pendingRestoreSnapshot.id;
+      const snapshotFormatted = formatSnapshotDisplay(pendingRestoreSnapshot.snapshot_date, pendingRestoreSnapshot.snapshot_time);
+
+      confirmRestoreSnapshotBtn.disabled = true;
+      const origHtml = confirmRestoreSnapshotBtn.innerHTML;
+      confirmRestoreSnapshotBtn.innerHTML = '⏳ Восстановление...';
+
+      try {
+        const res = await restoreSnapshot(snapshotIdToRestore);
+
+        if (restoreSnapshotModal) closeModal(restoreSnapshotModal);
+        if (adminHistoryViewerModal) closeModal(adminHistoryViewerModal);
+
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('success');
+        }
+
+        showInfoModal(
+          '📥',
+          'Лидерборд восстановлен!',
+          `Снимок за ${snapshotFormatted} успешно загружен в активный лидерборд!\nВсего игроков в актуальном рейтинге: ${res.totalPlayers || '?'}.\nПредыдущие и лишние записи полностью удалены.`
+        );
+
+        pendingRestoreSnapshot = null;
+        await loadAdminHistoryList();
+        if (leaderboardModal && !leaderboardModal.classList.contains('hidden')) {
+          await loadLeaderboardData();
+        }
+      } catch (err) {
+        console.error('[Restore Snapshot Error]', err);
+        showInfoModal('⚠️', 'Ошибка восстановления', 'Не удалось загрузить снимок: ' + (err.message || err));
+      } finally {
+        confirmRestoreSnapshotBtn.disabled = false;
+        confirmRestoreSnapshotBtn.innerHTML = origHtml;
       }
     });
   }
