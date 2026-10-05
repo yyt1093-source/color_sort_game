@@ -9060,6 +9060,14 @@ async function initColorSortApp() {
   // ============================================================
   const DEFAULT_CODE_CHECKPOINTS = [
     {
+      id: 'colorsort_checkpoint_20261005_093116',
+      createdAtTimestamp: 1791181876093,
+      kyivFormattedDate: '05.10.2026, 09:31:16 (Киев)',
+      title: 'Версия v1.0.9 — Отправитель подарков, выбор авторства для админа, новый дизайн карточек и мгновенный забор',
+      note: 'Метка Git: v1.0.9-gifts-sender-admin-mode-instant-claim. Отображение отправителя у входящих подарков («От: ...»). Панель выбора авторства для администратора («От Alligator» либо «От Color Sort»). Полностью переработана карточка подарка: центрированная иконка сверху, блок описания по центру и широкая кнопка «Забрать» внизу. Устранена задержка при заборе подарков — моментальный отклик и защита от рассинхронизации. Все тесты пройдены.',
+      tag: 'v1.0.9-gifts-sender-admin-mode-instant-claim'
+    },
+    {
       id: 'colorsort_checkpoint_20261003_171000',
       createdAtTimestamp: 1791036600000,
       kyivFormattedDate: '03.10.2026, 17:10:00 (Киев)',
@@ -9343,9 +9351,9 @@ async function initColorSortApp() {
     }
   }
 
-  const DEFAULT_SAVE_VERSION_TITLE = 'Версия v1.0.8 — Восстановление модалок лидерборда и рекламы, уровень игроков в подарках (Киев)';
-  const DEFAULT_SAVE_VERSION_TAG = 'v1.0.8-leaderboard-ad-modals-gifts-level-badge';
-  const DEFAULT_SAVE_VERSION_NOTE = 'Метка Git: v1.0.8-leaderboard-ad-modals-gifts-level-badge. Устранена вложенность модальных окон в public/index.html — кнопки Лидерборда и Рекламы открываются мгновенно и безотказно. В списке получателей подарков убрана кнопка «Выбрать» / «Отправить», а текущий уровень игрока из лидерборда аккуратно отображается в правом углу каждой строки с кликабельным выбором карточки. Полная приватность юзернеймов и анонимность подарков для игроков сохранена. Все тесты пройдены.';
+  const DEFAULT_SAVE_VERSION_TITLE = 'Версия v1.0.9 — Отправитель подарков, выбор авторства для админа, новый дизайн карточек и мгновенный забор (Киев)';
+  const DEFAULT_SAVE_VERSION_TAG = 'v1.0.9-gifts-sender-admin-mode-instant-claim';
+  const DEFAULT_SAVE_VERSION_NOTE = 'Метка Git: v1.0.9-gifts-sender-admin-mode-instant-claim. Отображение отправителя у входящих подарков («От: ...»). Панель выбора авторства для администратора («От Alligator» либо «От Color Sort»). Полностью переработана карточка подарка: центрированная иконка сверху, блок описания по центру и широкая кнопка «Забрать» внизу. Устранена задержка при заборе подарков — моментальный отклик и защита от рассинхронизации. Все тесты пройдены.';
 
   if (adminSaveCurrentVersionBtn) {
     adminSaveCurrentVersionBtn.addEventListener('click', (e) => {
