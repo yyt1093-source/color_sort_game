@@ -204,9 +204,14 @@
 
     <div class="start-screen-content">
       <div class="start-footer">
-        <button id="startGameBtn" class="start-btn pulse-glow">
-          <span class="start-btn-icon">▶</span>
-          <span class="start-btn-label">START</span>
+        <div id="splashPlayerBadge" class="splash-player-badge" style="opacity: 0; transition: opacity 0.3s ease;">
+          <span id="splashPlayerName" class="splash-player-badge-name">Игрок</span>
+          <span class="splash-player-badge-dot">•</span>
+          <span id="splashPlayerLevel" class="splash-player-badge-level">Уровень 1</span>
+        </div>
+        <button id="startGameBtn" class="start-btn start-btn-syncing" disabled>
+          <span id="startBtnIcon" class="start-btn-icon start-btn-spinner">⏳</span>
+          <span id="startBtnLabel" class="start-btn-label">СИНХРОНИЗАЦИЯ...</span>
         </button>
       </div>
     </div>
@@ -216,13 +221,66 @@
     (function() {
       var btn = document.getElementById('startGameBtn');
       var scr = document.getElementById('startScreen');
+      var badge = document.getElementById('splashPlayerBadge');
+      var nameEl = document.getElementById('splashPlayerName');
+      var lvlEl = document.getElementById('splashPlayerLevel');
+
+      // Instant pre-population of badge from localStorage on frame 0
+      try {
+        var rawInit = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || 
+                      (window.location.hash ? window.location.hash.replace(/^#/, '') : '') || 
+                      (window.location.search ? window.location.search.replace(/^\?/, '') : '');
+        var myTid = null, myName = null;
+        if (rawInit) {
+          var p = new URLSearchParams(rawInit);
+          var tgData = p.get('tgWebAppData') || rawInit;
+          var innerP = new URLSearchParams(tgData);
+          var uStr = innerP.get('user') || p.get('user');
+          if (uStr) {
+            var parsedU = JSON.parse(decodeURIComponent(uStr));
+            if (parsedU && parsedU.id) {
+              myTid = String(parsedU.id);
+              myName = parsedU.first_name;
+            }
+          }
+        }
+        if (!myTid) {
+          myTid = localStorage.getItem('cs_last_telegram_id');
+          myName = localStorage.getItem('cs_last_first_name');
+        }
+        var lvl = null;
+        if (myTid) {
+          var userRaw = localStorage.getItem('color_sort_user_' + myTid);
+          if (userRaw) {
+            var uObj = JSON.parse(userRaw);
+            lvl = uObj.maxLevel || uObj.level || uObj.currentLevel;
+            if (!myName && uObj.firstName) myName = uObj.firstName;
+          }
+        }
+        if (!lvl) lvl = localStorage.getItem('cs_cached_display_level');
+
+        if (nameEl && myName) nameEl.textContent = String(myName);
+        if (lvlEl && lvl && Number(lvl) > 0) lvlEl.textContent = 'Уровень ' + String(lvl);
+        if (badge && (myName || (lvl && Number(lvl) > 0))) badge.style.opacity = '1';
+      } catch(e) {}
+
       window.__startDismissed = false;
+      window.__startSyncReady = false;
+      window.__userWantsStart = false;
+
       var dismiss = function(e) {
         if (e && e.cancelable) {
           e.preventDefault();
           e.stopPropagation();
         }
         if (window.__startDismissed) return;
+
+        // If sync is still in progress, remember user tap to start as soon as sync completes
+        if (!window.__startSyncReady) {
+          window.__userWantsStart = true;
+          return;
+        }
+
         window.__startDismissed = true;
         if (scr) {
           scr.style.pointerEvents = 'none';
@@ -239,16 +297,42 @@
           try { window.__triggerStartGame(); } catch(e) {}
         }
       };
+
       window.dismissStartScreen = dismiss;
-      if (scr) {
-        scr.addEventListener('pointerdown', dismiss, { passive: false });
-        scr.addEventListener('touchstart', dismiss, { passive: true });
-        scr.addEventListener('click', dismiss);
-      }
+
+      window.__unlockStartScreen = function(userLevel, userName) {
+        window.__startSyncReady = true;
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('start-btn-syncing');
+          btn.classList.add('pulse-glow');
+          var iconEl = document.getElementById('startBtnIcon');
+          var labelEl = document.getElementById('startBtnLabel');
+          if (iconEl) {
+            iconEl.textContent = '▶';
+            iconEl.classList.remove('start-btn-spinner');
+          }
+          if (labelEl) labelEl.textContent = 'START';
+        }
+        if (badge) {
+          if (nameEl && userName) nameEl.textContent = String(userName);
+          if (lvlEl && userLevel) lvlEl.textContent = 'Уровень ' + String(userLevel);
+          badge.style.opacity = '1';
+        }
+        if (window.__userWantsStart) {
+          dismiss();
+        }
+      };
+
       if (btn) {
         btn.addEventListener('pointerdown', dismiss, { passive: false });
         btn.addEventListener('touchstart', dismiss, { passive: true });
         btn.addEventListener('click', dismiss);
+      }
+      if (scr) {
+        scr.addEventListener('click', function(e) {
+          if (window.__startSyncReady && e.target === scr) dismiss(e);
+        });
       }
     })();
   </script>

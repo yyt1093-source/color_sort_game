@@ -3549,6 +3549,46 @@ async function initColorSortApp() {
   loadLocalUser();
   updateHeaderUI();
 
+  // 6.0 Synchronization Window Coordinator (gives 1.8s for live server & cloud sync)
+  const startSyncStartTime = Date.now();
+  const MIN_SYNC_DELAY_MS = 1800; // 1.8s delay requested by user to allow full server & cloud synchronization
+  let isStartUnlocked = false;
+
+  function unlockStartScreenWhenReady() {
+    if (isStartUnlocked) return;
+    isStartUnlocked = true;
+
+    const targetLvl = Math.max(1, Number(currentUser.maxLevel || 1), Number(currentUser.currentLevel || 1));
+    currentUser.currentLevel = targetLvl;
+    currentUser.maxLevel = targetLvl;
+    currentUser.level = targetLvl;
+
+    if (LG && LG.generateLevel) {
+      currentLevelData = LG.generateLevel(targetLvl);
+      engine.startLevel(currentLevelData);
+      if (renderer && renderer.renderBoard) {
+        renderer.renderBoard(engine);
+      }
+    }
+    updateHeaderUI();
+
+    if (typeof window.__unlockStartScreen === 'function') {
+      window.__unlockStartScreen(currentUser.maxLevel, currentUser.firstName);
+    }
+  }
+
+  function scheduleStartUnlock(force = false) {
+    if (isStartUnlocked) return;
+    const elapsed = Date.now() - startSyncStartTime;
+    const remaining = force ? 0 : Math.max(0, MIN_SYNC_DELAY_MS - elapsed);
+    setTimeout(() => {
+      unlockStartScreenWhenReady();
+    }, remaining);
+  }
+
+  // Hard safeguard timeout: never keep start button disabled longer than 2.6s
+  setTimeout(() => scheduleStartUnlock(true), 2600);
+
   // 6.1 Unconditionally fetch live cloud inventory & stats from KVDB (works 24/7 on GitHub Pages)
   if (currentUser.telegramId) {
     const myIdStr = String(currentUser.telegramId);
@@ -3720,7 +3760,9 @@ async function initColorSortApp() {
             }
           }
         }
-      }).catch(() => {});
+      }).catch(() => {}).finally(() => {
+        scheduleStartUnlock();
+      });
   }
 
   // 6.2 Check global season reset in parallel
@@ -3992,14 +4034,18 @@ async function initColorSortApp() {
     checkGlobalSeasonReset();
   }).catch(() => {
     checkGlobalSeasonReset();
+  }).finally(() => {
+    scheduleStartUnlock();
   });
 
   // Pre-load leaderboard in background to ensure profile & leaderboard are 100% synchronized from boot
   setTimeout(() => {
     if (typeof loadLeaderboardData === 'function') {
-      loadLeaderboardData().catch(() => {});
+      loadLeaderboardData().catch(() => {}).finally(() => {
+        scheduleStartUnlock();
+      });
     }
-  }, 150);
+  }, 100);
 
   let isSeasonResetKicked = false;
 
@@ -10810,6 +10856,11 @@ async function initColorSortApp() {
     const handleStart = (e) => {
       if (e && e.cancelable) {
         e.preventDefault();
+      }
+      // If server & cloud data is still synchronizing, wait for sync to finish
+      if (window.__startSyncReady === false) {
+        window.__userWantsStart = true;
+        return;
       }
       if (isStarting) return;
       isStarting = true;
