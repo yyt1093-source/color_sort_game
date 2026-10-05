@@ -341,10 +341,22 @@
     } catch (e) {}
   }
 
-  // Check Pending Gifts & Update Pulsing Indicators
-  async function checkPendingGifts() {
+  // Check Pending Gifts & Update Pulsing Indicators (battery-optimized with 60s cooldown)
+  let lastGiftCheckTimestamp = 0;
+  const GIFT_CHECK_COOLDOWN_MS = 60000;
+
+  async function checkPendingGifts(force = false) {
     if (!currentUserRef || !currentUserRef.telegramId) return [];
     const userId = String(currentUserRef.telegramId);
+
+    const now = Date.now();
+    if (!force && (now - lastGiftCheckTimestamp < GIFT_CHECK_COOLDOWN_MS) && cachedInbox && cachedInbox.length > 0) {
+      const unclaimed = cachedInbox.filter(g => !g.claimed && !isGiftIdClaimed(userId, g.id));
+      updateIndicatorStyles(unclaimed.length);
+      return unclaimed;
+    }
+
+    lastGiftCheckTimestamp = now;
     const inbox = await fetchCloudInbox(userId);
     cachedInbox = inbox;
     const unclaimed = inbox.filter(g => !g.claimed && !isGiftIdClaimed(userId, g.id));
@@ -1313,7 +1325,8 @@
         sendBtn.classList.remove('active');
         if (receiveView) receiveView.classList.remove('hidden');
         if (sendView) sendView.classList.add('hidden');
-        checkPendingGifts().then(() => renderReceiveView());
+        checkPendingGifts(true).then(() => renderReceiveView());
+        startModalPolling();
       });
 
       sendBtn.addEventListener('click', (e) => {
@@ -1323,6 +1336,7 @@
         receiveBtn.classList.remove('active');
         if (sendView) sendView.classList.remove('hidden');
         if (receiveView) receiveView.classList.add('hidden');
+        stopModalPolling();
         renderSendView();
       });
     }
@@ -1431,6 +1445,15 @@
       closeQtyModalBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         closeQuantityModal();
+      });
+    }
+
+    const giftQtyModal = document.getElementById('giftQuantityModal');
+    if (giftQtyModal) {
+      giftQtyModal.addEventListener('click', (e) => {
+        if (e.target === giftQtyModal) {
+          closeQuantityModal();
+        }
       });
     }
 
@@ -1675,30 +1698,40 @@
       bindEvents();
       setLanguage(currentLang, tCallback);
 
-      // Initial check
-      checkPendingGifts();
+      // Initial check on boot
+      checkPendingGifts(true);
 
-      // Poll periodically (every 25 seconds)
-      if (pollingInterval) clearInterval(pollingInterval);
-      pollingInterval = setInterval(() => {
-        checkPendingGifts();
-      }, 25000);
+      // Event-driven check when returning to the tab from background (throttled by 60s)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && document.visibilityState === 'visible') {
+          checkPendingGifts(false);
+          if (isReceiveViewOpen()) {
+            startModalPolling();
+          }
+        } else {
+          stopModalPolling();
+        }
+      });
     },
 
     setUser(user) {
       currentUserRef = user;
-      checkPendingGifts();
+      checkPendingGifts(true);
     },
 
     setLanguage,
 
     refresh() {
       if (activeSubnav === 'receive') {
-        checkPendingGifts().then(() => renderReceiveView());
+        checkPendingGifts(true).then(() => renderReceiveView());
+        startModalPolling();
       } else {
+        stopModalPolling();
         renderSendView();
       }
     },
+
+    stopModalPolling,
 
     checkPendingGifts,
 
@@ -1731,6 +1764,36 @@
       return (cachedInbox || []).some(g => !g.claimed);
     }
   };
+
+  function isReceiveViewOpen() {
+    const adModal = document.getElementById('adBonusModal') || document.getElementById('adModal');
+    if (!adModal || adModal.classList.contains('hidden') || adModal.style.display === 'none') {
+      return false;
+    }
+    const giftsView = document.getElementById('adModalGiftsView');
+    if (!giftsView || giftsView.classList.contains('hidden') || giftsView.style.display === 'none') {
+      return false;
+    }
+    return activeSubnav === 'receive';
+  }
+
+  function startModalPolling() {
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(() => {
+      if (isReceiveViewOpen()) {
+        checkPendingGifts(true).then(() => renderReceiveView());
+      } else {
+        stopModalPolling();
+      }
+    }, 60000);
+  }
+
+  function stopModalPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+  }
 
   window.GiftsModule = GiftsModule;
 })(window);

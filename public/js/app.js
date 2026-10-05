@@ -2881,6 +2881,17 @@ async function initColorSortApp() {
 
   function closeModal(el) {
     if (!el) return;
+    if (el === shopModal || (el && el.id === 'shopModal')) {
+      if (shopTimer) {
+        clearInterval(shopTimer);
+        shopTimer = null;
+      }
+    }
+    if (el === adModal || (el && el.id === 'adModal') || (el && el.id === 'adBonusModal')) {
+      if (window.GiftsModule && typeof window.GiftsModule.stopModalPolling === 'function') {
+        window.GiftsModule.stopModalPolling();
+      }
+    }
     el.classList.add('hidden');
     el.style.display = 'none';
     markModalClosed();
@@ -2920,6 +2931,15 @@ async function initColorSortApp() {
 
     if (infoModal) openModal(infoModal);
     else alert(`${icon} ${title}\n${text}`);
+  }
+
+  if (infoModal) {
+    infoModal.addEventListener('click', (e) => {
+      if (e.target === infoModal) {
+        closeModal(infoModal);
+        infoModalActionCallback = null;
+      }
+    });
   }
 
   const infoModalOkBtn = document.getElementById('infoModalOkBtn');
@@ -4219,8 +4239,9 @@ async function initColorSortApp() {
     }
 
     if (levelBadgeLabel) setIfDiff(levelBadgeLabel, t('levelLabel'));
-    setIfDiff(levelDisplay, Number(currentUser.maxLevel || 0));
-    setIfDiff(profileCardLevel, t('levelDisplayVal', Number(currentUser.maxLevel || 0)));
+    const displayLevel = Math.max(1, Number(currentUser.maxLevel || 1), Number(currentUser.currentLevel || 1));
+    setIfDiff(levelDisplay, displayLevel);
+    setIfDiff(profileCardLevel, t('levelDisplayVal', displayLevel));
 
     setIfDiff(coinsDisplay, currentUser.coins || 0);
     setIfDiff(hintsCountDisplay, currentUser.hints || 0);
@@ -4319,6 +4340,14 @@ async function initColorSortApp() {
   if (cancelRestartBtn && restartModal) {
     cancelRestartBtn.addEventListener('click', () => {
       closeModal(restartModal);
+    });
+  }
+
+  if (restartModal) {
+    restartModal.addEventListener('click', (e) => {
+      if (e.target === restartModal) {
+        closeModal(restartModal);
+      }
     });
   }
 
@@ -4903,6 +4932,14 @@ async function initColorSortApp() {
     });
   }
 
+  if (leaderboardModal) {
+    leaderboardModal.addEventListener('click', (e) => {
+      if (e.target === leaderboardModal) {
+        closeModal(leaderboardModal);
+      }
+    });
+  }
+
   // ==========================================================================
   // TON Wallet & Deposit Modal Controller
   // ==========================================================================
@@ -5254,6 +5291,14 @@ async function initColorSortApp() {
   if (closeTonModalBtn) {
     closeTonModalBtn.addEventListener('click', () => {
       if (tonWalletModal) closeModal(tonWalletModal);
+    });
+  }
+
+  if (tonWalletModal) {
+    tonWalletModal.addEventListener('click', (e) => {
+      if (e.target === tonWalletModal) {
+        closeModal(tonWalletModal);
+      }
     });
   }
 
@@ -5907,6 +5952,14 @@ async function initColorSortApp() {
         shopTimer = null;
       }
       if (shopModal) closeModal(shopModal);
+    });
+  }
+
+  if (shopModal) {
+    shopModal.addEventListener('click', (e) => {
+      if (e.target === shopModal) {
+        closeModal(shopModal);
+      }
     });
   }
 
@@ -10089,6 +10142,14 @@ async function initColorSortApp() {
   if (adminSaveVersionCancelBtn) {
     adminSaveVersionCancelBtn.addEventListener('click', () => {
       if (adminSaveVersionModal) closeModal(adminSaveVersionModal);
+    });
+  }
+
+  if (adminSaveVersionModal) {
+    adminSaveVersionModal.addEventListener('click', (e) => {
+      if (e.target === adminSaveVersionModal) {
+        closeModal(adminSaveVersionModal);
+      }
     });
   }
 
