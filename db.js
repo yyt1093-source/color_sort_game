@@ -666,22 +666,19 @@ function buyShopItem(telegramId, itemId) {
   if (itemId === 'daily_boosters_30d') {
     const now = Date.now();
     const kyiv = getKyivDateTime(new Date(now));
-    const isAtOrAfter2359 = (kyiv.hour === 23 && kyiv.minute >= 59);
-    let initialLastDate = user.daily_boosters_last_date || '';
-    if (!initialLastDate || Number(user.daily_boosters_days_left || 0) <= 0) {
-      if (isAtOrAfter2359) {
-        initialLastDate = kyiv.dateStr;
-      } else {
-        const prevDate = new Date(now - 24 * 3600 * 1000);
-        initialLastDate = getKyivDateTime(prevDate).dateStr;
-      }
-    }
     const currentDays = Number(user.daily_boosters_days_left || 0);
     const newDays = currentDays + 30;
+    // The first daily accrual (+10 of each booster) is credited immediately upon activation!
+    // Therefore, today's date in Kyiv is marked as credited so that subsequent accruals happen after 23:59 every following day.
+    const initialLastDate = kyiv.dateStr;
 
     const updateStmt = db.prepare(`
       UPDATE users
       SET ton_balance = ?,
+          hints = COALESCE(hints, 0) + 10,
+          undos = COALESCE(undos, 0) + 10,
+          reveals = COALESCE(reveals, 0) + 10,
+          extra_bottles = COALESCE(extra_bottles, 0) + 10,
           daily_boosters_days_left = ?,
           daily_boosters_last_date = ?,
           daily_boosters_purchased_at = ?,

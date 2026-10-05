@@ -405,14 +405,14 @@ async function initColorSortApp() {
       shopUndosTitle: "+20 Отмен хода",
       shopUndosDesc: "Возвращает ход назад в любой критической ситуации.",
       dailyBoostersTitle: "Подсказки каждый день (30 дней)",
-      dailyBoostersDesc: "Каждый день ровно в 23:59 по Киеву начисляется по 10 шт. каждой подсказки: отмена хода, подсказка, открыть цвет и пустая колба.",
+      dailyBoostersDesc: "Первое начисление (+10 каждой подсказки) выдаётся сразу при покупке! Далее — каждый день ровно в 23:59 по Киеву в течение 30 дней.",
       dailyBoostersTag: "30 дней",
       dailyBoostersCounterLabel: "⏳ Осталось дней:",
-      dailyBoostersNextInfo: "⏰ Начисление по 10 подсказок в 23:59 (Киев)",
+      dailyBoostersNextInfo: "⏰ Следующее начисление в 23:59 (Киев)",
       dailyBoostersBtnBuy: (price) => `Купить за ${price} GRAM`,
       dailyBoostersBtnExtend: (price) => `Продлить (+30 дн.) за ${price} GRAM`,
-      dailyBoostersSuccessTitle: "✨ Набор на 30 дней активирован!",
-      dailyBoostersSuccessMsg: "Вы успешно приобрели функцию за 5 GRAM!\n\nКаждый день ровно в 23:59 по Киеву вам будет начисляться по 10 подсказок каждого вида (отмена хода, подсказка, открыть цвет, пустая колба).\n\nВсего 30 дней подряд!",
+      dailyBoostersSuccessTitle: "✨ 30 дней подсказок активировано!",
+      dailyBoostersSuccessMsg: "Вы успешно приобрели функцию за 5 GRAM!\n\nПервое начисление (+10 подсказок каждого вида) уже начислено на ваш баланс!\n\nПоследующие начисления будут начисляться каждый день ровно в 23:59 по Киеву в течение 30 дней.",
       dailyBoostersClaimTitle: "🎁 Ежедневный набор подсказок!",
       dailyBoostersClaimMsg: (amount, daysLeft) => `Наступило 23:59 (Киев)!\n\nВам начислено по ${amount} подсказок каждого вида:\n• ↩️ Отмена хода: +${amount}\n• 💡 Подсказка: +${amount}\n• 🔮 Открыть цвет: +${amount}\n• 🧪 Пустая колба: +${amount}\n\nОсталось дней: ${daysLeft}`,
       shopBuyGram: (price) => `Купить за ${price} GRAM`,
@@ -5387,6 +5387,58 @@ async function initColorSortApp() {
     const now = new Date();
     const kyiv = getKyivDateTimeBrowser(now);
 
+    const initCreditedKey = `color_sort_daily_boosters_init_credited_${currentUser.telegramId}`;
+    const wasInitCredited = localStorage.getItem(initCreditedKey) === '1' || currentUser.daily_boosters_init_credited === true;
+
+    // Check if initial accrual upon activation was missed (e.g. user bought prior to this fix)
+    if (!wasInitCredited) {
+      localStorage.setItem(initCreditedKey, '1');
+      currentUser.daily_boosters_init_credited = true;
+      currentUser.hints = (currentUser.hints || 0) + 10;
+      currentUser.undos = (currentUser.undos || 0) + 10;
+      currentUser.reveals = (currentUser.reveals || 0) + 10;
+      currentUser.extraBottles = (currentUser.extraBottles || 0) + 10;
+      currentUser.extra_bottles = currentUser.extraBottles;
+      currentUser.daily_boosters_last_date = kyiv.dateStr;
+      currentUser.dailyBoostersLastDate = kyiv.dateStr;
+
+      localStorage.setItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`, String(currentUser.daily_boosters_days_left || 0));
+      localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, kyiv.dateStr);
+
+      saveLocalUser();
+      updateHeaderUI();
+      updateShopUI();
+      syncPlayerToCloud(currentUser);
+
+      const revealBadgeEl = document.getElementById('revealBadge');
+      if (revealBadgeEl) {
+        revealBadgeEl.textContent = String(currentUser.reveals || 0);
+        revealBadgeEl.classList.toggle('badge-zero', (currentUser.reveals || 0) === 0);
+      }
+      const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
+      if (extraBottleBadgeEl) {
+        extraBottleBadgeEl.textContent = String(currentUser.extraBottles || 0);
+        extraBottleBadgeEl.classList.toggle('badge-zero', (currentUser.extraBottles || 0) === 0);
+      }
+      const hintBadgeEl = document.getElementById('hintBadge');
+      if (hintBadgeEl) {
+        hintBadgeEl.textContent = String(currentUser.hints || 0);
+        hintBadgeEl.classList.toggle('badge-zero', (currentUser.hints || 0) === 0);
+      }
+      const undoBadgeEl = document.getElementById('undoBadge');
+      if (undoBadgeEl) {
+        undoBadgeEl.textContent = String(currentUser.undos || 0);
+        undoBadgeEl.classList.toggle('badge-zero', (currentUser.undos || 0) === 0);
+      }
+
+      showInfoModal(
+        '🎁',
+        t('dailyBoostersClaimTitle') || '🎁 Начисление подсказок!',
+        `Вам начислено первое начисление по 10 подсказок каждого вида:\n• ↩️ Отмена хода: +10\n• 💡 Подсказка: +10\n• 🔮 Открыть цвет: +10\n• 🧪 Пустая колба: +10\n\nСледующее начисление будет в 23:59 (Киев)!`
+      );
+      return;
+    }
+
     let latestEligibleDate = null;
     if (kyiv.hour === 23 && kyiv.minute >= 59) {
       latestEligibleDate = kyiv.dateStr;
@@ -5397,8 +5449,8 @@ async function initColorSortApp() {
 
     const lastDate = (currentUser.daily_boosters_last_date || '').trim();
     if (!lastDate) {
-      currentUser.daily_boosters_last_date = latestEligibleDate;
-      currentUser.dailyBoostersLastDate = latestEligibleDate;
+      currentUser.daily_boosters_last_date = kyiv.dateStr;
+      currentUser.dailyBoostersLastDate = kyiv.dateStr;
       saveLocalUser();
       return;
     }
@@ -5438,6 +5490,27 @@ async function initColorSortApp() {
     updateHeaderUI();
     updateShopUI();
     syncPlayerToCloud(currentUser);
+
+    const revealBadgeEl = document.getElementById('revealBadge');
+    if (revealBadgeEl) {
+      revealBadgeEl.textContent = String(currentUser.reveals || 0);
+      revealBadgeEl.classList.toggle('badge-zero', (currentUser.reveals || 0) === 0);
+    }
+    const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
+    if (extraBottleBadgeEl) {
+      extraBottleBadgeEl.textContent = String(currentUser.extraBottles || 0);
+      extraBottleBadgeEl.classList.toggle('badge-zero', (currentUser.extraBottles || 0) === 0);
+    }
+    const hintBadgeEl = document.getElementById('hintBadge');
+    if (hintBadgeEl) {
+      hintBadgeEl.textContent = String(currentUser.hints || 0);
+      hintBadgeEl.classList.toggle('badge-zero', (currentUser.hints || 0) === 0);
+    }
+    const undoBadgeEl = document.getElementById('undoBadge');
+    if (undoBadgeEl) {
+      undoBadgeEl.textContent = String(currentUser.undos || 0);
+      undoBadgeEl.classList.toggle('badge-zero', (currentUser.undos || 0) === 0);
+    }
 
     if (window.TelegramApp && window.TelegramApp.TelegramApp) {
       window.TelegramApp.TelegramApp.haptic('success');
@@ -5597,29 +5670,42 @@ async function initColorSortApp() {
 
         const serverExtraBottles = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
 
+        if (itemId === 'daily_boosters_30d') {
+          const kyiv = getKyivDateTimeBrowser(new Date());
+          localStorage.setItem(`color_sort_daily_boosters_init_credited_${currentUser.telegramId}`, '1');
+          currentUser.daily_boosters_init_credited = true;
+          currentUser.hints = (res.user.hints !== undefined) ? Number(res.user.hints) : ((currentUser.hints || 0) + 10);
+          currentUser.undos = (res.user.undos !== undefined) ? Number(res.user.undos) : ((currentUser.undos || 0) + 10);
+          currentUser.reveals = (res.user.reveals !== undefined) ? Number(res.user.reveals) : ((currentUser.reveals || 0) + 10);
+          currentUser.extraBottles = (serverExtraBottles !== undefined) ? Number(serverExtraBottles) : ((currentUser.extraBottles || 0) + 10);
+          currentUser.extra_bottles = currentUser.extraBottles;
+          currentUser.daily_boosters_last_date = kyiv.dateStr;
+          currentUser.dailyBoostersLastDate = kyiv.dateStr;
+        }
+
         if (itemId === 'bottles_pack_15') {
           currentUser.extraBottles = (currentUser.extraBottles || 0) + 15;
           currentUser.extra_bottles = currentUser.extraBottles;
-        } else if (serverExtraBottles !== undefined && Number(serverExtraBottles) > 0) {
+        } else if (serverExtraBottles !== undefined && Number(serverExtraBottles) > 0 && itemId !== 'daily_boosters_30d') {
           currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverExtraBottles || 0));
           currentUser.extra_bottles = currentUser.extraBottles;
         }
 
         if (itemId === 'hints_pack_20') {
           currentUser.hints = (currentUser.hints || 0) + 20;
-        } else if (res.user.hints !== undefined && Number(res.user.hints) > 0) {
+        } else if (res.user.hints !== undefined && Number(res.user.hints) > 0 && itemId !== 'daily_boosters_30d') {
           currentUser.hints = Math.max(currentUser.hints || 0, Number(res.user.hints || 0));
         }
 
         if (itemId === 'undos_pack_20') {
           currentUser.undos = (currentUser.undos || 0) + 20;
-        } else if (res.user.undos !== undefined && Number(res.user.undos) > 0) {
+        } else if (res.user.undos !== undefined && Number(res.user.undos) > 0 && itemId !== 'daily_boosters_30d') {
           currentUser.undos = Math.max(currentUser.undos || 0, Number(res.user.undos || 0));
         }
 
         if (itemId === 'reveals_pack_20') {
           currentUser.reveals = (currentUser.reveals || 0) + 20;
-        } else if (res.user.reveals !== undefined && Number(res.user.reveals) > 0) {
+        } else if (res.user.reveals !== undefined && Number(res.user.reveals) > 0 && itemId !== 'daily_boosters_30d') {
           currentUser.reveals = Math.max(currentUser.reveals || 0, Number(res.user.reveals || 0));
         }
       } else {
@@ -5627,22 +5713,22 @@ async function initColorSortApp() {
         currentUser.ton_balance = newBalance;
         if (itemId === 'daily_boosters_30d') {
           const now = Date.now();
+          const kyiv = getKyivDateTimeBrowser(new Date(now));
+          localStorage.setItem(`color_sort_daily_boosters_init_credited_${currentUser.telegramId}`, '1');
+          currentUser.daily_boosters_init_credited = true;
           currentUser.daily_boosters_days_left = (currentUser.daily_boosters_days_left || 0) + 30;
           currentUser.dailyBoostersDaysLeft = currentUser.daily_boosters_days_left;
-          if (!currentUser.daily_boosters_last_date) {
-            const kyiv = getKyivDateTimeBrowser(new Date(now));
-            if (kyiv.hour < 23 || (kyiv.hour === 23 && kyiv.minute < 59)) {
-              const yesterday = new Date(now - 24 * 3600 * 1000);
-              currentUser.daily_boosters_last_date = getKyivDateTimeBrowser(yesterday).dateStr;
-            } else {
-              currentUser.daily_boosters_last_date = kyiv.dateStr;
-            }
-            currentUser.dailyBoostersLastDate = currentUser.daily_boosters_last_date;
-          }
-          if (!currentUser.daily_boosters_purchased_at) {
-            currentUser.daily_boosters_purchased_at = now;
-            currentUser.dailyBoostersPurchasedAt = now;
-          }
+          currentUser.daily_boosters_last_date = kyiv.dateStr;
+          currentUser.dailyBoostersLastDate = kyiv.dateStr;
+          currentUser.daily_boosters_purchased_at = now;
+          currentUser.dailyBoostersPurchasedAt = now;
+
+          // Immediate first accrual on activation: +10 of each booster!
+          currentUser.hints = (currentUser.hints || 0) + 10;
+          currentUser.undos = (currentUser.undos || 0) + 10;
+          currentUser.reveals = (currentUser.reveals || 0) + 10;
+          currentUser.extraBottles = (currentUser.extraBottles || 0) + 10;
+          currentUser.extra_bottles = currentUser.extraBottles;
         } else if (itemId === 'all_colors_15d') {
           const now = Date.now();
           const curr = Number(currentUser.all_colors_until || 0);

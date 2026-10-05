@@ -546,6 +546,11 @@ app.post('/api/shop/buy', async (req, res) => {
           val.daily_boosters_days_left = result.user.daily_boosters_days_left;
           val.daily_boosters_last_date = result.user.daily_boosters_last_date;
           val.daily_boosters_purchased_at = result.user.daily_boosters_purchased_at;
+          val.hints = (Number(val.hints) || 0) + 10;
+          val.undos = (Number(val.undos) || 0) + 10;
+          val.reveals = (Number(val.reveals) || 0) + 10;
+          val.extraBottles = (Number(val.extraBottles || val.extra_bottles) || 0) + 10;
+          val.extra_bottles = val.extraBottles;
         } else if (itemId === 'all_colors_15d') {
           const now = Date.now();
           const curr = Number(val.all_colors_until || 0);
