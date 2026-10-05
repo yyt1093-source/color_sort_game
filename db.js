@@ -168,6 +168,9 @@ function initDatabase() {
     db.exec(`ALTER TABLE users ADD COLUMN referrer_id TEXT DEFAULT NULL;`);
   } catch (e) {}
   try {
+    db.exec(`ALTER TABLE users ADD COLUMN force_reset_at INTEGER DEFAULT 0;`);
+  } catch (e) {}
+  try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS referral_bindings (
         referred_id TEXT PRIMARY KEY,

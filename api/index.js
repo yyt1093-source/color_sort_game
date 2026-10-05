@@ -53,49 +53,78 @@ app.post('/api/user/init', async (req, res) => {
         if (kvRes.ok) {
           const kvData = await kvRes.json();
           if (kvData && typeof kvData === 'object') {
-            const kvMaxLvl = kvData.max_level !== undefined ? kvData.max_level : kvData.maxLevel;
-            if (kvMaxLvl !== undefined) {
-              user.max_level = Math.max(Number(user.max_level || 0), Number(kvMaxLvl || 0));
-            }
-            const kvCurLvl = kvData.current_level !== undefined ? kvData.current_level : kvData.currentLevel;
-            if (kvCurLvl !== undefined) {
-              user.current_level = Math.max(Number(user.current_level || 1), Number(kvCurLvl || 1));
-            }
-            if (kvData.stars !== undefined) {
-              user.stars = Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
-            }
-            user.hints = Math.max(Number(user.hints || 0), Number(kvData.hints || 0));
-            user.undos = Math.max(Number(user.undos || 0), Number(kvData.undos || 0));
-            user.reveals = Math.max(Number(user.reveals || 0), Number(kvData.reveals || 0));
-            const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
-            const finalB = Math.max(Number(user.extra_bottles || 0), Number(kvB || 0));
-            user.extra_bottles = finalB;
-            user.extraBottles = finalB;
-            if (kvData.ton_balance !== undefined) {
-              user.ton_balance = Number(kvData.ton_balance);
-            }
-            user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
-            user.all_colors_purchased_at = Math.max(Number(user.all_colors_purchased_at || 0), Number(kvData.all_colors_purchased_at || 0));
-            if (kvData.daily_boosters_days_left !== undefined || kvData.dailyBoostersDaysLeft !== undefined) {
-              const kDays = Number(kvData.daily_boosters_days_left !== undefined ? kvData.daily_boosters_days_left : kvData.dailyBoostersDaysLeft);
-              user.daily_boosters_days_left = Math.max(Number(user.daily_boosters_days_left || 0), kDays);
-            }
-            if (kvData.daily_boosters_last_date && !user.daily_boosters_last_date) {
-              user.daily_boosters_last_date = kvData.daily_boosters_last_date;
-            }
-            if (kvData.daily_boosters_purchased_at && !user.daily_boosters_purchased_at) {
-              user.daily_boosters_purchased_at = kvData.daily_boosters_purchased_at;
-            }
-            if (kvData.ton_wallet && !user.ton_wallet) user.ton_wallet = kvData.ton_wallet;
-            if (kvData.memo_code && !user.memo_code) user.memo_code = kvData.memo_code;
+            const forceResetTs = Number(kvData.forceResetAt || kvData.accountResetAt || 0);
+            if (forceResetTs > 0 && forceResetTs > Number(user.force_reset_at || 0)) {
+              user.max_level = Number(kvData.max_level !== undefined ? kvData.max_level : (kvData.maxLevel !== undefined ? kvData.maxLevel : 10));
+              user.current_level = Number(kvData.current_level !== undefined ? kvData.current_level : (kvData.currentLevel !== undefined ? kvData.currentLevel : 10));
+              user.stars = Number(kvData.stars || 0);
+              user.hints = Number(kvData.hints || 0);
+              user.undos = Number(kvData.undos || 0);
+              user.reveals = Number(kvData.reveals || 0);
+              const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : (kvData.extraBottles || 0);
+              user.extra_bottles = Number(kvB || 0);
+              user.extraBottles = user.extra_bottles;
+              user.shuffles = 0;
+              user.all_colors_until = 0;
+              user.all_colors_purchased_at = 0;
+              user.daily_boosters_days_left = 0;
+              user.dailyBoostersDaysLeft = 0;
+              user.daily_boosters_last_date = '';
+              user.daily_boosters_purchased_at = 0;
+              user.ton_wallet = '';
+              user.force_reset_at = forceResetTs;
+              try {
+                db.prepare(`
+                  UPDATE users 
+                  SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?, daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ?, force_reset_at = ?
+                  WHERE telegram_id = ?
+                `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, user.extra_bottles, Number(user.ton_balance || 0), user.all_colors_until, user.all_colors_purchased_at, 0, '', 0, forceResetTs, String(id));
+              } catch (e) {}
+            } else {
+              const kvMaxLvl = kvData.max_level !== undefined ? kvData.max_level : kvData.maxLevel;
+              if (kvMaxLvl !== undefined) {
+                user.max_level = Math.max(Number(user.max_level || 0), Number(kvMaxLvl || 0));
+              }
+              const kvCurLvl = kvData.current_level !== undefined ? kvData.current_level : kvData.currentLevel;
+              if (kvCurLvl !== undefined) {
+                user.current_level = Math.max(Number(user.current_level || 1), Number(kvCurLvl || 1));
+              }
+              if (kvData.stars !== undefined) {
+                user.stars = Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
+              }
+              user.hints = Math.max(Number(user.hints || 0), Number(kvData.hints || 0));
+              user.undos = Math.max(Number(user.undos || 0), Number(kvData.undos || 0));
+              user.reveals = Math.max(Number(user.reveals || 0), Number(kvData.reveals || 0));
+              const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
+              const finalB = Math.max(Number(user.extra_bottles || 0), Number(kvB || 0));
+              user.extra_bottles = finalB;
+              user.extraBottles = finalB;
+              if (kvData.ton_balance !== undefined) {
+                user.ton_balance = Number(kvData.ton_balance);
+              }
+              user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
+              user.all_colors_purchased_at = Math.max(Number(user.all_colors_purchased_at || 0), Number(kvData.all_colors_purchased_at || 0));
+              if (kvData.daily_boosters_days_left !== undefined || kvData.dailyBoostersDaysLeft !== undefined) {
+                const kDays = Number(kvData.daily_boosters_days_left !== undefined ? kvData.daily_boosters_days_left : kvData.dailyBoostersDaysLeft);
+                user.daily_boosters_days_left = Math.max(Number(user.daily_boosters_days_left || 0), kDays);
+              }
+              if (kvData.daily_boosters_last_date && !user.daily_boosters_last_date) {
+                user.daily_boosters_last_date = kvData.daily_boosters_last_date;
+              }
+              if (kvData.daily_boosters_purchased_at && !user.daily_boosters_purchased_at) {
+                user.daily_boosters_purchased_at = kvData.daily_boosters_purchased_at;
+              }
+              if (kvData.ton_wallet && !user.ton_wallet) user.ton_wallet = kvData.ton_wallet;
+              if (kvData.memo_code && !user.memo_code) user.memo_code = kvData.memo_code;
 
-            try {
-              db.prepare(`
-                UPDATE users 
-                SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?, daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ?
-                WHERE telegram_id = ?
-              `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, Number(user.daily_boosters_days_left || 0), user.daily_boosters_last_date || '', Number(user.daily_boosters_purchased_at || 0), String(id));
-            } catch (e) {}
+              try {
+                db.prepare(`
+                  UPDATE users 
+                  SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ?, ton_balance = ?, all_colors_until = ?, all_colors_purchased_at = ?, daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ?
+                  WHERE telegram_id = ?
+                `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, user.ton_balance, user.all_colors_until, user.all_colors_purchased_at, Number(user.daily_boosters_days_left || 0), user.daily_boosters_last_date || '', Number(user.daily_boosters_purchased_at || 0), String(id));
+              } catch (e) {}
+            }
           }
         }
       } catch (e) {}
