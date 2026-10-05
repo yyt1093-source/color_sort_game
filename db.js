@@ -208,6 +208,7 @@ function initDatabase() {
 
 initDatabase();
 ensureSeedLeaderboardSnapshot();
+ensureActiveSnapshotApplied();
 
 function generateMemoCode(telegramId) {
   const digits = String(telegramId).replace(/\D/g, '');
@@ -1988,6 +1989,45 @@ function ensureSeedLeaderboardSnapshot() {
   } catch (e) {}
 }
 
+function ensureActiveSnapshotApplied() {
+  try {
+    const activeId = getActiveSnapshotId();
+    if (!activeId) return;
+    const snap = getLeaderboardSnapshotById(activeId);
+    if (!snap || !snap.players || snap.players.length === 0) return;
+
+    const uCount = db.prepare(`SELECT COUNT(*) as c FROM users WHERE max_level >= 1`).get();
+    if (uCount && uCount.c <= 1) {
+      const updateUserStmt = db.prepare(`
+        UPDATE users 
+        SET max_level = ?, current_level = ?, stars = ?,
+            first_name = COALESCE(NULLIF(?, ''), first_name),
+            username = COALESCE(NULLIF(?, ''), username),
+            updated_at = datetime('now')
+        WHERE telegram_id = ?
+      `);
+      const insertUserStmt = db.prepare(`
+        INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      for (const sp of snap.players) {
+        const tid = String(sp.telegramId || sp.telegram_id || '').trim();
+        if (!tid) continue;
+        const lvl = Number(sp.level !== undefined ? sp.level : (sp.max_level || 1));
+        const stars = Number(sp.stars || 0);
+        const name = sp.name || sp.first_name || 'Игрок';
+        const uname = sp.username || '';
+        const existing = db.prepare(`SELECT telegram_id FROM users WHERE telegram_id = ?`).get(tid);
+        if (existing) {
+          updateUserStmt.run(lvl, lvl, stars, name, uname, tid);
+        } else {
+          insertUserStmt.run(tid, name, uname, lvl, lvl, stars);
+        }
+      }
+    }
+  } catch (e) {}
+}
+
 function sendGift(giftData) {
   const senderId = String(giftData.fromId || giftData.senderId || giftData.sender_id || '');
   const recipientId = String(giftData.recipientId || giftData.targetId || giftData.recipient_id || '');
@@ -2103,6 +2143,7 @@ module.exports = {
   updateUserProgress,
   getLeaderboard,
   logAdReward,
+  getAdRewardsCount,
   checkAdRewardAllowed,
   resetSeason,
   getSeasonResetTimestamp,

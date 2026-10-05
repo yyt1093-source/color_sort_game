@@ -147,19 +147,25 @@ app.post('/api/user/init', async (req, res) => {
                 `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, user.extra_bottles, Number(user.ton_balance || 0), user.all_colors_until, user.all_colors_purchased_at, 0, '', 0, forceResetTs, String(id));
               } catch (e) {}
             } else {
+              const kvRestore = Number(kvData.snapshotRestoredAt || 0);
               const kvMaxLvl = kvData.max_level !== undefined ? kvData.max_level : kvData.maxLevel;
-              if (kvMaxLvl !== undefined) {
+              if (kvRestore > 0) {
+                user.max_level = Number(kvMaxLvl || 0);
+                user.snapshotRestoredAt = kvRestore;
+              } else if (kvMaxLvl !== undefined) {
                 user.max_level = Math.max(Number(user.max_level || 0), Number(kvMaxLvl || 0));
               }
               const kvCurLvl = kvData.current_level !== undefined ? kvData.current_level : kvData.currentLevel;
-              if (kvCurLvl !== undefined) {
+              if (kvRestore > 0) {
+                user.current_level = Number(kvCurLvl || (user.max_level > 0 ? user.max_level : 1));
+              } else if (kvCurLvl !== undefined) {
                 user.current_level = Math.max(Number(user.current_level || 1), Number(kvCurLvl || 1));
               }
               if (user.max_level > 0 && user.current_level < user.max_level) {
                 user.current_level = user.max_level;
               }
               if (kvData.stars !== undefined) {
-                user.stars = Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
+                user.stars = kvRestore > 0 ? Number(kvData.stars || 0) : Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
               }
               user.hints = Math.max(Number(user.hints || 0), Number(kvData.hints || 0));
               user.undos = Math.max(Number(user.undos || 0), Number(kvData.undos || 0));
