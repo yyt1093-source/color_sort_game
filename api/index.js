@@ -672,6 +672,11 @@ app.get('/api/config/season-status', (req, res) => {
   }
 });
 
+let serverReloadTimestamp = Date.now();
+app.get('/api/config/server-reload', (req, res) => {
+  res.json({ success: true, reloadAt: serverReloadTimestamp });
+});
+
 async function resetKvdbSeasonServer(resetTimestamp, targetPlayerIds = []) {
   const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
   const baseUrl = `https://kvdb.io/${bucket}`;
