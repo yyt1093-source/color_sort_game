@@ -277,7 +277,10 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
   if (!user) return null;
 
   const newMaxLevel = Math.max(user.max_level, maxLevel || currentLevel || user.max_level);
-  const newCurrentLevel = currentLevel || user.current_level;
+  let newCurrentLevel = currentLevel || user.current_level;
+  if (newMaxLevel > 0 && newCurrentLevel < newMaxLevel) {
+    newCurrentLevel = newMaxLevel;
+  }
   const newStars = user.stars + (starsAdded || 0);
   const newCoins = Math.max(0, user.coins + (coinsAdded || 0));
 
@@ -333,15 +336,55 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
 }
 
 /**
+ * Set exact user level (Admin)
+ */
+function setUserLevel(telegramId, level) {
+  const targetLvl = Math.max(1, Math.min(500, Number(level || 1)));
+  const user = getUser(telegramId);
+  if (!user) return null;
+
+  const stmt = db.prepare(`
+    UPDATE users
+    SET current_level = ?,
+        max_level = ?,
+        updated_at = datetime('now')
+    WHERE telegram_id = ?
+  `);
+  stmt.run(targetLvl, targetLvl, String(telegramId));
+  return getUser(telegramId);
+}
+
+/**
  * Add items / bonus rewards to user
  */
-function addBonus(telegramId, { coins = 0, hints = 0, undos = 0, reveals = 0, extra_bottles = 0, extraBottles = 0, shuffles = 0, ton_balance = 0, tonBalance = 0, levels = 0, levelsAdded = 0 }) {
+function addBonus(telegramId, { coins = 0, hints = 0, undos = 0, reveals = 0, extra_bottles = 0, extraBottles = 0, shuffles = 0, ton_balance = 0, tonBalance = 0, levels = 0, levelsAdded = 0, setLevel = null }) {
   const user = getUser(telegramId);
   if (!user) return null;
 
   const bottlesToAdd = extra_bottles || extraBottles || 0;
   const tonToAdd = ton_balance || tonBalance || 0;
   const levelsToAdd = Number(levels || levelsAdded || 0);
+
+  if (setLevel !== null && setLevel !== undefined && Number(setLevel) >= 1) {
+    const targetLvl = Math.max(1, Math.min(500, Number(setLevel)));
+    const stmt = db.prepare(`
+      UPDATE users
+      SET coins = coins + ?,
+          hints = hints + ?,
+          undos = undos + ?,
+          reveals = COALESCE(reveals, 0) + ?,
+          extra_bottles = COALESCE(extra_bottles, 0) + ?,
+          shuffles = COALESCE(shuffles, 0) + ?,
+          ton_balance = COALESCE(ton_balance, 0) + ?,
+          current_level = ?,
+          max_level = ?,
+          updated_at = datetime('now')
+      WHERE telegram_id = ?
+    `);
+    stmt.run(coins, hints, undos, reveals, bottlesToAdd, shuffles, tonToAdd, targetLvl, targetLvl, String(telegramId));
+    return getUser(telegramId);
+  }
+
   const stmt = db.prepare(`
     UPDATE users
     SET coins = coins + ?,
@@ -1847,6 +1890,7 @@ module.exports = {
   getInboxGifts,
   claimGift,
   addBonus,
+  setUserLevel,
   accrueDailyBoostersForUser,
   accrueDailyBoostersForAll
 };

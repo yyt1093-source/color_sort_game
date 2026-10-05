@@ -109,6 +109,9 @@ app.post('/api/user/init', async (req, res) => {
               if (kvCurLvl !== undefined) {
                 user.current_level = Math.max(Number(user.current_level || 1), Number(kvCurLvl || 1));
               }
+              if (user.max_level > 0 && user.current_level < user.max_level) {
+                user.current_level = user.max_level;
+              }
               if (kvData.stars !== undefined) {
                 user.stars = Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
               }
@@ -155,6 +158,13 @@ app.post('/api/user/init', async (req, res) => {
       }
     } catch (e) {}
 
+    if (user && user.max_level > 0 && (!user.current_level || user.current_level < user.max_level)) {
+      user.current_level = user.max_level;
+      try {
+        db.prepare('UPDATE users SET current_level = ? WHERE telegram_id = ?').run(user.max_level, String(id));
+      } catch (e) {}
+    }
+
     const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
     const purchasesResetAt = db.getPurchasesResetTimestamp ? db.getPurchasesResetTimestamp() : 0;
     res.json({ success: true, user, seasonResetAt, purchasesResetAt });
@@ -173,10 +183,14 @@ app.post('/api/user/sync', async (req, res) => {
 
     const id = telegramId || 'guest_dev_123';
     const existingUser = db.getUser ? db.getUser(id) : null;
-    if (existingUser && maxLevel !== undefined && maxLevel > (existingUser.max_level || 0) + 1) {
+    if (!checkIsAdmin(req.body || {}) && existingUser && maxLevel !== undefined && maxLevel > (existingUser.max_level || 0) + 1) {
       console.warn(`[Anti-Cheat] Suspicious level jump for ${id}: ${existingUser.max_level} -> ${maxLevel}. Capped.`);
       maxLevel = existingUser.max_level;
       if (currentLevel > existingUser.max_level + 1) currentLevel = existingUser.max_level + 1;
+    }
+
+    if (maxLevel > 0 && (!currentLevel || currentLevel < maxLevel)) {
+      currentLevel = maxLevel;
     }
 
     const updatedUser = db.updateUserProgress(id, {
@@ -228,6 +242,10 @@ app.post('/api/user/sync', async (req, res) => {
           username: updatedUser.username || username || '',
           photoUrl: updatedUser.photo_url || photoUrl || '',
           maxLevel: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
+          max_level: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
+          level: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
+          currentLevel: updatedUser.current_level !== undefined ? updatedUser.current_level : (currentLevel !== undefined ? currentLevel : 1),
+          current_level: updatedUser.current_level !== undefined ? updatedUser.current_level : (currentLevel !== undefined ? currentLevel : 1),
           stars: updatedUser.stars || 0,
           hints: finalHints,
           undos: finalUndos,
@@ -890,7 +908,7 @@ app.post('/api/admin/add-boosters', (req, res) => {
       return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
     }
 
-    const { telegramId, hints = 0, undos = 0, reveals = 0, extraBottles = 0, tonBalance = 0, levels = 0 } = req.body || {};
+    const { telegramId, hints = 0, undos = 0, reveals = 0, extraBottles = 0, tonBalance = 0, levels = 0, setLevel = null } = req.body || {};
     const id = telegramId || 'guest_dev_123';
 
     const updatedUser = db.addBonus(id, {
@@ -899,7 +917,8 @@ app.post('/api/admin/add-boosters', (req, res) => {
       reveals: Number(reveals || 0),
       extraBottles: Number(extraBottles || 0),
       ton_balance: Number(tonBalance || 0),
-      levels: Number(levels || 0)
+      levels: Number(levels || 0),
+      setLevel: setLevel !== null && setLevel !== undefined ? Number(setLevel) : null
     });
 
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
@@ -913,10 +932,20 @@ app.post('/api/admin/add-boosters', (req, res) => {
             val.undos = (val.undos || 0) + Number(undos || 0);
             val.reveals = (val.reveals || 0) + Number(reveals || 0);
             val.extraBottles = (val.extraBottles || 0) + Number(extraBottles || 0);
+            val.extra_bottles = val.extraBottles;
             val.ton_balance = (val.ton_balance || 0) + Number(tonBalance || 0);
-            if (Number(levels || 0) > 0) {
+            if (setLevel !== null && setLevel !== undefined && Number(setLevel) >= 1) {
+              const exactLvl = Math.max(1, Math.min(500, Number(setLevel)));
+              val.currentLevel = exactLvl;
+              val.current_level = exactLvl;
+              val.maxLevel = exactLvl;
+              val.max_level = exactLvl;
+              val.level = exactLvl;
+            } else if (Number(levels || 0) > 0) {
               val.currentLevel = (val.currentLevel || 1) + Number(levels || 0);
+              val.current_level = val.currentLevel;
               val.maxLevel = (val.maxLevel || 0) + Number(levels || 0);
+              val.max_level = val.maxLevel;
               val.level = val.maxLevel;
             }
             val.updatedAt = Date.now();
@@ -932,6 +961,52 @@ app.post('/api/admin/add-boosters', (req, res) => {
     res.json({ success: true, user: updatedUser });
   } catch (err) {
     console.error('[API ERROR] /api/admin/add-boosters:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin Set Exact Player Level (Admin Only)
+ */
+app.post('/api/admin/set-level', async (req, res) => {
+  try {
+    if (!checkIsAdmin(req.body || {})) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
+    }
+
+    const { targetTelegramId, telegramId, level } = req.body || {};
+    const id = String(targetTelegramId || telegramId || '').trim();
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Telegram ID is required' });
+    }
+
+    const newLvl = Math.max(1, Math.min(500, Number(level || 1)));
+    const updatedUser = db.setUserLevel ? db.setUserLevel(id, newLvl) : null;
+
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      const baseUrl = `https://kvdb.io/${bucket}`;
+      fetch(`${baseUrl}/${encodeURIComponent('player_' + id)}?_cb=${Date.now()}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(val => {
+          const baseObj = (val && typeof val === 'object') ? val : { telegramId: id };
+          baseObj.maxLevel = newLvl;
+          baseObj.max_level = newLvl;
+          baseObj.level = newLvl;
+          baseObj.currentLevel = newLvl;
+          baseObj.current_level = newLvl;
+          baseObj.updatedAt = Date.now();
+          fetch(`${baseUrl}/${encodeURIComponent('player_' + id)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(baseObj)
+          }).catch(() => {});
+        }).catch(() => {});
+    }
+
+    res.json({ success: true, user: updatedUser, level: newLvl });
+  } catch (err) {
+    console.error('[API ERROR] /api/admin/set-level:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
