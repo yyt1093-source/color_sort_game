@@ -3867,7 +3867,21 @@ async function initColorSortApp() {
           }
           if (cloudData.daily_boosters_days_left !== undefined || cloudData.dailyBoostersDaysLeft !== undefined) {
             const cDays = Number(cloudData.daily_boosters_days_left !== undefined ? cloudData.daily_boosters_days_left : cloudData.dailyBoostersDaysLeft);
-            if (cDays > Number(currentUser.daily_boosters_days_left || 0)) {
+            const cDate = cloudData.daily_boosters_last_date || cloudData.dailyBoostersLastDate || '';
+            const localDate = currentUser.daily_boosters_last_date || '';
+            if (cDate > localDate) {
+              currentUser.daily_boosters_days_left = cDays;
+              currentUser.dailyBoostersDaysLeft = cDays;
+              currentUser.daily_boosters_last_date = cDate;
+              currentUser.dailyBoostersLastDate = cDate;
+              changed = true;
+            } else if (cDate === localDate) {
+              if (cDays !== currentUser.daily_boosters_days_left) {
+                currentUser.daily_boosters_days_left = Math.max(Number(currentUser.daily_boosters_days_left || 0), cDays);
+                currentUser.dailyBoostersDaysLeft = currentUser.daily_boosters_days_left;
+                changed = true;
+              }
+            } else if (cDays > Number(currentUser.daily_boosters_days_left || 0)) {
               currentUser.daily_boosters_days_left = cDays;
               currentUser.dailyBoostersDaysLeft = cDays;
               changed = true;
@@ -6144,12 +6158,11 @@ async function initColorSortApp() {
       latestEligibleDate = getKyivDateTimeBrowser(yesterday).dateStr;
     }
 
-    const lastDate = (currentUser.daily_boosters_last_date || '').trim();
+    let lastDate = (currentUser.daily_boosters_last_date || '').trim();
     if (!lastDate) {
-      currentUser.daily_boosters_last_date = kyiv.dateStr;
-      currentUser.dailyBoostersLastDate = kyiv.dateStr;
-      saveLocalUser();
-      return;
+      const dElig = new Date(latestEligibleDate + 'T12:00:00Z');
+      const dBefore = new Date(dElig.getTime() - 24 * 3600 * 1000);
+      lastDate = getKyivDateTimeBrowser(dBefore).dateStr;
     }
 
     if (lastDate >= latestEligibleDate) {
@@ -6221,8 +6234,18 @@ async function initColorSortApp() {
       t('dailyBoostersClaimTitle') || '🎁 Ежедневный набор начислен!',
       (typeof t('dailyBoostersClaimMsg') === 'function'
         ? t('dailyBoostersClaimMsg')(bonusPerType, currentUser.daily_boosters_days_left)
-        : `Наступило 23:59 (Киев)!\n\nВам начислено по ${bonusPerType} подсказок каждого вида:\n• ↩️ Отмена: +${bonusPerType}\n• 💡 Подсказка: +${bonusPerType}\n• 🔮 Открыть цвет: +${bonusPerType}\n• 🧪 Пустая колба: +${bonusPerType}\n\nОсталось дней: ${currentUser.daily_boosters_days_left}`)
+        : `Наступило 23:59 (Киев)!\n\nВам начислено по ${bonusPerType} подсказок каждого вида:\n• ↩️ Отмена хода: +${bonusPerType}\n• 💡 Подсказка: +${bonusPerType}\n• 🔮 Открыть цвет: +${bonusPerType}\n• 🧪 Пустая колба: +${bonusPerType}\n\nОсталось дней: ${currentUser.daily_boosters_days_left} ${formatDailyDaysWord(currentUser.daily_boosters_days_left)}`)
     );
+  }
+
+  function formatDailyDaysWord(d) {
+    const abs = Math.abs(Number(d) || 0);
+    const mod10 = abs % 10;
+    const mod100 = abs % 100;
+    if (mod100 >= 11 && mod100 <= 19) return 'дней';
+    if (mod10 === 1) return 'день';
+    if (mod10 >= 2 && mod10 <= 4) return 'дня';
+    return 'дней';
   }
 
   function updateShopUI() {
@@ -6259,13 +6282,31 @@ async function initColorSortApp() {
     const dailyDays = Number(currentUser.daily_boosters_days_left || 0);
     const dailyBoostersStatusBox = document.getElementById('dailyBoostersStatusBox');
     const dailyBoostersDaysLeft = document.getElementById('dailyBoostersDaysLeft');
+    const dailyBoostersTag = document.getElementById('dailyBoostersTag');
+    const dailyBoostersNextInfo = document.getElementById('dailyBoostersNextInfo');
     const buyDailyBoostersBtnText = document.getElementById('buyDailyBoostersBtnText');
 
     if (dailyBoostersStatusBox) {
       dailyBoostersStatusBox.classList.toggle('hidden', dailyDays <= 0);
     }
     if (dailyBoostersDaysLeft) {
-      dailyBoostersDaysLeft.textContent = `${dailyDays} дн.`;
+      dailyBoostersDaysLeft.textContent = `${dailyDays} ${formatDailyDaysWord(dailyDays)}`;
+    }
+    if (dailyBoostersTag) {
+      if (dailyDays > 0) {
+        dailyBoostersTag.textContent = `${dailyDays} ${formatDailyDaysWord(dailyDays)}`;
+        dailyBoostersTag.style.background = 'rgba(16, 185, 129, 0.25)';
+        dailyBoostersTag.style.color = '#34d399';
+        dailyBoostersTag.style.border = '1px solid #10b981';
+      } else {
+        dailyBoostersTag.textContent = '30 дней';
+        dailyBoostersTag.style.background = '';
+        dailyBoostersTag.style.color = '';
+        dailyBoostersTag.style.border = '';
+      }
+    }
+    if (dailyBoostersNextInfo && dailyDays > 0) {
+      dailyBoostersNextInfo.textContent = '⏰ Следующее начисление: сегодня в 23:59 (Киев) (+10 каждого подарка)';
     }
     if (buyDailyBoostersBtnText) {
       buyDailyBoostersBtnText.textContent = dailyDays > 0 ? t('dailyBoostersBtnExtend', 5) : t('dailyBoostersBtnBuy', 5);
@@ -6294,6 +6335,15 @@ async function initColorSortApp() {
       window.TelegramApp.TelegramApp.haptic('light');
     }
   }
+
+  // Real-time automated monitor for 23:59:00 Kyiv daily boosters distribution
+  setInterval(() => {
+    try {
+      if (currentUser && currentUser.telegramId && Number(currentUser.daily_boosters_days_left || 0) > 0) {
+        checkAndApplyClientDailyBoosters();
+      }
+    } catch (e) {}
+  }, 10000);
 
   if (shopBtn) {
     shopBtn.addEventListener('click', (e) => {
@@ -6391,16 +6441,23 @@ async function initColorSortApp() {
         const serverExtraBottles = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
 
         if (itemId === 'daily_boosters_30d') {
-          const kyiv = getKyivDateTimeBrowser(new Date());
+          const now = Date.now();
+          const kyiv = getKyivDateTimeBrowser(new Date(now));
+          const isAtOrAfter2359 = (kyiv.hour === 23 && kyiv.minute >= 59);
+          let initialLastDate = kyiv.dateStr;
+          if (!isAtOrAfter2359) {
+            const prevDate = new Date(now - 24 * 3600 * 1000);
+            initialLastDate = getKyivDateTimeBrowser(prevDate).dateStr;
+          }
           localStorage.setItem(`color_sort_daily_boosters_init_credited_${currentUser.telegramId}`, '1');
           currentUser.daily_boosters_init_credited = true;
-          currentUser.hints = (res.user.hints !== undefined) ? Number(res.user.hints) : ((currentUser.hints || 0) + 10);
-          currentUser.undos = (res.user.undos !== undefined) ? Number(res.user.undos) : ((currentUser.undos || 0) + 10);
-          currentUser.reveals = (res.user.reveals !== undefined) ? Number(res.user.reveals) : ((currentUser.reveals || 0) + 10);
+          currentUser.hints = (res && res.user && res.user.hints !== undefined) ? Number(res.user.hints) : ((currentUser.hints || 0) + 10);
+          currentUser.undos = (res && res.user && res.user.undos !== undefined) ? Number(res.user.undos) : ((currentUser.undos || 0) + 10);
+          currentUser.reveals = (res && res.user && res.user.reveals !== undefined) ? Number(res.user.reveals) : ((currentUser.reveals || 0) + 10);
           currentUser.extraBottles = (serverExtraBottles !== undefined) ? Number(serverExtraBottles) : ((currentUser.extraBottles || 0) + 10);
           currentUser.extra_bottles = currentUser.extraBottles;
-          currentUser.daily_boosters_last_date = kyiv.dateStr;
-          currentUser.dailyBoostersLastDate = kyiv.dateStr;
+          currentUser.daily_boosters_last_date = (res && res.user && res.user.daily_boosters_last_date) ? res.user.daily_boosters_last_date : initialLastDate;
+          currentUser.dailyBoostersLastDate = currentUser.daily_boosters_last_date;
         }
 
         if (itemId === 'bottles_pack_15') {
@@ -6434,12 +6491,18 @@ async function initColorSortApp() {
         if (itemId === 'daily_boosters_30d') {
           const now = Date.now();
           const kyiv = getKyivDateTimeBrowser(new Date(now));
+          const isAtOrAfter2359 = (kyiv.hour === 23 && kyiv.minute >= 59);
+          let initialLastDate = kyiv.dateStr;
+          if (!isAtOrAfter2359) {
+            const prevDate = new Date(now - 24 * 3600 * 1000);
+            initialLastDate = getKyivDateTimeBrowser(prevDate).dateStr;
+          }
           localStorage.setItem(`color_sort_daily_boosters_init_credited_${currentUser.telegramId}`, '1');
           currentUser.daily_boosters_init_credited = true;
           currentUser.daily_boosters_days_left = (currentUser.daily_boosters_days_left || 0) + 30;
           currentUser.dailyBoostersDaysLeft = currentUser.daily_boosters_days_left;
-          currentUser.daily_boosters_last_date = kyiv.dateStr;
-          currentUser.dailyBoostersLastDate = kyiv.dateStr;
+          currentUser.daily_boosters_last_date = initialLastDate;
+          currentUser.dailyBoostersLastDate = initialLastDate;
           currentUser.daily_boosters_purchased_at = now;
           currentUser.dailyBoostersPurchasedAt = now;
 
