@@ -8313,22 +8313,43 @@ async function initColorSortApp() {
   }
 
   if (adminTabMaintenanceBtn) {
-    adminTabMaintenanceBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
+    const handleMaintenanceTabClick = (e) => {
+      if (e) {
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+      }
       switchAdminTab('maintenance');
-    });
+    };
+    adminTabMaintenanceBtn.addEventListener('click', handleMaintenanceTabClick);
+    adminTabMaintenanceBtn.addEventListener('touchend', handleMaintenanceTabClick, { passive: false });
   }
 
   if (adminTabCodeBackupBtn) {
     const handleCodeBackupTabClick = (e) => {
       if (e) {
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         e.stopPropagation();
       }
       switchAdminTab('code_backup');
     };
     adminTabCodeBackupBtn.addEventListener('click', handleCodeBackupTabClick);
     adminTabCodeBackupBtn.addEventListener('touchend', handleCodeBackupTabClick, { passive: false });
+  }
+
+  const adminNavTabsContainer = document.querySelector('.admin-nav-tabs');
+  if (adminNavTabsContainer) {
+    const handleNavTabsEvent = (e) => {
+      const btn = e.target.closest('.admin-nav-tab');
+      if (!btn) return;
+      const tab = btn.getAttribute('data-tab');
+      if (tab) {
+        if (e && e.cancelable) e.preventDefault();
+        if (e) e.stopPropagation();
+        switchAdminTab(tab);
+      }
+    };
+    adminNavTabsContainer.addEventListener('click', handleNavTabsEvent);
+    adminNavTabsContainer.addEventListener('touchend', handleNavTabsEvent, { passive: false });
   }
 
   // Cloud & LocalStorage snapshot index retrieval

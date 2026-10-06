@@ -3342,6 +3342,10 @@ body {
   transform: scale(0.97);
 }
 
+.admin-nav-tab * {
+  pointer-events: none;
+}
+
 /* Specific button: Новости (full width on bottom row) */
 #adminTabNewsBtn {
   grid-column: 1 / -1;
@@ -3453,6 +3457,20 @@ body {
   background: rgba(244, 63, 94, 0.2);
   border-color: rgba(251, 113, 133, 0.6);
   box-shadow: 0 0 10px rgba(244, 63, 94, 0.4);
+}
+
+#adminTabMaintenanceBtn.active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(15, 23, 42, 0.95));
+  border: 1.5px solid rgba(245, 158, 11, 0.7);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+}
+#adminTabMaintenanceBtn.active .admin-nav-tab-text strong {
+  color: #fbbf24;
+}
+#adminTabMaintenanceBtn.active .admin-nav-tab-icon {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.6);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
 }
 
 .admin-tab-content {
