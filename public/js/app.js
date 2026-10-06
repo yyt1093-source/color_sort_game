@@ -2938,6 +2938,13 @@ async function initColorSortApp() {
     if (rawLocal) {
       const parsedLocal = JSON.parse(rawLocal);
       currentUser = { ...currentUser, ...parsedLocal };
+      const isLocalDummy = !parsedLocal.firstName || parsedLocal.firstName === 'Игрок' || parsedLocal.firstName === 'Player' || parsedLocal.firstName === '.';
+      if (userData.firstName && (isLocalDummy || (userData.firstName !== 'Игрок' && userData.firstName !== 'Player'))) {
+        currentUser.firstName = userData.firstName;
+      }
+      if (userData.username) {
+        currentUser.username = userData.username;
+      }
       if (currentUser.maxLevel > 0) {
         currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));
         currentUser.level = currentUser.maxLevel;
@@ -3310,10 +3317,26 @@ async function initColorSortApp() {
         if (finalDailyLastDate && !user.daily_boosters_last_date) user.daily_boosters_last_date = finalDailyLastDate;
         if (finalDailyPurchasedAt && !user.daily_boosters_purchased_at) user.daily_boosters_purchased_at = finalDailyPurchasedAt;
 
+        const isDummy = (name) => !name || name === 'Игрок' || name === 'Player' || name === '.';
+        let effectiveFirstName = user.firstName;
+        if (isDummy(effectiveFirstName) && existingCloud && !isDummy(existingCloud.firstName || existingCloud.first_name)) {
+          effectiveFirstName = existingCloud.firstName || existingCloud.first_name;
+          user.firstName = effectiveFirstName;
+        }
+        let effectiveUsername = user.username || '';
+        if (!effectiveUsername && existingCloud && (existingCloud.username || existingCloud.user_name)) {
+          effectiveUsername = existingCloud.username || existingCloud.user_name;
+          user.username = effectiveUsername;
+        }
+        if (isDummy(effectiveFirstName) && effectiveUsername) {
+          effectiveFirstName = `@${effectiveUsername.replace(/^@/, '')}`;
+          user.firstName = effectiveFirstName;
+        }
+
         const payload = {
           telegramId: id,
-          firstName: user.firstName || 'Игрок',
-          username: user.username || '',
+          firstName: effectiveFirstName || 'Игрок',
+          username: effectiveUsername || '',
           photoUrl: user.photoUrl || '',
           maxLevel: maxLvl,
           max_level: maxLvl,
@@ -3463,7 +3486,16 @@ async function initColorSortApp() {
     if (data) {
       try {
         const parsed = JSON.parse(data);
+        const savedFirst = currentUser.firstName;
+        const savedUname = currentUser.username;
         currentUser = { ...currentUser, ...parsed };
+        const isParsedDummy = !parsed.firstName || parsed.firstName === 'Игрок' || parsed.firstName === 'Player' || parsed.firstName === '.';
+        if (savedFirst && (isParsedDummy || (savedFirst !== 'Игрок' && savedFirst !== 'Player'))) {
+          currentUser.firstName = savedFirst;
+        }
+        if (savedUname) {
+          currentUser.username = savedUname;
+        }
         if (currentUser.maxLevel > 0) {
           currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));
           currentUser.level = currentUser.maxLevel;
@@ -5091,22 +5123,46 @@ async function initColorSortApp() {
       const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
       if (lvl < 1) return;
 
+      const isDummyName = (name) => !name || name === 'Игрок' || name === 'Player' || name === '.';
       const stars = Number(p.stars || 0);
       const existing = uniqueMap.get(id);
       const existingLvl = existing ? Number(existing.maxLevel !== undefined ? existing.maxLevel : (existing.level !== undefined ? existing.level : 0)) : 0;
-      if (!existing || lvl > existingLvl) {
-        uniqueMap.set(id, {
-          ...p,
-          telegramId: id,
-          firstName: p.firstName || (existing ? existing.firstName : 'Игрок'),
-          username: p.username || (existing ? existing.username : ''),
-          photoUrl: p.photoUrl || (existing ? existing.photoUrl : ''),
-          maxLevel: lvl,
-          level: lvl,
-          stars: stars,
-          updatedAt: p.updatedAt || Date.now()
-        });
+
+      const rawUsername = p.username || (existing ? existing.username : '') || '';
+      const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
+
+      let bestFirstName = existing ? existing.firstName : '';
+      if (isDummyName(bestFirstName) && !isDummyName(p.firstName)) {
+        bestFirstName = p.firstName;
+      } else if (!bestFirstName && p.firstName) {
+        bestFirstName = p.firstName;
+      } else if (p.firstName && !isDummyName(p.firstName)) {
+        bestFirstName = p.firstName;
       }
+
+      if (isDummyName(bestFirstName) && cleanUsername) {
+        bestFirstName = `@${cleanUsername}`;
+      } else if (isDummyName(bestFirstName)) {
+        bestFirstName = 'Игрок';
+      }
+
+      const bestLvl = Math.max(lvl, existingLvl);
+      const bestStars = lvl >= existingLvl ? stars : (existing ? existing.stars : stars);
+      const bestPhoto = p.photoUrl || (existing ? existing.photoUrl : '') || '';
+      const bestUpdatedAt = Math.max(Number(p.updatedAt || 0), Number(existing ? existing.updatedAt : 0));
+
+      uniqueMap.set(id, {
+        ...(existing || {}),
+        ...p,
+        telegramId: id,
+        firstName: bestFirstName,
+        username: cleanUsername,
+        photoUrl: bestPhoto,
+        maxLevel: bestLvl,
+        level: bestLvl,
+        stars: bestStars,
+        updatedAt: bestUpdatedAt || Date.now()
+      });
     });
 
     const sortedPlayers = Array.from(uniqueMap.values()).sort((a, b) => {
@@ -5130,7 +5186,6 @@ async function initColorSortApp() {
         </li>
       `;
     } else {
-      const isAdminViewer = isAlligatorAdmin(currentUser);
       sortedPlayers.forEach((player, idx) => {
         const rank = idx + 1;
         const li = document.createElement('li');
@@ -5138,13 +5193,16 @@ async function initColorSortApp() {
         li.className = `leaderboard-item ${rank <= 3 ? 'top-' + rank : ''} ${isSelf ? 'is-self' : ''}`;
         
         const crown = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-        const nameDisplay = isSelf 
-          ? `${escapeHtml(player.firstName || 'Игрок')} <span class="self-tag">${t('youTag')}</span>` 
-          : escapeHtml(player.firstName || 'Игрок');
-        const levelDisplayVal = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
         const rawUsername = player.username || '';
         const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
-        const showUsername = isAdminViewer && cleanUsername;
+        const isDummy = !player.firstName || player.firstName === 'Игрок' || player.firstName === 'Player' || player.firstName === '.';
+        const displayName = isDummy && cleanUsername ? `@${cleanUsername}` : (player.firstName || (cleanUsername ? `@${cleanUsername}` : 'Игрок'));
+
+        const nameDisplay = isSelf 
+          ? `${escapeHtml(displayName)} <span class="self-tag">${t('youTag')}</span>` 
+          : escapeHtml(displayName);
+        const levelDisplayVal = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
+        const showUsername = Boolean(cleanUsername) && (!displayName.startsWith(`@${cleanUsername}`));
 
         li.innerHTML = `
           <div class="player-meta">
@@ -5162,11 +5220,15 @@ async function initColorSortApp() {
 
     // 6. Update user's personal banner & strictly synchronize profile with leaderboard
     const myRankIdx = sortedPlayers.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
+    const myDisplayName = (!currentUser.firstName || currentUser.firstName === 'Игрок' || currentUser.firstName === 'Player' || currentUser.firstName === '.')
+      ? (currentUser.username ? `@${currentUser.username.replace(/^@/, '')}` : (currentUser.firstName || 'Вы'))
+      : currentUser.firstName;
+
     if (myRankIdx !== -1) {
       const myRankNum = myRankIdx + 1;
       const myCrown = myRankNum === 1 ? '🥇' : myRankNum === 2 ? '🥈' : myRankNum === 3 ? '🥉' : `#${myRankNum}`;
       if (modalUserPos) modalUserPos.textContent = myCrown;
-      if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
+      if (modalUserName) modalUserName.textContent = `${myDisplayName} ${t('youTag')}`;
       const playerLvl = Number(sortedPlayers[myRankIdx].maxLevel !== undefined ? sortedPlayers[myRankIdx].maxLevel : (sortedPlayers[myRankIdx].level || 0));
       const playerStars = Number(sortedPlayers[myRankIdx].stars || 0);
       if (modalUserLevel) modalUserLevel.textContent = t('levelDisplayVal', playerLvl);
@@ -5192,7 +5254,7 @@ async function initColorSortApp() {
       }
     } else if (isRealUser) {
       if (modalUserPos) modalUserPos.textContent = '#—';
-      if (modalUserName) modalUserName.textContent = `${currentUser.firstName || 'Вы'} ${t('youTag')}`;
+      if (modalUserName) modalUserName.textContent = `${myDisplayName} ${t('youTag')}`;
       if (modalUserLevel) modalUserLevel.textContent = t('levelDisplayVal', Number(currentUser.maxLevel || 0));
       if (userRank) userRank.textContent = '—';
     } else {
@@ -6862,16 +6924,12 @@ async function initColorSortApp() {
           </div>
         `;
       } else {
-        const isAdmin = isAlligatorAdmin(currentUser);
         referralsListContainer.innerHTML = referrals.map(r => {
-          let displayName = (r.referred_name && r.referred_name !== 'Друг' && r.referred_name !== 'Friend')
+          const rawUname = r.referred_username ? String(r.referred_username).replace(/^@/, '').trim() : '';
+          const usernameDisplay = rawUname ? `@${rawUname}` : '';
+          let displayName = (r.referred_name && r.referred_name !== 'Друг' && r.referred_name !== 'Friend' && r.referred_name !== 'Player' && r.referred_name !== 'Игрок')
             ? r.referred_name
-            : (t('defaultPlayerName') || 'Игрок');
-          let usernameDisplay = '';
-
-          if (isAdmin && r.referred_username) {
-            usernameDisplay = `@${String(r.referred_username).replace(/^@/, '')}`;
-          }
+            : (usernameDisplay || t('defaultPlayerName') || 'Игрок');
 
           const isClaimed = r.reward_claimed === 1 || r.reward_claimed === true;
           const statusHtml = isClaimed

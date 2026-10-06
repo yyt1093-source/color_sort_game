@@ -216,6 +216,12 @@ function generateMemoCode(telegramId) {
   return `SORT-${suffix}`;
 }
 
+function isDummyName(name) {
+  if (!name || typeof name !== 'string') return true;
+  const s = name.trim();
+  return s === '' || s === 'Игрок' || s === 'Player' || s === '.' || s === 'Гость' || s === 'Guest';
+}
+
 /**
  * Get or create user by Telegram ID
  */
@@ -231,20 +237,54 @@ function getUser(telegramId, defaultUserData = {}) {
       needsUpdate = true;
     }
 
-    if (defaultUserData.first_name || defaultUserData.username || defaultUserData.photo_url || needsUpdate) {
+    let targetFirstName = user.first_name;
+    const incomingFirst = defaultUserData.first_name ? String(defaultUserData.first_name).trim() : '';
+    if (incomingFirst) {
+      if (!isDummyName(incomingFirst)) {
+        if (targetFirstName !== incomingFirst) {
+          targetFirstName = incomingFirst;
+          needsUpdate = true;
+        }
+      } else if (isDummyName(targetFirstName) && incomingFirst) {
+        if (!targetFirstName) {
+          targetFirstName = incomingFirst;
+          needsUpdate = true;
+        }
+      }
+    }
+
+    let targetUsername = user.username || '';
+    const incomingUname = defaultUserData.username ? String(defaultUserData.username).replace(/^@/, '').trim() : '';
+    if (incomingUname && incomingUname !== targetUsername) {
+      targetUsername = incomingUname;
+      needsUpdate = true;
+    }
+
+    if (isDummyName(targetFirstName) && targetUsername) {
+      targetFirstName = `@${targetUsername}`;
+      needsUpdate = true;
+    }
+
+    let targetPhoto = user.photo_url || '';
+    if (defaultUserData.photo_url && defaultUserData.photo_url !== targetPhoto) {
+      targetPhoto = defaultUserData.photo_url;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
       const updateStmt = db.prepare(`
         UPDATE users 
-        SET first_name = COALESCE(?, first_name),
-            username = COALESCE(?, username),
-            photo_url = COALESCE(?, photo_url),
-            memo_code = COALESCE(?, memo_code),
+        SET first_name = ?,
+            username = ?,
+            photo_url = ?,
+            memo_code = ?,
             updated_at = datetime('now')
         WHERE telegram_id = ?
       `);
       updateStmt.run(
-        defaultUserData.first_name || null,
-        defaultUserData.username || null,
-        defaultUserData.photo_url || null,
+        targetFirstName || 'Игрок',
+        targetUsername || null,
+        targetPhoto || null,
         memoCode,
         String(telegramId)
       );
@@ -254,6 +294,14 @@ function getUser(telegramId, defaultUserData = {}) {
   }
 
   const memo = generateMemoCode(telegramId);
+  const cleanUname = defaultUserData.username ? String(defaultUserData.username).replace(/^@/, '').trim() : '';
+  let initialFirst = defaultUserData.first_name ? String(defaultUserData.first_name).trim() : '';
+  if (isDummyName(initialFirst) && cleanUname) {
+    initialFirst = `@${cleanUname}`;
+  } else if (isDummyName(initialFirst)) {
+    initialFirst = String(telegramId) === 'guest_dev_123' ? 'Гость' : 'Игрок';
+  }
+
   const insertStmt = db.prepare(`
     INSERT INTO users (telegram_id, first_name, username, photo_url, max_level, current_level, stars, coins, hints, undos, reveals, extra_bottles, shuffles, total_moves, ton_balance, ton_wallet, memo_code, all_colors_until, daily_boosters_days_left, daily_boosters_last_date, daily_boosters_purchased_at)
     VALUES (?, ?, ?, ?, 0, 1, 0, 100, 0, 0, 0, 0, 0, 0, 0.0, '', ?, 0, 0, '', 0)
@@ -261,8 +309,8 @@ function getUser(telegramId, defaultUserData = {}) {
   
   insertStmt.run(
     String(telegramId),
-    defaultUserData.first_name || 'Player',
-    defaultUserData.username || '',
+    initialFirst,
+    cleanUname || null,
     defaultUserData.photo_url || '',
     memo
   );
@@ -313,6 +361,19 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
 
   const newTotalMoves = user.total_moves + (totalMoves || 0);
 
+  let effectiveFirst = user.first_name;
+  if (firstName && !isDummyName(firstName)) {
+    effectiveFirst = String(firstName).trim();
+  }
+  let effectiveUname = user.username || '';
+  if (username && String(username).trim()) {
+    effectiveUname = String(username).replace(/^@/, '').trim();
+  }
+  if (isDummyName(effectiveFirst) && effectiveUname) {
+    effectiveFirst = `@${effectiveUname}`;
+  }
+  const effectivePhoto = photoUrl || user.photo_url || null;
+
   const stmt = db.prepare(`
     UPDATE users
     SET current_level = ?,
@@ -325,14 +386,14 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
         extra_bottles = ?,
         shuffles = ?,
         total_moves = ?,
-        first_name = COALESCE(?, first_name),
-        username = COALESCE(?, username),
-        photo_url = COALESCE(?, photo_url),
+        first_name = ?,
+        username = ?,
+        photo_url = ?,
         updated_at = datetime('now')
     WHERE telegram_id = ?
   `);
 
-  stmt.run(newCurrentLevel, newMaxLevel, newStars, newCoins, newHints, newUndos, newReveals, newExtraBottles, newShuffles, newTotalMoves, firstName || null, username || null, photoUrl || null, String(telegramId));
+  stmt.run(newCurrentLevel, newMaxLevel, newStars, newCoins, newHints, newUndos, newReveals, newExtraBottles, newShuffles, newTotalMoves, effectiveFirst || 'Игрок', effectiveUname || null, effectivePhoto, String(telegramId));
   return getUser(telegramId);
 }
 

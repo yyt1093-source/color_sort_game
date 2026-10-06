@@ -92,7 +92,7 @@ app.post('/api/user/init', async (req, res) => {
 
     const id = telegramId || 'guest_dev_123';
     let user = db.getUser(id, {
-      first_name: firstName || (id === 'guest_dev_123' ? 'Гость' : 'Игрок'),
+      first_name: firstName || null,
       username: username || '',
       photo_url: photoUrl || ''
     });
@@ -288,10 +288,25 @@ app.post('/api/user/sync', async (req, res) => {
           ? Number(extraBottles !== undefined ? extraBottles : extra_bottles)
           : Math.max(Number(updatedUser.extra_bottles || 0), Number(exB || 0));
 
+        const isDummyName = (name) => !name || name === 'Игрок' || name === 'Player' || name === '.';
+        let effectiveFirst = updatedUser.first_name;
+        if (isDummyName(effectiveFirst) && firstName && !isDummyName(firstName)) {
+          effectiveFirst = firstName;
+        }
+        if (isDummyName(effectiveFirst) && existing && !isDummyName(existing.firstName || existing.first_name)) {
+          effectiveFirst = existing.firstName || existing.first_name;
+        }
+        const cleanUname = (updatedUser.username || username || (existing ? (existing.username || existing.user_name) : '') || '').replace(/^@/, '').trim();
+        if (isDummyName(effectiveFirst) && cleanUname) {
+          effectiveFirst = `@${cleanUname}`;
+        } else if (isDummyName(effectiveFirst)) {
+          effectiveFirst = 'Игрок';
+        }
+
         const payload = {
           telegramId: String(id),
-          firstName: updatedUser.first_name || firstName || 'Игрок',
-          username: updatedUser.username || username || '',
+          firstName: effectiveFirst,
+          username: cleanUname,
           photoUrl: updatedUser.photo_url || photoUrl || '',
           maxLevel: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
           max_level: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
@@ -406,12 +421,21 @@ app.get('/api/leaderboard', async (req, res) => {
           if (restoredAt > 0 && cpUpdated < restoredAt) return;
           if (cpMaxLevel < 1) return;
 
+          const isDummyName = (name) => !name || name === 'Игрок' || name === 'Player' || name === '.';
+          const cpCleanUname = cp.username ? String(cp.username).replace(/^@/, '').trim() : '';
+
           // If SQLite already has this player, SQLite is authoritative unless cp is newer than restore
           if (!existing) {
+            let cpFirst = cp.firstName;
+            if (isDummyName(cpFirst) && cpCleanUname) {
+              cpFirst = `@${cpCleanUname}`;
+            } else if (isDummyName(cpFirst)) {
+              cpFirst = 'Игрок';
+            }
             playersMap.set(id, {
               telegram_id: id,
-              first_name: cp.firstName || 'Игрок',
-              username: cp.username || '',
+              first_name: cpFirst,
+              username: cpCleanUname,
               photo_url: cp.photoUrl || '',
               max_level: cpMaxLevel,
               stars: cp.stars || 0
@@ -420,20 +444,49 @@ app.get('/api/leaderboard', async (req, res) => {
               db.prepare(`
                 INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars)
                 VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT(telegram_id) DO UPDATE SET max_level = excluded.max_level, stars = excluded.stars
-              `).run(id, cp.firstName || 'Игрок', cp.username || '', cpMaxLevel, cpMaxLevel, cp.stars || 0);
+                ON CONFLICT(telegram_id) DO UPDATE SET 
+                  max_level = excluded.max_level, 
+                  stars = excluded.stars,
+                  first_name = CASE WHEN users.first_name IN ('Player', 'Игрок', '.', '') AND excluded.first_name NOT IN ('Player', 'Игрок', '.', '') THEN excluded.first_name ELSE users.first_name END,
+                  username = CASE WHEN (users.username IS NULL OR users.username = '') AND excluded.username != '' THEN excluded.username ELSE users.username END
+              `).run(id, cpFirst, cpCleanUname, cpMaxLevel, cpMaxLevel, cp.stars || 0);
             } catch(e) {}
-          } else if (cpUpdated >= restoredAt && cpMaxLevel !== existing.max_level) {
-            existing.max_level = cpMaxLevel;
-            if (cp.stars !== undefined) existing.stars = cp.stars;
-            if (cp.firstName) existing.first_name = cp.firstName;
-            if (cp.username) existing.username = cp.username;
-            try {
-              db.prepare(`
-                UPDATE users SET max_level = ?, current_level = ?, stars = ?, first_name = COALESCE(NULLIF(?, ''), first_name), username = COALESCE(NULLIF(?, ''), username)
-                WHERE telegram_id = ?
-              `).run(cpMaxLevel, cpMaxLevel, existing.stars, cp.firstName || '', cp.username || '', id);
-            } catch(e) {}
+          } else {
+            let updatedDb = false;
+            let finalName = existing.first_name;
+            let finalUname = existing.username || '';
+
+            if (isDummyName(existing.first_name) && !isDummyName(cp.firstName)) {
+              finalName = cp.firstName;
+              existing.first_name = finalName;
+              updatedDb = true;
+            } else if (isDummyName(existing.first_name) && cpCleanUname) {
+              finalName = `@${cpCleanUname}`;
+              existing.first_name = finalName;
+              updatedDb = true;
+            }
+
+            if (!finalUname && cpCleanUname) {
+              finalUname = cpCleanUname;
+              existing.username = finalUname;
+              updatedDb = true;
+            }
+
+            if (cpUpdated >= restoredAt && cpMaxLevel > existing.max_level) {
+              existing.max_level = cpMaxLevel;
+              if (cp.stars !== undefined) existing.stars = cp.stars;
+              updatedDb = true;
+            }
+
+            if (updatedDb) {
+              try {
+                db.prepare(`
+                  UPDATE users 
+                  SET max_level = ?, current_level = ?, stars = ?, first_name = ?, username = ?
+                  WHERE telegram_id = ?
+                `).run(existing.max_level, existing.max_level, existing.stars || 0, finalName, finalUname, id);
+              } catch(e) {}
+            }
           }
         });
         
