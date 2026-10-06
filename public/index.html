@@ -301,18 +301,8 @@
         }
 
         window.__isMaintenanceAllowed = isAccessAllowed;
-
-        if (!isAccessAllowed) {
-          window.__maintenanceBlocked = true;
-          if (maintScr) maintScr.style.display = 'flex';
-          if (scr) scr.style.display = 'none';
-          var appCont = document.getElementById('appContainer');
-          if (appCont) appCont.style.display = 'none';
-          return;
-        } else {
-          window.__maintenanceBlocked = false;
-          if (maintScr) maintScr.style.display = 'none';
-        }
+        window.__maintenanceBlocked = false;
+        if (maintScr) maintScr.style.display = 'none';
       } catch(e) {}
 
       window.__startDismissed = false;
@@ -1612,6 +1602,9 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
         <!-- Tab 6: Admin Maintenance Mode Control (Технические работы) -->
         <div id="adminTabMaintenanceContent" class="admin-tab-content hidden">
           <div class="admin-history-header-box" style="border-left: 3px solid #f59e0b;">
