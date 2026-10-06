@@ -488,6 +488,7 @@ async function initColorSortApp() {
       dailyBoostersDesc: "Первое начисление (+10 каждой подсказки) выдаётся сразу при покупке! Далее — каждый день ровно в 23:59 по Киеву в течение 30 дней.",
       dailyBoostersTag: "30 дней",
       dailyBoostersCounterLabel: "⏳ Осталось дней:",
+      dailyBoostersNextLabel: "⏰ Следующее начисление:",
       dailyBoostersNextInfo: "⏰ Следующее начисление в 23:59 (Киев)",
       dailyBoostersBtnBuy: (price) => `Купить за ${price} GRAM`,
       dailyBoostersBtnExtend: (price) => `Продлить (+30 дн.) за ${price} GRAM`,
@@ -869,6 +870,7 @@ async function initColorSortApp() {
       dailyBoostersDesc: "Перше нарахування (+10 кожної підказки) видається одразу при купівлі! Далі — щодня рівно о 23:59 за Києвом протягом 30 днів.",
       dailyBoostersTag: "30 днів",
       dailyBoostersCounterLabel: "⏳ Залишилося днів:",
+      dailyBoostersNextLabel: "⏰ Наступне нарахування:",
       dailyBoostersNextInfo: "⏰ Нарахування по 10 підказок о 23:59 (Київ)",
       dailyBoostersBtnBuy: (price) => `Купити за ${price} GRAM`,
       dailyBoostersBtnExtend: (price) => `Продовжити (+30 дн.) за ${price} GRAM`,
@@ -1248,6 +1250,7 @@ async function initColorSortApp() {
       dailyBoostersDesc: "First accrual (+10 of each booster) is granted immediately upon purchase! Then — every day strictly at 23:59 Kyiv time for 30 consecutive days.",
       dailyBoostersTag: "30 days",
       dailyBoostersCounterLabel: "⏳ Days remaining:",
+      dailyBoostersNextLabel: "⏰ Next reward:",
       dailyBoostersNextInfo: "⏰ 10 of each booster awarded at 23:59 (Kyiv)",
       dailyBoostersBtnBuy: (price) => `Buy for ${price} GRAM`,
       dailyBoostersBtnExtend: (price) => `Extend (+30 d.) for ${price} GRAM`,
@@ -1606,6 +1609,7 @@ async function initColorSortApp() {
       dailyBoostersDesc: "Erste Gutschrift (+10 von jedem Booster) erfolgt sofort beim Kauf! Danach jeden Tag pünktlich um 23:59 Uhr Kiewer Zeit für 30 Tage.",
       dailyBoostersTag: "30 Tage",
       dailyBoostersCounterLabel: "⏳ Verbleibende Tage:",
+      dailyBoostersNextLabel: "⏰ Nächste Gutschrift:",
       dailyBoostersNextInfo: "⏰ Gutschrift von je 10 Hinweisen um 23:59 (Kiew)",
       dailyBoostersBtnBuy: (price) => `Kaufen für ${price} GRAM`,
       dailyBoostersBtnExtend: (price) => `Verlängern (+30 T.) für ${price} GRAM`,
@@ -1972,6 +1976,7 @@ async function initColorSortApp() {
       dailyBoostersDesc: "Pirmas priskaitymas (+10 kiekvienos rūšies) suteikiamas iškart perkant! Vėliau — kasdien tiksliai 23:59 Kijevo laiku 30 dienų iš eilės.",
       dailyBoostersTag: "30 dienų",
       dailyBoostersCounterLabel: "⏳ Liko dienų:",
+      dailyBoostersNextLabel: "⏰ Kitas priskaitymas:",
       dailyBoostersNextInfo: "⏰ Priskaičiavimas po 10 užuominų 23:59 (Kijevas)",
       dailyBoostersBtnBuy: (price) => `Pirkti už ${price} GRAM`,
       dailyBoostersBtnExtend: (price) => `Pratęsti (+30 d.) už ${price} GRAM`,
@@ -2468,8 +2473,8 @@ async function initColorSortApp() {
     if (dailyBoostersTag) dailyBoostersTag.textContent = t('dailyBoostersTag');
     const dailyBoostersCounterLabel = document.getElementById('dailyBoostersCounterLabel');
     if (dailyBoostersCounterLabel) dailyBoostersCounterLabel.textContent = t('dailyBoostersCounterLabel');
-    const dailyBoostersNextInfo = document.getElementById('dailyBoostersNextInfo');
-    if (dailyBoostersNextInfo) dailyBoostersNextInfo.textContent = t('dailyBoostersNextInfo');
+    const dailyBoostersNextLabel = document.getElementById('dailyBoostersNextLabel');
+    if (dailyBoostersNextLabel) dailyBoostersNextLabel.textContent = t('dailyBoostersNextLabel') || '⏰ Следующее начисление:';
     const shopBottlesTitle = document.getElementById('shopBottlesTitle');
     if (shopBottlesTitle) shopBottlesTitle.textContent = t('shopBottlesTitle');
     const shopBottlesDesc = document.getElementById('shopBottlesDesc');
@@ -3044,8 +3049,17 @@ async function initColorSortApp() {
     return { hours, minutes, totalMinutes: diffMinutes };
   }
 
-  function formatHoursWord(h) {
+  function formatHoursWord(h, lang = 'ru') {
     const abs = Math.abs(Number(h) || 0);
+    const l = (lang || 'ru').toLowerCase();
+    if (l === 'uk') {
+      const mod10 = abs % 10;
+      const mod100 = abs % 100;
+      if (mod100 >= 11 && mod100 <= 19) return `${abs} годин`;
+      if (mod10 === 1) return `${abs} година`;
+      if (mod10 >= 2 && mod10 <= 4) return `${abs} години`;
+      return `${abs} годин`;
+    }
     const mod10 = abs % 10;
     const mod100 = abs % 100;
     if (mod100 >= 11 && mod100 <= 19) return `${abs} часов`;
@@ -3054,8 +3068,17 @@ async function initColorSortApp() {
     return `${abs} часов`;
   }
 
-  function formatMinutesWord(m) {
+  function formatMinutesWord(m, lang = 'ru') {
     const abs = Math.abs(Number(m) || 0);
+    const l = (lang || 'ru').toLowerCase();
+    if (l === 'uk') {
+      const mod10 = abs % 10;
+      const mod100 = abs % 100;
+      if (mod100 >= 11 && mod100 <= 19) return `${abs} хвилин`;
+      if (mod10 === 1) return `${abs} хвилина`;
+      if (mod10 >= 2 && mod10 <= 4) return `${abs} хвилини`;
+      return `${abs} хвилин`;
+    }
     const mod10 = abs % 10;
     const mod100 = abs % 100;
     if (mod100 >= 11 && mod100 <= 19) return `${abs} минут`;
@@ -3064,8 +3087,26 @@ async function initColorSortApp() {
     return `${abs} минут`;
   }
 
-  function formatDailyDaysWord(d) {
+  function formatDailyDaysWord(d, lang = 'ru') {
     const abs = Math.abs(Number(d) || 0);
+    const l = (lang || 'ru').toLowerCase();
+    if (l === 'uk') {
+      const mod10 = abs % 10;
+      const mod100 = abs % 100;
+      if (mod100 >= 11 && mod100 <= 19) return 'днів';
+      if (mod10 === 1) return 'день';
+      if (mod10 >= 2 && mod10 <= 4) return 'дні';
+      return 'днів';
+    }
+    if (l === 'en') {
+      return abs === 1 ? 'day' : 'days';
+    }
+    if (l === 'de') {
+      return abs === 1 ? 'Tag' : 'Tage';
+    }
+    if (l === 'lt') {
+      return 'dienų';
+    }
     const mod10 = abs % 10;
     const mod100 = abs % 100;
     if (mod100 >= 11 && mod100 <= 19) return 'дней';
@@ -6326,16 +6367,16 @@ async function initColorSortApp() {
       dailyBoostersStatusBox.classList.toggle('hidden', dailyDays <= 0);
     }
     if (dailyBoostersDaysLeft) {
-      dailyBoostersDaysLeft.textContent = `${dailyDays} ${formatDailyDaysWord(dailyDays)}`;
+      dailyBoostersDaysLeft.textContent = `${dailyDays} ${formatDailyDaysWord(dailyDays, currentLang)}`;
     }
     if (dailyBoostersTag) {
       if (dailyDays > 0) {
-        dailyBoostersTag.textContent = `${dailyDays} ${formatDailyDaysWord(dailyDays)}`;
+        dailyBoostersTag.textContent = `${dailyDays} ${formatDailyDaysWord(dailyDays, currentLang)}`;
         dailyBoostersTag.style.background = 'rgba(16, 185, 129, 0.25)';
         dailyBoostersTag.style.color = '#34d399';
         dailyBoostersTag.style.border = '1px solid #10b981';
       } else {
-        dailyBoostersTag.textContent = '30 дней';
+        dailyBoostersTag.textContent = t('dailyBoostersTag') || '30 дней';
         dailyBoostersTag.style.background = '';
         dailyBoostersTag.style.color = '';
         dailyBoostersTag.style.border = '';
@@ -6343,11 +6384,38 @@ async function initColorSortApp() {
     }
     if (dailyBoostersCountdownTimer && dailyDays > 0) {
       const remainingTime = getTimeUntilNext2359Kyiv();
+      const lang = (currentLang || 'ru').toLowerCase();
+      let timeStr = '';
       if (remainingTime.hours > 0) {
-        dailyBoostersCountdownTimer.textContent = `${formatHoursWord(remainingTime.hours)} и ${formatMinutesWord(remainingTime.minutes)}`;
+        if (lang === 'uk') {
+          timeStr = `через ${formatHoursWord(remainingTime.hours, lang)} і ${formatMinutesWord(remainingTime.minutes, lang)}`;
+        } else if (lang === 'en') {
+          timeStr = `in ${remainingTime.hours} h ${remainingTime.minutes} m`;
+        } else if (lang === 'de') {
+          timeStr = `in ${remainingTime.hours} Std. ${remainingTime.minutes} Min.`;
+        } else if (lang === 'lt') {
+          timeStr = `po ${remainingTime.hours} val. ${remainingTime.minutes} min.`;
+        } else {
+          timeStr = `через ${formatHoursWord(remainingTime.hours, 'ru')} и ${formatMinutesWord(remainingTime.minutes, 'ru')}`;
+        }
       } else {
-        dailyBoostersCountdownTimer.textContent = `${formatMinutesWord(remainingTime.minutes)}`;
+        if (remainingTime.minutes > 0) {
+          if (lang === 'uk') {
+            timeStr = `через ${formatMinutesWord(remainingTime.minutes, lang)}`;
+          } else if (lang === 'en') {
+            timeStr = `in ${remainingTime.minutes} min`;
+          } else if (lang === 'de') {
+            timeStr = `in ${remainingTime.minutes} Min.`;
+          } else if (lang === 'lt') {
+            timeStr = `po ${remainingTime.minutes} min.`;
+          } else {
+            timeStr = `через ${formatMinutesWord(remainingTime.minutes, 'ru')}`;
+          }
+        } else {
+          timeStr = lang === 'en' ? 'less than a minute' : (lang === 'uk' ? 'менше хвилини' : 'менее 1 минуты');
+        }
       }
+      dailyBoostersCountdownTimer.textContent = timeStr;
     }
     if (buyDailyBoostersBtnText) {
       buyDailyBoostersBtnText.textContent = dailyDays > 0 ? t('dailyBoostersBtnExtend', 5) : t('dailyBoostersBtnBuy', 5);

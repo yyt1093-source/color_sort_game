@@ -714,33 +714,32 @@
 
         <!-- 30-Day Daily Boosters Subscription (5 GRAM) -->
         <div class="shop-item-card shop-item-featured" id="dailyBoostersCard">
-          <div class="shop-item-top">
+          <div class="shop-item-top" style="align-items: center;">
             <div class="shop-item-icon-box item-icon-allcolors">
               <span class="shop-item-emoji">🎁</span>
             </div>
-            <div class="shop-item-details">
-              <div class="shop-item-name-row">
-                <strong class="shop-item-title" id="dailyBoostersTitle">Подсказки каждый день (30 дней)</strong>
-                <span class="shop-duration-tag" id="dailyBoostersTag">30 дней</span>
-              </div>
-              <p class="shop-item-desc" id="dailyBoostersDesc">Первое начисление (+10 каждой подсказки) выдаётся сразу при покупке! Далее — каждый день ровно в 23:59 по Киеву в течение 30 дней.</p>
-              
-              <!-- Active Subscription Counter & Status -->
-              <div id="dailyBoostersStatusBox" class="daily-boosters-status-box hidden" style="margin-top: 8px; padding: 10px 12px; background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(52, 211, 153, 0.45); border-radius: 12px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
-                  <span style="font-size: 0.8rem; font-weight: 700; color: #a7f3d0;" id="dailyBoostersCounterLabel">⏳ Осталось дней:</span>
-                  <strong style="font-size: 1.05rem; font-weight: 900; color: #34d399;" id="dailyBoostersDaysLeft">29 дней</strong>
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 5px; border-top: 1px dashed rgba(52, 211, 153, 0.35); font-size: 0.76rem; font-weight: 600;" id="dailyBoostersNextInfo">
-                  <span style="color: #cbd5e1;">⏰ До следующей награды:</span>
-                  <strong id="dailyBoostersCountdownTimer" style="color: #facc15; font-weight: 700;">--</strong>
-                </div>
-                <div style="font-size: 0.70rem; color: #6ee7b7; margin-top: 5px; opacity: 0.9;">
-                  🎁 Каждый день в 23:59 (Киев) начисляется по +10 каждого подарка
-                </div>
-              </div>
+            <div class="shop-item-details" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <strong class="shop-item-title" id="dailyBoostersTitle" style="font-size: 0.95rem;">Подсказки каждый день (30 дней)</strong>
+              <span class="shop-duration-tag" id="dailyBoostersTag">30 дней</span>
             </div>
           </div>
+          
+          <p class="shop-item-desc" id="dailyBoostersDesc" style="margin: 0; width: 100%; box-sizing: border-box; font-size: 0.77rem; line-height: 1.45; color: rgba(203, 213, 225, 0.9);">
+            Первое начисление (+10 каждой подсказки) выдаётся сразу при покупке! Далее — каждый день ровно в 23:59 по Киеву в течение 30 дней.
+          </p>
+          
+          <!-- Active Subscription Counter & Status (Full Width across card) -->
+          <div id="dailyBoostersStatusBox" class="daily-boosters-status-box hidden" style="width: 100%; box-sizing: border-box; margin: 0; padding: 10px 14px; background: rgba(16, 185, 129, 0.14); border: 1.5px solid rgba(52, 211, 153, 0.45); border-radius: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px;">
+              <span style="font-size: 0.83rem; font-weight: 700; color: #a7f3d0;" id="dailyBoostersCounterLabel">⏳ Осталось дней:</span>
+              <strong style="font-size: 1.05rem; font-weight: 900; color: #34d399;" id="dailyBoostersDaysLeft">29 дней</strong>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 7px; border-top: 1px dashed rgba(52, 211, 153, 0.35); font-size: 0.81rem; font-weight: 600;" id="dailyBoostersNextRow">
+              <span style="color: #cbd5e1;" id="dailyBoostersNextLabel">⏰ Следующее начисление:</span>
+              <strong id="dailyBoostersCountdownTimer" style="color: #facc15; font-weight: 800;">--</strong>
+            </div>
+          </div>
+
           <div class="shop-item-bottom">
             <div class="shop-item-price-box">
               <strong class="shop-price-value" id="dailyBoostersPrice">💎 5.00 GRAM</strong>
