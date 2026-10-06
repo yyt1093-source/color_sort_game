@@ -3001,6 +3001,79 @@ async function initColorSortApp() {
     };
   }
 
+  function calculateDailyBoostersDaysLeft(purchasedAt, nowInput = new Date(), totalDays = 30) {
+    const pAt = Number(purchasedAt || 0);
+    if (!pAt) return null;
+    const pKyiv = getKyivDateTimeBrowser(new Date(pAt));
+    const nowKyiv = getKyivDateTimeBrowser(nowInput);
+    const pParts = pKyiv.dateStr.split('-').map(Number);
+    const nowParts = nowKyiv.dateStr.split('-').map(Number);
+    const dP = Date.UTC(pParts[0], pParts[1] - 1, pParts[2]);
+    const dNow = Date.UTC(nowParts[0], nowParts[1] - 1, nowParts[2]);
+    const diffDays = Math.round((dNow - dP) / (24 * 3600 * 1000));
+    let cutoffsPassed = Math.max(0, diffDays);
+    if (nowKyiv.hour === 23 && nowKyiv.minute >= 59) {
+      cutoffsPassed += 1;
+    }
+    return Math.max(0, totalDays - cutoffsPassed);
+  }
+
+  function getEffectiveDailyDays(user, nowInput = new Date()) {
+    if (!user) return 0;
+    const pAt = Number(user.daily_boosters_purchased_at || user.dailyBoostersPurchasedAt || 0);
+    const rawDays = Number(user.daily_boosters_days_left !== undefined ? user.daily_boosters_days_left : (user.dailyBoostersDaysLeft || 0));
+    if (pAt > 0) {
+      const calcDays = calculateDailyBoostersDaysLeft(pAt, nowInput);
+      if (calcDays !== null) {
+        return Math.min(rawDays > 0 ? rawDays : calcDays, calcDays);
+      }
+    }
+    return Math.max(0, rawDays);
+  }
+
+  function getTimeUntilNext2359Kyiv(nowInput = new Date()) {
+    const kyiv = getKyivDateTimeBrowser(nowInput);
+    const currentTotalMinutes = kyiv.hour * 60 + kyiv.minute;
+    const targetTotalMinutes = 23 * 60 + 59; // 23:59 (1439 mins)
+    let diffMinutes = targetTotalMinutes - currentTotalMinutes;
+    if (diffMinutes < 0) {
+      diffMinutes = 24 * 60;
+    }
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    return { hours, minutes, totalMinutes: diffMinutes };
+  }
+
+  function formatHoursWord(h) {
+    const abs = Math.abs(Number(h) || 0);
+    const mod10 = abs % 10;
+    const mod100 = abs % 100;
+    if (mod100 >= 11 && mod100 <= 19) return `${abs} часов`;
+    if (mod10 === 1) return `${abs} час`;
+    if (mod10 >= 2 && mod10 <= 4) return `${abs} часа`;
+    return `${abs} часов`;
+  }
+
+  function formatMinutesWord(m) {
+    const abs = Math.abs(Number(m) || 0);
+    const mod10 = abs % 10;
+    const mod100 = abs % 100;
+    if (mod100 >= 11 && mod100 <= 19) return `${abs} минут`;
+    if (mod10 === 1) return `${abs} минута`;
+    if (mod10 >= 2 && mod10 <= 4) return `${abs} минуты`;
+    return `${abs} минут`;
+  }
+
+  function formatDailyDaysWord(d) {
+    const abs = Math.abs(Number(d) || 0);
+    const mod10 = abs % 10;
+    const mod100 = abs % 100;
+    if (mod100 >= 11 && mod100 <= 19) return 'дней';
+    if (mod10 === 1) return 'день';
+    if (mod10 >= 2 && mod10 <= 4) return 'дня';
+    return 'дней';
+  }
+
   let currentLevelData = null;
   let justStartedGame = false;
   let modalJustClosed = false;
@@ -3138,11 +3211,12 @@ async function initColorSortApp() {
     user.ton_deposits_total = Number(user.ton_deposits_total || 0);
     user.ton_deposits_count = Number(user.ton_deposits_count || 0);
     user.purchasesResetAt = Number(user.purchasesResetAt || user.purchases_reset_at || 0);
-    user.purchases_reset_at = user.purchasesResetAt;
-    user.daily_boosters_days_left = Math.max(0, Number(user.daily_boosters_days_left !== undefined ? user.daily_boosters_days_left : (user.dailyBoostersDaysLeft || 0)));
+    user.daily_boosters_purchased_at = Number(user.daily_boosters_purchased_at || user.dailyBoostersPurchasedAt || 0);
+    user.dailyBoostersPurchasedAt = user.daily_boosters_purchased_at;
+    user.daily_boosters_days_left = getEffectiveDailyDays(user);
     user.dailyBoostersDaysLeft = user.daily_boosters_days_left;
     user.daily_boosters_last_date = String(user.daily_boosters_last_date || user.dailyBoostersLastDate || '').trim();
-    user.daily_boosters_purchased_at = Number(user.daily_boosters_purchased_at || user.dailyBoostersPurchasedAt || 0);
+    user.dailyBoostersLastDate = user.daily_boosters_last_date;
     if (user.maxLevel !== undefined && Number(user.maxLevel) > 0) {
       user.currentLevel = Math.max(Number(user.currentLevel || 1), Number(user.maxLevel));
       user.level = Math.max(Number(user.level || 0), Number(user.maxLevel));
@@ -3520,19 +3594,17 @@ async function initColorSortApp() {
       } catch (e) {}
     }
     // Safety check for daily boosters backup keys
-    const backupDays = Number(localStorage.getItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`) || 0);
-    if (backupDays > Number(currentUser.daily_boosters_days_left || 0)) {
-      currentUser.daily_boosters_days_left = backupDays;
-      currentUser.dailyBoostersDaysLeft = backupDays;
-      const backupDate = localStorage.getItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`);
-      if (backupDate && !currentUser.daily_boosters_last_date) {
-        currentUser.daily_boosters_last_date = backupDate;
-      }
-      const backupAt = Number(localStorage.getItem(`color_sort_daily_boosters_at_${currentUser.telegramId}`) || 0);
-      if (backupAt && !currentUser.daily_boosters_purchased_at) {
-        currentUser.daily_boosters_purchased_at = backupAt;
-      }
+    const backupAt = Number(localStorage.getItem(`color_sort_daily_boosters_at_${currentUser.telegramId}`) || 0);
+    if (backupAt && !currentUser.daily_boosters_purchased_at) {
+      currentUser.daily_boosters_purchased_at = backupAt;
     }
+    const backupDate = localStorage.getItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`);
+    if (backupDate && !currentUser.daily_boosters_last_date) {
+      currentUser.daily_boosters_last_date = backupDate;
+    }
+    const effectiveDays = getEffectiveDailyDays(currentUser);
+    currentUser.daily_boosters_days_left = effectiveDays;
+    currentUser.dailyBoostersDaysLeft = effectiveDays;
     if (!currentUser.purchasesResetAt) {
       const storedReset = Number(localStorage.getItem(`color_sort_user_purchases_reset_${currentUser.telegramId}`) || localStorage.getItem('color_sort_gram_reset_at') || 0);
       currentUser.purchasesResetAt = storedReset;
@@ -3865,35 +3937,31 @@ async function initColorSortApp() {
             const acp = Math.max(Number(currentUser.all_colors_purchased_at || 0), Number(cloudData.all_colors_purchased_at || 0));
             if (acp !== currentUser.all_colors_purchased_at) { currentUser.all_colors_purchased_at = acp; changed = true; }
           }
-          if (cloudData.daily_boosters_days_left !== undefined || cloudData.dailyBoostersDaysLeft !== undefined) {
-            const cDays = Number(cloudData.daily_boosters_days_left !== undefined ? cloudData.daily_boosters_days_left : cloudData.dailyBoostersDaysLeft);
-            const cDate = cloudData.daily_boosters_last_date || cloudData.dailyBoostersLastDate || '';
-            const localDate = currentUser.daily_boosters_last_date || '';
-            if (cDate > localDate) {
-              currentUser.daily_boosters_days_left = cDays;
-              currentUser.dailyBoostersDaysLeft = cDays;
-              currentUser.daily_boosters_last_date = cDate;
-              currentUser.dailyBoostersLastDate = cDate;
-              changed = true;
-            } else if (cDate === localDate) {
-              if (cDays !== currentUser.daily_boosters_days_left) {
-                currentUser.daily_boosters_days_left = Math.max(Number(currentUser.daily_boosters_days_left || 0), cDays);
-                currentUser.dailyBoostersDaysLeft = currentUser.daily_boosters_days_left;
-                changed = true;
-              }
-            } else if (cDays > Number(currentUser.daily_boosters_days_left || 0)) {
-              currentUser.daily_boosters_days_left = cDays;
-              currentUser.dailyBoostersDaysLeft = cDays;
+          if (cloudData.daily_boosters_purchased_at) {
+            const cAt = Number(cloudData.daily_boosters_purchased_at || cloudData.dailyBoostersPurchasedAt || 0);
+            if (cAt > Number(currentUser.daily_boosters_purchased_at || 0)) {
+              currentUser.daily_boosters_purchased_at = cAt;
+              currentUser.dailyBoostersPurchasedAt = cAt;
               changed = true;
             }
           }
-          if (cloudData.daily_boosters_last_date && !currentUser.daily_boosters_last_date) {
-            currentUser.daily_boosters_last_date = cloudData.daily_boosters_last_date;
-            changed = true;
+          if (cloudData.daily_boosters_last_date) {
+            const cDate = cloudData.daily_boosters_last_date || cloudData.dailyBoostersLastDate || '';
+            const localDate = currentUser.daily_boosters_last_date || '';
+            if (cDate > localDate || !localDate) {
+              currentUser.daily_boosters_last_date = cDate;
+              currentUser.dailyBoostersLastDate = cDate;
+              changed = true;
+            }
           }
-          if (cloudData.daily_boosters_purchased_at && !currentUser.daily_boosters_purchased_at) {
-            currentUser.daily_boosters_purchased_at = Number(cloudData.daily_boosters_purchased_at);
-            changed = true;
+          const effCloudDays = getEffectiveDailyDays(cloudData);
+          if (effCloudDays > 0 || cloudData.daily_boosters_days_left !== undefined) {
+            const finalDays = getEffectiveDailyDays({ ...currentUser, daily_boosters_days_left: effCloudDays });
+            if (currentUser.daily_boosters_days_left !== finalDays) {
+              currentUser.daily_boosters_days_left = finalDays;
+              currentUser.dailyBoostersDaysLeft = finalDays;
+              changed = true;
+            }
           }
 
           if (cloudData.ton_balance !== undefined) {
@@ -6101,53 +6169,28 @@ async function initColorSortApp() {
     const initCreditedKey = `color_sort_daily_boosters_init_credited_${currentUser.telegramId}`;
     const wasInitCredited = localStorage.getItem(initCreditedKey) === '1' || currentUser.daily_boosters_init_credited === true;
 
-    // Check if initial accrual upon activation was missed (e.g. user bought prior to this fix)
+    // Check if initial accrual upon activation was missed
     if (!wasInitCredited) {
       localStorage.setItem(initCreditedKey, '1');
       currentUser.daily_boosters_init_credited = true;
-      currentUser.hints = (currentUser.hints || 0) + 10;
-      currentUser.undos = (currentUser.undos || 0) + 10;
-      currentUser.reveals = (currentUser.reveals || 0) + 10;
-      currentUser.extraBottles = (currentUser.extraBottles || 0) + 10;
-      currentUser.extra_bottles = currentUser.extraBottles;
-      currentUser.daily_boosters_last_date = kyiv.dateStr;
-      currentUser.dailyBoostersLastDate = kyiv.dateStr;
+      if (!currentUser.daily_boosters_purchased_at) {
+        currentUser.hints = (currentUser.hints || 0) + 10;
+        currentUser.undos = (currentUser.undos || 0) + 10;
+        currentUser.reveals = (currentUser.reveals || 0) + 10;
+        currentUser.extraBottles = (currentUser.extraBottles || 0) + 10;
+        currentUser.extra_bottles = currentUser.extraBottles;
+        currentUser.daily_boosters_last_date = kyiv.dateStr;
+        currentUser.dailyBoostersLastDate = kyiv.dateStr;
 
-      localStorage.setItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`, String(currentUser.daily_boosters_days_left || 0));
-      localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, kyiv.dateStr);
+        localStorage.setItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`, String(currentUser.daily_boosters_days_left || 0));
+        localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, kyiv.dateStr);
 
-      saveLocalUser();
-      updateHeaderUI();
-      updateShopUI();
-      syncPlayerToCloud(currentUser);
-
-      const revealBadgeEl = document.getElementById('revealBadge');
-      if (revealBadgeEl) {
-        revealBadgeEl.textContent = String(currentUser.reveals || 0);
-        revealBadgeEl.classList.toggle('badge-zero', (currentUser.reveals || 0) === 0);
+        saveLocalUser();
+        updateHeaderUI();
+        updateShopUI();
+        syncPlayerToCloud(currentUser);
+        return;
       }
-      const extraBottleBadgeEl = document.getElementById('extraBottleBadge');
-      if (extraBottleBadgeEl) {
-        extraBottleBadgeEl.textContent = String(currentUser.extraBottles || 0);
-        extraBottleBadgeEl.classList.toggle('badge-zero', (currentUser.extraBottles || 0) === 0);
-      }
-      const hintBadgeEl = document.getElementById('hintBadge');
-      if (hintBadgeEl) {
-        hintBadgeEl.textContent = String(currentUser.hints || 0);
-        hintBadgeEl.classList.toggle('badge-zero', (currentUser.hints || 0) === 0);
-      }
-      const undoBadgeEl = document.getElementById('undoBadge');
-      if (undoBadgeEl) {
-        undoBadgeEl.textContent = String(currentUser.undos || 0);
-        undoBadgeEl.classList.toggle('badge-zero', (currentUser.undos || 0) === 0);
-      }
-
-      showInfoModal(
-        '🎁',
-        t('dailyBoostersClaimTitle') || '🎁 Начисление подсказок!',
-        `Вам начислено первое начисление по 10 подсказок каждого вида:\n• ↩️ Отмена хода: +10\n• 💡 Подсказка: +10\n• 🔮 Открыть цвет: +10\n• 🧪 Пустая колба: +10\n\nСледующее начисление будет в 23:59 (Киев)!`
-      );
-      return;
     }
 
     let latestEligibleDate = null;
@@ -6238,16 +6281,6 @@ async function initColorSortApp() {
     );
   }
 
-  function formatDailyDaysWord(d) {
-    const abs = Math.abs(Number(d) || 0);
-    const mod10 = abs % 10;
-    const mod100 = abs % 100;
-    if (mod100 >= 11 && mod100 <= 19) return 'дней';
-    if (mod10 === 1) return 'день';
-    if (mod10 >= 2 && mod10 <= 4) return 'дня';
-    return 'дней';
-  }
-
   function updateShopUI() {
     const bal = parseFloat(currentUser.ton_balance || 0);
     if (shopUserBalance) {
@@ -6279,11 +6312,14 @@ async function initColorSortApp() {
     }
 
     // Daily Boosters (30 Days) UI Update
-    const dailyDays = Number(currentUser.daily_boosters_days_left || 0);
+    const dailyDays = getEffectiveDailyDays(currentUser);
+    currentUser.daily_boosters_days_left = dailyDays;
+    currentUser.dailyBoostersDaysLeft = dailyDays;
+
     const dailyBoostersStatusBox = document.getElementById('dailyBoostersStatusBox');
     const dailyBoostersDaysLeft = document.getElementById('dailyBoostersDaysLeft');
     const dailyBoostersTag = document.getElementById('dailyBoostersTag');
-    const dailyBoostersNextInfo = document.getElementById('dailyBoostersNextInfo');
+    const dailyBoostersCountdownTimer = document.getElementById('dailyBoostersCountdownTimer');
     const buyDailyBoostersBtnText = document.getElementById('buyDailyBoostersBtnText');
 
     if (dailyBoostersStatusBox) {
@@ -6305,8 +6341,13 @@ async function initColorSortApp() {
         dailyBoostersTag.style.border = '';
       }
     }
-    if (dailyBoostersNextInfo && dailyDays > 0) {
-      dailyBoostersNextInfo.textContent = '⏰ Следующее начисление: сегодня в 23:59 (Киев) (+10 каждого подарка)';
+    if (dailyBoostersCountdownTimer && dailyDays > 0) {
+      const remainingTime = getTimeUntilNext2359Kyiv();
+      if (remainingTime.hours > 0) {
+        dailyBoostersCountdownTimer.textContent = `${formatHoursWord(remainingTime.hours)} и ${formatMinutesWord(remainingTime.minutes)}`;
+      } else {
+        dailyBoostersCountdownTimer.textContent = `${formatMinutesWord(remainingTime.minutes)}`;
+      }
     }
     if (buyDailyBoostersBtnText) {
       buyDailyBoostersBtnText.textContent = dailyDays > 0 ? t('dailyBoostersBtnExtend', 5) : t('dailyBoostersBtnBuy', 5);
@@ -6326,7 +6367,7 @@ async function initColorSortApp() {
           if (shopTimer) clearInterval(shopTimer);
           shopTimer = null;
         }
-      }, 1000);
+      }, 60000); // 1-minute interval, no overhead
     }
     const modalContent = document.querySelector('.shop-modal-content');
     if (modalContent) modalContent.scrollTop = 0;
@@ -6336,14 +6377,17 @@ async function initColorSortApp() {
     }
   }
 
-  // Real-time automated monitor for 23:59:00 Kyiv daily boosters distribution
+  // Real-time automated monitor for 23:59:00 Kyiv daily reward countdown and distribution (once a minute)
   setInterval(() => {
     try {
       if (currentUser && currentUser.telegramId && Number(currentUser.daily_boosters_days_left || 0) > 0) {
         checkAndApplyClientDailyBoosters();
+        if (typeof updateShopUI === 'function') {
+          updateShopUI();
+        }
       }
     } catch (e) {}
-  }, 10000);
+  }, 60000);
 
   if (shopBtn) {
     shopBtn.addEventListener('click', (e) => {

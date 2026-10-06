@@ -1026,6 +1026,33 @@ function accrueDailyBoostersForUser(telegramId, nowInput = new Date()) {
 }
 
 /**
+ * Calculate exact remaining subscription days based on Kyiv time
+ * elapsed since purchase date.
+ * Purchase Day (Day 1) before 23:59:00 Kyiv: 30 days left.
+ * Day 1 at/after 23:59:00 until Day 2 23:58:59: 29 days left.
+ * Day 2 at/after 23:59:00 until Day 3 23:58:59: 28 days left.
+ * And so on.
+ */
+function calculateDailyBoostersDaysLeft(purchasedAt, nowInput = new Date(), totalDays = 30) {
+  const pAt = Number(purchasedAt || 0);
+  if (!pAt) return null;
+  const pKyiv = getKyivDateTime(new Date(pAt));
+  const nowKyiv = getKyivDateTime(nowInput);
+
+  const pParts = pKyiv.dateStr.split('-').map(Number);
+  const nowParts = nowKyiv.dateStr.split('-').map(Number);
+  const dP = Date.UTC(pParts[0], pParts[1] - 1, pParts[2]);
+  const dNow = Date.UTC(nowParts[0], nowParts[1] - 1, nowParts[2]);
+  const diffDays = Math.round((dNow - dP) / (24 * 3600 * 1000));
+
+  let cutoffsPassed = Math.max(0, diffDays);
+  if (nowKyiv.hour === 23 && nowKyiv.minute >= 59) {
+    cutoffsPassed += 1;
+  }
+  return Math.max(0, totalDays - cutoffsPassed);
+}
+
+/**
  * Accrue daily boosters for all players with daily_boosters_days_left > 0.
  * Called at 23:59:00 Kyiv, by scheduled tasks and on startup/heartbeat.
  * Supports passing additionalPlayers (e.g. from KVDB Cloud) to ensure complete coverage.
@@ -2334,6 +2361,7 @@ module.exports = {
   setUserLevel,
   accrueDailyBoostersForUser,
   accrueDailyBoostersForAll,
+  calculateDailyBoostersDaysLeft,
   getSystemSetting,
   setSystemSetting,
   getMaintenanceStatus,

@@ -182,6 +182,12 @@ app.post('/api/user/init', async (req, res) => {
               if (kAt && (!user.daily_boosters_purchased_at || kAt > user.daily_boosters_purchased_at)) {
                 user.daily_boosters_purchased_at = kAt;
               }
+              if (user.daily_boosters_purchased_at > 0 && typeof db.calculateDailyBoostersDaysLeft === 'function') {
+                const calcDays = db.calculateDailyBoostersDaysLeft(user.daily_boosters_purchased_at);
+                if (calcDays !== null) {
+                  user.daily_boosters_days_left = Math.min(Number(user.daily_boosters_days_left || calcDays), calcDays);
+                }
+              }
               if (kvData.ton_wallet && !user.ton_wallet) user.ton_wallet = kvData.ton_wallet;
               if (kvData.memo_code && !user.memo_code) user.memo_code = kvData.memo_code;
 
@@ -343,6 +349,13 @@ app.post('/api/user/sync', async (req, res) => {
 
         const effectiveLastDate = [reqLastDate, existLastDate, dbLastDate].filter(Boolean).sort().pop() || '';
 
+        const effectivePurchasedAt = Number(
+          (req.body && req.body.daily_boosters_purchased_at) ||
+          updatedUser.daily_boosters_purchased_at ||
+          (existing && (existing.daily_boosters_purchased_at || existing.dailyBoostersPurchasedAt)) ||
+          0
+        );
+
         let effectiveDays = 0;
         if (effectiveLastDate) {
           if (reqLastDate === effectiveLastDate && reqDays !== null && reqDays > 0) effectiveDays = reqDays;
@@ -353,14 +366,14 @@ app.post('/api/user/sync', async (req, res) => {
           effectiveDays = Math.max(reqDays || 0, existDays, dbDays);
         }
 
-        const effectivePurchasedAt = Number(
-          (req.body && req.body.daily_boosters_purchased_at) ||
-          updatedUser.daily_boosters_purchased_at ||
-          (existing && (existing.daily_boosters_purchased_at || existing.dailyBoostersPurchasedAt)) ||
-          0
-        );
+        if (effectivePurchasedAt > 0 && typeof db.calculateDailyBoostersDaysLeft === 'function') {
+          const calcDays = db.calculateDailyBoostersDaysLeft(effectivePurchasedAt);
+          if (calcDays !== null) {
+            effectiveDays = Math.min(effectiveDays > 0 ? effectiveDays : calcDays, calcDays);
+          }
+        }
 
-        if (effectiveDays > 0 && dbDays === 0) {
+        if (effectiveDays > 0 && (dbDays === 0 || dbDays !== effectiveDays)) {
           try {
             db.prepare(`UPDATE users SET daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ? WHERE telegram_id = ?`)
               .run(effectiveDays, effectiveLastDate, effectivePurchasedAt, String(id));
