@@ -30,13 +30,13 @@ const {
   checkIsAdmin
 } = require('../auth');
 
-// Strict Maintenance Mode: Only Alligator and Maria allowed
-const MAINTENANCE_MODE = true;
+// Maintenance Mode: Configurable via Admin Panel & DB
 const MAINTENANCE_ALLOWED_IDS = ['5761685341', '7116446051'];
 const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
 function maintenanceMiddleware(req, res, next) {
-  if (!MAINTENANCE_MODE) return next();
+  const maint = db.getMaintenanceStatus();
+  if (!maint.active) return next();
   if (req.path === '/config' || req.path === '/api/config' || req.path.startsWith('/admin') || req.path.startsWith('/api/admin')) {
     return next();
   }
@@ -44,14 +44,14 @@ function maintenanceMiddleware(req, res, next) {
   const tid = String((req.user && req.user.id) || (req.body && req.body.telegramId) || (req.query && req.query.telegramId) || '').trim();
   const uname = String((req.user && req.user.username) || (req.body && req.body.username) || (req.query && req.query.username) || '').toLowerCase().replace(/^@/, '').trim();
 
-  if (MAINTENANCE_ALLOWED_IDS.includes(tid) || (uname && MAINTENANCE_ALLOWED_USERNAMES.includes(uname))) {
+  if (MAINTENANCE_ALLOWED_IDS.includes(tid) || (uname && MAINTENANCE_ALLOWED_USERNAMES.includes(uname)) || checkIsAdmin(req)) {
     return next();
   }
 
   return res.status(200).json({
     success: false,
     maintenance: true,
-    error: 'Идут технические работы. Доступ временно ограничен.'
+    error: maint.message || 'Идут технические работы. Доступ временно ограничен.'
   });
 }
 
@@ -72,10 +72,11 @@ app.use('/api/admin', adminAuthMiddleware);
  * Public client config (Adsgram block ID, TON deposit address, etc.)
  */
 app.get('/api/config', (req, res) => {
+  const maint = db.getMaintenanceStatus();
   res.json({
     success: true,
-    maintenance: MAINTENANCE_MODE,
-    maintenanceMessage: 'Идут технические работы',
+    maintenance: maint.active,
+    maintenanceMessage: maint.message,
     allowedIds: MAINTENANCE_ALLOWED_IDS,
     adsgramBlockId: process.env.ADSGRAM_BLOCK_ID || '47788',
     tonDepositAddress: process.env.TON_DEPOSIT_ADDRESS || 'UQCHkPFe4kzBSXOez0wHtYZFFI-txS4Hwz6toXgwsuuwPIv5'
@@ -1651,6 +1652,44 @@ app.post('/api/admin/code-backups', async (req, res) => {
     return res.status(400).json({ success: false, error: 'Неизвестное действие' });
   } catch (err) {
     console.error('[API ERROR] /api/admin/code-backups:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: Get Maintenance Mode Status
+ */
+app.get('/api/admin/maintenance', (req, res) => {
+  try {
+    const maint = db.getMaintenanceStatus();
+    res.json({
+      success: true,
+      active: maint.active,
+      message: maint.message,
+      allowedIds: MAINTENANCE_ALLOWED_IDS,
+      allowedUsernames: MAINTENANCE_ALLOWED_USERNAMES
+    });
+  } catch (err) {
+    console.error('[API ERROR] GET /api/admin/maintenance:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Admin: Toggle or Update Maintenance Mode
+ */
+app.post('/api/admin/maintenance', async (req, res) => {
+  try {
+    const { active, message } = req.body || {};
+    const updated = db.setMaintenanceStatus(!!active, message);
+    console.log(`[ADMIN] Maintenance mode updated: active=${updated.active}, message="${updated.message}"`);
+    res.json({
+      success: true,
+      active: updated.active,
+      message: updated.message
+    });
+  } catch (err) {
+    console.error('[API ERROR] POST /api/admin/maintenance:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

@@ -521,6 +521,56 @@ function getAllTelegramIds() {
   }
 }
 
+function getSystemSetting(key, defaultValue = null) {
+  try {
+    const row = db.prepare(`SELECT value FROM system_settings WHERE key = ?`).get(key);
+    return (row && row.value !== null && row.value !== undefined) ? row.value : defaultValue;
+  } catch (e) {
+    return defaultValue;
+  }
+}
+
+function setSystemSetting(key, value) {
+  try {
+    db.prepare(`
+      INSERT INTO system_settings (key, value)
+      VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+    `).run(key, String(value));
+    return true;
+  } catch (e) {
+    console.error(`[DB ERROR] setSystemSetting(${key}):`, e);
+    return false;
+  }
+}
+
+function getMaintenanceStatus() {
+  try {
+    const activeVal = getSystemSetting('maintenance_mode', '0');
+    const messageVal = getSystemSetting('maintenance_message', 'Идут технические работы. Доступ временно ограничен.');
+    return {
+      active: activeVal === '1' || activeVal === 'true',
+      message: messageVal || 'Идут технические работы. Доступ временно ограничен.'
+    };
+  } catch (e) {
+    return { active: false, message: 'Идут технические работы. Доступ временно ограничен.' };
+  }
+}
+
+function setMaintenanceStatus(active, message = null) {
+  try {
+    const activeStr = active ? '1' : '0';
+    setSystemSetting('maintenance_mode', activeStr);
+    if (message !== null && message !== undefined && String(message).trim()) {
+      setSystemSetting('maintenance_message', String(message).trim());
+    }
+    return getMaintenanceStatus();
+  } catch (e) {
+    console.error('[DB ERROR] setMaintenanceStatus:', e);
+    return { active: !!active, message: message || '' };
+  }
+}
+
 function getSeasonResetTimestamp() {
   try {
     const row = db.prepare(`SELECT value FROM system_settings WHERE key = 'season_reset_at'`).get();
@@ -2190,5 +2240,9 @@ module.exports = {
   addBonus,
   setUserLevel,
   accrueDailyBoostersForUser,
-  accrueDailyBoostersForAll
+  accrueDailyBoostersForAll,
+  getSystemSetting,
+  setSystemSetting,
+  getMaintenanceStatus,
+  setMaintenanceStatus
 };
