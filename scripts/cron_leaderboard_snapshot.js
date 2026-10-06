@@ -305,7 +305,42 @@ async function main() {
   await postJson(`${GLOBAL_CLOUD_BASE}/${SNAPSHOTS_INDEX_KEY}`, curIndex);
   log(`📋 Cloud meta_leaderboard_snapshots_index updated! (${curIndex.length} total snapshots)`);
 
-  log(`🎉 DAILY LEADERBOARD SNAPSHOT COMPLETED SUCCESSFULLY!\n`);
+  // 8. Accrue daily boosters (+10 hints, undos, reveals, extra bottles) for all players with daily_boosters_days_left > 0
+  log(`🎁 Processing daily 23:59 boosters accrual for all active subscribers...`);
+  try {
+    const boosterResults = db.accrueDailyBoostersForAll(new Date(), cloudPlayers);
+    log(`   • Processed ${boosterResults.length} booster subscriptions in SQLite.`);
+    
+    // Also update KVDB Cloud directly for all active players
+    for (const bItem of boosterResults) {
+      if (bItem.user && !String(bItem.telegramId).startsWith('guest') && !String(bItem.telegramId).startsWith('dev')) {
+        const tid = String(bItem.telegramId);
+        const existingCloud = cloudPlayers.find(p => String(p.telegramId) === tid) || {};
+        const updatedPayload = {
+          ...existingCloud,
+          telegramId: tid,
+          hints: bItem.user.hints,
+          undos: bItem.user.undos,
+          reveals: bItem.user.reveals,
+          extraBottles: bItem.user.extra_bottles,
+          extra_bottles: bItem.user.extra_bottles,
+          daily_boosters_days_left: bItem.user.daily_boosters_days_left,
+          daily_boosters_last_date: bItem.user.daily_boosters_last_date,
+          updatedAt: Date.now()
+        };
+        const ok = await postJson(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(tid)}`, updatedPayload);
+        if (ok) {
+          log(`   ✅ Credited +${bItem.addAmount} boosters to ${bItem.user.first_name || tid} (@${bItem.user.username || '—'})! Days left: ${bItem.newDaysLeft}`);
+        } else {
+          log(`   ⚠️ Failed to update KVDB player ${tid}`);
+        }
+      }
+    }
+  } catch (bErr) {
+    log(`❌ Error processing daily boosters in cron runner: ${bErr.message}`);
+  }
+
+  log(`🎉 DAILY LEADERBOARD SNAPSHOT & BOOSTERS ACCRUAL COMPLETED SUCCESSFULLY!\n`);
 }
 
 main().catch(err => {

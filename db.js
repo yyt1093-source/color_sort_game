@@ -867,8 +867,15 @@ function buyShopItem(telegramId, itemId) {
     const currentDays = Number(user.daily_boosters_days_left || 0);
     const newDays = currentDays + 30;
     // The first daily accrual (+10 of each booster) is credited immediately upon activation!
-    // Therefore, today's date in Kyiv is marked as credited so that subsequent accruals happen after 23:59 every following day.
-    const initialLastDate = kyiv.dateStr;
+    // If activated before 23:59:00 Kyiv, the Day 1 23:59 accrual will happen at 23:59 TONIGHT!
+    // Therefore, initialLastDate is set to yesterday so that today's 23:59 accrual fires.
+    // If activated at or after 23:59:00 Kyiv, today's 23:59 has already passed, so initialLastDate = kyiv.dateStr.
+    const isAtOrAfter2359 = (kyiv.hour === 23 && kyiv.minute >= 59);
+    let initialLastDate = kyiv.dateStr;
+    if (!isAtOrAfter2359) {
+      const prevDate = new Date(now - 24 * 3600 * 1000);
+      initialLastDate = getKyivDateTime(prevDate).dateStr;
+    }
 
     const updateStmt = db.prepare(`
       UPDATE users
@@ -1020,16 +1027,41 @@ function accrueDailyBoostersForUser(telegramId, nowInput = new Date()) {
 
 /**
  * Accrue daily boosters for all players with daily_boosters_days_left > 0.
- * Called at 23:59:00 Kyiv and on startup/heartbeat.
+ * Called at 23:59:00 Kyiv, by scheduled tasks and on startup/heartbeat.
+ * Supports passing additionalPlayers (e.g. from KVDB Cloud) to ensure complete coverage.
  */
-function accrueDailyBoostersForAll(nowInput = new Date()) {
+function accrueDailyBoostersForAll(nowInput = new Date(), additionalPlayers = []) {
   try {
+    if (Array.isArray(additionalPlayers) && additionalPlayers.length > 0) {
+      for (const p of additionalPlayers) {
+        if (!p) continue;
+        const tid = String(p.telegramId || p.telegram_id || '');
+        const pDays = Number(p.daily_boosters_days_left !== undefined ? p.daily_boosters_days_left : (p.dailyBoostersDaysLeft || 0));
+        const pDate = p.daily_boosters_last_date || p.dailyBoostersLastDate || '';
+        const pAt = Number(p.daily_boosters_purchased_at || p.dailyBoostersPurchasedAt || 0);
+        if (tid && pDays > 0) {
+          const u = getUser(tid);
+          if (u && Number(u.daily_boosters_days_left || 0) < pDays) {
+            db.prepare(`UPDATE users SET daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ? WHERE telegram_id = ?`)
+              .run(pDays, pDate, pAt, tid);
+          }
+        }
+      }
+    }
+
     const users = db.prepare(`SELECT telegram_id FROM users WHERE daily_boosters_days_left > 0`).all();
     const results = [];
     for (const u of users) {
       const res = accrueDailyBoostersForUser(u.telegram_id, nowInput);
       if (res && res.accrued) {
-        results.push({ telegramId: u.telegram_id, dueCount: res.dueCount, newDaysLeft: res.newDaysLeft, addAmount: res.addAmount });
+        results.push({
+          telegramId: u.telegram_id,
+          dueCount: res.dueCount,
+          newDaysLeft: res.newDaysLeft,
+          addAmount: res.addAmount,
+          lastDate: res.lastDate,
+          user: res.user
+        });
       }
     }
     return results;

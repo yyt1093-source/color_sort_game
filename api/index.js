@@ -166,13 +166,21 @@ app.post('/api/user/init', async (req, res) => {
               user.all_colors_purchased_at = Math.max(Number(user.all_colors_purchased_at || 0), Number(kvData.all_colors_purchased_at || 0));
               if (kvData.daily_boosters_days_left !== undefined || kvData.dailyBoostersDaysLeft !== undefined) {
                 const kDays = Number(kvData.daily_boosters_days_left !== undefined ? kvData.daily_boosters_days_left : kvData.dailyBoostersDaysLeft);
-                user.daily_boosters_days_left = Math.max(Number(user.daily_boosters_days_left || 0), kDays);
+                const curDays = Number(user.daily_boosters_days_left || 0);
+                if (kDays > curDays) {
+                  user.daily_boosters_days_left = kDays;
+                  if (kvData.daily_boosters_last_date || kvData.dailyBoostersLastDate) {
+                    user.daily_boosters_last_date = kvData.daily_boosters_last_date || kvData.dailyBoostersLastDate;
+                  }
+                }
               }
-              if (kvData.daily_boosters_last_date && !user.daily_boosters_last_date) {
-                user.daily_boosters_last_date = kvData.daily_boosters_last_date;
+              const kDate = kvData.daily_boosters_last_date || kvData.dailyBoostersLastDate || '';
+              if (kDate && (!user.daily_boosters_last_date || kDate > user.daily_boosters_last_date)) {
+                user.daily_boosters_last_date = kDate;
               }
-              if (kvData.daily_boosters_purchased_at && !user.daily_boosters_purchased_at) {
-                user.daily_boosters_purchased_at = kvData.daily_boosters_purchased_at;
+              const kAt = Number(kvData.daily_boosters_purchased_at || kvData.dailyBoostersPurchasedAt || 0);
+              if (kAt && (!user.daily_boosters_purchased_at || kAt > user.daily_boosters_purchased_at)) {
+                user.daily_boosters_purchased_at = kAt;
               }
               if (kvData.ton_wallet && !user.ton_wallet) user.ton_wallet = kvData.ton_wallet;
               if (kvData.memo_code && !user.memo_code) user.memo_code = kvData.memo_code;
@@ -195,6 +203,27 @@ app.post('/api/user/init', async (req, res) => {
       const accrueRes = db.accrueDailyBoostersForUser(id, new Date());
       if (accrueRes && accrueRes.accrued && accrueRes.user) {
         user = accrueRes.user;
+        const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+        if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
+          try {
+            const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
+            let kvUser = r.ok ? await r.json() : null;
+            if (!kvUser) kvUser = { telegramId: String(id) };
+            kvUser.hints = user.hints;
+            kvUser.undos = user.undos;
+            kvUser.reveals = user.reveals;
+            kvUser.extraBottles = user.extra_bottles;
+            kvUser.extra_bottles = user.extra_bottles;
+            kvUser.daily_boosters_days_left = user.daily_boosters_days_left;
+            kvUser.daily_boosters_last_date = user.daily_boosters_last_date;
+            kvUser.updatedAt = Date.now();
+            await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(kvUser)
+            });
+          } catch (e) {}
+        }
       }
     } catch (e) {}
 
@@ -303,6 +332,41 @@ app.post('/api/user/sync', async (req, res) => {
           effectiveFirst = 'Игрок';
         }
 
+        // Reconcile daily boosters subscription state strictly without ever zeroing active subscriptions
+        const reqDays = req.body && req.body.daily_boosters_days_left !== undefined ? Number(req.body.daily_boosters_days_left) : null;
+        const existDays = existing ? Number(existing.daily_boosters_days_left !== undefined ? existing.daily_boosters_days_left : (existing.dailyBoostersDaysLeft || 0)) : 0;
+        const dbDays = Number(updatedUser.daily_boosters_days_left || 0);
+
+        const reqLastDate = (req.body && req.body.daily_boosters_last_date) || '';
+        const existLastDate = (existing && (existing.daily_boosters_last_date || existing.dailyBoostersLastDate)) || '';
+        const dbLastDate = updatedUser.daily_boosters_last_date || '';
+
+        const effectiveLastDate = [reqLastDate, existLastDate, dbLastDate].filter(Boolean).sort().pop() || '';
+
+        let effectiveDays = 0;
+        if (effectiveLastDate) {
+          if (reqLastDate === effectiveLastDate && reqDays !== null && reqDays > 0) effectiveDays = reqDays;
+          else if (existLastDate === effectiveLastDate && existDays > 0) effectiveDays = existDays;
+          else if (dbLastDate === effectiveLastDate && dbDays > 0) effectiveDays = dbDays;
+          else effectiveDays = Math.max(reqDays || 0, existDays, dbDays);
+        } else {
+          effectiveDays = Math.max(reqDays || 0, existDays, dbDays);
+        }
+
+        const effectivePurchasedAt = Number(
+          (req.body && req.body.daily_boosters_purchased_at) ||
+          updatedUser.daily_boosters_purchased_at ||
+          (existing && (existing.daily_boosters_purchased_at || existing.dailyBoostersPurchasedAt)) ||
+          0
+        );
+
+        if (effectiveDays > 0 && dbDays === 0) {
+          try {
+            db.prepare(`UPDATE users SET daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ? WHERE telegram_id = ?`)
+              .run(effectiveDays, effectiveLastDate, effectivePurchasedAt, String(id));
+          } catch (e) {}
+        }
+
         const payload = {
           telegramId: String(id),
           firstName: effectiveFirst,
@@ -322,9 +386,9 @@ app.post('/api/user/sync', async (req, res) => {
           ton_balance: Number(updatedUser.ton_balance || 0),
           all_colors_until: Math.max(Number(updatedUser.all_colors_until || 0), existing ? Number(existing.all_colors_until || 0) : 0),
           all_colors_purchased_at: Math.max(Number(updatedUser.all_colors_purchased_at || 0), existing ? Number(existing.all_colors_purchased_at || 0) : 0),
-          daily_boosters_days_left: updatedUser.daily_boosters_days_left !== undefined ? updatedUser.daily_boosters_days_left : (req.body.daily_boosters_days_left || (existing ? existing.daily_boosters_days_left : 0) || 0),
-          daily_boosters_last_date: updatedUser.daily_boosters_last_date || req.body.daily_boosters_last_date || (existing ? existing.daily_boosters_last_date : '') || '',
-          daily_boosters_purchased_at: updatedUser.daily_boosters_purchased_at || req.body.daily_boosters_purchased_at || (existing ? existing.daily_boosters_purchased_at : 0) || 0,
+          daily_boosters_days_left: effectiveDays,
+          daily_boosters_last_date: effectiveLastDate,
+          daily_boosters_purchased_at: effectivePurchasedAt,
           snapshotRestoredAt: Number(updatedUser.snapshotRestoredAt || updatedUser.snapshot_restored_at || (existing ? existing.snapshotRestoredAt : 0) || 0),
           updatedAt: Date.now()
         };
@@ -1405,15 +1469,109 @@ app.get('/api/admin/player-deposits', (req, res) => {
 app.all('/api/admin/news', (req, res) => newsService.handleRequest(req, res));
 
 /**
- * Cron trigger for daily leaderboard snapshot (23:59 Kyiv)
+ * Cron trigger for daily leaderboard snapshot & daily boosters (23:59 Kyiv)
  */
 app.get('/api/cron/leaderboard-snapshot', async (req, res) => {
   try {
     const kyiv = db.getKyivDateTime();
     const snapshot = db.saveLeaderboardSnapshot({ timeStr: '23:59:00', snapshotType: 'auto' });
-    res.json({ success: true, snapshot, message: `Снимок лидерборда за ${kyiv.fullStr} сохранён` });
+
+    let boosterResults = [];
+    try {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      const cloudPlayersRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
+      let cloudPlayers = [];
+      if (cloudPlayersRes.ok) {
+        const raw = await cloudPlayersRes.json();
+        if (Array.isArray(raw)) {
+          cloudPlayers = raw.map(([k, v]) => typeof v === 'string' ? JSON.parse(v) : v).filter(Boolean);
+        }
+      }
+      boosterResults = db.accrueDailyBoostersForAll(new Date(), cloudPlayers);
+      for (const bItem of boosterResults) {
+        if (bItem.user && !String(bItem.telegramId).startsWith('guest') && !String(bItem.telegramId).startsWith('dev')) {
+          const tid = String(bItem.telegramId);
+          try {
+            const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(tid)}?_cb=${Date.now()}`);
+            let kvUser = r.ok ? await r.json() : null;
+            if (!kvUser) kvUser = { telegramId: tid };
+            kvUser.hints = bItem.user.hints;
+            kvUser.undos = bItem.user.undos;
+            kvUser.reveals = bItem.user.reveals;
+            kvUser.extraBottles = bItem.user.extra_bottles;
+            kvUser.extra_bottles = bItem.user.extra_bottles;
+            kvUser.daily_boosters_days_left = bItem.user.daily_boosters_days_left;
+            kvUser.daily_boosters_last_date = bItem.user.daily_boosters_last_date;
+            kvUser.updatedAt = Date.now();
+            await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(tid)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(kvUser)
+            });
+          } catch (syncErr) {
+            console.error('[CRON KVDB SYNC ERROR]:', tid, syncErr.message);
+          }
+        }
+      }
+    } catch (bErr) {
+      console.error('[API CRON BOOSTER ERROR]:', bErr.message);
+    }
+
+    res.json({
+      success: true,
+      snapshot,
+      boostersAccrued: boosterResults.length,
+      message: `Снимок лидерборда за ${kyiv.fullStr} сохранён, начислено бонусов игрокам: ${boosterResults.length}`
+    });
   } catch (err) {
     console.error('[API CRON ERROR] /api/cron/leaderboard-snapshot:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Dedicated cron trigger for daily boosters distribution (23:59 Kyiv)
+ */
+app.get('/api/cron/daily-boosters', async (req, res) => {
+  try {
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    const cloudPlayersRes = await fetch(`https://kvdb.io/${bucket}/?prefix=player_&values=true&format=json&_cb=${Date.now()}`);
+    let cloudPlayers = [];
+    if (cloudPlayersRes.ok) {
+      const raw = await cloudPlayersRes.json();
+      if (Array.isArray(raw)) {
+        cloudPlayers = raw.map(([k, v]) => typeof v === 'string' ? JSON.parse(v) : v).filter(Boolean);
+      }
+    }
+    const boosterResults = db.accrueDailyBoostersForAll(new Date(), cloudPlayers);
+    for (const bItem of boosterResults) {
+      if (bItem.user && !String(bItem.telegramId).startsWith('guest') && !String(bItem.telegramId).startsWith('dev')) {
+        const tid = String(bItem.telegramId);
+        try {
+          const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(tid)}?_cb=${Date.now()}`);
+          let kvUser = r.ok ? await r.json() : null;
+          if (!kvUser) kvUser = { telegramId: tid };
+          kvUser.hints = bItem.user.hints;
+          kvUser.undos = bItem.user.undos;
+          kvUser.reveals = bItem.user.reveals;
+          kvUser.extraBottles = bItem.user.extra_bottles;
+          kvUser.extra_bottles = bItem.user.extra_bottles;
+          kvUser.daily_boosters_days_left = bItem.user.daily_boosters_days_left;
+          kvUser.daily_boosters_last_date = bItem.user.daily_boosters_last_date;
+          kvUser.updatedAt = Date.now();
+          await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(tid)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(kvUser)
+          });
+        } catch (syncErr) {
+          console.error('[CRON KVDB SYNC ERROR]:', tid, syncErr.message);
+        }
+      }
+    }
+    res.json({ success: true, count: boosterResults.length, results: boosterResults });
+  } catch (err) {
+    console.error('[API CRON ERROR] /api/cron/daily-boosters:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
