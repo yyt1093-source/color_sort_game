@@ -197,6 +197,7 @@
 <body>
   <!-- Maintenance Mode Fullscreen Modal (Only Alligator and Maria allowed) -->
   <div id="maintenanceScreen" class="maintenance-screen" style="display:none;">
+    <button type="button" id="maintenancePreviewCloseBtn" class="maintenance-preview-close-btn hidden" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); color: #fff; padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; z-index: 999999999; backdrop-filter: blur(10px);">✕ Закрыть предпросмотр</button>
     <div class="maintenance-card">
       <div class="maintenance-icon-wrap">
         <span class="maintenance-icon-main">⚙️</span>
@@ -205,25 +206,25 @@
         <span class="maintenance-status-dot"></span>
         <span>Технический перерыв</span>
       </div>
-      <h1 class="maintenance-title">Идут технические работы</h1>
-      <p class="maintenance-text">
+      <h1 class="maintenance-title" id="maintenanceTitle">Идут технические работы</h1>
+      <p class="maintenance-text" id="maintenanceText">
         В настоящее время в игре проводятся плановые технические работы. Доступ временно ограничен.
       </p>
       <div class="maintenance-info-box">
         <div class="maintenance-info-item">
           <span>🛠️</span>
-          <span>Статус: <strong>Идут технические работы</strong></span>
+          <span>Статус: <strong id="maintenanceStatusVal">Идут технические работы</strong></span>
         </div>
         <div class="maintenance-info-item">
           <span>🔒</span>
-          <span>Доступ: <strong>Временно ограничен</strong></span>
+          <span>Доступ: <strong id="maintenanceAccessVal">Временно ограничен</strong></span>
         </div>
         <div class="maintenance-info-item">
           <span>⏳</span>
-          <span>Ожидание: <strong>Пожалуйста, зайдите позже</strong></span>
+          <span>Ожидание: <strong id="maintenanceWaitVal">Пожалуйста, зайдите позже</strong></span>
         </div>
       </div>
-      <p class="maintenance-footer-hint">
+      <p class="maintenance-footer-hint" id="maintenanceFooterHint">
         Мы скоро вернемся! Приносим извинения за временные неудобства.
       </p>
     </div>
@@ -1051,12 +1052,21 @@
               </div>
             </div>
           </button>
-          <button type="button" class="admin-nav-tab" id="adminTabNewsBtn" data-tab="news" style="grid-column: 1 / -1 !important; width: 100% !important; display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: center !important; padding: 8px 12px !important; min-height: 48px !important; border-radius: 13px !important; box-sizing: border-box !important;">
-            <div class="admin-nav-tab-main" style="display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: center !important; gap: 8px !important; width: auto !important;">
-              <span class="admin-nav-tab-icon" style="width: 32px !important; height: 32px !important; font-size: 1.15rem !important;">📢</span>
-              <div class="admin-nav-tab-text" style="display: flex !important; flex-direction: column !important; align-items: flex-start !important; text-align: left !important; width: auto !important; gap: 1px !important;">
+          <button type="button" class="admin-nav-tab" id="adminTabNewsBtn" data-tab="news" style="width: 100% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-align: center !important; padding: 10px 6px !important; min-height: 72px !important; border-radius: 13px !important; box-sizing: border-box !important;">
+            <div class="admin-nav-tab-main" style="display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 5px !important; width: 100% !important;">
+              <span class="admin-nav-tab-icon">📢</span>
+              <div class="admin-nav-tab-text" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important; width: 100% !important;">
                 <strong id="adminTabNewsLabel">Новости</strong>
-                <span class="admin-nav-tab-desc" id="adminTabNewsDesc">Рассылка сообщений в боте</span>
+                <span class="admin-nav-tab-desc" id="adminTabNewsDesc">Рассылка в боте</span>
+              </div>
+            </div>
+          </button>
+          <button type="button" class="admin-nav-tab" id="adminTabMaintenanceBtn" data-tab="maintenance" style="width: 100% !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; text-align: center !important; padding: 10px 6px !important; min-height: 72px !important; border-radius: 13px !important; box-sizing: border-box !important;">
+            <div class="admin-nav-tab-main" style="display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 5px !important; width: 100% !important;">
+              <span class="admin-nav-tab-icon">🚧</span>
+              <div class="admin-nav-tab-text" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important; width: 100% !important;">
+                <strong id="adminTabMaintenanceLabel">Тех. работы</strong>
+                <span class="admin-nav-tab-desc" id="adminTabMaintenanceDesc">Блокировка входа</span>
               </div>
             </div>
           </button>
@@ -1602,7 +1612,69 @@
                 </div>
               </div>
             </div>
+        <!-- Tab 6: Admin Maintenance Mode Control (Технические работы) -->
+        <div id="adminTabMaintenanceContent" class="admin-tab-content hidden">
+          <div class="admin-history-header-box" style="border-left: 3px solid #f59e0b;">
+            <div class="admin-history-title-row">
+              <span style="font-size: 20px;">🚧</span>
+              <strong id="adminMaintenanceHeaderTitle">Управление техническими работами</strong>
+            </div>
+            <span class="admin-history-sub" id="adminMaintenanceHeaderSub" style="margin-top: 4px; display: block; line-height: 1.45;">
+              Блокировка входа в игру для всех пользователей. Когда тех. работы включены, игроки при запуске видят окно «Идут технические работы». Доступ открыт только администраторам (Аллигатор и Мария).
+            </span>
           </div>
+
+          <!-- Status Card -->
+          <div class="admin-maintenance-card" style="margin-top: 10px; padding: 14px 16px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 14px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="adminMaintenanceStatusDot" style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; box-shadow: 0 0 10px #10b981; display: inline-block;"></span>
+                <div>
+                  <div style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;" id="adminMaintenanceStatusLabel">Текущий статус входа:</div>
+                  <strong id="adminMaintenanceStatusText" style="font-size: 0.95rem; color: #34d399;">🟢 Доступ открыт (Все игроки могут играть)</strong>
+                </div>
+              </div>
+              <button type="button" id="adminMaintenanceRefreshBtn" class="admin-history-icon-btn" title="Обновить статус" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); width: 34px; height: 34px; border-radius: 8px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;">🔄</button>
+            </div>
+
+            <!-- Big Main Toggle Button -->
+            <button type="button" id="adminMaintenanceToggleBtn" style="width: 100%; padding: 14px 16px; border-radius: 12px; border: none; font-size: 0.92rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; box-shadow: 0 4px 14px rgba(0,0,0,0.4); background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: #ffffff;">
+              <span id="adminMaintenanceToggleIcon" style="font-size: 1.2rem;">🛑</span>
+              <span id="adminMaintenanceToggleLabel">Включить тех. работы (Заблокировать вход всем)</span>
+            </button>
+
+            <!-- Quick Action: Preview Screen -->
+            <button type="button" id="adminMaintenancePreviewBtn" style="width: 100%; padding: 10px 14px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; color: #38bdf8; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>👁️</span>
+              <span id="adminMaintenancePreviewBtnLabel">Предпросмотр окна тех. работ (как видят игроки)</span>
+            </button>
+          </div>
+
+          <!-- Message Customization Box -->
+          <div style="margin-top: 10px; padding: 14px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; display: flex; flex-direction: column; gap: 10px;">
+            <label for="adminMaintenanceMessageInput" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
+              <span>💬</span> <span id="adminMaintenanceMessageInputLabel">Сообщение в окне технических работ:</span>
+            </label>
+            <textarea id="adminMaintenanceMessageInput" rows="2" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; color: #fff; font-size: 0.88rem; font-family: inherit; resize: vertical; outline: none;" placeholder="В настоящее время в игре проводятся плановые технические работы. Доступ временно ограничен.">В настоящее время в игре проводятся плановые технические работы. Доступ временно ограничен.</textarea>
+            
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+              <button type="button" id="adminMaintenanceResetMsgBtn" style="padding: 8px 12px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; color: #94a3b8; font-size: 0.8rem; font-weight: 600; cursor: pointer;">
+                <span id="adminMaintenanceResetMsgLabel">По умолчанию</span>
+              </button>
+              <button type="button" id="adminMaintenanceSaveMsgBtn" style="padding: 8px 16px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; color: #fff; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <span>💾</span>
+                <span id="adminMaintenanceSaveMsgLabel">Сохранить текст</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Whitelist Note Box -->
+          <div style="margin-top: 10px; padding: 12px 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; font-size: 0.8rem; color: #a7f3d0; line-height: 1.45;">
+            🛡️ <strong>Белый список администраторов:</strong> Доступ к игре всегда открыт для <code>alligator0709</code> (5761685341) и <code>maria290355</code> (7116446051). Вы можете свободно тестировать и отключать режим в любой момент.
+          </div>
+
+          <!-- Feedback Status Message Box -->
+          <div id="adminMaintenanceFeedbackMsg" class="admin-feedback-msg hidden" style="margin-top: 10px;"></div>
         </div>
 
         <!-- Bottom Collapse Button -->

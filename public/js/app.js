@@ -13,8 +13,7 @@ async function initColorSortApp() {
     photoUrl: ''
   };
 
-  // 1.1 Strict Maintenance Access Control (Only Alligator and Maria allowed)
-  const MAINTENANCE_ACTIVE = true;
+  // 1.1 Maintenance Access Control (Admins Alligator & Maria always allowed)
   const MAINTENANCE_ALLOWED_IDS = ['5761685341', '7116446051'];
   const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
@@ -22,21 +21,46 @@ async function initColorSortApp() {
   const checkUname = String(userData.username || '').toLowerCase().replace(/^@/, '').trim();
   const isAllowedPlayer = MAINTENANCE_ALLOWED_IDS.includes(checkTid) || (checkUname && MAINTENANCE_ALLOWED_USERNAMES.includes(checkUname));
 
-  if (MAINTENANCE_ACTIVE && !isAllowedPlayer) {
+  window.__maintenanceBlocked = false;
+  const maintEl = document.getElementById('maintenanceScreen');
+  if (maintEl) maintEl.style.display = 'none';
+
+  function applyMaintenanceBlock(messageText) {
+    if (isAllowedPlayer) return;
     console.warn('[Maintenance] Access closed for player:', checkTid, checkUname);
     window.__maintenanceBlocked = true;
-    const maintEl = document.getElementById('maintenanceScreen');
-    if (maintEl) maintEl.style.display = 'flex';
+    if (maintEl) {
+      if (messageText) {
+        const textEl = document.getElementById('maintenanceText');
+        if (textEl) textEl.textContent = messageText;
+      }
+      maintEl.style.display = 'flex';
+    }
     const startEl = document.getElementById('startScreen');
     if (startEl) startEl.style.display = 'none';
     const appEl = document.getElementById('appContainer');
     if (appEl) appEl.style.display = 'none';
-    return; // Completely block all game engine loading and network activity
+    try {
+      if (typeof audio !== 'undefined' && audio.stopAll) audio.stopAll();
+      if (window.SoundEngine && window.SoundEngine.SoundEngine && window.SoundEngine.SoundEngine.stopAll) {
+        window.SoundEngine.SoundEngine.stopAll();
+      }
+    } catch (e) {}
   }
 
-  window.__maintenanceBlocked = false;
-  const maintEl = document.getElementById('maintenanceScreen');
-  if (maintEl) maintEl.style.display = 'none';
+  function liftMaintenanceBlock() {
+    window.__maintenanceBlocked = false;
+    if (maintEl) maintEl.style.display = 'none';
+    const startEl = document.getElementById('startScreen');
+    if (startEl && !window.__gameAlreadyStarted) {
+      startEl.style.display = 'flex';
+      startEl.style.pointerEvents = 'auto';
+    }
+    const appEl = document.getElementById('appContainer');
+    if (appEl && window.__gameAlreadyStarted) {
+      appEl.style.display = 'flex';
+    }
+  }
 
   // 2. Init Adsgram
   let AdController = null;
@@ -45,11 +69,19 @@ async function initColorSortApp() {
   async function initAdsgram() {
     try {
       const cfg = await apiCall('/api/config');
-      if (cfg && cfg.adsgramBlockId) {
-        adsgramBlockId = String(cfg.adsgramBlockId).trim();
-      }
-      if (cfg && cfg.tonDepositAddress) {
-        tonDepositAddress = String(cfg.tonDepositAddress).trim();
+      if (cfg) {
+        if (cfg.maintenance && !isAllowedPlayer) {
+          applyMaintenanceBlock(cfg.maintenanceMessage);
+          return;
+        } else {
+          liftMaintenanceBlock();
+        }
+        if (cfg.adsgramBlockId) {
+          adsgramBlockId = String(cfg.adsgramBlockId).trim();
+        }
+        if (cfg.tonDepositAddress) {
+          tonDepositAddress = String(cfg.tonDepositAddress).trim();
+        }
       }
     } catch (e) {}
 
@@ -378,6 +410,19 @@ async function initColorSortApp() {
       adminNewsHistoryTitle: "История отправленных новостей",
       adminNewsLoadingText: "Загрузка истории новостей...",
       adminNewsEmptyText: "Пока нет отправленных новостей",
+      adminTabMaintenanceLabel: "Тех. работы",
+      adminTabMaintenanceDesc: "Блокировка входа",
+      adminMaintenanceHeaderTitle: "Управление техническими работами",
+      adminMaintenanceHeaderSub: "Блокировка входа в игру для всех пользователей. Когда тех. работы включены, игроки при запуске видят окно «Идут технические работы». Доступ открыт только администраторам (Аллигатор и Мария).",
+      adminMaintenanceStatusLabel: "Текущий статус входа:",
+      adminMaintenanceStatusOpen: "🟢 Доступ открыт (Все игроки могут играть)",
+      adminMaintenanceStatusActive: "🔴 Тех. работы активны (Вход заблокирован для всех)",
+      adminMaintenanceToggleEnable: "Включить тех. работы (Заблокировать вход всем)",
+      adminMaintenanceToggleDisable: "Выключить тех. работы (Открыть доступ всем)",
+      adminMaintenancePreviewBtnLabel: "Предпросмотр окна тех. работ (как видят игроки)",
+      adminMaintenanceMessageInputLabel: "Сообщение в окне технических работ:",
+      adminMaintenanceResetMsgLabel: "По умолчанию",
+      adminMaintenanceSaveMsgLabel: "Сохранить текст",
       tgChannelTitle: "Telegram–канал",
       officialBadge: "Официальный",
       ourProject: "Наш проект",
@@ -760,6 +805,19 @@ async function initColorSortApp() {
       adminNewsHistoryTitle: "Історія надісланих новин",
       adminNewsLoadingText: "Завантаження історії новин...",
       adminNewsEmptyText: "Поки немає надісланих новин",
+      adminTabMaintenanceLabel: "Тех. роботи",
+      adminTabMaintenanceDesc: "Блокування входу",
+      adminMaintenanceHeaderTitle: "Керування технічними роботами",
+      adminMaintenanceHeaderSub: "Блокування входу до гри для всіх користувачів. Коли тех. роботи увімкнено, гравці при запуску бачать вікно «Йдуть технічні роботи». Доступ відкрито тільки адміністраторам (Алігатор та Марія).",
+      adminMaintenanceStatusLabel: "Поточний статус входу:",
+      adminMaintenanceStatusOpen: "🟢 Доступ відкрито (Всі гравці можуть грати)",
+      adminMaintenanceStatusActive: "🔴 Тех. роботи активні (Вхід заблоковано для всіх)",
+      adminMaintenanceToggleEnable: "Увімкнути тех. роботи (Заблокувати вхід всім)",
+      adminMaintenanceToggleDisable: "Вимкнути тех. роботи (Відкрити доступ всім)",
+      adminMaintenancePreviewBtnLabel: "Попередній перегляд вікна тех. робіт",
+      adminMaintenanceMessageInputLabel: "Повідомлення у вікні технічних робіт:",
+      adminMaintenanceResetMsgLabel: "За замовчуванням",
+      adminMaintenanceSaveMsgLabel: "Зберегти текст",
       tgChannelTitle: "Telegram–канал",
       officialBadge: "Офіційний",
       ourProject: "Наш проєкт",
@@ -1126,6 +1184,19 @@ async function initColorSortApp() {
       adminNewsHistoryTitle: "Broadcast History",
       adminNewsLoadingText: "Loading news history...",
       adminNewsEmptyText: "No broadcast history yet",
+      adminTabMaintenanceLabel: "Maintenance",
+      adminTabMaintenanceDesc: "Lock access",
+      adminMaintenanceHeaderTitle: "Maintenance Mode Management",
+      adminMaintenanceHeaderSub: "Lock game access for all users. When maintenance is enabled, players see the 'Maintenance ongoing' popup on startup. Only admins (Alligator & Maria) retain access.",
+      adminMaintenanceStatusLabel: "Current access status:",
+      adminMaintenanceStatusOpen: "🟢 Access open (All players can play)",
+      adminMaintenanceStatusActive: "🔴 Maintenance active (Access locked for all)",
+      adminMaintenanceToggleEnable: "Enable maintenance (Block all players)",
+      adminMaintenanceToggleDisable: "Disable maintenance (Allow all players)",
+      adminMaintenancePreviewBtnLabel: "Preview maintenance screen",
+      adminMaintenanceMessageInputLabel: "Message on maintenance screen:",
+      adminMaintenanceResetMsgLabel: "Default",
+      adminMaintenanceSaveMsgLabel: "Save text",
       tgChannelTitle: "Telegram Channel",
       officialBadge: "Official",
       ourProject: "Our project",
@@ -2654,6 +2725,26 @@ async function initColorSortApp() {
     const adminSaveVersionActionSub = document.getElementById('adminSaveVersionActionSub');
     if (adminSaveVersionActionSub) adminSaveVersionActionSub.textContent = t('adminSaveVersionActionSub') || 'Сохранить текущее состояние игры в контрольные точки';
 
+    // Admin Maintenance Tab
+    const adminTabMaintenanceLabel = document.getElementById('adminTabMaintenanceLabel');
+    if (adminTabMaintenanceLabel) adminTabMaintenanceLabel.textContent = t('adminTabMaintenanceLabel');
+    const adminTabMaintenanceDesc = document.getElementById('adminTabMaintenanceDesc');
+    if (adminTabMaintenanceDesc) adminTabMaintenanceDesc.textContent = t('adminTabMaintenanceDesc');
+    const adminMaintenanceHeaderTitle = document.getElementById('adminMaintenanceHeaderTitle');
+    if (adminMaintenanceHeaderTitle) adminMaintenanceHeaderTitle.textContent = t('adminMaintenanceHeaderTitle');
+    const adminMaintenanceHeaderSub = document.getElementById('adminMaintenanceHeaderSub');
+    if (adminMaintenanceHeaderSub) adminMaintenanceHeaderSub.textContent = t('adminMaintenanceHeaderSub');
+    const adminMaintenanceStatusLabel = document.getElementById('adminMaintenanceStatusLabel');
+    if (adminMaintenanceStatusLabel) adminMaintenanceStatusLabel.textContent = t('adminMaintenanceStatusLabel');
+    const adminMaintenancePreviewBtnLabel = document.getElementById('adminMaintenancePreviewBtnLabel');
+    if (adminMaintenancePreviewBtnLabel) adminMaintenancePreviewBtnLabel.textContent = t('adminMaintenancePreviewBtnLabel');
+    const adminMaintenanceMessageInputLabel = document.getElementById('adminMaintenanceMessageInputLabel');
+    if (adminMaintenanceMessageInputLabel) adminMaintenanceMessageInputLabel.textContent = t('adminMaintenanceMessageInputLabel');
+    const adminMaintenanceResetMsgLabel = document.getElementById('adminMaintenanceResetMsgLabel');
+    if (adminMaintenanceResetMsgLabel) adminMaintenanceResetMsgLabel.textContent = t('adminMaintenanceResetMsgLabel');
+    const adminMaintenanceSaveMsgLabel = document.getElementById('adminMaintenanceSaveMsgLabel');
+    if (adminMaintenanceSaveMsgLabel) adminMaintenanceSaveMsgLabel.textContent = t('adminMaintenanceSaveMsgLabel');
+
     // Leaderboard
     const leaderboardModalTitle = document.getElementById('leaderboardModalTitle');
     if (leaderboardModalTitle) leaderboardModalTitle.textContent = t('leaderboardTitle');
@@ -3342,7 +3433,11 @@ async function initColorSortApp() {
       const res = await fetch(API_BASE + endpoint, options);
       clearTimeout(timeoutId);
       if (!res.ok) return null;
-      return await res.json();
+      const json = await res.json();
+      if (json && json.maintenance && !isAllowedPlayer) {
+        applyMaintenanceBlock(json.error || json.maintenanceMessage);
+      }
+      return json;
     } catch (e) {
       return null;
     }
@@ -6572,7 +6667,10 @@ async function initColorSortApp() {
       }
       const newsBtn = document.getElementById('adminTabNewsBtn');
       if (newsBtn) {
-        newsBtn.style.setProperty('grid-column', '1 / -1', 'important');
+        newsBtn.style.removeProperty('grid-column');
+      }
+      if (typeof loadAdminMaintenanceStatus === 'function') {
+        loadAdminMaintenanceStatus();
       }
       setTimeout(() => {
         adminPanelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -7959,13 +8057,15 @@ async function initColorSortApp() {
   const adminTabWalletsBtn = document.getElementById('adminTabWalletsBtn');
   const adminTabNewsBtn = document.getElementById('adminTabNewsBtn');
   const adminTabCodeBackupBtn = document.getElementById('adminTabCodeBackupBtn');
+  const adminTabMaintenanceBtn = document.getElementById('adminTabMaintenanceBtn');
   const adminTabActionsContent = document.getElementById('adminTabActionsContent');
   const adminTabHistoryContent = document.getElementById('adminTabHistoryContent');
   const adminTabWalletsContent = document.getElementById('adminTabWalletsContent');
   const adminTabNewsContent = document.getElementById('adminTabNewsContent');
   const adminTabCodeBackupContent = document.getElementById('adminTabCodeBackupContent');
+  const adminTabMaintenanceContent = document.getElementById('adminTabMaintenanceContent');
 
-  // Enforce Checkerboard / Tile Grid on Admin Nav Tabs (2x2 + 1)
+  // Enforce Checkerboard / Tile Grid on Admin Nav Tabs (2x3 Grid)
   const enforceAdminNavGrid = () => {
     const navTabs = document.querySelector('.admin-nav-tabs');
     if (navTabs) {
@@ -7975,7 +8075,7 @@ async function initColorSortApp() {
       navTabs.style.setProperty('width', '100%', 'important');
     }
     if (adminTabNewsBtn) {
-      adminTabNewsBtn.style.setProperty('grid-column', '1 / -1', 'important');
+      adminTabNewsBtn.style.removeProperty('grid-column');
     }
   };
   enforceAdminNavGrid();
@@ -8092,11 +8192,13 @@ async function initColorSortApp() {
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
       if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
       if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.remove('active');
+      if (adminTabMaintenanceBtn) adminTabMaintenanceBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.remove('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
       if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
       if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.add('hidden');
+      if (adminTabMaintenanceContent) adminTabMaintenanceContent.classList.add('hidden');
       loadAdminHistoryList();
     } else if (tabName === 'wallets') {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
@@ -8104,11 +8206,13 @@ async function initColorSortApp() {
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.add('active');
       if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
       if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.remove('active');
+      if (adminTabMaintenanceBtn) adminTabMaintenanceBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.remove('hidden');
       if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
       if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.add('hidden');
+      if (adminTabMaintenanceContent) adminTabMaintenanceContent.classList.add('hidden');
       loadAdminWalletsList();
     } else if (tabName === 'news') {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
@@ -8116,11 +8220,13 @@ async function initColorSortApp() {
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
       if (adminTabNewsBtn) adminTabNewsBtn.classList.add('active');
       if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.remove('active');
+      if (adminTabMaintenanceBtn) adminTabMaintenanceBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
       if (adminTabNewsContent) adminTabNewsContent.classList.remove('hidden');
       if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.add('hidden');
+      if (adminTabMaintenanceContent) adminTabMaintenanceContent.classList.add('hidden');
       loadAdminNewsData();
     } else if (tabName === 'code_backup') {
       if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
@@ -8128,15 +8234,38 @@ async function initColorSortApp() {
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
       if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
       if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.add('active');
+      if (adminTabMaintenanceBtn) adminTabMaintenanceBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
       if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
       if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.remove('hidden');
+      if (adminTabMaintenanceContent) adminTabMaintenanceContent.classList.add('hidden');
       loadAdminCodeBackups();
       setTimeout(() => {
         if (adminTabCodeBackupContent) {
           adminTabCodeBackupContent.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 40);
+    } else if (tabName === 'maintenance') {
+      if (adminTabActionsBtn) adminTabActionsBtn.classList.remove('active');
+      if (adminTabHistoryBtn) adminTabHistoryBtn.classList.remove('active');
+      if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
+      if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
+      if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.remove('active');
+      if (adminTabMaintenanceBtn) adminTabMaintenanceBtn.classList.add('active');
+      if (adminTabActionsContent) adminTabActionsContent.classList.add('hidden');
+      if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
+      if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
+      if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
+      if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.add('hidden');
+      if (adminTabMaintenanceContent) adminTabMaintenanceContent.classList.remove('hidden');
+      if (typeof loadAdminMaintenanceStatus === 'function') {
+        loadAdminMaintenanceStatus();
+      }
+      setTimeout(() => {
+        if (adminTabMaintenanceContent) {
+          adminTabMaintenanceContent.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       }, 40);
     } else {
@@ -8145,11 +8274,13 @@ async function initColorSortApp() {
       if (adminTabWalletsBtn) adminTabWalletsBtn.classList.remove('active');
       if (adminTabNewsBtn) adminTabNewsBtn.classList.remove('active');
       if (adminTabCodeBackupBtn) adminTabCodeBackupBtn.classList.remove('active');
+      if (adminTabMaintenanceBtn) adminTabMaintenanceBtn.classList.remove('active');
       if (adminTabActionsContent) adminTabActionsContent.classList.remove('hidden');
       if (adminTabHistoryContent) adminTabHistoryContent.classList.add('hidden');
       if (adminTabWalletsContent) adminTabWalletsContent.classList.add('hidden');
       if (adminTabNewsContent) adminTabNewsContent.classList.add('hidden');
       if (adminTabCodeBackupContent) adminTabCodeBackupContent.classList.add('hidden');
+      if (adminTabMaintenanceContent) adminTabMaintenanceContent.classList.add('hidden');
     }
   }
 
@@ -8178,6 +8309,13 @@ async function initColorSortApp() {
     adminTabNewsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       switchAdminTab('news');
+    });
+  }
+
+  if (adminTabMaintenanceBtn) {
+    adminTabMaintenanceBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchAdminTab('maintenance');
     });
   }
 
@@ -10756,6 +10894,186 @@ async function initColorSortApp() {
       showInfoModal('💾', 'Версия зафиксирована!', `Контрольная точка «${title}» успешно сохранена в панели администратора.`);
 
       await loadAdminCodeBackups();
+    });
+  }
+
+  // ==========================================
+  // ADMIN MAINTENANCE MODE CONTROLLER
+  // ==========================================
+  let isMaintenanceActive = false;
+  let isTogglingMaintenance = false;
+
+  const adminMaintenanceStatusDot = document.getElementById('adminMaintenanceStatusDot');
+  const adminMaintenanceStatusText = document.getElementById('adminMaintenanceStatusText');
+  const adminMaintenanceRefreshBtn = document.getElementById('adminMaintenanceRefreshBtn');
+  const adminMaintenanceToggleBtn = document.getElementById('adminMaintenanceToggleBtn');
+  const adminMaintenanceToggleIcon = document.getElementById('adminMaintenanceToggleIcon');
+  const adminMaintenanceToggleLabel = document.getElementById('adminMaintenanceToggleLabel');
+  const adminMaintenancePreviewBtn = document.getElementById('adminMaintenancePreviewBtn');
+  const adminMaintenanceMessageInput = document.getElementById('adminMaintenanceMessageInput');
+  const adminMaintenanceResetMsgBtn = document.getElementById('adminMaintenanceResetMsgBtn');
+  const adminMaintenanceSaveMsgBtn = document.getElementById('adminMaintenanceSaveMsgBtn');
+  const adminMaintenanceFeedbackMsg = document.getElementById('adminMaintenanceFeedbackMsg');
+  const maintenancePreviewCloseBtn = document.getElementById('maintenancePreviewCloseBtn');
+
+  const DEFAULT_MAINTENANCE_MSG = 'В настоящее время в игре проводятся плановые технические работы. Доступ временно ограничен.';
+
+  function updateAdminMaintenanceUI(active, message) {
+    isMaintenanceActive = !!active;
+
+    if (adminMaintenanceStatusDot) {
+      adminMaintenanceStatusDot.style.background = isMaintenanceActive ? '#ef4444' : '#10b981';
+      adminMaintenanceStatusDot.style.boxShadow = isMaintenanceActive ? '0 0 10px #ef4444' : '0 0 10px #10b981';
+    }
+
+    if (adminMaintenanceStatusText) {
+      if (isMaintenanceActive) {
+        adminMaintenanceStatusText.textContent = t('adminMaintenanceStatusActive') || '🔴 Тех. работы активны (Вход заблокирован для всех)';
+        adminMaintenanceStatusText.style.color = '#f87171';
+      } else {
+        adminMaintenanceStatusText.textContent = t('adminMaintenanceStatusOpen') || '🟢 Доступ открыт (Все игроки могут играть)';
+        adminMaintenanceStatusText.style.color = '#34d399';
+      }
+    }
+
+    if (adminMaintenanceToggleBtn) {
+      if (isMaintenanceActive) {
+        adminMaintenanceToggleBtn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+        if (adminMaintenanceToggleIcon) adminMaintenanceToggleIcon.textContent = '✅';
+        if (adminMaintenanceToggleLabel) adminMaintenanceToggleLabel.textContent = t('adminMaintenanceToggleDisable') || 'Выключить тех. работы (Открыть доступ всем)';
+      } else {
+        adminMaintenanceToggleBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)';
+        if (adminMaintenanceToggleIcon) adminMaintenanceToggleIcon.textContent = '🛑';
+        if (adminMaintenanceToggleLabel) adminMaintenanceToggleLabel.textContent = t('adminMaintenanceToggleEnable') || 'Включить тех. работы (Заблокировать вход всем)';
+      }
+    }
+
+    if (message && adminMaintenanceMessageInput && !adminMaintenanceMessageInput.matches(':focus')) {
+      adminMaintenanceMessageInput.value = message;
+    }
+  }
+
+  async function loadAdminMaintenanceStatus() {
+    try {
+      if (adminMaintenanceFeedbackMsg) adminMaintenanceFeedbackMsg.classList.add('hidden');
+      const res = await apiCall('/api/admin/maintenance');
+      if (res && res.success) {
+        updateAdminMaintenanceUI(res.active, res.message);
+      }
+    } catch (e) {
+      console.warn('[Admin Maintenance] Status fetch failed:', e);
+    }
+  }
+
+  async function setAdminMaintenanceMode(newActive, customMsg) {
+    if (isTogglingMaintenance) return;
+    isTogglingMaintenance = true;
+    if (adminMaintenanceToggleBtn) {
+      adminMaintenanceToggleBtn.disabled = true;
+      adminMaintenanceToggleBtn.style.opacity = '0.7';
+    }
+
+    try {
+      const msg = customMsg !== undefined ? customMsg : (adminMaintenanceMessageInput ? adminMaintenanceMessageInput.value : '');
+      const res = await apiCall('/api/admin/maintenance', 'POST', {
+        active: newActive,
+        message: msg
+      });
+
+      if (res && res.success) {
+        updateAdminMaintenanceUI(res.active, res.message);
+        if (adminMaintenanceFeedbackMsg) {
+          adminMaintenanceFeedbackMsg.className = 'admin-feedback-msg success';
+          adminMaintenanceFeedbackMsg.textContent = res.active 
+            ? '⚠️ Технические работы активированы! Вход в игру заблокирован для всех игроков.'
+            : '✅ Технические работы выключены! Доступ открыт, игроки могут заходить в игру.';
+          adminMaintenanceFeedbackMsg.classList.remove('hidden');
+        }
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      } else {
+        throw new Error(res && res.error ? res.error : 'Ошибка сохранения на сервере');
+      }
+    } catch (err) {
+      if (adminMaintenanceFeedbackMsg) {
+        adminMaintenanceFeedbackMsg.className = 'admin-feedback-msg error';
+        adminMaintenanceFeedbackMsg.textContent = '❌ Не удалось изменить статус: ' + (err.message || 'Ошибка сети');
+        adminMaintenanceFeedbackMsg.classList.remove('hidden');
+      }
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
+    } finally {
+      isTogglingMaintenance = false;
+      if (adminMaintenanceToggleBtn) {
+        adminMaintenanceToggleBtn.disabled = false;
+        adminMaintenanceToggleBtn.style.opacity = '1';
+      }
+    }
+  }
+
+  if (adminMaintenanceToggleBtn) {
+    adminMaintenanceToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setAdminMaintenanceMode(!isMaintenanceActive);
+    });
+  }
+
+  if (adminMaintenanceRefreshBtn) {
+    adminMaintenanceRefreshBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadAdminMaintenanceStatus();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+    });
+  }
+
+  if (adminMaintenanceSaveMsgBtn) {
+    adminMaintenanceSaveMsgBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const newMsg = adminMaintenanceMessageInput ? adminMaintenanceMessageInput.value.trim() : '';
+      if (!newMsg) return;
+      await setAdminMaintenanceMode(isMaintenanceActive, newMsg);
+      if (adminMaintenanceFeedbackMsg) {
+        adminMaintenanceFeedbackMsg.className = 'admin-feedback-msg success';
+        adminMaintenanceFeedbackMsg.textContent = '✅ Текст сообщения для игроков успешно сохранён!';
+        adminMaintenanceFeedbackMsg.classList.remove('hidden');
+      }
+    });
+  }
+
+  if (adminMaintenanceResetMsgBtn) {
+    adminMaintenanceResetMsgBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (adminMaintenanceMessageInput) {
+        adminMaintenanceMessageInput.value = DEFAULT_MAINTENANCE_MSG;
+      }
+    });
+  }
+
+  if (adminMaintenancePreviewBtn) {
+    adminMaintenancePreviewBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const maintScreen = document.getElementById('maintenanceScreen');
+      if (maintScreen) {
+        const textEl = document.getElementById('maintenanceText');
+        if (textEl && adminMaintenanceMessageInput) {
+          textEl.textContent = adminMaintenanceMessageInput.value.trim() || DEFAULT_MAINTENANCE_MSG;
+        }
+        if (maintenancePreviewCloseBtn) {
+          maintenancePreviewCloseBtn.classList.remove('hidden');
+        }
+        maintScreen.style.display = 'flex';
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  if (maintenancePreviewCloseBtn) {
+    maintenancePreviewCloseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const maintScreen = document.getElementById('maintenanceScreen');
+      if (maintScreen) {
+        maintScreen.style.display = 'none';
+      }
+      maintenancePreviewCloseBtn.classList.add('hidden');
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
     });
   }
 
