@@ -1043,10 +1043,12 @@
     const isAdmin = isUserAdmin(currentUserRef);
 
     filtered.forEach((player, idx) => {
-      const name = player.firstName || player.first_name || player.name || t('defaultPlayerName') || 'Игрок';
       const rawUsername = player.username || player.user_name || '';
       const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
-      const usernameDisplay = (isAdmin && cleanUsername) ? `@${cleanUsername}` : '';
+      let rawName = player.firstName || player.first_name || player.name || '';
+      const isDummy = !rawName || rawName === 'Игрок' || rawName === 'Player' || rawName.trim() === '.';
+      const name = !isDummy ? rawName : (cleanUsername ? `@${cleanUsername}` : (t('defaultPlayerName') || 'Игрок'));
+      const usernameDisplay = (cleanUsername && !name.startsWith(`@${cleanUsername}`)) ? `@${cleanUsername}` : '';
       const lvl = player.maxLevel !== undefined ? player.maxLevel : (player.level || 1);
       const crown = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
 

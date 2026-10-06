@@ -57,7 +57,13 @@
           const innerParams = new URLSearchParams(tgWebAppData);
           const userStr = innerParams.get('user') || params.get('user');
           if (userStr) {
-            u = JSON.parse(decodeURIComponent(userStr));
+            try {
+              u = JSON.parse(decodeURIComponent(userStr));
+            } catch (e1) {
+              try {
+                u = JSON.parse(decodeURIComponent(decodeURIComponent(userStr)));
+              } catch (e2) {}
+            }
           }
         }
       } catch (e) {}
@@ -65,16 +71,20 @@
 
     if (u && u.id) {
       const id = String(u.id);
+      const cleanUname = u.username ? String(u.username).replace(/^@/, '').trim() : '';
+      const isDummyFirst = !u.first_name || u.first_name === 'Игрок' || u.first_name === 'Player' || u.first_name.trim() === '.';
+      const effectiveFirst = !isDummyFirst ? u.first_name : (cleanUname ? `@${cleanUname}` : (u.first_name || 'Игрок'));
+
       try {
         localStorage.setItem('cs_last_telegram_id', id);
-        if (u.first_name) localStorage.setItem('cs_last_first_name', u.first_name);
-        if (u.username) localStorage.setItem('cs_last_username', u.username);
+        if (effectiveFirst) localStorage.setItem('cs_last_first_name', effectiveFirst);
+        if (cleanUname) localStorage.setItem('cs_last_username', cleanUname);
         if (u.photo_url) localStorage.setItem('cs_last_photo_url', u.photo_url);
       } catch (e) {}
       return {
         telegramId: id,
-        firstName: u.first_name || 'Игрок',
-        username: u.username || '',
+        firstName: effectiveFirst,
+        username: cleanUname,
         photoUrl: u.photo_url || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${id}`
       };
     }
@@ -82,10 +92,15 @@
     // Fallback 2: Check cached Telegram ID from localStorage so reloads never downgrade to guest
     const cachedId = localStorage.getItem('cs_last_telegram_id');
     if (cachedId && /^\d+$/.test(cachedId)) {
+      const cachedFirst = localStorage.getItem('cs_last_first_name');
+      const cachedUname = localStorage.getItem('cs_last_username') || '';
+      const cleanCachedUname = cachedUname ? String(cachedUname).replace(/^@/, '').trim() : '';
+      const isDummy = !cachedFirst || cachedFirst === 'Игрок' || cachedFirst === 'Player' || cachedFirst.trim() === '.';
+      const effectiveFirst = !isDummy ? cachedFirst : (cleanCachedUname ? `@${cleanCachedUname}` : 'Игрок');
       return {
         telegramId: cachedId,
-        firstName: localStorage.getItem('cs_last_first_name') || 'Игрок',
-        username: localStorage.getItem('cs_last_username') || '',
+        firstName: effectiveFirst,
+        username: cleanCachedUname,
         photoUrl: localStorage.getItem('cs_last_photo_url') || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${cachedId}`
       };
     }
