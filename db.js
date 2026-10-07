@@ -228,6 +228,19 @@ function isDummyName(name) {
 function getUser(telegramId, defaultUserData = {}) {
   const stmt = db.prepare('SELECT * FROM users WHERE telegram_id = ?');
   let user = stmt.get(String(telegramId));
+
+  const cleanUname = defaultUserData.username ? String(defaultUserData.username).replace(/^@/, '').trim() : '';
+
+  // If user not found by telegram_id, check if user exists by username to unify records and prevent progress loss
+  if (!user && cleanUname) {
+    try {
+      const byUname = db.prepare('SELECT * FROM users WHERE LOWER(username) = ?').get(cleanUname.toLowerCase());
+      if (byUname) {
+        db.prepare(`UPDATE users SET telegram_id = ?, updated_at = datetime('now') WHERE LOWER(username) = ?`).run(String(telegramId), cleanUname.toLowerCase());
+        user = stmt.get(String(telegramId));
+      }
+    } catch (e) {}
+  }
   
   if (user) {
     let needsUpdate = false;
@@ -294,7 +307,6 @@ function getUser(telegramId, defaultUserData = {}) {
   }
 
   const memo = generateMemoCode(telegramId);
-  const cleanUname = defaultUserData.username ? String(defaultUserData.username).replace(/^@/, '').trim() : '';
   let initialFirst = defaultUserData.first_name ? String(defaultUserData.first_name).trim() : '';
   if (isDummyName(initialFirst) && cleanUname) {
     initialFirst = `@${cleanUname}`;
@@ -316,6 +328,20 @@ function getUser(telegramId, defaultUserData = {}) {
   );
 
   return stmt.get(String(telegramId));
+}
+
+/**
+ * Get user by Telegram username
+ */
+function getUserByUsername(username) {
+  if (!username) return null;
+  const clean = String(username).replace(/^@/, '').trim().toLowerCase();
+  if (!clean) return null;
+  try {
+    return db.prepare('SELECT * FROM users WHERE LOWER(username) = ?').get(clean);
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -1445,33 +1471,60 @@ function saveLeaderboardSnapshot(options = {}) {
 
   // 2. Combine with any external players provided (e.g. KVDB)
   const playersMap = new Map();
+  const usernameMap = new Map();
   localPlayers.forEach(p => {
-    playersMap.set(String(p.telegram_id), {
-      telegram_id: String(p.telegram_id),
+    const tid = String(p.telegram_id);
+    const rawUname = p.username || '';
+    const cleanUname = rawUname ? String(rawUname).replace(/^@/, '').trim().toLowerCase() : '';
+    const entry = {
+      telegram_id: tid,
       first_name: p.first_name || 'Игрок',
-      username: p.username || '',
+      username: rawUname ? String(rawUname).replace(/^@/, '').trim() : '',
       max_level: Number(p.max_level || 0),
       stars: Number(p.stars || 0)
-    });
+    };
+    playersMap.set(tid, entry);
+    if (cleanUname) usernameMap.set(cleanUname, entry);
   });
 
   if (Array.isArray(options.additionalPlayers)) {
     options.additionalPlayers.forEach(cp => {
-      if (!cp || !cp.telegramId) return;
-      const tid = String(cp.telegramId);
+      if (!cp || (!cp.telegramId && !cp.telegram_id)) return;
+      const tid = String(cp.telegramId || cp.telegram_id);
       if (tid.startsWith('guest') || tid.startsWith('dev')) return;
-      const cpLevel = Number(cp.maxLevel || cp.level || 0);
+      const cpLevel = Number(cp.maxLevel || cp.level || cp.max_level || 0);
       if (cpLevel < 1) return;
 
-      const existing = playersMap.get(tid);
-      if (!existing || cpLevel > existing.max_level) {
-        playersMap.set(tid, {
+      const rawUname = cp.username || '';
+      const cleanUname = rawUname ? String(rawUname).replace(/^@/, '').trim().toLowerCase() : '';
+
+      let existing = playersMap.get(tid);
+      if (!existing && cleanUname && usernameMap.has(cleanUname)) {
+        existing = usernameMap.get(cleanUname);
+      }
+
+      if (existing) {
+        if (cpLevel > existing.max_level) {
+          existing.max_level = cpLevel;
+          existing.stars = Math.max(Number(existing.stars || 0), Number(cp.stars || 0));
+        }
+        if ((!existing.username || existing.username === '') && rawUname) {
+          existing.username = String(rawUname).replace(/^@/, '').trim();
+          if (cleanUname) usernameMap.set(cleanUname, existing);
+        }
+        if ((!existing.first_name || existing.first_name === 'Игрок') && cp.firstName) {
+          existing.first_name = cp.firstName;
+        }
+      } else {
+        const newEntry = {
           telegram_id: tid,
-          first_name: cp.firstName || (existing ? existing.first_name : 'Игрок'),
-          username: cp.username || (existing ? existing.username : ''),
+          first_name: cp.firstName || cp.first_name || 'Игрок',
+          username: rawUname ? String(rawUname).replace(/^@/, '').trim() : '',
           max_level: cpLevel,
-          stars: Number(cp.stars || (existing ? existing.stars : 0))
-        });
+          stars: Number(cp.stars || 0)
+        };
+        playersMap.set(tid, newEntry);
+        if (cleanUname) usernameMap.set(cleanUname, newEntry);
       }
     });
   }
@@ -2323,6 +2376,7 @@ module.exports = {
   prepare: (sql) => db.prepare(sql),
   exec: (sql) => db.exec(sql),
   getUser,
+  getUserByUsername,
   updateUserProgress,
   getLeaderboard,
   logAdReward,

@@ -303,25 +303,31 @@ app.post('/api/user/sync', (req, res) => {
     let { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves, hints, undos, reveals, extraBottles, extra_bottles, shuffles } = req.body;
 
     const id = telegramId || 'guest_dev_123';
-    let existingUser = db.getUser ? db.getUser(id) : null;
+    const cleanUname = (username || '').replace(/^@/, '').trim().toLowerCase();
 
-    // Check if player has verified level in active snapshot or database before anti-cheat
-    let verifiedMax = (existingUser && existingUser.max_level) ? existingUser.max_level : 0;
+    let existingUser = db.getUser ? db.getUser(id, { first_name: firstName, username, photo_url: photoUrl }) : null;
+    if (!existingUser && cleanUname && typeof db.getUserByUsername === 'function') {
+      existingUser = db.getUserByUsername(cleanUname);
+    }
+
+    // Determine verifiedMax across local SQLite, snapshots (by id AND by username), and user record
+    let verifiedMax = (existingUser && existingUser.max_level) ? Number(existingUser.max_level) : 0;
     try {
-      const snapRow = db.prepare(`SELECT max_level FROM leaderboard_snapshot_entries WHERE telegram_id = ? ORDER BY max_level DESC LIMIT 1`).get(String(id));
+      let snapRow = null;
+      if (cleanUname) {
+        snapRow = db.prepare(`SELECT max_level FROM leaderboard_snapshot_entries WHERE telegram_id = ? OR (username IS NOT NULL AND LOWER(username) = ?) ORDER BY max_level DESC LIMIT 1`).get(String(id), cleanUname);
+      } else {
+        snapRow = db.prepare(`SELECT max_level FROM leaderboard_snapshot_entries WHERE telegram_id = ? ORDER BY max_level DESC LIMIT 1`).get(String(id));
+      }
       if (snapRow && Number(snapRow.max_level) > verifiedMax) {
         verifiedMax = Number(snapRow.max_level);
         if (existingUser) existingUser.max_level = verifiedMax;
       }
     } catch (e) {}
 
-    const isExempt = checkIsAdmin(req.body || {}) || ['5761685341', '7116446051'].includes(String(id));
-    if (!isExempt && maxLevel !== undefined && maxLevel > verifiedMax + 1) {
-      console.warn(`[Anti-Cheat] Suspicious level jump for ${id}: ${verifiedMax} -> ${maxLevel}. Capped.`);
-      maxLevel = verifiedMax;
-      if (currentLevel > verifiedMax + 1) currentLevel = verifiedMax + 1;
-    }
-
+    const reqMaxLevel = Number(maxLevel !== undefined ? maxLevel : (currentLevel || 0));
+    // Level must NEVER be downgraded below verified/existing level
+    maxLevel = Math.max(verifiedMax, reqMaxLevel);
     if (maxLevel > 0 && (!currentLevel || currentLevel < maxLevel)) {
       currentLevel = maxLevel;
     }
@@ -514,33 +520,44 @@ app.get('/api/leaderboard', async (req, res) => {
           .filter(p => p && p.telegramId && !String(p.telegramId).startsWith('guest') && !String(p.telegramId).startsWith('dev'));
         
         const playersMap = new Map();
+        const usernameMap = new Map();
+
         leaderboard.topPlayers.forEach(p => {
-          playersMap.set(String(p.telegram_id), {
-            telegram_id: String(p.telegram_id),
+          const tid = String(p.telegram_id);
+          const rawU = p.username || '';
+          const cleanU = rawU ? String(rawU).replace(/^@/, '').trim().toLowerCase() : '';
+          const entry = {
+            telegram_id: tid,
             first_name: p.first_name,
-            username: p.username,
+            username: rawU ? String(rawU).replace(/^@/, '').trim() : '',
             photo_url: p.photo_url,
-            max_level: p.max_level,
-            stars: p.stars || 0
-          });
+            max_level: Number(p.max_level || 0),
+            stars: Number(p.stars || 0)
+          };
+          playersMap.set(tid, entry);
+          if (cleanU) usernameMap.set(cleanU, entry);
         });
+
         cloudPlayers.forEach(cp => {
           const id = String(cp.telegramId);
-          const existing = playersMap.get(id);
+          const cpCleanUname = cp.username ? String(cp.username).replace(/^@/, '').trim() : '';
+          const lowerUname = cpCleanUname ? cpCleanUname.toLowerCase() : '';
+
           const cpSeason = Number(cp.seasonResetAt || 0);
-          const cpUpdated = Number(cp.updatedAt || 0);
-          const cpMaxLevel = Number(cp.maxLevel || cp.level || 0);
+          const cpMaxLevel = Number(cp.maxLevel || cp.level || cp.max_level || 0);
 
           // Exclude cloud players from old season or players who haven't completed round 1 (maxLevel < 1)
-          if (seasonResetAt > 0 && cpSeason < seasonResetAt && cpUpdated < seasonResetAt) return;
-          // If a snapshot was restored, omit any KVDB player older than the restore
-          if (restoredAt > 0 && cpUpdated < restoredAt) return;
+          if (seasonResetAt > 0 && cpSeason < seasonResetAt) return;
           if (cpMaxLevel < 1) return;
 
           const isDummyName = (name) => !name || name === 'Игрок' || name === 'Player' || name === '.';
-          const cpCleanUname = cp.username ? String(cp.username).replace(/^@/, '').trim() : '';
 
-          // If SQLite already has this player, SQLite is authoritative unless cp is newer than restore
+          // Match by telegram_id OR by username!
+          let existing = playersMap.get(id);
+          if (!existing && lowerUname && usernameMap.has(lowerUname)) {
+            existing = usernameMap.get(lowerUname);
+          }
+
           if (!existing) {
             let cpFirst = cp.firstName;
             if (isDummyName(cpFirst) && cpCleanUname) {
@@ -548,21 +565,24 @@ app.get('/api/leaderboard', async (req, res) => {
             } else if (isDummyName(cpFirst)) {
               cpFirst = 'Игрок';
             }
-            playersMap.set(id, {
+            const newEntry = {
               telegram_id: id,
               first_name: cpFirst,
               username: cpCleanUname,
               photo_url: cp.photoUrl || '',
               max_level: cpMaxLevel,
               stars: cp.stars || 0
-            });
+            };
+            playersMap.set(id, newEntry);
+            if (lowerUname) usernameMap.set(lowerUname, newEntry);
+
             try {
               db.prepare(`
                 INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars)
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(telegram_id) DO UPDATE SET 
-                  max_level = excluded.max_level, 
-                  stars = excluded.stars,
+                  max_level = MAX(users.max_level, excluded.max_level), 
+                  stars = MAX(users.stars, excluded.stars),
                   first_name = CASE WHEN users.first_name IN ('Player', 'Игрок', '.', '') AND excluded.first_name NOT IN ('Player', 'Игрок', '.', '') THEN excluded.first_name ELSE users.first_name END,
                   username = CASE WHEN (users.username IS NULL OR users.username = '') AND excluded.username != '' THEN excluded.username ELSE users.username END
               `).run(id, cpFirst, cpCleanUname, cpMaxLevel, cpMaxLevel, cp.stars || 0);
@@ -585,12 +605,14 @@ app.get('/api/leaderboard', async (req, res) => {
             if (!finalUname && cpCleanUname) {
               finalUname = cpCleanUname;
               existing.username = finalUname;
+              if (lowerUname) usernameMap.set(lowerUname, existing);
               updatedDb = true;
             }
 
-            if (cpUpdated >= restoredAt && cpMaxLevel > existing.max_level) {
+            // Always take maximum level! Never downgrade!
+            if (cpMaxLevel > existing.max_level) {
               existing.max_level = cpMaxLevel;
-              if (cp.stars !== undefined) existing.stars = cp.stars;
+              if (cp.stars !== undefined) existing.stars = Math.max(Number(existing.stars || 0), Number(cp.stars || 0));
               updatedDb = true;
             }
 
@@ -599,8 +621,8 @@ app.get('/api/leaderboard', async (req, res) => {
                 db.prepare(`
                   UPDATE users 
                   SET max_level = ?, current_level = ?, stars = ?, first_name = ?, username = ?
-                  WHERE telegram_id = ?
-                `).run(existing.max_level, existing.max_level, existing.stars || 0, finalName, finalUname, id);
+                  WHERE telegram_id = ? OR (username IS NOT NULL AND LOWER(username) = ?)
+                `).run(existing.max_level, existing.max_level, existing.stars || 0, finalName, finalUname, existing.telegram_id, lowerUname || '');
               } catch(e) {}
             }
           }

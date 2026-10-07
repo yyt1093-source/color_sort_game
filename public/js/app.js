@@ -3369,18 +3369,18 @@ async function initColorSortApp() {
             curLvl = user.currentLevel;
             stars = user.stars;
           } else if (isRestoreActive) {
-            // Snapshot rollback active: strictly adopt cloud state without resurrecting stale local level
+            // Snapshot rollback active: adopt cloud state while preserving any verified higher level
             localStorage.setItem(`color_sort_restored_at_${id}`, String(cloudRestoreTs));
             user.lastSnapshotRestoredAt = cloudRestoreTs;
             const exCloudMax = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : (existingCloud.level || 0));
             const exCloudCur = Number(existingCloud.currentLevel !== undefined ? existingCloud.currentLevel : (exCloudMax > 0 ? exCloudMax : 1));
             const exCloudStars = Number(existingCloud.stars || 0);
-            maxLvl = exCloudMax;
-            user.maxLevel = maxLvl;
-            user.level = maxLvl;
-            curLvl = exCloudCur;
+            maxLvl = Math.max(maxLvl, exCloudMax);
+            user.maxLevel = Math.max(Number(user.maxLevel || 0), maxLvl);
+            user.level = user.maxLevel;
+            curLvl = Math.max(curLvl, exCloudCur);
             user.currentLevel = curLvl;
-            stars = exCloudStars;
+            stars = Math.max(stars, exCloudStars);
             user.stars = stars;
           } else {
             const exCloudMax = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : (existingCloud.level || 0));
@@ -3388,6 +3388,9 @@ async function initColorSortApp() {
             const exCloudStars = Number(existingCloud.stars || 0);
             if (exCloudMax > maxLvl) {
               maxLvl = exCloudMax;
+              user.maxLevel = maxLvl;
+              user.level = maxLvl;
+            } else if (maxLvl > exCloudMax) {
               user.maxLevel = maxLvl;
               user.level = maxLvl;
             }
@@ -3448,14 +3451,20 @@ async function initColorSortApp() {
           user.firstName = effectiveFirstName;
         }
 
+        const cloudMaxTarget = Math.max(
+          maxLvl,
+          Number(user.maxLevel || 0),
+          existingCloud ? Number(existingCloud.maxLevel || existingCloud.level || existingCloud.max_level || 0) : 0
+        );
+
         const payload = {
           telegramId: id,
           firstName: effectiveFirstName || 'Игрок',
           username: effectiveUsername || '',
           photoUrl: user.photoUrl || '',
-          maxLevel: maxLvl,
-          max_level: maxLvl,
-          level: maxLvl,
+          maxLevel: cloudMaxTarget,
+          max_level: cloudMaxTarget,
+          level: cloudMaxTarget,
           currentLevel: curLvl,
           current_level: curLvl,
           stars: stars,
@@ -5197,7 +5206,12 @@ async function initColorSortApp() {
     } catch (e) {}
 
     if (isRealUser) {
-      const selfIndex = players.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
+      const myCleanUname = currentUser.username ? String(currentUser.username).replace(/^@/, '').trim().toLowerCase() : '';
+      const selfIndex = players.findIndex(p => {
+        if (String(p.telegramId) === String(currentUser.telegramId)) return true;
+        if (myCleanUname && p.username && String(p.username).replace(/^@/, '').trim().toLowerCase() === myCleanUname) return true;
+        return false;
+      });
       if (selfIndex !== -1) {
         // Player exists in central database: adopt their exact database level in profile and memory!
         const dbLvl = Number(players[selfIndex].maxLevel !== undefined ? players[selfIndex].maxLevel : (players[selfIndex].level || 0));
@@ -5215,21 +5229,17 @@ async function initColorSortApp() {
           syncPlayerToCloud(currentUser);
         }
       } else {
-        // Player is NOT in the central database snapshot: do NOT add to leaderboard, sync local level to 0
-        if (hasLoadedFromServer && currentUser.maxLevel > 0) {
-          currentUser.maxLevel = 0;
-          currentUser.level = 0;
-          currentUser.currentLevel = 1;
-          currentUser.stars = 0;
-          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, '0');
-          saveLocalUser();
-          updateHeaderUI();
+        // Player is not in snapshot list yet - sync their level to server!
+        if (currentUser.maxLevel > 0) {
+          syncPlayerToCloud(currentUser);
         }
       }
     }
 
-    // 4. Strict filter: NO BOTS, ONLY REAL PLAYERS (ONLINE & OFFLINE), UNIQUE BY TELEGRAM ID
+    // 4. Strict filter: NO BOTS, ONLY REAL PLAYERS (ONLINE & OFFLINE), UNIQUE BY TELEGRAM ID AND USERNAME
     const uniqueMap = new Map();
+    const usernameMap = new Map();
+
     players.forEach(p => {
       const id = String(p.telegramId);
       if (!id || id.startsWith('guest') || id.startsWith('dev') || !/^\d+$/.test(id)) return;
@@ -5246,13 +5256,19 @@ async function initColorSortApp() {
       const lvl = Number(p.maxLevel !== undefined ? p.maxLevel : (p.level !== undefined ? p.level : 0));
       if (lvl < 1) return;
 
+      const rawUsername = p.username || '';
+      const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
+      const lowerUname = cleanUsername.toLowerCase();
+
+      // Check existing by telegramId OR by cleanUsername
+      let existing = uniqueMap.get(id);
+      if (!existing && lowerUname && usernameMap.has(lowerUname)) {
+        existing = usernameMap.get(lowerUname);
+      }
+
       const isDummyName = (name) => !name || name === 'Игрок' || name === 'Player' || name === '.';
       const stars = Number(p.stars || 0);
-      const existing = uniqueMap.get(id);
       const existingLvl = existing ? Number(existing.maxLevel !== undefined ? existing.maxLevel : (existing.level !== undefined ? existing.level : 0)) : 0;
-
-      const rawUsername = p.username || (existing ? existing.username : '') || '';
-      const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
 
       let bestFirstName = existing ? existing.firstName : '';
       if (isDummyName(bestFirstName) && !isDummyName(p.firstName)) {
@@ -5263,8 +5279,9 @@ async function initColorSortApp() {
         bestFirstName = p.firstName;
       }
 
-      if (isDummyName(bestFirstName) && cleanUsername) {
-        bestFirstName = `@${cleanUsername}`;
+      const finalUname = cleanUsername || (existing ? existing.username : '');
+      if (isDummyName(bestFirstName) && finalUname) {
+        bestFirstName = `@${finalUname}`;
       } else if (isDummyName(bestFirstName)) {
         bestFirstName = 'Игрок';
       }
@@ -5274,18 +5291,24 @@ async function initColorSortApp() {
       const bestPhoto = p.photoUrl || (existing ? existing.photoUrl : '') || '';
       const bestUpdatedAt = Math.max(Number(p.updatedAt || 0), Number(existing ? existing.updatedAt : 0));
 
-      uniqueMap.set(id, {
+      const mergedEntry = {
         ...(existing || {}),
         ...p,
-        telegramId: id,
+        telegramId: existing ? existing.telegramId : id,
         firstName: bestFirstName,
-        username: cleanUsername,
+        username: finalUname,
         photoUrl: bestPhoto,
         maxLevel: bestLvl,
         level: bestLvl,
         stars: bestStars,
         updatedAt: bestUpdatedAt || Date.now()
-      });
+      };
+
+      uniqueMap.set(mergedEntry.telegramId, mergedEntry);
+      if (lowerUname) usernameMap.set(lowerUname, mergedEntry);
+      if (existing && existing.username) {
+        usernameMap.set(String(existing.username).replace(/^@/, '').trim().toLowerCase(), mergedEntry);
+      }
     });
 
     const sortedPlayers = Array.from(uniqueMap.values()).sort((a, b) => {
@@ -5309,15 +5332,19 @@ async function initColorSortApp() {
         </li>
       `;
     } else {
+      const myCleanUname = currentUser.username ? String(currentUser.username).replace(/^@/, '').trim().toLowerCase() : '';
       sortedPlayers.forEach((player, idx) => {
         const rank = idx + 1;
         const li = document.createElement('li');
-        const isSelf = isRealUser && String(player.telegramId) === String(currentUser.telegramId);
+        const rawUsername = player.username || '';
+        const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
+        const isSelf = isRealUser && (
+          String(player.telegramId) === String(currentUser.telegramId) ||
+          (Boolean(myCleanUname) && Boolean(cleanUsername) && cleanUsername.toLowerCase() === myCleanUname)
+        );
         li.className = `leaderboard-item ${rank <= 3 ? 'top-' + rank : ''} ${isSelf ? 'is-self' : ''}`;
         
         const crown = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-        const rawUsername = player.username || '';
-        const cleanUsername = rawUsername ? String(rawUsername).replace(/^@/, '').trim() : '';
         const isDummy = !player.firstName || player.firstName === 'Игрок' || player.firstName === 'Player' || player.firstName === '.';
         const displayName = isDummy && cleanUsername ? `@${cleanUsername}` : (player.firstName || (cleanUsername ? `@${cleanUsername}` : 'Игрок'));
 
@@ -5342,7 +5369,12 @@ async function initColorSortApp() {
     }
 
     // 6. Update user's personal banner & strictly synchronize profile with leaderboard
-    const myRankIdx = sortedPlayers.findIndex(p => String(p.telegramId) === String(currentUser.telegramId));
+    const myCleanUname = currentUser.username ? String(currentUser.username).replace(/^@/, '').trim().toLowerCase() : '';
+    const myRankIdx = sortedPlayers.findIndex(p => {
+      if (isRealUser && String(p.telegramId) === String(currentUser.telegramId)) return true;
+      if (myCleanUname && p.username && String(p.username).replace(/^@/, '').trim().toLowerCase() === myCleanUname) return true;
+      return false;
+    });
     const myDisplayName = (!currentUser.firstName || currentUser.firstName === 'Игрок' || currentUser.firstName === 'Player' || currentUser.firstName === '.')
       ? (currentUser.username ? `@${currentUser.username.replace(/^@/, '')}` : (currentUser.firstName || 'Вы'))
       : currentUser.firstName;
