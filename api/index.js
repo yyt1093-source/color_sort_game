@@ -386,17 +386,37 @@ app.post('/api/user/sync', async (req, res) => {
           } catch (e) {}
         }
 
+        const existingMaxLevel = existing ? Number(existing.maxLevel || existing.level || existing.max_level || 0) : 0;
+        const existingStars = existing ? Number(existing.stars || 0) : 0;
+        const finalMaxLevel = Math.max(
+          Number(updatedUser.max_level || 0),
+          Number(maxLevel !== undefined ? maxLevel : 0),
+          existingMaxLevel
+        );
+        const finalStars = Math.max(Number(updatedUser.stars || 0), existingStars);
+
+        if (finalMaxLevel > Number(updatedUser.max_level || 0) || finalStars > Number(updatedUser.stars || 0)) {
+          updatedUser.max_level = finalMaxLevel;
+          updatedUser.level = finalMaxLevel;
+          if (updatedUser.current_level < finalMaxLevel) updatedUser.current_level = finalMaxLevel;
+          updatedUser.stars = finalStars;
+          try {
+            db.prepare(`UPDATE users SET max_level = ?, current_level = ?, stars = ? WHERE telegram_id = ?`)
+              .run(finalMaxLevel, updatedUser.current_level, finalStars, String(id));
+          } catch(e) {}
+        }
+
         const payload = {
           telegramId: String(id),
           firstName: effectiveFirst,
           username: cleanUname,
           photoUrl: updatedUser.photo_url || photoUrl || '',
-          maxLevel: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
-          max_level: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
-          level: updatedUser.max_level !== undefined ? updatedUser.max_level : (maxLevel !== undefined ? maxLevel : 0),
+          maxLevel: finalMaxLevel,
+          max_level: finalMaxLevel,
+          level: finalMaxLevel,
           currentLevel: updatedUser.current_level !== undefined ? updatedUser.current_level : (currentLevel !== undefined ? currentLevel : 1),
           current_level: updatedUser.current_level !== undefined ? updatedUser.current_level : (currentLevel !== undefined ? currentLevel : 1),
-          stars: updatedUser.stars || 0,
+          stars: finalStars,
           hints: finalHints,
           undos: finalUndos,
           reveals: finalReveals,
