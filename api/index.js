@@ -34,6 +34,26 @@ const {
 const MAINTENANCE_ALLOWED_IDS = ['5761685341', '7116446051'];
 const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
+// Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
+const IMMUTABLE_PLAYER_BASELINES = {
+  '5761685341': { maxLevel: 49, stars: 0, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+  '7458436672': { maxLevel: 47, stars: 141, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
+  '8305679959': { maxLevel: 43, stars: 129, firstName: '.', username: '' },
+  '5269257903': { maxLevel: 37, stars: 108, firstName: 'Kostya', username: 'Koctya007' },
+  '8982516215': { maxLevel: 36, stars: 99, firstName: 'Qwerty', username: 'sinisterx3' },
+  '296239050':  { maxLevel: 35, stars: 105, firstName: 'Sergey', username: 'sergiy121234' },
+  '7116446051': { maxLevel: 23, stars: 0, firstName: 'Марія', username: 'Maria290355' },
+  '1890528535': { maxLevel: 20, stars: 60, firstName: 'Кирилл', username: 'Cristiano717' },
+  '1803189688': { maxLevel: 16, stars: 48, firstName: 'Andriejus', username: 'Tigras1986' },
+  '5177916222': { maxLevel: 16, stars: 48, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: '' },
+  '1152401670': { maxLevel: 14, stars: 42, firstName: 'Natta', username: 'Smaile82' },
+  '615300433':  { maxLevel: 10, stars: 30, firstName: 'ᅠ', username: 'velzevul999' },
+  '6582657380': { maxLevel: 9, stars: 21, firstName: 'R', username: 'Romanchiiik0' },
+  '1531426251': { maxLevel: 8, stars: 24, firstName: 'Алексей', username: 'Element1914' },
+  '387353019':  { maxLevel: 8, stars: 24, firstName: 'Danil', username: 'danilfrais' },
+  '7990014996': { maxLevel: 4, stars: 12, firstName: 'Samyrai', username: '' }
+};
+
 function maintenanceMiddleware(req, res, next) {
   const maint = db.getMaintenanceStatus();
   if (!maint.active) return next();
@@ -240,6 +260,20 @@ app.post('/api/user/init', async (req, res) => {
       } catch (e) {}
     }
 
+    const baseP = IMMUTABLE_PLAYER_BASELINES[String(id)];
+    if (baseP && user) {
+      if (Number(user.max_level || 0) < baseP.maxLevel) {
+        user.max_level = baseP.maxLevel;
+        user.level = baseP.maxLevel;
+        user.current_level = Math.max(Number(user.current_level || 1), baseP.maxLevel);
+        user.stars = Math.max(Number(user.stars || 0), baseP.stars);
+        try {
+          db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ? WHERE telegram_id = ?')
+            .run(user.max_level, user.current_level, user.stars, String(id));
+        } catch (e) {}
+      }
+    }
+
     const seasonResetAt = db.getSeasonResetTimestamp ? db.getSeasonResetTimestamp() : 0;
     const purchasesResetAt = db.getPurchasesResetTimestamp ? db.getPurchasesResetTimestamp() : 0;
     res.json({ success: true, user, seasonResetAt, purchasesResetAt });
@@ -279,9 +313,11 @@ app.post('/api/user/sync', async (req, res) => {
       }
     } catch (e) {}
 
+    const baseP = IMMUTABLE_PLAYER_BASELINES[String(id)];
+    const baseMax = baseP ? baseP.maxLevel : 0;
     const reqMaxLevel = Number(maxLevel !== undefined ? maxLevel : (currentLevel || 0));
-    // Level must NEVER be downgraded below verified/existing level
-    maxLevel = Math.max(verifiedMax, reqMaxLevel);
+    // Level must NEVER be downgraded below verified/existing level or baseline
+    maxLevel = Math.max(verifiedMax, reqMaxLevel, baseMax);
     if (maxLevel > 0 && (!currentLevel || currentLevel < maxLevel)) {
       currentLevel = maxLevel;
     }
@@ -386,14 +422,19 @@ app.post('/api/user/sync', async (req, res) => {
           } catch (e) {}
         }
 
+        const baseP = IMMUTABLE_PLAYER_BASELINES[String(id)];
+        const baseMax = baseP ? baseP.maxLevel : 0;
+        const baseStars = baseP ? baseP.stars : 0;
+
         const existingMaxLevel = existing ? Number(existing.maxLevel || existing.level || existing.max_level || 0) : 0;
         const existingStars = existing ? Number(existing.stars || 0) : 0;
         const finalMaxLevel = Math.max(
           Number(updatedUser.max_level || 0),
           Number(maxLevel !== undefined ? maxLevel : 0),
-          existingMaxLevel
+          existingMaxLevel,
+          baseMax
         );
-        const finalStars = Math.max(Number(updatedUser.stars || 0), existingStars);
+        const finalStars = Math.max(Number(updatedUser.stars || 0), existingStars, baseStars);
 
         if (finalMaxLevel > Number(updatedUser.max_level || 0) || finalStars > Number(updatedUser.stars || 0)) {
           updatedUser.max_level = finalMaxLevel;
@@ -608,7 +649,27 @@ app.get('/api/leaderboard', async (req, res) => {
             }
           }
         });
-        
+
+        // Strictly guarantee immutable verified baselines by Telegram ID
+        Object.entries(IMMUTABLE_PLAYER_BASELINES).forEach(([tid, baseP]) => {
+          let existing = playersMap.get(tid);
+          if (existing) {
+            existing.max_level = Math.max(existing.max_level, baseP.maxLevel);
+            existing.stars = Math.max(existing.stars, baseP.stars);
+            if (!existing.first_name || isDummyName(existing.first_name)) existing.first_name = baseP.firstName;
+            if (!existing.username && baseP.username) existing.username = baseP.username;
+          } else {
+            playersMap.set(tid, {
+              telegram_id: tid,
+              first_name: baseP.firstName,
+              username: baseP.username,
+              photo_url: '',
+              max_level: baseP.maxLevel,
+              stars: baseP.stars
+            });
+          }
+        });
+
         const mergedList = Array.from(playersMap.values())
           .sort((a, b) => b.max_level - a.max_level || (b.stars || 0) - (a.stars || 0))
           .slice(0, 50);

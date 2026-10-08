@@ -206,9 +206,48 @@ function initDatabase() {
   } catch (e) {}
 }
 
+const IMMUTABLE_PLAYER_BASELINES = {
+  '5761685341': { maxLevel: 49, stars: 0, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+  '7458436672': { maxLevel: 47, stars: 141, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
+  '8305679959': { maxLevel: 43, stars: 129, firstName: '.', username: '' },
+  '5269257903': { maxLevel: 37, stars: 108, firstName: 'Kostya', username: 'Koctya007' },
+  '8982516215': { maxLevel: 36, stars: 99, firstName: 'Qwerty', username: 'sinisterx3' },
+  '296239050':  { maxLevel: 35, stars: 105, firstName: 'Sergey', username: 'sergiy121234' },
+  '7116446051': { maxLevel: 23, stars: 0, firstName: 'Марія', username: 'Maria290355' },
+  '1890528535': { maxLevel: 20, stars: 60, firstName: 'Кирилл', username: 'Cristiano717' },
+  '1803189688': { maxLevel: 16, stars: 48, firstName: 'Andriejus', username: 'Tigras1986' },
+  '5177916222': { maxLevel: 16, stars: 48, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: '' },
+  '1152401670': { maxLevel: 14, stars: 42, firstName: 'Natta', username: 'Smaile82' },
+  '615300433':  { maxLevel: 10, stars: 30, firstName: 'ᅠ', username: 'velzevul999' },
+  '6582657380': { maxLevel: 9, stars: 21, firstName: 'R', username: 'Romanchiiik0' },
+  '1531426251': { maxLevel: 8, stars: 24, firstName: 'Алексей', username: 'Element1914' },
+  '387353019':  { maxLevel: 8, stars: 24, firstName: 'Danil', username: 'danilfrais' },
+  '7990014996': { maxLevel: 4, stars: 12, firstName: 'Samyrai', username: '' }
+};
+
+function ensureImmutablePlayerBaselines() {
+  try {
+    const upsertStmt = db.prepare(`
+      INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(telegram_id) DO UPDATE SET
+        max_level = MAX(users.max_level, excluded.max_level),
+        current_level = MAX(users.current_level, excluded.current_level),
+        stars = MAX(users.stars, excluded.stars),
+        first_name = CASE WHEN users.first_name IN ('Player', 'Игрок', '.', '') AND excluded.first_name NOT IN ('Player', 'Игрок', '.', '') THEN excluded.first_name ELSE users.first_name END,
+        username = CASE WHEN (users.username IS NULL OR users.username = '') AND excluded.username != '' THEN excluded.username ELSE users.username END
+    `);
+    for (const [tid, p] of Object.entries(IMMUTABLE_PLAYER_BASELINES)) {
+      upsertStmt.run(tid, p.firstName, p.username, p.maxLevel, p.maxLevel, p.stars);
+    }
+  } catch (e) {}
+}
+
 initDatabase();
+ensureImmutablePlayerBaselines();
 ensureSeedLeaderboardSnapshot();
 ensureActiveSnapshotApplied();
+ensureImmutablePlayerBaselines();
 
 function generateMemoCode(telegramId) {
   const digits = String(telegramId).replace(/\D/g, '');
@@ -303,6 +342,19 @@ function getUser(telegramId, defaultUserData = {}) {
       );
       user = stmt.get(String(telegramId));
     }
+    const baseEntry = IMMUTABLE_PLAYER_BASELINES[String(telegramId)];
+    if (baseEntry && user) {
+      if (Number(user.max_level || 0) < baseEntry.maxLevel) {
+        user.max_level = baseEntry.maxLevel;
+        user.level = baseEntry.maxLevel;
+        user.current_level = Math.max(Number(user.current_level || 1), baseEntry.maxLevel);
+        user.stars = Math.max(Number(user.stars || 0), baseEntry.stars);
+        try {
+          db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ? WHERE telegram_id = ?')
+            .run(user.max_level, user.current_level, user.stars, String(telegramId));
+        } catch (e) {}
+      }
+    }
     return user;
   }
 
@@ -327,7 +379,21 @@ function getUser(telegramId, defaultUserData = {}) {
     memo
   );
 
-  return stmt.get(String(telegramId));
+  const createdUser = stmt.get(String(telegramId));
+  const baseEntry = IMMUTABLE_PLAYER_BASELINES[String(telegramId)];
+  if (baseEntry && createdUser) {
+    if (Number(createdUser.max_level || 0) < baseEntry.maxLevel) {
+      createdUser.max_level = baseEntry.maxLevel;
+      createdUser.level = baseEntry.maxLevel;
+      createdUser.current_level = Math.max(Number(createdUser.current_level || 1), baseEntry.maxLevel);
+      createdUser.stars = Math.max(Number(createdUser.stars || 0), baseEntry.stars);
+      try {
+        db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ? WHERE telegram_id = ?')
+          .run(createdUser.max_level, createdUser.current_level, createdUser.stars, String(telegramId));
+      } catch (e) {}
+    }
+  }
+  return createdUser;
 }
 
 /**
@@ -1529,6 +1595,25 @@ function saveLeaderboardSnapshot(options = {}) {
     });
   }
 
+  // Merge verified baselines strictly by Telegram ID
+  Object.entries(IMMUTABLE_PLAYER_BASELINES).forEach(([tid, baseP]) => {
+    let existing = playersMap.get(tid);
+    if (existing) {
+      existing.max_level = Math.max(existing.max_level, baseP.maxLevel);
+      existing.stars = Math.max(existing.stars, baseP.stars);
+      if (!existing.first_name || existing.first_name === 'Игрок') existing.first_name = baseP.firstName;
+      if (!existing.username && baseP.username) existing.username = baseP.username;
+    } else {
+      playersMap.set(tid, {
+        telegram_id: tid,
+        first_name: baseP.firstName,
+        username: baseP.username,
+        max_level: baseP.maxLevel,
+        stars: baseP.stars
+      });
+    }
+  });
+
   // 3. Sort all players: max_level DESC, stars DESC
   const sortedPlayers = Array.from(playersMap.values())
     .sort((a, b) => b.max_level - a.max_level || (b.stars || 0) - (a.stars || 0));
@@ -2236,7 +2321,7 @@ function ensureActiveSnapshotApplied() {
       db.prepare(`UPDATE users SET max_level = 0, current_level = 1, stars = 0, total_moves = 0, updated_at = datetime('now')`).run();
       const updateUserStmt = db.prepare(`
         UPDATE users 
-        SET max_level = ?, current_level = ?, stars = ?,
+        SET max_level = MAX(users.max_level, ?), current_level = MAX(users.current_level, ?), stars = MAX(users.stars, ?),
             first_name = COALESCE(NULLIF(?, ''), first_name),
             username = COALESCE(NULLIF(?, ''), username),
             updated_at = datetime('now')
@@ -2253,13 +2338,17 @@ function ensureActiveSnapshotApplied() {
         const stars = Number(sp.stars || 0);
         const name = sp.name || sp.first_name || 'Игрок';
         const uname = sp.username || '';
+        const base = IMMUTABLE_PLAYER_BASELINES[tid];
+        const finalLvl = Math.max(lvl, base ? base.maxLevel : 0);
+        const finalStars = Math.max(stars, base ? base.stars : 0);
         const existing = db.prepare(`SELECT telegram_id FROM users WHERE telegram_id = ?`).get(tid);
         if (existing) {
-          updateUserStmt.run(lvl, lvl, stars, name, uname, tid);
+          updateUserStmt.run(finalLvl, finalLvl, finalStars, name, uname, tid);
         } else {
-          insertUserStmt.run(tid, name, uname, lvl, lvl, stars);
+          insertUserStmt.run(tid, name, uname, finalLvl, finalLvl, finalStars);
         }
       }
+      ensureImmutablePlayerBaselines();
     }
   } catch (e) {}
 }
