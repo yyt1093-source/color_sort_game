@@ -2937,6 +2937,26 @@ async function initColorSortApp() {
     daily_boosters_purchased_at: 0
   };
 
+  // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
+  const IMMUTABLE_PLAYER_BASELINES = {
+    '5761685341': { maxLevel: 49, stars: 0, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+    '7458436672': { maxLevel: 47, stars: 141, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
+    '8305679959': { maxLevel: 43, stars: 129, firstName: '.', username: '' },
+    '5269257903': { maxLevel: 37, stars: 108, firstName: 'Kostya', username: 'Koctya007' },
+    '8982516215': { maxLevel: 36, stars: 99, firstName: 'Qwerty', username: 'sinisterx3' },
+    '296239050':  { maxLevel: 35, stars: 105, firstName: 'Sergey', username: 'sergiy121234' },
+    '7116446051': { maxLevel: 23, stars: 0, firstName: 'Марія', username: 'Maria290355' },
+    '1890528535': { maxLevel: 20, stars: 60, firstName: 'Кирилл', username: 'Cristiano717' },
+    '1803189688': { maxLevel: 16, stars: 48, firstName: 'Andriejus', username: 'Tigras1986' },
+    '5177916222': { maxLevel: 16, stars: 48, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: '' },
+    '1152401670': { maxLevel: 14, stars: 42, firstName: 'Natta', username: 'Smaile82' },
+    '615300433':  { maxLevel: 10, stars: 30, firstName: 'ᅠ', username: 'velzevul999' },
+    '6582657380': { maxLevel: 9, stars: 21, firstName: 'R', username: 'Romanchiiik0' },
+    '1531426251': { maxLevel: 8, stars: 24, firstName: 'Алексей', username: 'Element1914' },
+    '387353019':  { maxLevel: 8, stars: 24, firstName: 'Danil', username: 'danilfrais' },
+    '7990014996': { maxLevel: 4, stars: 12, firstName: 'Samyrai', username: '' }
+  };
+
   // Instant pre-population from localStorage for immediate, zero-delay baseline
   try {
     const rawLocal = localStorage.getItem(`color_sort_user_${userData.telegramId}`);
@@ -2954,17 +2974,24 @@ async function initColorSortApp() {
         currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));
         currentUser.level = currentUser.maxLevel;
       }
-      if (String(userData.telegramId) === '5761685341' && Number(currentUser.maxLevel) === 175) {
-        currentUser.maxLevel = 48;
-        currentUser.level = 48;
-        currentUser.currentLevel = 48;
-        try {
-          localStorage.setItem(`color_sort_user_${userData.telegramId}`, JSON.stringify(currentUser));
-          localStorage.setItem('cs_cached_display_level', '48');
-        } catch (e) {}
-      }
     }
   } catch (e) {}
+
+  // Enforce Telegram ID immutable baseline protection immediately at startup
+  const startupBaseline = IMMUTABLE_PLAYER_BASELINES[String(userData.telegramId)];
+  if (startupBaseline) {
+    if (Number(currentUser.maxLevel || 0) < startupBaseline.maxLevel) {
+      currentUser.maxLevel = startupBaseline.maxLevel;
+      currentUser.level = startupBaseline.maxLevel;
+      currentUser.currentLevel = startupBaseline.maxLevel;
+      currentUser.stars = Math.max(Number(currentUser.stars || 0), startupBaseline.stars || 0);
+      try {
+        localStorage.setItem(`color_sort_user_${userData.telegramId}`, JSON.stringify(currentUser));
+        localStorage.setItem(`color_sort_db_level_${userData.telegramId}`, String(startupBaseline.maxLevel));
+        localStorage.setItem('cs_cached_display_level', String(startupBaseline.maxLevel));
+      } catch (e) {}
+    }
+  }
 
   window.isAllColorsActive = function () {
     if (!currentUser) return false;
@@ -3630,15 +3657,19 @@ async function initColorSortApp() {
           currentUser.level = cachedDbLvl;
           currentUser.currentLevel = cachedDbLvl;
         }
-        if (String(currentUser.telegramId) === '5761685341' && Number(currentUser.maxLevel) === 175) {
-          currentUser.maxLevel = 48;
-          currentUser.level = 48;
-          currentUser.currentLevel = 48;
-          try {
-            localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
-            localStorage.setItem('cs_cached_display_level', '48');
-            localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, '48');
-          } catch (e) {}
+        const userBaseline = IMMUTABLE_PLAYER_BASELINES[String(currentUser.telegramId)];
+        if (userBaseline) {
+          if (Number(currentUser.maxLevel || 0) < userBaseline.maxLevel) {
+            currentUser.maxLevel = userBaseline.maxLevel;
+            currentUser.level = userBaseline.maxLevel;
+            currentUser.currentLevel = userBaseline.maxLevel;
+            currentUser.stars = Math.max(Number(currentUser.stars || 0), userBaseline.stars || 0);
+            try {
+              localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
+              localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(userBaseline.maxLevel));
+              localStorage.setItem('cs_cached_display_level', String(userBaseline.maxLevel));
+            } catch (e) {}
+          }
         }
         currentUser._localLoaded = true;
       } catch (e) {}
@@ -4337,20 +4368,22 @@ async function initColorSortApp() {
         const srvRestore = Number(serverUser.user.snapshotRestoredAt || serverUser.restoredAt || 0);
         const localRestore = Number(localStorage.getItem(`color_sort_restored_at_${currentUser.telegramId}`) || currentUser.lastSnapshotRestoredAt || 0);
         const isNewSrvRestore = srvRestore > 0 && srvRestore > localRestore;
+        const baselineMax = (IMMUTABLE_PLAYER_BASELINES[String(currentUser.telegramId)]?.maxLevel || 0);
+        const effectiveSrvMax = Math.max(srvMax, baselineMax);
         if (isNewSrvRestore) {
-          currentUser.maxLevel = srvMax;
-          currentUser.level = srvMax;
+          currentUser.maxLevel = Math.max(Number(currentUser.maxLevel || 0), effectiveSrvMax);
+          currentUser.level = currentUser.maxLevel;
           currentUser.lastSnapshotRestoredAt = srvRestore;
           localStorage.setItem(`color_sort_restored_at_${currentUser.telegramId}`, String(srvRestore));
-          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(srvMax));
-          if (srvMax === 0) {
+          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(currentUser.maxLevel));
+          if (currentUser.maxLevel === 0) {
             currentUser.currentLevel = 1;
             currentUser.stars = 0;
           }
-        } else if (srvMax > Number(currentUser.maxLevel || 0)) {
-          currentUser.maxLevel = srvMax;
-          currentUser.level = srvMax;
-          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(srvMax));
+        } else if (effectiveSrvMax > Number(currentUser.maxLevel || 0)) {
+          currentUser.maxLevel = effectiveSrvMax;
+          currentUser.level = effectiveSrvMax;
+          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(effectiveSrvMax));
         }
       }
       if (serverUser.user.current_level !== undefined) {
@@ -5213,14 +5246,15 @@ async function initColorSortApp() {
         return false;
       });
       if (selfIndex !== -1) {
-        // Player exists in central database: adopt their exact database level in profile and memory!
         const dbLvl = Number(players[selfIndex].maxLevel !== undefined ? players[selfIndex].maxLevel : (players[selfIndex].level || 0));
-        if (dbLvl > Number(currentUser.maxLevel || 0)) {
-          currentUser.maxLevel = dbLvl;
-          currentUser.level = dbLvl;
-          currentUser.currentLevel = dbLvl > 0 ? dbLvl : 1;
-          currentUser.stars = Number(players[selfIndex].stars || 0);
-          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(dbLvl));
+        const baselineMax = (IMMUTABLE_PLAYER_BASELINES[String(currentUser.telegramId)]?.maxLevel || 0);
+        const effectiveDbLvl = Math.max(dbLvl, baselineMax);
+        if (effectiveDbLvl > Number(currentUser.maxLevel || 0)) {
+          currentUser.maxLevel = effectiveDbLvl;
+          currentUser.level = effectiveDbLvl;
+          currentUser.currentLevel = effectiveDbLvl > 0 ? effectiveDbLvl : 1;
+          currentUser.stars = Math.max(Number(currentUser.stars || 0), Number(players[selfIndex].stars || 0), (IMMUTABLE_PLAYER_BASELINES[String(currentUser.telegramId)]?.stars || 0));
+          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(effectiveDbLvl));
           saveLocalUser();
           updateHeaderUI();
         } else if (Number(currentUser.maxLevel || 0) > dbLvl) {
@@ -5286,8 +5320,11 @@ async function initColorSortApp() {
         bestFirstName = 'Игрок';
       }
 
-      const bestLvl = Math.max(lvl, existingLvl);
-      const bestStars = lvl >= existingLvl ? stars : (existing ? existing.stars : stars);
+      const baseEntry = IMMUTABLE_PLAYER_BASELINES[id];
+      const baseLvl = baseEntry ? baseEntry.maxLevel : 0;
+      const baseStars = baseEntry ? baseEntry.stars : 0;
+      const bestLvl = Math.max(lvl, existingLvl, baseLvl);
+      const bestStars = Math.max(stars, (existing ? existing.stars : 0), baseStars);
       const bestPhoto = p.photoUrl || (existing ? existing.photoUrl : '') || '';
       const bestUpdatedAt = Math.max(Number(p.updatedAt || 0), Number(existing ? existing.updatedAt : 0));
 
