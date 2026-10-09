@@ -565,7 +565,7 @@ app.get('/api/leaderboard', async (req, res) => {
             username: rawU ? String(rawU).replace(/^@/, '').trim() : '',
             photo_url: p.photo_url,
             max_level: Number(p.max_level || 0),
-            stars: Number(p.stars || 0)
+            stars: 0
           };
           playersMap.set(tid, entry);
           if (cleanU) usernameMap.set(cleanU, entry);
