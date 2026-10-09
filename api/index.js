@@ -683,6 +683,7 @@ app.get('/api/leaderboard', async (req, res) => {
         });
 
         const mergedList = Array.from(playersMap.values())
+          .map(p => ({ ...p, stars: 0 }))
           .sort((a, b) => b.max_level - a.max_level)
           .slice(0, 50);
 
