@@ -4880,6 +4880,39 @@ body {
   color: #34d399;
 }
 
+.ton-connect-actions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ton-btn-disconnect {
+  width: 100%;
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  border-radius: 12px;
+  color: #f87171;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+}
+
+.ton-btn-disconnect:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.7);
+}
+
+.ton-btn-disconnect:active {
+  transform: scale(0.98);
+}
+
 /* Choose Deposit Amount Card */
 .ton-amount-card {
   border: 1px solid rgba(56, 189, 248, 0.2);

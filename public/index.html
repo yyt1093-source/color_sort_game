@@ -59,7 +59,7 @@
   <link rel="preload" href="js/levelGenerator.js?v=49007" as="script">
   <link rel="preload" href="js/tonconnect-ui.min.js?v=49007" as="script">
   <link rel="preload" href="js/gifts.js?v=49007" as="script">
-  <link rel="preload" href="js/app.js?v=49030" as="script">
+  <link rel="preload" href="js/app.js?v=49070" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -70,7 +70,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"></noscript>
   
-  <link rel="stylesheet" href="style.css?v=49020">
+  <link rel="stylesheet" href="style.css?v=49070">
   <style>
     /* Direct Fail-Safe Tile Grid for Admin Navigation (Шахматный порядок 2x2 + 1) */
     .admin-nav-tabs {
@@ -565,10 +565,16 @@
           <span class="wallet-icon-pink">👛</span>
           <strong class="ton-card-heading" id="tonConnectHeading">Подключение кошелька</strong>
         </div>
-        <button type="button" id="tonConnectBtn" class="ton-btn-connect">
-          <span class="btn-gem-icon">💎</span>
-          <span id="tonConnectBtnLabel">Подключить TON Кошелёк</span>
-        </button>
+        <div class="ton-connect-actions-container">
+          <button type="button" id="tonConnectBtn" class="ton-btn-connect">
+            <span class="btn-gem-icon">💎</span>
+            <span id="tonConnectBtnLabel">Подключить TON Кошелёк</span>
+          </button>
+          <button type="button" id="tonDisconnectBtn" class="ton-btn-disconnect hidden">
+            <span class="btn-disconnect-icon">🔌</span>
+            <span id="tonDisconnectBtnLabel">Отключить кошелёк</span>
+          </button>
+        </div>
       </div>
 
       <!-- Choose Deposit Amount Card -->
@@ -2352,6 +2358,26 @@
     </div>
   </div>
 
+  <!-- Disconnect Wallet Confirmation Modal -->
+  <div id="tonDisconnectConfirmModal" class="modal-overlay hidden" style="z-index: 10006;">
+    <div class="glass-modal reset-modal-content" style="max-width: 360px; text-align: center;">
+      <div class="warning-icon-glow" style="font-size: 2.4rem; margin-bottom: 8px;">🔌</div>
+      <h2 id="disconnectWalletModalTitle" class="reset-modal-title" style="margin-bottom: 10px;">Отключение кошелька</h2>
+      <div class="reset-warning-card" style="margin: 0 0 16px 0; padding: 12px 14px;">
+        <p class="reset-warning-lead" id="disconnectWalletModalDesc" style="font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px;">
+          Вы действительно хотите отключить кошелёк?
+        </p>
+        <p id="disconnectWalletModalNote" style="font-size: 12.5px; color: #94a3b8; line-height: 1.4; margin: 0;">
+          Ваш игровой баланс TON / GRAM полностью сохраняется в игре.
+        </p>
+      </div>
+      <div class="modal-actions" style="display: flex; gap: 10px;">
+        <button type="button" id="cancelDisconnectWalletBtn" class="btn-cancel" style="flex: 1; padding: 11px;">Отмена</button>
+        <button type="button" id="confirmDisconnectWalletBtn" class="btn-confirm-danger" style="flex: 1; padding: 11px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">Да, отключить</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Info/Alert Modal (replaces native alert) -->
   <div id="infoModal" class="modal-overlay hidden">
     <div class="glass-modal" style="text-align:center">
@@ -2460,6 +2486,6 @@
   <script src="js/renderer.js?v=49060"></script>
   <script src="js/tonconnect-ui.min.js?v=49060"></script>
   <script src="js/gifts.js?v=49060"></script>
-  <script src="js/app.js?v=49060"></script>
+  <script src="js/app.js?v=49070"></script>
 </body>
 </html>

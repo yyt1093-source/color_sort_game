@@ -460,6 +460,12 @@ async function initColorSortApp() {
       tonConnectHeading: "Подключение кошелька",
       tonConnectSubtext: "Привяжите кошелёк для наград и баланса",
       tonConnectBtnLabel: "Подключить TON Кошелёк",
+      tonDisconnectBtnLabel: "Отключить кошелёк",
+      disconnectWalletModalTitle: "Отключение кошелька",
+      disconnectWalletModalDesc: "Вы действительно хотите отключить кошелёк?",
+      disconnectWalletModalNote: "Ваш игровой баланс TON / GRAM полностью сохраняется в игре.",
+      disconnectWalletConfirmBtn: "Да, отключить",
+      disconnectWalletCancelBtn: "Отмена",
       tonAmountTitle: "Выберите сумму пополнения:",
       tonRewardLabel: "Зачисление на баланс GRAM:",
       tonChoiceHeader: "Выберите кошелёк для оплаты:",
@@ -842,6 +848,12 @@ async function initColorSortApp() {
       tonConnectHeading: "Підключення гаманця",
       tonConnectSubtext: "Прив'яжіть гаманець для нагород та балансу",
       tonConnectBtnLabel: "Підключити TON Гаманець",
+      tonDisconnectBtnLabel: "Відключити гаманець",
+      disconnectWalletModalTitle: "Відключення гаманця",
+      disconnectWalletModalDesc: "Ви дійсно бажаєте відключити гаманець?",
+      disconnectWalletModalNote: "Ваш ігровий баланс TON / GRAM повністю зберігається в грі.",
+      disconnectWalletConfirmBtn: "Так, відключити",
+      disconnectWalletCancelBtn: "Скасувати",
       tonAmountTitle: "Виберіть суму поповнення:",
       tonRewardLabel: "Зарахування на баланс GRAM:",
       tonChoiceHeader: "Виберіть гаманець для оплати:",
@@ -1222,6 +1234,12 @@ async function initColorSortApp() {
       tonConnectHeading: "Wallet Connection",
       tonConnectSubtext: "Connect wallet for rewards and balance",
       tonConnectBtnLabel: "Connect TON Wallet",
+      tonDisconnectBtnLabel: "Disconnect Wallet",
+      disconnectWalletModalTitle: "Disconnect Wallet",
+      disconnectWalletModalDesc: "Are you sure you want to disconnect your wallet?",
+      disconnectWalletModalNote: "Your in-game TON / GRAM balance is fully preserved in the game.",
+      disconnectWalletConfirmBtn: "Yes, disconnect",
+      disconnectWalletCancelBtn: "Cancel",
       tonAmountTitle: "Select Top-Up Amount:",
       tonRewardLabel: "Credited to GRAM balance:",
       tonChoiceHeader: "Select Payment Wallet:",
@@ -1581,6 +1599,12 @@ async function initColorSortApp() {
       tonConnectHeading: "Wallet verbinden",
       tonConnectSubtext: "Wallet verbinden für Belohnungen und Guthaben",
       tonConnectBtnLabel: "TON-Wallet verbinden",
+      tonDisconnectBtnLabel: "Wallet trennen",
+      disconnectWalletModalTitle: "Wallet trennen",
+      disconnectWalletModalDesc: "Möchten Sie die Wallet wirklich trennen?",
+      disconnectWalletModalNote: "Ihr TON / GRAM-Spielguthaben bleibt im Spiel vollständig erhalten.",
+      disconnectWalletConfirmBtn: "Ja, trennen",
+      disconnectWalletCancelBtn: "Abbrechen",
       tonAmountTitle: "Einzahlungsbetrag auswählen:",
       tonRewardLabel: "Gutschrift auf GRAM-Konto:",
       tonChoiceHeader: "Zahlungswallet auswählen:",
@@ -1948,6 +1972,12 @@ async function initColorSortApp() {
       tonConnectHeading: "Piniginės prijungimas",
       tonConnectSubtext: "Prijunkite piniginę apdovanojimams ir balansui",
       tonConnectBtnLabel: "Prijungti TON piniginę",
+      tonDisconnectBtnLabel: "Atjungti piniginę",
+      disconnectWalletModalTitle: "Piniginės atjungimas",
+      disconnectWalletModalDesc: "Ar tikrai norite atjungti piniginę?",
+      disconnectWalletModalNote: "Jūsų žaidimo TON / GRAM balansas visiškai išlieka žaidime.",
+      disconnectWalletConfirmBtn: "Taip, atjungti",
+      disconnectWalletCancelBtn: "Atšaukti",
       tonAmountTitle: "Pasirinkite papildymo sumą:",
       tonRewardLabel: "Įskaitymas į GRAM balansą:",
       tonChoiceHeader: "Pasirinkite mokėjimo piniginę:",
@@ -2221,6 +2251,14 @@ async function initColorSortApp() {
   const tonWalletStatusLabel = document.getElementById('tonWalletStatusLabel');
   const tonConnectBtn = document.getElementById('tonConnectBtn');
   const tonConnectBtnLabel = document.getElementById('tonConnectBtnLabel');
+  const tonDisconnectBtn = document.getElementById('tonDisconnectBtn');
+  const tonDisconnectBtnLabel = document.getElementById('tonDisconnectBtnLabel');
+  const tonDisconnectConfirmModal = document.getElementById('tonDisconnectConfirmModal');
+  const disconnectWalletModalTitle = document.getElementById('disconnectWalletModalTitle');
+  const disconnectWalletModalDesc = document.getElementById('disconnectWalletModalDesc');
+  const disconnectWalletModalNote = document.getElementById('disconnectWalletModalNote');
+  const cancelDisconnectWalletBtn = document.getElementById('cancelDisconnectWalletBtn');
+  const confirmDisconnectWalletBtn = document.getElementById('confirmDisconnectWalletBtn');
   const tonSelectedAmountBadge = document.getElementById('tonSelectedAmountBadge');
   const tonChipsRow = document.getElementById('tonChipsRow');
   const tonStepMinusBtn = document.getElementById('tonStepMinusBtn');
@@ -2413,6 +2451,12 @@ async function initColorSortApp() {
     if (tonWalletStatusSub) tonWalletStatusSub.textContent = t('tonWalletStatusSub');
     const tonConnectHeading = document.getElementById('tonConnectHeading');
     if (tonConnectHeading) tonConnectHeading.textContent = t('tonConnectHeading') || t('tonModalTitle');
+    if (tonDisconnectBtnLabel) tonDisconnectBtnLabel.textContent = t('tonDisconnectBtnLabel');
+    if (disconnectWalletModalTitle) disconnectWalletModalTitle.textContent = t('disconnectWalletModalTitle');
+    if (disconnectWalletModalDesc) disconnectWalletModalDesc.textContent = t('disconnectWalletModalDesc');
+    if (disconnectWalletModalNote) disconnectWalletModalNote.textContent = t('disconnectWalletModalNote');
+    if (cancelDisconnectWalletBtn) cancelDisconnectWalletBtn.textContent = t('disconnectWalletCancelBtn');
+    if (confirmDisconnectWalletBtn) confirmDisconnectWalletBtn.textContent = t('disconnectWalletConfirmBtn');
     const tonAmountTitle = document.getElementById('tonAmountTitle');
     if (tonAmountTitle) tonAmountTitle.textContent = t('tonAmountTitle');
     const tonRewardLabel = document.getElementById('tonRewardLabel');
@@ -3455,7 +3499,11 @@ async function initColorSortApp() {
         const finalReveals = isForceResetActive ? Number(existingCloud.reveals || 0) : Math.max(Number(user.reveals || 0), existingCloud ? Number(existingCloud.reveals || 0) : 0);
         const existingB = existingCloud ? (existingCloud.extra_bottles !== undefined ? existingCloud.extra_bottles : existingCloud.extraBottles) : 0;
         const finalBottles = isForceResetActive ? Number(existingB || 0) : Math.max(Number(user.extraBottles || 0), Number(existingB || 0));
-        const finalBalance = Number(user.ton_balance !== undefined ? user.ton_balance : (existingCloud ? existingCloud.ton_balance : 0));
+        const finalBalance = Math.max(
+          Number(user.ton_balance !== undefined ? user.ton_balance : 0),
+          existingCloud ? Number(existingCloud.ton_balance || existingCloud.tonBalance || 0) : 0
+        );
+        user.ton_balance = finalBalance;
         const finalAllColors = isForceResetActive ? Number(existingCloud.all_colors_until || 0) : Math.max(Number(user.all_colors_until || 0), existingCloud ? Number(existingCloud.all_colors_until || 0) : 0);
 
         user.hints = finalHints;
@@ -3498,6 +3546,18 @@ async function initColorSortApp() {
           existingCloud ? Number(existingCloud.maxLevel || existingCloud.level || existingCloud.max_level || 0) : 0
         );
 
+        let finalWallet = user.ton_wallet || '';
+        let finalWalletType = user.ton_wallet ? (user.ton_wallet_type || '') : '';
+        if (!options.forceDisconnectWallet && !finalWallet && existingCloud && existingCloud.ton_wallet) {
+          const isManuallyDisconnected = localStorage.getItem(`color_sort_wallet_disconnected_${id}`) === 'true';
+          if (!isManuallyDisconnected) {
+            finalWallet = existingCloud.ton_wallet;
+            finalWalletType = existingCloud.ton_wallet_type || '';
+          }
+        }
+        user.ton_wallet = finalWallet;
+        user.ton_wallet_type = finalWalletType;
+
         const payload = {
           telegramId: id,
           firstName: effectiveFirstName || 'Игрок',
@@ -3515,8 +3575,8 @@ async function initColorSortApp() {
           extraBottles: finalBottles,
           extra_bottles: finalBottles,
           ton_balance: finalBalance,
-          ton_wallet: user.ton_wallet || (existingCloud ? existingCloud.ton_wallet : '') || '',
-          ton_wallet_type: user.ton_wallet_type || (existingCloud ? existingCloud.ton_wallet_type : '') || '',
+          ton_wallet: finalWallet || '',
+          ton_wallet_type: finalWalletType || '',
           ton_deposits_total: Number(user.ton_deposits_total || 0),
           ton_deposits_count: Number(user.ton_deposits_count || 0),
           all_colors_until: finalAllColors,
@@ -3645,6 +3705,9 @@ async function initColorSortApp() {
       localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, String(currentUser.daily_boosters_last_date || ''));
       localStorage.setItem(`color_sort_daily_boosters_at_${currentUser.telegramId}`, String(currentUser.daily_boosters_purchased_at || ''));
     }
+    if (currentUser.ton_balance !== undefined && currentUser.ton_balance !== null) {
+      localStorage.setItem(`color_sort_ton_balance_${currentUser.telegramId}`, String(currentUser.ton_balance));
+    }
   }
   function loadLocalUser() {
     const data = localStorage.getItem(`color_sort_user_${currentUser.telegramId}`);
@@ -3660,6 +3723,10 @@ async function initColorSortApp() {
         }
         if (savedUname) {
           currentUser.username = savedUname;
+        }
+        const cachedTonBal = localStorage.getItem(`color_sort_ton_balance_${currentUser.telegramId}`);
+        if (cachedTonBal !== null && !isNaN(parseFloat(cachedTonBal))) {
+          currentUser.ton_balance = Math.max(Number(currentUser.ton_balance || 0), parseFloat(cachedTonBal));
         }
         if (currentUser.maxLevel > 0) {
           currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));
@@ -4054,14 +4121,17 @@ async function initColorSortApp() {
             if (!currentUser._localLoaded || currentUser.ton_balance === undefined || currentUser.ton_balance === null) {
               currentUser.ton_balance = cb;
               changed = true;
-            } else if (cloudData.updatedAt && currentUser.updatedAt && cloudData.updatedAt > currentUser.updatedAt) {
+            } else if (cb > Number(currentUser.ton_balance || 0)) {
               currentUser.ton_balance = cb;
               changed = true;
             }
           }
           if (cloudData.ton_wallet && !currentUser.ton_wallet) {
-            currentUser.ton_wallet = cloudData.ton_wallet;
-            changed = true;
+            const isManuallyDisconnected = localStorage.getItem(`color_sort_wallet_disconnected_${myIdStr}`) === 'true';
+            if (!isManuallyDisconnected) {
+              currentUser.ton_wallet = cloudData.ton_wallet;
+              changed = true;
+            }
           }
           if (cloudData.memo_code && !currentUser.memo_code) {
             currentUser.memo_code = cloudData.memo_code;
@@ -4363,9 +4433,16 @@ async function initColorSortApp() {
         const sb = Number(serverUser.user.ton_balance || 0);
         if (!currentUser._localLoaded || currentUser.ton_balance === undefined || currentUser.ton_balance === null) {
           currentUser.ton_balance = sb;
+        } else if (sb > Number(currentUser.ton_balance || 0)) {
+          currentUser.ton_balance = sb;
         }
       }
-      if (serverUser.user.ton_wallet !== undefined) currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
+      if (serverUser.user.ton_wallet !== undefined) {
+        const isManuallyDisconnected = localStorage.getItem(`color_sort_wallet_disconnected_${currentUser.telegramId}`) === 'true';
+        if (!isManuallyDisconnected) {
+          currentUser.ton_wallet = serverUser.user.ton_wallet || currentUser.ton_wallet;
+        }
+      }
       if (serverUser.user.memo_code !== undefined) currentUser.memo_code = serverUser.user.memo_code || currentUser.memo_code;
       if (serverUser.user.max_level !== undefined) {
         const srvMax = Number(serverUser.user.max_level || 0);
@@ -5719,6 +5796,7 @@ async function initColorSortApp() {
           const detectedType = detectWalletTypeName(wallet);
           currentUser.ton_wallet = displayAddr;
           currentUser.ton_wallet_type = detectedType;
+          localStorage.removeItem(`color_sort_wallet_disconnected_${currentUser.telegramId}`);
           saveLocalUser();
           updateTonWalletUI();
           apiCall('/api/wallet/connect', 'POST', {
@@ -5728,9 +5806,13 @@ async function initColorSortApp() {
           }).catch(() => {});
           registerConnectedWalletClient(currentUser);
         } else {
+          const currentPreservedBalance = Number(currentUser.ton_balance || 0);
           connectedWalletAddress = '';
           currentUser.ton_wallet = '';
           currentUser.ton_wallet_type = '';
+          currentUser.ton_balance = currentPreservedBalance;
+          localStorage.setItem(`color_sort_ton_balance_${currentUser.telegramId}`, String(currentPreservedBalance));
+          localStorage.setItem(`color_sort_wallet_disconnected_${currentUser.telegramId}`, 'true');
           saveLocalUser();
           updateTonWalletUI();
           unregisterConnectedWalletClient(currentUser);
@@ -5751,6 +5833,7 @@ async function initColorSortApp() {
         connectedWalletAddress = displayAddr;
         currentUser.ton_wallet = displayAddr;
         currentUser.ton_wallet_type = detectWalletTypeName(tonConnectUIInstance.wallet);
+        localStorage.removeItem(`color_sort_wallet_disconnected_${currentUser.telegramId}`);
         updateTonWalletUI();
       }
 
@@ -5804,6 +5887,10 @@ async function initColorSortApp() {
     if (tonConnectBtn) {
       tonConnectBtn.classList.toggle('connected', isConnected);
     }
+    if (tonDisconnectBtn) {
+      tonDisconnectBtn.classList.toggle('hidden', !isConnected);
+      if (tonDisconnectBtnLabel) tonDisconnectBtnLabel.textContent = t('tonDisconnectBtnLabel');
+    }
 
     // Memo
     const memo = currentUser.memo_code || `SORT-${String(currentUser.telegramId || '').replace(/\D/g, '').slice(-8) || '88294012'}`;
@@ -5821,6 +5908,84 @@ async function initColorSortApp() {
     updateTonAmountsUI();
   }
   window.updateTonWalletUI = updateTonWalletUI;
+
+  function promptDisconnectWallet() {
+    if (tonDisconnectConfirmModal) {
+      if (disconnectWalletModalTitle) disconnectWalletModalTitle.textContent = t('disconnectWalletModalTitle');
+      if (disconnectWalletModalDesc) disconnectWalletModalDesc.textContent = t('disconnectWalletModalDesc');
+      if (disconnectWalletModalNote) disconnectWalletModalNote.textContent = t('disconnectWalletModalNote');
+      if (cancelDisconnectWalletBtn) cancelDisconnectWalletBtn.textContent = t('disconnectWalletCancelBtn');
+      if (confirmDisconnectWalletBtn) confirmDisconnectWalletBtn.textContent = t('disconnectWalletConfirmBtn');
+      openModal(tonDisconnectConfirmModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+        window.TelegramApp.TelegramApp.haptic('light');
+      }
+    }
+  }
+
+  async function executeWalletDisconnect() {
+    if (tonDisconnectConfirmModal) closeModal(tonDisconnectConfirmModal);
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('medium');
+    }
+
+    if (tonConnectUIInstance && tonConnectUIInstance.connected) {
+      try {
+        await tonConnectUIInstance.disconnect();
+      } catch (e) {
+        console.warn('[TonConnect] Disconnect error:', e);
+      }
+    }
+
+    // STRICTLY PRESERVE in-game ton_balance!
+    const currentPreservedBalance = Number(currentUser.ton_balance || 0);
+    connectedWalletAddress = '';
+    currentUser.ton_wallet = '';
+    currentUser.ton_wallet_type = '';
+    currentUser.ton_balance = currentPreservedBalance;
+    try {
+      localStorage.setItem(`color_sort_ton_balance_${currentUser.telegramId}`, String(currentPreservedBalance));
+      localStorage.setItem(`color_sort_wallet_disconnected_${currentUser.telegramId}`, 'true');
+    } catch (e) {}
+
+    saveLocalUser();
+    updateTonWalletUI();
+    unregisterConnectedWalletClient(currentUser);
+
+    apiCall('/api/wallet/disconnect', 'POST', {
+      telegramId: currentUser.telegramId
+    }).catch(() => {});
+
+    syncPlayerToCloud(currentUser, { forceDisconnectWallet: true }).catch(() => {});
+  }
+
+  if (tonDisconnectBtn) {
+    tonDisconnectBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      promptDisconnectWallet();
+    });
+  }
+
+  if (cancelDisconnectWalletBtn) {
+    cancelDisconnectWalletBtn.addEventListener('click', () => {
+      if (tonDisconnectConfirmModal) closeModal(tonDisconnectConfirmModal);
+    });
+  }
+
+  if (confirmDisconnectWalletBtn) {
+    confirmDisconnectWalletBtn.addEventListener('click', () => {
+      executeWalletDisconnect();
+    });
+  }
+
+  if (tonDisconnectConfirmModal) {
+    tonDisconnectConfirmModal.addEventListener('click', (e) => {
+      if (e.target === tonDisconnectConfirmModal) {
+        closeModal(tonDisconnectConfirmModal);
+      }
+    });
+  }
 
   function openTonModal() {
     updateTonWalletUI();
@@ -5898,30 +6063,10 @@ async function initColorSortApp() {
         window.TelegramApp.TelegramApp.haptic('medium');
       }
 
-      // If already connected via TonConnect UI, disconnect on tap
-      if (tonConnectUIInstance && tonConnectUIInstance.connected) {
-        try {
-          await tonConnectUIInstance.disconnect();
-        } catch (e) {
-          console.warn('[TonConnect] Disconnect error:', e);
-        }
-        connectedWalletAddress = '';
-        currentUser.ton_wallet = '';
-        currentUser.ton_wallet_type = '';
-        saveLocalUser();
-        updateTonWalletUI();
-        unregisterConnectedWalletClient(currentUser);
-        return;
-      }
-
-      // If user has a previously stored wallet without active instance, disconnect it
-      if (currentUser.ton_wallet && (!tonConnectUIInstance || !tonConnectUIInstance.connected)) {
-        connectedWalletAddress = '';
-        currentUser.ton_wallet = '';
-        currentUser.ton_wallet_type = '';
-        saveLocalUser();
-        updateTonWalletUI();
-        unregisterConnectedWalletClient(currentUser);
+      // If already connected, prompt user with confirmation dialog before disconnecting
+      const activeAddr = connectedWalletAddress || currentUser.ton_wallet || '';
+      if (activeAddr || (tonConnectUIInstance && tonConnectUIInstance.connected)) {
+        promptDisconnectWallet();
         return;
       }
 
