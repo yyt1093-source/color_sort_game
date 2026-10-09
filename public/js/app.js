@@ -2939,33 +2939,33 @@ async function initColorSortApp() {
 
   // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
   const IMMUTABLE_PLAYER_BASELINES = {
-    '5761685341': { maxLevel: 50, stars: 0, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
-    '7458436672': { maxLevel: 47, stars: 141, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
-    '8305679959': { maxLevel: 43, stars: 129, firstName: '.', username: '' },
-    '8982516215': { maxLevel: 41, stars: 99, firstName: 'Qwerty', username: 'sinisterx3' },
-    '5269257903': { maxLevel: 37, stars: 108, firstName: 'Kostya', username: 'Koctya007' },
-    '296239050':  { maxLevel: 35, stars: 105, firstName: 'Sergey', username: 'sergiy121234' },
-    '7116446051': { maxLevel: 27, stars: 0, firstName: 'Марія', username: 'Maria290355' },
-    '1890528535': { maxLevel: 20, stars: 60, firstName: 'Кирилл', username: 'Cristiano717' },
-    '5177916222': { maxLevel: 18, stars: 48, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: 'Diana13031303' },
-    '1803189688': { maxLevel: 16, stars: 48, firstName: 'Andriejus', username: 'Tigras1986' },
-    '1152401670': { maxLevel: 14, stars: 42, firstName: 'Natta', username: 'Smaile82' },
-    '615300433':  { maxLevel: 10, stars: 30, firstName: 'ᅠ', username: 'velzevul999' },
-    '6582657380': { maxLevel: 9, stars: 21, firstName: 'R', username: 'Romanchiiik0' },
-    '1531426251': { maxLevel: 8, stars: 24, firstName: 'Алексей', username: 'Element1914' },
-    '387353019':  { maxLevel: 8, stars: 24, firstName: 'Danil', username: 'danilfrais' },
-    '5403252654': { maxLevel: 8, stars: 24, firstName: 'ВиталийTower🏰', username: 'Tuchkovit' },
-    '7990014996': { maxLevel: 4, stars: 12, firstName: 'Samyrai', username: 'KaLLoooS' },
-    '5991713296': { maxLevel: 4, stars: 12, firstName: 'Юлия', username: '' },
-    '8743109762': { maxLevel: 4, stars: 12, firstName: 'Ірина', username: 'iriskaturgan1' },
-    '1471767067': { maxLevel: 3, stars: 9, firstName: 'Александрович', username: '' },
-    '5253063837': { maxLevel: 3, stars: 9, firstName: '♥️НАТ♥️', username: '' },
-    '5502743854': { maxLevel: 3, stars: 9, firstName: 'Потерял', username: '' },
-    '5709982730': { maxLevel: 3, stars: 9, firstName: 'Алексей PIXLANDS', username: '' },
-    '6573295041': { maxLevel: 3, stars: 0, firstName: 'Smurf 😈hiroll777.space', username: 'SmSmurf7777' },
-    '5839076186': { maxLevel: 1, stars: 3, firstName: 'Женя', username: '' },
-    '7387508554': { maxLevel: 1, stars: 3, firstName: 'Дмитрий', username: '' },
-    '743036609':  { maxLevel: 1, stars: 0, firstName: '@EcoForestTonBot🌿⚒️ MinerGram@klikadobot#TotalHashСвітлана', username: 'Svet11256' }
+    '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+    '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
+    '8305679959': { maxLevel: 43, firstName: '.', username: '' },
+    '8982516215': { maxLevel: 41, firstName: 'Qwerty', username: 'sinisterx3' },
+    '5269257903': { maxLevel: 37, firstName: 'Kostya', username: 'Koctya007' },
+    '296239050':  { maxLevel: 35, firstName: 'Sergey', username: 'sergiy121234' },
+    '7116446051': { maxLevel: 27, firstName: 'Марія', username: 'Maria290355' },
+    '1890528535': { maxLevel: 20, firstName: 'Кирилл', username: 'Cristiano717' },
+    '5177916222': { maxLevel: 18, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: 'Diana13031303' },
+    '1803189688': { maxLevel: 16, firstName: 'Andriejus', username: 'Tigras1986' },
+    '1152401670': { maxLevel: 14, firstName: 'Natta', username: 'Smaile82' },
+    '615300433':  { maxLevel: 10, firstName: 'ᅠ', username: 'velzevul999' },
+    '6582657380': { maxLevel: 9, firstName: 'R', username: 'Romanchiiik0' },
+    '1531426251': { maxLevel: 8, firstName: 'Алексей', username: 'Element1914' },
+    '387353019':  { maxLevel: 8, firstName: 'Danil', username: 'danilfrais' },
+    '5403252654': { maxLevel: 8, firstName: 'ВиталийTower🏰', username: 'Tuchkovit' },
+    '7990014996': { maxLevel: 4, firstName: 'Samyrai', username: 'KaLLoooS' },
+    '5991713296': { maxLevel: 4, firstName: 'Юлия', username: '' },
+    '8743109762': { maxLevel: 4, firstName: 'Ірина', username: 'iriskaturgan1' },
+    '1471767067': { maxLevel: 3, firstName: 'Александрович', username: '' },
+    '5253063837': { maxLevel: 3, firstName: '♥️НАТ♥️', username: '' },
+    '5502743854': { maxLevel: 3, firstName: 'Потерял', username: '' },
+    '5709982730': { maxLevel: 3, firstName: 'Алексей PIXLANDS', username: '' },
+    '6573295041': { maxLevel: 3, firstName: 'Smurf 😈hiroll777.space', username: 'SmSmurf7777' },
+    '5839076186': { maxLevel: 1, firstName: 'Женя', username: '' },
+    '7387508554': { maxLevel: 1, firstName: 'Дмитрий', username: '' },
+    '743036609':  { maxLevel: 1, firstName: '@EcoForestTonBot🌿⚒️ MinerGram@klikadobot#TotalHashСвітлана', username: 'Svet11256' }
   };
 
   // Instant pre-population from localStorage for immediate, zero-delay baseline
@@ -3508,7 +3508,7 @@ async function initColorSortApp() {
           level: cloudMaxTarget,
           currentLevel: curLvl,
           current_level: curLvl,
-          stars: stars,
+          stars: 0,
           hints: finalHints,
           undos: finalUndos,
           reveals: finalReveals,
@@ -5357,9 +5357,7 @@ async function initColorSortApp() {
       const bLvl = Number(b.maxLevel !== undefined ? b.maxLevel : (b.level !== undefined ? b.level : 0));
       const diff = bLvl - aLvl;
       if (diff !== 0) return diff;
-      const starDiff = (b.stars || 0) - (a.stars || 0);
-      if (starDiff !== 0) return starDiff;
-      return (b.updatedAt || 0) - (a.updatedAt || 0);
+      return (a.updatedAt || 0) - (b.updatedAt || 0);
     });
 
     // 5. Render to DOM
