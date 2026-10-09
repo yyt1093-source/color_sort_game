@@ -36,22 +36,33 @@ const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
 // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
 const IMMUTABLE_PLAYER_BASELINES = {
-  '5761685341': { maxLevel: 49, stars: 0, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+  '5761685341': { maxLevel: 50, stars: 0, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
   '7458436672': { maxLevel: 47, stars: 141, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
   '8305679959': { maxLevel: 43, stars: 129, firstName: '.', username: '' },
+  '8982516215': { maxLevel: 41, stars: 99, firstName: 'Qwerty', username: 'sinisterx3' },
   '5269257903': { maxLevel: 37, stars: 108, firstName: 'Kostya', username: 'Koctya007' },
-  '8982516215': { maxLevel: 36, stars: 99, firstName: 'Qwerty', username: 'sinisterx3' },
   '296239050':  { maxLevel: 35, stars: 105, firstName: 'Sergey', username: 'sergiy121234' },
-  '7116446051': { maxLevel: 23, stars: 0, firstName: 'Марія', username: 'Maria290355' },
+  '7116446051': { maxLevel: 27, stars: 0, firstName: 'Марія', username: 'Maria290355' },
   '1890528535': { maxLevel: 20, stars: 60, firstName: 'Кирилл', username: 'Cristiano717' },
+  '5177916222': { maxLevel: 18, stars: 48, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: 'Diana13031303' },
   '1803189688': { maxLevel: 16, stars: 48, firstName: 'Andriejus', username: 'Tigras1986' },
-  '5177916222': { maxLevel: 16, stars: 48, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: '' },
   '1152401670': { maxLevel: 14, stars: 42, firstName: 'Natta', username: 'Smaile82' },
   '615300433':  { maxLevel: 10, stars: 30, firstName: 'ᅠ', username: 'velzevul999' },
   '6582657380': { maxLevel: 9, stars: 21, firstName: 'R', username: 'Romanchiiik0' },
   '1531426251': { maxLevel: 8, stars: 24, firstName: 'Алексей', username: 'Element1914' },
   '387353019':  { maxLevel: 8, stars: 24, firstName: 'Danil', username: 'danilfrais' },
-  '7990014996': { maxLevel: 4, stars: 12, firstName: 'Samyrai', username: '' }
+  '5403252654': { maxLevel: 8, stars: 24, firstName: 'ВиталийTower🏰', username: 'Tuchkovit' },
+  '7990014996': { maxLevel: 4, stars: 12, firstName: 'Samyrai', username: 'KaLLoooS' },
+  '5991713296': { maxLevel: 4, stars: 12, firstName: 'Юлия', username: '' },
+  '8743109762': { maxLevel: 4, stars: 12, firstName: 'Ірина', username: 'iriskaturgan1' },
+  '1471767067': { maxLevel: 3, stars: 9, firstName: 'Александрович', username: '' },
+  '5253063837': { maxLevel: 3, stars: 9, firstName: '♥️НАТ♥️', username: '' },
+  '5502743854': { maxLevel: 3, stars: 9, firstName: 'Потерял', username: '' },
+  '5709982730': { maxLevel: 3, stars: 9, firstName: 'Алексей PIXLANDS', username: '' },
+  '6573295041': { maxLevel: 3, stars: 0, firstName: 'Smurf 😈hiroll777.space', username: 'SmSmurf7777' },
+  '5839076186': { maxLevel: 1, stars: 3, firstName: 'Женя', username: '' },
+  '7387508554': { maxLevel: 1, stars: 3, firstName: 'Дмитрий', username: '' },
+  '743036609':  { maxLevel: 1, stars: 0, firstName: '@EcoForestTonBot🌿⚒️ MinerGram@klikadobot#TotalHashСвітлана', username: 'Svet11256' }
 };
 
 function maintenanceMiddleware(req, res, next) {
@@ -568,8 +579,9 @@ app.get('/api/leaderboard', async (req, res) => {
           const cpSeason = Number(cp.seasonResetAt || 0);
           const cpMaxLevel = Number(cp.maxLevel || cp.level || cp.max_level || 0);
 
-          // Exclude cloud players from old season or players who haven't completed round 1 (maxLevel < 1)
-          if (seasonResetAt > 0 && cpSeason < seasonResetAt) return;
+          const cpUpdated = Number(cp.updatedAt || 0);
+          // Exclude cloud players from old season only if neither seasonResetAt nor updatedAt matches current season
+          if (seasonResetAt > 0 && cpSeason < seasonResetAt && cpUpdated < seasonResetAt) return;
           if (cpMaxLevel < 1) return;
 
           const isDummyName = (name) => !name || name === 'Игрок' || name === 'Player' || name === '.';

@@ -2939,22 +2939,33 @@ async function initColorSortApp() {
 
   // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
   const IMMUTABLE_PLAYER_BASELINES = {
-    '5761685341': { maxLevel: 49, stars: 0, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+    '5761685341': { maxLevel: 50, stars: 0, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
     '7458436672': { maxLevel: 47, stars: 141, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
     '8305679959': { maxLevel: 43, stars: 129, firstName: '.', username: '' },
+    '8982516215': { maxLevel: 41, stars: 99, firstName: 'Qwerty', username: 'sinisterx3' },
     '5269257903': { maxLevel: 37, stars: 108, firstName: 'Kostya', username: 'Koctya007' },
-    '8982516215': { maxLevel: 36, stars: 99, firstName: 'Qwerty', username: 'sinisterx3' },
     '296239050':  { maxLevel: 35, stars: 105, firstName: 'Sergey', username: 'sergiy121234' },
-    '7116446051': { maxLevel: 23, stars: 0, firstName: 'Марія', username: 'Maria290355' },
+    '7116446051': { maxLevel: 27, stars: 0, firstName: 'Марія', username: 'Maria290355' },
     '1890528535': { maxLevel: 20, stars: 60, firstName: 'Кирилл', username: 'Cristiano717' },
+    '5177916222': { maxLevel: 18, stars: 48, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: 'Diana13031303' },
     '1803189688': { maxLevel: 16, stars: 48, firstName: 'Andriejus', username: 'Tigras1986' },
-    '5177916222': { maxLevel: 16, stars: 48, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: '' },
     '1152401670': { maxLevel: 14, stars: 42, firstName: 'Natta', username: 'Smaile82' },
     '615300433':  { maxLevel: 10, stars: 30, firstName: 'ᅠ', username: 'velzevul999' },
     '6582657380': { maxLevel: 9, stars: 21, firstName: 'R', username: 'Romanchiiik0' },
     '1531426251': { maxLevel: 8, stars: 24, firstName: 'Алексей', username: 'Element1914' },
     '387353019':  { maxLevel: 8, stars: 24, firstName: 'Danil', username: 'danilfrais' },
-    '7990014996': { maxLevel: 4, stars: 12, firstName: 'Samyrai', username: '' }
+    '5403252654': { maxLevel: 8, stars: 24, firstName: 'ВиталийTower🏰', username: 'Tuchkovit' },
+    '7990014996': { maxLevel: 4, stars: 12, firstName: 'Samyrai', username: 'KaLLoooS' },
+    '5991713296': { maxLevel: 4, stars: 12, firstName: 'Юлия', username: '' },
+    '8743109762': { maxLevel: 4, stars: 12, firstName: 'Ірина', username: 'iriskaturgan1' },
+    '1471767067': { maxLevel: 3, stars: 9, firstName: 'Александрович', username: '' },
+    '5253063837': { maxLevel: 3, stars: 9, firstName: '♥️НАТ♥️', username: '' },
+    '5502743854': { maxLevel: 3, stars: 9, firstName: 'Потерял', username: '' },
+    '5709982730': { maxLevel: 3, stars: 9, firstName: 'Алексей PIXLANDS', username: '' },
+    '6573295041': { maxLevel: 3, stars: 0, firstName: 'Smurf 😈hiroll777.space', username: 'SmSmurf7777' },
+    '5839076186': { maxLevel: 1, stars: 3, firstName: 'Женя', username: '' },
+    '7387508554': { maxLevel: 1, stars: 3, firstName: 'Дмитрий', username: '' },
+    '743036609':  { maxLevel: 1, stars: 0, firstName: '@EcoForestTonBot🌿⚒️ MinerGram@klikadobot#TotalHashСвітлана', username: 'Svet11256' }
   };
 
   // Instant pre-population from localStorage for immediate, zero-delay baseline
@@ -3478,9 +3489,12 @@ async function initColorSortApp() {
           user.firstName = effectiveFirstName;
         }
 
+        const baseRec = IMMUTABLE_PLAYER_BASELINES[id];
+        const baseLevel = baseRec ? Number(baseRec.maxLevel || 0) : 0;
         const cloudMaxTarget = Math.max(
           maxLvl,
           Number(user.maxLevel || 0),
+          baseLevel,
           existingCloud ? Number(existingCloud.maxLevel || existingCloud.level || existingCloud.max_level || 0) : 0
         );
 
@@ -3946,19 +3960,9 @@ async function initColorSortApp() {
           const cloudSeason = Number(cloudData.seasonResetAt || 0);
           const cloudRestore = Number(cloudData.snapshotRestoredAt || 0);
 
-          // Restored snapshot records take absolute priority and are NEVER wiped to level 1 on reload
-          if (cloudRestore > 0) {
-            // Active restored snapshot - preserve level from snapshot
-          } else if (localReset > 0 && cloudSeason > 0 && cloudSeason < localReset) {
-            // Stale record from previous season - reset local level/stars, but preserve all boosters!
-            currentUser.currentLevel = 1;
-            currentUser.maxLevel = 0;
-            currentUser.level = 0;
-            currentUser.stars = 0;
-            currentUser.seasonResetAt = localReset;
-            saveLocalUser();
-            updateHeaderUI();
-            loadCurrentLevel();
+          // Restored snapshot records take absolute priority and are NEVER wiped on reload
+          if (cloudSeason > Number(currentUser.seasonResetAt || 0)) {
+            currentUser.seasonResetAt = cloudSeason;
           }
 
           const forceResetTs = Number(cloudData.forceResetAt || cloudData.accountResetAt || 0);
@@ -4074,11 +4078,11 @@ async function initColorSortApp() {
           const isNewSnapshotRestore = cloudRestoreTs > 0 && cloudRestoreTs > localRestoreTs;
 
           if (isNewSnapshotRestore) {
-            currentUser.maxLevel = cloudMax;
-            currentUser.level = cloudMax;
-            currentUser.currentLevel = cloudCur > 0 ? cloudCur : (cloudMax > 0 ? cloudMax : 1);
-            currentUser.stars = cloudStars;
-            localStorage.setItem(`color_sort_db_level_${myIdStr}`, String(cloudMax));
+            currentUser.maxLevel = Math.max(Number(currentUser.maxLevel || 0), cloudMax);
+            currentUser.level = currentUser.maxLevel;
+            currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), cloudCur > 0 ? cloudCur : (currentUser.maxLevel > 0 ? currentUser.maxLevel : 1));
+            currentUser.stars = Math.max(Number(currentUser.stars || 0), cloudStars);
+            localStorage.setItem(`color_sort_db_level_${myIdStr}`, String(currentUser.maxLevel));
             localStorage.setItem(`color_sort_restored_at_${myIdStr}`, String(cloudRestoreTs));
             currentUser.lastSnapshotRestoredAt = cloudRestoreTs;
             changed = true;
@@ -9579,17 +9583,20 @@ async function initColorSortApp() {
 
             if (snapMap.has(tid)) {
               const sp = snapMap.get(tid);
+              const curLvl = Number(val.maxLevel !== undefined ? val.maxLevel : (val.level || 0));
+              const finalRestoreLvl = Math.max(sp.lvl, curLvl, (IMMUTABLE_PLAYER_BASELINES[tid]?.maxLevel || 0));
+              const finalRestoreStars = Math.max(Number(sp.stars || 0), Number(val.stars || 0), (IMMUTABLE_PLAYER_BASELINES[tid]?.stars || 0));
               const updatedPayload = {
                 ...val,
                 telegramId: tid,
                 firstName: val.firstName || sp.name,
                 username: val.username || sp.username,
-                maxLevel: sp.lvl,
-                max_level: sp.lvl,
-                level: sp.lvl,
-                currentLevel: sp.lvl,
-                current_level: sp.lvl,
-                stars: sp.stars,
+                maxLevel: finalRestoreLvl,
+                max_level: finalRestoreLvl,
+                level: finalRestoreLvl,
+                currentLevel: Math.max(Number(val.currentLevel || 1), finalRestoreLvl),
+                current_level: Math.max(Number(val.current_level || 1), finalRestoreLvl),
+                stars: finalRestoreStars,
                 snapshotRestoredAt: nowTs,
                 updatedAt: nowTs
               };
@@ -9598,26 +9605,8 @@ async function initColorSortApp() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedPayload)
               });
-            } else {
-              // Not in snapshot: completely wipe level & stars to 0 (preserving ton balance and wallet)
-              const resetPayload = {
-                ...val,
-                telegramId: tid,
-                maxLevel: 0,
-                max_level: 0,
-                level: 0,
-                currentLevel: 1,
-                current_level: 1,
-                stars: 0,
-                snapshotRestoredAt: nowTs,
-                updatedAt: nowTs
-              };
-              await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(tid)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(resetPayload)
-              });
             }
+            // Players not in snapshot are preserved as active real players without being reset
           }
 
           // Insert any snapshot players not in KVDB yet
