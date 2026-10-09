@@ -2942,7 +2942,7 @@ async function initColorSortApp() {
     '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
     '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
     '8305679959': { maxLevel: 43, firstName: '.', username: '' },
-    '8982516215': { maxLevel: 41, firstName: 'Qwerty', username: 'sinisterx3' },
+    '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
     '5269257903': { maxLevel: 37, firstName: 'Kostya', username: 'Koctya007' },
     '296239050':  { maxLevel: 35, firstName: 'Sergey', username: 'sergiy121234' },
     '7116446051': { maxLevel: 27, firstName: 'Марія', username: 'Maria290355' },
