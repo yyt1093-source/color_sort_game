@@ -36,33 +36,33 @@ const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
 // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
 const IMMUTABLE_PLAYER_BASELINES = {
-  '5761685341': { maxLevel: 50, stars: 0, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
-  '7458436672': { maxLevel: 47, stars: 141, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
-  '8305679959': { maxLevel: 43, stars: 129, firstName: '.', username: '' },
-  '8982516215': { maxLevel: 41, stars: 99, firstName: 'Qwerty', username: 'sinisterx3' },
-  '5269257903': { maxLevel: 37, stars: 108, firstName: 'Kostya', username: 'Koctya007' },
-  '296239050':  { maxLevel: 35, stars: 105, firstName: 'Sergey', username: 'sergiy121234' },
-  '7116446051': { maxLevel: 27, stars: 0, firstName: 'Марія', username: 'Maria290355' },
-  '1890528535': { maxLevel: 20, stars: 60, firstName: 'Кирилл', username: 'Cristiano717' },
-  '5177916222': { maxLevel: 18, stars: 48, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: 'Diana13031303' },
-  '1803189688': { maxLevel: 16, stars: 48, firstName: 'Andriejus', username: 'Tigras1986' },
-  '1152401670': { maxLevel: 14, stars: 42, firstName: 'Natta', username: 'Smaile82' },
-  '615300433':  { maxLevel: 10, stars: 30, firstName: 'ᅠ', username: 'velzevul999' },
-  '6582657380': { maxLevel: 9, stars: 21, firstName: 'R', username: 'Romanchiiik0' },
-  '1531426251': { maxLevel: 8, stars: 24, firstName: 'Алексей', username: 'Element1914' },
-  '387353019':  { maxLevel: 8, stars: 24, firstName: 'Danil', username: 'danilfrais' },
-  '5403252654': { maxLevel: 8, stars: 24, firstName: 'ВиталийTower🏰', username: 'Tuchkovit' },
-  '7990014996': { maxLevel: 4, stars: 12, firstName: 'Samyrai', username: 'KaLLoooS' },
-  '5991713296': { maxLevel: 4, stars: 12, firstName: 'Юлия', username: '' },
-  '8743109762': { maxLevel: 4, stars: 12, firstName: 'Ірина', username: 'iriskaturgan1' },
-  '1471767067': { maxLevel: 3, stars: 9, firstName: 'Александрович', username: '' },
-  '5253063837': { maxLevel: 3, stars: 9, firstName: '♥️НАТ♥️', username: '' },
-  '5502743854': { maxLevel: 3, stars: 9, firstName: 'Потерял', username: '' },
-  '5709982730': { maxLevel: 3, stars: 9, firstName: 'Алексей PIXLANDS', username: '' },
-  '6573295041': { maxLevel: 3, stars: 0, firstName: 'Smurf 😈hiroll777.space', username: 'SmSmurf7777' },
-  '5839076186': { maxLevel: 1, stars: 3, firstName: 'Женя', username: '' },
-  '7387508554': { maxLevel: 1, stars: 3, firstName: 'Дмитрий', username: '' },
-  '743036609':  { maxLevel: 1, stars: 0, firstName: '@EcoForestTonBot🌿⚒️ MinerGram@klikadobot#TotalHashСвітлана', username: 'Svet11256' }
+  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+  '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
+  '8305679959': { maxLevel: 43, firstName: '.', username: '' },
+  '8982516215': { maxLevel: 41, firstName: 'Qwerty', username: 'sinisterx3' },
+  '5269257903': { maxLevel: 37, firstName: 'Kostya', username: 'Koctya007' },
+  '296239050':  { maxLevel: 35, firstName: 'Sergey', username: 'sergiy121234' },
+  '7116446051': { maxLevel: 27, firstName: 'Марія', username: 'Maria290355' },
+  '1890528535': { maxLevel: 20, firstName: 'Кирилл', username: 'Cristiano717' },
+  '5177916222': { maxLevel: 18, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: 'Diana13031303' },
+  '1803189688': { maxLevel: 16, firstName: 'Andriejus', username: 'Tigras1986' },
+  '1152401670': { maxLevel: 14, firstName: 'Natta', username: 'Smaile82' },
+  '615300433':  { maxLevel: 10, firstName: 'ᅠ', username: 'velzevul999' },
+  '6582657380': { maxLevel: 9, firstName: 'R', username: 'Romanchiiik0' },
+  '1531426251': { maxLevel: 8, firstName: 'Алексей', username: 'Element1914' },
+  '387353019':  { maxLevel: 8, firstName: 'Danil', username: 'danilfrais' },
+  '5403252654': { maxLevel: 8, firstName: 'ВиталийTower🏰', username: 'Tuchkovit' },
+  '7990014996': { maxLevel: 4, firstName: 'Samyrai', username: 'KaLLoooS' },
+  '5991713296': { maxLevel: 4, firstName: 'Юлия', username: '' },
+  '8743109762': { maxLevel: 4, firstName: 'Ірина', username: 'iriskaturgan1' },
+  '1471767067': { maxLevel: 3, firstName: 'Александрович', username: '' },
+  '5253063837': { maxLevel: 3, firstName: '♥️НАТ♥️', username: '' },
+  '5502743854': { maxLevel: 3, firstName: 'Потерял', username: '' },
+  '5709982730': { maxLevel: 3, firstName: 'Алексей PIXLANDS', username: '' },
+  '6573295041': { maxLevel: 3, firstName: 'Smurf 😈hiroll777.space', username: 'SmSmurf7777' },
+  '5839076186': { maxLevel: 1, firstName: 'Женя', username: '' },
+  '7387508554': { maxLevel: 1, firstName: 'Дмитрий', username: '' },
+  '743036609':  { maxLevel: 1, firstName: '@EcoForestTonBot🌿⚒️ MinerGram@klikadobot#TotalHashСвітлана', username: 'Svet11256' }
 };
 
 function maintenanceMiddleware(req, res, next) {
@@ -605,7 +605,7 @@ app.get('/api/leaderboard', async (req, res) => {
               username: cpCleanUname,
               photo_url: cp.photoUrl || '',
               max_level: cpMaxLevel,
-              stars: cp.stars || 0
+              stars: 0
             };
             playersMap.set(id, newEntry);
             if (lowerUname) usernameMap.set(lowerUname, newEntry);
@@ -613,13 +613,13 @@ app.get('/api/leaderboard', async (req, res) => {
             try {
               db.prepare(`
                 INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, 0)
                 ON CONFLICT(telegram_id) DO UPDATE SET 
                   max_level = MAX(users.max_level, excluded.max_level), 
-                  stars = MAX(users.stars, excluded.stars),
+                  stars = 0,
                   first_name = CASE WHEN users.first_name IN ('Player', 'Игрок', '.', '') AND excluded.first_name NOT IN ('Player', 'Игрок', '.', '') THEN excluded.first_name ELSE users.first_name END,
                   username = CASE WHEN (users.username IS NULL OR users.username = '') AND excluded.username != '' THEN excluded.username ELSE users.username END
-              `).run(id, cpFirst, cpCleanUname, cpMaxLevel, cpMaxLevel, cp.stars || 0);
+              `).run(id, cpFirst, cpCleanUname, cpMaxLevel, cpMaxLevel);
             } catch(e) {}
           } else {
             let updatedDb = false;
@@ -646,7 +646,7 @@ app.get('/api/leaderboard', async (req, res) => {
             // Always take maximum level! Never downgrade!
             if (cpMaxLevel > existing.max_level) {
               existing.max_level = cpMaxLevel;
-              if (cp.stars !== undefined) existing.stars = Math.max(Number(existing.stars || 0), Number(cp.stars || 0));
+              existing.stars = 0;
               updatedDb = true;
             }
 
@@ -654,9 +654,9 @@ app.get('/api/leaderboard', async (req, res) => {
               try {
                 db.prepare(`
                   UPDATE users 
-                  SET max_level = ?, current_level = ?, stars = ?, first_name = ?, username = ?
+                  SET max_level = ?, current_level = ?, stars = 0, first_name = ?, username = ?
                   WHERE telegram_id = ? OR (username IS NOT NULL AND LOWER(username) = ?)
-                `).run(existing.max_level, existing.max_level, existing.stars || 0, finalName, finalUname, existing.telegram_id, lowerUname || '');
+                `).run(existing.max_level, existing.max_level, finalName, finalUname, existing.telegram_id, lowerUname || '');
               } catch(e) {}
             }
           }
@@ -667,7 +667,7 @@ app.get('/api/leaderboard', async (req, res) => {
           let existing = playersMap.get(tid);
           if (existing) {
             existing.max_level = Math.max(existing.max_level, baseP.maxLevel);
-            existing.stars = Math.max(existing.stars, baseP.stars);
+            existing.stars = 0;
             if (!existing.first_name || isDummyName(existing.first_name)) existing.first_name = baseP.firstName;
             if (!existing.username && baseP.username) existing.username = baseP.username;
           } else {
@@ -677,13 +677,13 @@ app.get('/api/leaderboard', async (req, res) => {
               username: baseP.username,
               photo_url: '',
               max_level: baseP.maxLevel,
-              stars: baseP.stars
+              stars: 0
             });
           }
         });
 
         const mergedList = Array.from(playersMap.values())
-          .sort((a, b) => b.max_level - a.max_level || (b.stars || 0) - (a.stars || 0))
+          .sort((a, b) => b.max_level - a.max_level)
           .slice(0, 50);
 
         leaderboard.topPlayers = mergedList;

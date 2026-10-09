@@ -81,7 +81,7 @@ runTest('Historical Seed Snapshots and Same-Day Manual/Auto Isolation', () => {
     const top1 = snap6.players[0];
     assert.strictEqual(top1.rank, 1);
     assert.strictEqual(top1.telegram_id, '5761685341');
-    assert.strictEqual(top1.level, 150);
+    assert.strictEqual(top1.level, 45);
   }
 
   // Check 10th Sept (110 players)
