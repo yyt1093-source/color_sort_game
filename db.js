@@ -775,14 +775,15 @@ function resetSeason(resetTimestamp = Date.now()) {
 }
 
 function updateTonWallet(telegramId, walletAddress, walletType = '') {
+  const isClearing = !walletAddress;
   const stmt = db.prepare(`
     UPDATE users
     SET ton_wallet = ?,
-        ton_wallet_type = CASE WHEN ? != '' THEN ? ELSE ton_wallet_type END,
+        ton_wallet_type = CASE WHEN ? = 1 THEN '' WHEN ? != '' THEN ? ELSE ton_wallet_type END,
         updated_at = datetime('now')
     WHERE telegram_id = ?
   `);
-  stmt.run(walletAddress || '', walletType || '', walletType || '', String(telegramId));
+  stmt.run(walletAddress || '', isClearing ? 1 : 0, walletType || '', walletType || '', String(telegramId));
   return getUser(telegramId);
 }
 

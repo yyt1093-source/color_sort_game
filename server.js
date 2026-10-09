@@ -501,6 +501,27 @@ app.post('/api/user/sync', (req, res) => {
             } catch(e) {}
           }
 
+          const incomingTonBal = req.body && req.body.ton_balance !== undefined ? Number(req.body.ton_balance) : null;
+          const existingTonBal = existing ? Number(existing.ton_balance || existing.tonBalance || 0) : 0;
+          const finalTonBalance = Math.max(
+            Number(updatedUser.ton_balance || 0),
+            incomingTonBal !== null ? incomingTonBal : 0,
+            existingTonBal
+          );
+          if (finalTonBalance > Number(updatedUser.ton_balance || 0)) {
+            try {
+              db.prepare(`UPDATE users SET ton_balance = ? WHERE telegram_id = ?`).run(finalTonBalance, String(id));
+              updatedUser.ton_balance = finalTonBalance;
+            } catch(e) {}
+          }
+
+          let finalWallet = updatedUser.ton_wallet || '';
+          if (req.body && req.body.ton_wallet !== undefined) {
+            finalWallet = req.body.ton_wallet;
+          } else if (!finalWallet && existing && existing.ton_wallet) {
+            finalWallet = existing.ton_wallet;
+          }
+
           const payload = {
             telegramId: String(id),
             firstName: effectiveFirst,
@@ -517,7 +538,9 @@ app.post('/api/user/sync', (req, res) => {
             reveals: finalReveals,
             extraBottles: finalBottles,
             extra_bottles: finalBottles,
-            ton_balance: Number(updatedUser.ton_balance || 0),
+            ton_balance: finalTonBalance,
+            ton_wallet: finalWallet || '',
+            ton_wallet_type: finalWallet ? (updatedUser.ton_wallet_type || (existing ? existing.ton_wallet_type : '') || '') : '',
             all_colors_until: Math.max(Number(updatedUser.all_colors_until || 0), existing ? Number(existing.all_colors_until || 0) : 0),
             all_colors_purchased_at: Math.max(Number(updatedUser.all_colors_purchased_at || 0), existing ? Number(existing.all_colors_purchased_at || 0) : 0),
             daily_boosters_days_left: effectiveDays,
@@ -826,6 +849,21 @@ app.post('/api/wallet/connect', (req, res) => {
     res.json({ success: true, user: updatedUser });
   } catch (err) {
     console.error('[API ERROR] /api/wallet/connect:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Disconnect TON wallet while strictly preserving ton_balance
+ */
+app.post('/api/wallet/disconnect', (req, res) => {
+  try {
+    const { telegramId } = req.body;
+    const id = telegramId || 'guest_dev_123';
+    const updatedUser = db.updateTonWallet(id, '', '');
+    res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error('[API ERROR] /api/wallet/disconnect:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
