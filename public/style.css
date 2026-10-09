@@ -3234,15 +3234,15 @@ body {
 }
 
 /* ============================================================
-   Admin Panel Navigation (Плиточная панель)
+   Admin Panel Navigation (Компактная плиточная панель 3x2)
    ============================================================ */
 .admin-nav-tabs {
   display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 8px !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 6px !important;
   width: 100% !important;
   margin-top: 6px !important;
-  margin-bottom: 12px !important;
+  margin-bottom: 10px !important;
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
@@ -3255,9 +3255,9 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 10px 6px;
-  min-height: 72px;
-  border-radius: 13px;
+  padding: 6px 3px;
+  min-height: 42px;
+  border-radius: 9px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(15, 23, 42, 0.78);
   backdrop-filter: blur(10px);
@@ -3266,7 +3266,7 @@ body {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   box-sizing: border-box;
   position: relative;
 }
@@ -3276,22 +3276,22 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 2px;
   min-width: 0;
   width: 100%;
 }
 
 .admin-nav-tab-icon {
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
@@ -3307,20 +3307,24 @@ body {
 }
 
 .admin-nav-tab-text strong {
-  font-size: 0.82rem;
+  font-size: 0.68rem;
   font-weight: 800;
   color: #f1f5f9;
-  letter-spacing: 0.2px;
-  line-height: 1.25;
+  letter-spacing: 0.1px;
+  line-height: 1.15;
   transition: color 0.2s ease;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .admin-nav-tab-desc {
-  font-size: 0.65rem;
+  font-size: 0.55rem;
   color: #64748b;
   font-weight: 500;
-  line-height: 1.15;
+  line-height: 1.05;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3346,46 +3350,8 @@ body {
   pointer-events: none;
 }
 
-/* Specific button: Новости (full width on bottom row) */
 #adminTabNewsBtn {
-  grid-column: 1 / -1;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
-  min-height: 48px;
-}
-
-#adminTabNewsBtn .admin-nav-tab-main {
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: auto;
-}
-
-#adminTabNewsBtn .admin-nav-tab-icon {
-  width: 32px;
-  height: 32px;
-  font-size: 1.15rem;
-}
-
-#adminTabNewsBtn .admin-nav-tab-text {
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  width: auto;
-  gap: 1px;
-}
-
-#adminTabNewsBtn .admin-nav-tab-text strong {
-  font-size: 0.85rem;
-  text-align: left;
-}
-
-#adminTabNewsBtn .admin-nav-tab-desc {
-  font-size: 0.68rem;
-  text-align: left;
+  grid-column: auto;
 }
 
 /* Themed Active Highlights for Tiles */
@@ -4399,26 +4365,29 @@ body {
 
 .admin-boosters-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
 .admin-boost-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 3px;
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
   border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: 10px;
-  padding: 10px 8px;
+  border-radius: 8px;
+  padding: 6px 3px;
+  min-height: 42px;
   color: #f1f5f9;
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   user-select: none;
+  text-align: center;
 }
 
 .admin-boost-btn:hover {
@@ -4434,7 +4403,8 @@ body {
 }
 
 .admin-boost-icon {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  line-height: 1;
   flex-shrink: 0;
 }
 
