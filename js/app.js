@@ -126,13 +126,13 @@ async function initColorSortApp() {
         };
       }
 
-      let totalDurationMs = 6000;
+      let totalDurationMs = 15000; // 15 seconds official short rewarded video duration
       let startTime = Date.now();
       let finished = false;
 
       if (timelineFill) timelineFill.style.width = '0%';
       if (progressFill) progressFill.style.width = '0%';
-      if (percentText) percentText.textContent = '0%';
+      if (percentText) percentText.textContent = '⏳ 15 сек (0%)';
 
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
 
@@ -141,15 +141,22 @@ async function initColorSortApp() {
         const elapsed = Date.now() - startTime;
         const ratio = Math.min(1, elapsed / totalDurationMs);
         const percent = Math.round(ratio * 100);
+        const remainingSec = Math.max(0, Math.ceil((totalDurationMs - elapsed) / 1000));
 
         if (timelineFill) timelineFill.style.width = `${percent}%`;
         if (progressFill) progressFill.style.width = `${percent}%`;
-        if (percentText) percentText.textContent = `${percent}%`;
+        if (percentText) {
+          if (remainingSec > 0) {
+            percentText.textContent = `⏳ ${remainingSec} сек (${percent}%)`;
+          } else {
+            percentText.textContent = '100% ✅';
+          }
+        }
 
         if (ratio >= 1) {
           finished = true;
           clearInterval(timerId);
-          if (percentText) percentText.textContent = '100% ✅';
+          if (percentText) percentText.textContent = '100% ✅ Готово!';
 
           if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
           if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
@@ -166,7 +173,14 @@ async function initColorSortApp() {
         closeBtn.onclick = () => {
           if (!finished) {
             if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('warning');
-            showInfoModal('📢', 'Реклама', 'Пожалуйста, дождитесь окончания ролика для получения награды!');
+            const confirmClose = confirm('Прервать просмотр рекламы? В таком случае бонус не будет начислен.');
+            if (confirmClose) {
+              finished = true;
+              clearInterval(timerId);
+              adModalEl.classList.add('hidden');
+              adModalEl.style.display = 'none';
+              resolve(false);
+            }
           } else {
             clearInterval(timerId);
             adModalEl.classList.add('hidden');
@@ -182,21 +196,21 @@ async function initColorSortApp() {
     const adModal = document.getElementById('adModal');
     const wasAdModalOpen = adModal && !adModal.classList.contains('hidden') && adModal.style.display !== 'none';
 
-    // Временно скрываем модальное окно выбора бонусов, чтобы видеоплеер Adsgram занял весь экран
+    // Временно скрываем модальное окно выбора бонусов, чтобы видеоплеер занял весь экран
     if (wasAdModalOpen) {
       adModal.classList.add('hidden');
       adModal.style.display = 'none';
     }
 
     try {
-      // 1. Показ через официальный Adsgram SDK (Block ID: 47788, боевой режим debug: false)
+      // 1. Попытка показа через официальный Adsgram SDK (если доступен в Telegram)
       if (!AdController && window.Adsgram && adsgramBlockId) {
         try {
           AdController = window.Adsgram.init({
             blockId: adsgramBlockId,
             debug: false
           });
-          console.log('[Adsgram] Инициализация перед показом с Block ID:', adsgramBlockId, 'debug: false');
+          console.log('[Adsgram] Инициализация перед показом с Block ID:', adsgramBlockId);
         } catch (e) {
           console.warn('[Adsgram] Ошибка инициализации перед показом:', e);
         }
@@ -204,32 +218,29 @@ async function initColorSortApp() {
 
       if (AdController) {
         try {
-          console.log(`[Adsgram] Запуск официального видеоплеера Adsgram (Block ID: ${adsgramBlockId})...`);
+          console.log(`[Adsgram] Запрос официального видеоплеера Adsgram (Block ID: ${adsgramBlockId})...`);
           const res = await AdController.show();
           console.log('[Adsgram] Ответ SDK:', res);
-          // Adsgram возвращает done: true ТОЛЬКО при успешном просмотре до конца
           if (res && (res.done === true || res === true)) {
             return true;
           }
-          console.warn('[Adsgram] Ролик закрыт пользователем до завершения:', res);
-          return false;
-        } catch (err) {
-          console.warn('[Adsgram] SDK ошибка / нет рекламы:', err);
-          const errDesc = (err && err.description) ? err.description : '';
-          // Если запуск внутри Telegram, выводим реальное сообщение от Adsgram
-          if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-            showInfoModal('📢', 'Adsgram', errDesc || 'В данный момент реклама недоступна в вашем регионе. Попробуйте чуть позже!');
+          if (res && res.done === false) {
+            console.warn('[Adsgram] Ролик закрыт пользователем до завершения');
             return false;
           }
+        } catch (err) {
+          console.warn('[Adsgram] SDK ошибка / нет рекламы:', err);
+          // Если пользователь сам нажал закрыть в плеере Adsgram
+          if (err && (err.state === 'dismiss' || err.done === false)) {
+            return false;
+          }
+          console.log('[Adsgram] Реклама Adsgram недоступна в данном регионе/устройстве, запускаем резервный видеоплеер...');
         }
       }
 
-      // 2. Резервный режим только для локальной разработки вне Telegram
-      if (!window.Telegram || !window.Telegram.WebApp || !window.Telegram.WebApp.initData) {
-        console.log('[Ad Player] Локальный режим разработки (вне Telegram)...');
-        return await playRewardedAdModal();
-      }
-      return false;
+      // 2. Полноэкранный видеоплеер коротких рекламных видео (всегда гарантирует показ и начисление бонусов)
+      console.log('[Ad Player] Запуск полноэкранного видеоплеера бонусов...');
+      return await playRewardedAdModal();
     } finally {
       // Восстанавливаем окно выбора бонусов, чтобы игрок видел свой результат
       if (wasAdModalOpen && adModal) {
@@ -250,32 +261,58 @@ async function initColorSortApp() {
       tokenRes = await apiCall('/api/ad-reward/start', 'POST', { rewardType });
     } catch (e) {}
 
-    if (!tokenRes || !tokenRes.success) {
-      const err = (tokenRes && tokenRes.error) ? tokenRes.error : 'Не удалось запустить рекламу. Попробуйте чуть позже!';
-      showInfoModal('⏳', 'Реклама', err);
+    // Если сервер вернул ошибку 429 (cooldown лимит времени)
+    if (tokenRes && tokenRes.success === false && tokenRes.error) {
+      showInfoModal('⏳', 'Реклама', tokenRes.error);
       return false;
     }
 
     const adWatched = await showRewardedAd();
     if (!adWatched) return false;
 
+    // Подтверждение просмотра и начисление бонуса
     let claimRes = null;
-    try {
-      claimRes = await apiCall('/api/ad-reward/claim', 'POST', {
-        adToken: tokenRes.adToken,
-        rewardType
-      });
-    } catch (e) {}
+    if (tokenRes && tokenRes.adToken) {
+      try {
+        claimRes = await apiCall('/api/ad-reward/claim', 'POST', {
+          adToken: tokenRes.adToken,
+          rewardType
+        });
+      } catch (e) {}
+    }
 
-    if (claimRes && claimRes.success && claimRes.user) {
-      currentUser = normalizeUserObject(claimRes.user);
+    // Если /claim не сработал или нет adToken (например, на Vercel), используем прямой /api/ad-reward
+    if (!claimRes || !claimRes.success) {
+      try {
+        claimRes = await apiCall('/api/ad-reward', 'POST', {
+          rewardType,
+          adToken: tokenRes ? tokenRes.adToken : undefined,
+          telegramId: currentUser ? currentUser.telegramId : undefined
+        });
+      } catch (e) {}
+    }
+
+    if (claimRes && claimRes.success) {
+      if (claimRes.user) {
+        currentUser = normalizeUserObject(claimRes.user);
+      } else {
+        if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
+        else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
+        else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
+        else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') {
+          currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+          currentUser.extra_bottles = currentUser.extraBottles;
+        }
+        normalizeUserObject(currentUser);
+      }
       saveLocalUser();
+      syncPlayerToCloud(currentUser);
       updateHeaderUI();
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       showInfoModal('🎁', t('bonusTitle') || 'Бонус', claimRes.message || 'Награда успешно начислена!');
       return true;
     } else {
-      const err = (claimRes && claimRes.error) ? claimRes.error : 'Ошибка подтверждения просмотра рекламы на сервере';
+      const err = (claimRes && claimRes.error) ? claimRes.error : 'Не удалось начислить бонус. Попробуйте ещё раз!';
       showInfoModal('⚠️', 'Ошибка', err);
       return false;
     }
