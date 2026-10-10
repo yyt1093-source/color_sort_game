@@ -199,7 +199,7 @@ function adminAuthMiddleware(req, res, next) {
         console.warn(`[AUTH] 403 Forbidden: Invalid or missing admin PIN code '${pin}' for ${req.path}`);
         return res.status(403).json({
           success: false,
-          error: 'Forbidden: Неверный или отсутствующий секретный PIN-код администратора (требуется код 1986)'
+          error: 'Forbidden: Неверный или отсутствующий секретный PIN-код администратора'
         });
       }
     }

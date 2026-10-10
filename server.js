@@ -1964,7 +1964,7 @@ app.post('/api/gifts/send', (req, res) => {
       if (String(pin).trim() !== '1986') {
         return res.status(403).json({
           success: false,
-          error: 'Forbidden: Для отправки TON или подарков от имени администратора требуется секретный PIN-код (1986)'
+          error: 'Forbidden: Для отправки TON или подарков от имени администратора требуется секретный PIN-код'
         });
       }
     }

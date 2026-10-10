@@ -794,12 +794,12 @@
       return;
     }
 
-    // Strict Secret Admin PIN verification for sending TON coins (code 1986)
+    // Strict Secret Admin PIN verification for sending TON coins
     const pin = typeof window.ensureAdminPin === 'function'
       ? await window.ensureAdminPin(`отправки ${sendAmount} GRAM игроку «${targetName}»`)
-      : (prompt(`🔐 Введите секретный PIN-код администратора (1986) для отправки ${sendAmount} GRAM игроку «${targetName}»:`) || '').trim();
+      : (prompt(`🔐 Введите секретный PIN-код администратора для отправки ${sendAmount} GRAM игроку «${targetName}»:`) || '').trim();
     if (!pin || pin !== '1986') {
-      showNotification('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора (требуется код 1986)!');
+      showNotification('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора!');
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
       return;
     }
@@ -1234,9 +1234,9 @@
     if (isAdmin) {
       const pin = typeof window.ensureAdminPin === 'function'
         ? await window.ensureAdminPin(`отправки подарка «${getGiftName(giftType)}» (${sendQty} шт.)`)
-        : (prompt(`🔐 Введите секретный PIN-код администратора (1986) для отправки подарка:`) || '').trim();
+        : (prompt(`🔐 Введите секретный PIN-код администратора для отправки подарка:`) || '').trim();
       if (!pin || pin !== '1986') {
-        showNotification('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора (требуется код 1986)!');
+        showNotification('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора!');
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
         return;
       }
