@@ -54,12 +54,12 @@
   <link rel="preload" href="referral_art_clean.jpg?v=48986" as="image">
   <link rel="preload" href="game_icon.png?v=48945" as="image">
   <link rel="preload" href="ton_icon.png?v=48945" as="image">
-  <link rel="preload" href="js/gameEngine.js?v=49140" as="script">
-  <link rel="preload" href="js/renderer.js?v=49140" as="script">
-  <link rel="preload" href="js/levelGenerator.js?v=49140" as="script">
-  <link rel="preload" href="js/tonconnect-ui.min.js?v=49140" as="script">
-  <link rel="preload" href="js/gifts.js?v=49140" as="script">
-  <link rel="preload" href="js/app.js?v=49140" as="script">
+  <link rel="preload" href="js/gameEngine.js?v=49150" as="script">
+  <link rel="preload" href="js/renderer.js?v=49150" as="script">
+  <link rel="preload" href="js/levelGenerator.js?v=49150" as="script">
+  <link rel="preload" href="js/tonconnect-ui.min.js?v=49150" as="script">
+  <link rel="preload" href="js/gifts.js?v=49150" as="script">
+  <link rel="preload" href="js/app.js?v=49150" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -339,6 +339,14 @@
           if (window.__startSyncReady && e.target === scr) dismiss(e);
         });
       }
+
+      // Absolute fallback timer: guarantees splash screen can NEVER stay stuck or block user
+      setTimeout(function() {
+        if (!window.__startSyncReady && typeof window.__unlockStartScreen === 'function') {
+          console.warn('[StartScreen] Safety fallback timer triggered auto-unlock');
+          window.__unlockStartScreen();
+        }
+      }, 2800);
     })();
   </script>
 
@@ -2410,14 +2418,14 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=49140"></script>
-  <script src="js/audio.js?v=49140"></script>
-  <script src="js/solver.js?v=49140"></script>
-  <script src="js/levelGenerator.js?v=49140"></script>
-  <script src="js/gameEngine.js?v=49140"></script>
-  <script src="js/renderer.js?v=49140"></script>
-  <script src="js/tonconnect-ui.min.js?v=49140"></script>
-  <script src="js/gifts.js?v=49140"></script>
-  <script src="js/app.js?v=49140"></script>
+  <script src="js/telegram.js?v=49150"></script>
+  <script src="js/audio.js?v=49150"></script>
+  <script src="js/solver.js?v=49150"></script>
+  <script src="js/levelGenerator.js?v=49150"></script>
+  <script src="js/gameEngine.js?v=49150"></script>
+  <script src="js/renderer.js?v=49150"></script>
+  <script src="js/tonconnect-ui.min.js?v=49150"></script>
+  <script src="js/gifts.js?v=49150"></script>
+  <script src="js/app.js?v=49150"></script>
 </body>
 </html>

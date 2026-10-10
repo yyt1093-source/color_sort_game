@@ -3233,6 +3233,8 @@ async function initColorSortApp() {
 
   const engine = window.GameEngine.Engine || window.GameEngine;
   const renderer = (window.GameRenderer && window.GameRenderer.GameRenderer) ? window.GameRenderer.GameRenderer : window.GameRenderer;
+  const LG = (window.LevelGenerator && window.LevelGenerator.LevelGenerator) ? window.LevelGenerator.LevelGenerator : window.LevelGenerator;
+  let isLevelGuardianRunning = false;
 
   // Universal Modal Helpers
   function openModal(el) {
@@ -4210,8 +4212,6 @@ async function initColorSortApp() {
   };
 
   // 8. Load level immediately
-  const LG = (window.LevelGenerator && window.LevelGenerator.LevelGenerator) ? window.LevelGenerator.LevelGenerator : window.LevelGenerator;
-
   async function loadCurrentLevel() {
     if (typeof checkServerStatus === 'function') checkServerStatus(false);
     
@@ -4733,16 +4733,21 @@ async function initColorSortApp() {
 
     // Unconditional Level-Board Integrity Guardian:
     // Guarantees board flasks NEVER lag behind header level (e.g. showing Level 1 bottles when header is Level 50)
-    if (typeof LG !== 'undefined' && LG && LG.generateLevel && engine) {
+    if (!isLevelGuardianRunning && typeof LG !== 'undefined' && LG && LG.generateLevel && engine) {
       if (!currentLevelData || currentLevelData.levelNumber !== displayLevel || engine.currentLevel !== displayLevel) {
-        console.warn(`[Level Guardian] Auto-repairing board desync: Header level is ${displayLevel}, but engine level is ${engine ? engine.currentLevel : 0}. Regenerating board for Level ${displayLevel}...`);
-        currentUser.currentLevel = displayLevel;
-        currentUser.maxLevel = displayLevel;
-        currentUser.level = displayLevel;
-        currentLevelData = LG.generateLevel(displayLevel);
-        engine.startLevel(currentLevelData);
-        if (renderer && renderer.renderBoard) {
-          renderer.renderBoard(engine);
+        isLevelGuardianRunning = true;
+        try {
+          console.warn(`[Level Guardian] Auto-repairing board desync: Header level is ${displayLevel}, but engine level is ${engine ? engine.currentLevel : 0}. Regenerating board for Level ${displayLevel}...`);
+          currentUser.currentLevel = displayLevel;
+          currentUser.maxLevel = displayLevel;
+          currentUser.level = displayLevel;
+          currentLevelData = LG.generateLevel(displayLevel);
+          engine.startLevel(currentLevelData);
+          if (renderer && renderer.renderBoard) {
+            renderer.renderBoard(engine);
+          }
+        } finally {
+          isLevelGuardianRunning = false;
         }
       }
     }
