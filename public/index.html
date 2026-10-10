@@ -54,12 +54,12 @@
   <link rel="preload" href="referral_art_clean.jpg?v=48986" as="image">
   <link rel="preload" href="game_icon.png?v=48945" as="image">
   <link rel="preload" href="ton_icon.png?v=48945" as="image">
-  <link rel="preload" href="js/gameEngine.js?v=49130" as="script">
-  <link rel="preload" href="js/renderer.js?v=49130" as="script">
-  <link rel="preload" href="js/levelGenerator.js?v=49130" as="script">
-  <link rel="preload" href="js/tonconnect-ui.min.js?v=49130" as="script">
-  <link rel="preload" href="js/gifts.js?v=49130" as="script">
-  <link rel="preload" href="js/app.js?v=49130" as="script">
+  <link rel="preload" href="js/gameEngine.js?v=49140" as="script">
+  <link rel="preload" href="js/renderer.js?v=49140" as="script">
+  <link rel="preload" href="js/levelGenerator.js?v=49140" as="script">
+  <link rel="preload" href="js/tonconnect-ui.min.js?v=49140" as="script">
+  <link rel="preload" href="js/gifts.js?v=49140" as="script">
+  <link rel="preload" href="js/app.js?v=49140" as="script">
 
   <!-- Adsgram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
@@ -410,7 +410,10 @@
               lvl = localStorage.getItem('cs_cached_display_level');
             }
             if (String(myTid) === '5761685341' && Number(lvl) === 175) {
-              lvl = 48;
+              lvl = 50;
+            }
+            if (String(myTid) === '5761685341' && (!lvl || Number(lvl) < 50)) {
+              lvl = 50;
             }
             if (String(myTid) === '7116446051' && (!lvl || Number(lvl) <= 1)) {
               lvl = 15;
@@ -2407,14 +2410,14 @@
   </div>
 
   <!-- JS Scripts (load order matters!) -->
-  <script src="js/telegram.js?v=49130"></script>
-  <script src="js/audio.js?v=49130"></script>
-  <script src="js/solver.js?v=49130"></script>
-  <script src="js/levelGenerator.js?v=49130"></script>
-  <script src="js/gameEngine.js?v=49130"></script>
-  <script src="js/renderer.js?v=49130"></script>
-  <script src="js/tonconnect-ui.min.js?v=49130"></script>
-  <script src="js/gifts.js?v=49130"></script>
-  <script src="js/app.js?v=49130"></script>
+  <script src="js/telegram.js?v=49140"></script>
+  <script src="js/audio.js?v=49140"></script>
+  <script src="js/solver.js?v=49140"></script>
+  <script src="js/levelGenerator.js?v=49140"></script>
+  <script src="js/gameEngine.js?v=49140"></script>
+  <script src="js/renderer.js?v=49140"></script>
+  <script src="js/tonconnect-ui.min.js?v=49140"></script>
+  <script src="js/gifts.js?v=49140"></script>
+  <script src="js/app.js?v=49140"></script>
 </body>
 </html>
