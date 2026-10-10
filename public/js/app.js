@@ -7449,14 +7449,14 @@ async function initColorSortApp() {
     }, 2800);
   }
 
-  // Admin Secret PIN Code Verification (Code: 1986)
+  // Admin Secret PIN Code Verification
   async function ensureAdminPin(actionText = '') {
     const promptMsg = actionText
-      ? `🔐 Введите секретный PIN-код администратора (1986) для ${actionText}:`
-      : '🔐 Введите секретный PIN-код администратора (код 1986):';
+      ? `🔐 Введите секретный PIN-код администратора для ${actionText}:`
+      : '🔐 Введите секретный PIN-код администратора:';
     const input = prompt(promptMsg);
     if (!input || input.trim() !== '1986') {
-      showInfoModal('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора (требуется код 1986)!');
+      showInfoModal('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора!');
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
       sessionAdminPin = null;
       window.currentAdminPin = null;
