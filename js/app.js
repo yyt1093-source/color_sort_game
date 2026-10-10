@@ -178,6 +178,9 @@ async function initColorSortApp() {
   // --- Game Session & Anti-Cheat Move Tracking ---
   let activeGameSessionToken = null;
   let activeMovesLog = [];
+  let currentLevelStartedAt = Date.now();
+  let currentLevelBoostersUsed = { hints: 0, undos: 0, reveals: 0, extraBottles: 0 };
+  let pendingLevelVictory = null;
 
   // Verified Ad Watching Helper (Server-Authoritative)
   async function watchRewardedAdForBonus(rewardType) {
@@ -2363,6 +2366,9 @@ async function initColorSortApp() {
   const modalUserLevel = document.getElementById('modalUserLevel');
 
   const winModal = document.getElementById('winModal');
+  const winModalMovesCount = document.getElementById('winModalMovesCount');
+  const winModalBoostersCount = document.getElementById('winModalBoostersCount');
+  const winModalTimeElapsed = document.getElementById('winModalTimeElapsed');
   const adModal = document.getElementById('adModal');
   const closeAdModalBtn = document.getElementById('closeAdModalBtn');
   const adModalTitle = document.getElementById('adModalTitle');
@@ -3719,7 +3725,16 @@ async function initColorSortApp() {
       
       const res = await fetch(API_BASE + endpoint, options);
       clearTimeout(timeoutId);
-      if (!res.ok) return null;
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        return {
+          ok: false,
+          status: res.status,
+          success: false,
+          error: errJson && errJson.error ? errJson.error : `HTTP ${res.status}`,
+          unverified: errJson ? errJson.unverified : undefined
+        };
+      }
       const json = await res.json();
       if (json && json.maintenance && !isAllowedPlayer) {
         applyMaintenanceBlock(json.error || json.maintenanceMessage);
@@ -4299,18 +4314,190 @@ async function initColorSortApp() {
   };
 
   let isNextLevelLoading = false;
-  let winAutoAdvanceTimer = null;
+
+  function showSecurityAlert(message) {
+    if (securityAlertDesc) {
+      securityAlertDesc.textContent = message || 'Замечены подозрительные комбинации или накрутка уровня.';
+      securityAlertDesc.style.display = 'block';
+    }
+    if (securityAlertModal) {
+      openModal(securityAlertModal);
+    } else {
+      alert('🛑 Система безопасности Color Sort: ' + (message || 'Замечены невозможные действия.'));
+      restartCurrentLevelSecurity();
+    }
+  }
+
+  function verifyVictoryLocally(levelNumber, movesLog, boostersUsed, durationMs) {
+    if (!LG || !LG.generateLevel) {
+      return { verified: true };
+    }
+    const gen = LG.generateLevel(levelNumber);
+    const bottles = JSON.parse(JSON.stringify(gen.bottles));
+    const capacity = gen.capacity || 5;
+    const colorCount = gen.colorCount || 5;
+
+    const extraBottles = Math.max(0, Number(boostersUsed && (boostersUsed.extraBottles || boostersUsed.extra_bottles) || 0));
+    const explicitInLog = (movesLog || []).filter(m => m && m.type === 'extra_bottle').length;
+    for (let i = 0; i < Math.max(0, extraBottles - explicitInLog); i++) {
+      bottles.push([]);
+    }
+
+    let validMoves = 0;
+    if (Array.isArray(movesLog)) {
+      for (let i = 0; i < movesLog.length; i++) {
+        const m = movesLog[i];
+        if (!m) continue;
+        if (m.type === 'extra_bottle') {
+          bottles.push([]);
+          continue;
+        }
+        const from = m.from !== undefined ? m.from : m.fromIndex;
+        const to = m.to !== undefined ? m.to : m.toIndex;
+        if (from === undefined || to === undefined) continue;
+        const fIdx = Number(from);
+        const tIdx = Number(to);
+        if (fIdx < 0 || fIdx >= bottles.length || tIdx < 0 || tIdx >= bottles.length) {
+          return { verified: false, error: 'Ход #' + (i + 1) + ': колбочка вне игрового поля' };
+        }
+        const bFrom = bottles[fIdx];
+        const bTo = bottles[tIdx];
+        if (fIdx === tIdx || !bFrom || bFrom.length === 0 || !bTo || bTo.length >= capacity) {
+          return { verified: false, error: 'Ход #' + (i + 1) + ': невозможный перелив' };
+        }
+        const topColor = bFrom[bFrom.length - 1];
+        if (bTo.length > 0 && bTo[bTo.length - 1] !== topColor) {
+          return { verified: false, error: 'Ход #' + (i + 1) + ': несовпадение цветов при переливании' };
+        }
+        let count = 0;
+        for (let k = bFrom.length - 1; k >= 0; k--) {
+          if (bFrom[k] === topColor) count++;
+          else break;
+        }
+        const amount = Math.min(count, capacity - bTo.length);
+        for (let k = 0; k < amount; k++) {
+          bottles[fIdx].pop();
+          bottles[tIdx].push(topColor);
+        }
+        validMoves++;
+      }
+    }
+
+    const won = bottles.every(b => b.length === 0 || (b.length === capacity && b.every(c => c === b[0])));
+    if (!won) {
+      return { verified: false, error: 'Уровень не завершён: не все колбочки собраны по цветам' };
+    }
+
+    const lvl = Math.max(1, Number(levelNumber || 1));
+    const minRealistic = lvl === 1 ? 6 : (lvl === 2 ? 8 : (lvl === 3 ? 10 : (lvl === 4 ? 12 : (lvl === 5 ? 14 : Math.max(15, Math.floor(colorCount * 1.3))))));
+    if (validMoves < minRealistic) {
+      return { verified: false, error: `Подозрительная активность: уровень ${levelNumber} завершён за ${validMoves} ходов (требуется от ${minRealistic})` };
+    }
+
+    return { verified: true };
+  }
 
   async function advanceToNextLevel() {
     if (isNextLevelLoading) return;
-    isNextLevelLoading = true;
-    if (winAutoAdvanceTimer) {
-      clearTimeout(winAutoAdvanceTimer);
-      winAutoAdvanceTimer = null;
+    if (!pendingLevelVictory) {
+      closeModal(winModal);
+      return;
     }
-    closeModal(winModal);
-    await loadCurrentLevel();
-    isNextLevelLoading = false;
+
+    // Strict Anti-Cheat Check: board must be completely sorted
+    if (!engine || !engine.isLevelWon()) {
+      console.warn('[Anti-Cheat] Progression rejected: board is not solved!');
+      closeModal(winModal);
+      showSecurityAlert('Замечена попытка перейти на следующий уровень без завершения текущего.');
+      return;
+    }
+
+    isNextLevelLoading = true;
+    if (nextLevelBtn) {
+      nextLevelBtn.disabled = true;
+      nextLevelBtn.innerHTML = '<span class="pulse">⏳ Проверка ходов...</span>';
+    }
+
+    const victoryData = pendingLevelVictory;
+    const completedToken = victoryData.sessionToken;
+    const completedMoves = victoryData.moves;
+    const levelCompleted = victoryData.levelNumber;
+    const durationMs = victoryData.durationMs;
+    const boostersUsed = victoryData.boostersUsed;
+    const movesCount = victoryData.movesCount;
+
+    let serverVerified = false;
+    let verifiedUser = null;
+    let rejectionError = null;
+
+    try {
+      const res = await apiCall('/api/game/complete-level', 'POST', {
+        sessionToken: completedToken,
+        levelNumber: levelCompleted,
+        moves: completedMoves,
+        boostersUsed,
+        movesCount,
+        durationMs
+      });
+
+      if (res && res.success) {
+        serverVerified = true;
+        if (res.user) verifiedUser = res.user;
+      } else if (res && (res.unverified === true || res.status === 400 || (res.error && res.success === false))) {
+        rejectionError = res.error || 'Замечены невозможные комбинации ходов или накрутка уровня.';
+      } else {
+        // Fallback check for offline / network issues
+        const localCheck = verifyVictoryLocally(levelCompleted, completedMoves, boostersUsed, durationMs);
+        if (localCheck.verified) {
+          serverVerified = true;
+        } else {
+          rejectionError = localCheck.error;
+        }
+      }
+    } catch (e) {
+      const localCheck = verifyVictoryLocally(levelCompleted, completedMoves, boostersUsed, durationMs);
+      if (localCheck.verified) {
+        serverVerified = true;
+      } else {
+        rejectionError = localCheck.error;
+      }
+    }
+
+    if (rejectionError) {
+      console.warn('[Anti-Cheat Progression Blocked]:', rejectionError);
+      pendingLevelVictory = null;
+      isNextLevelLoading = false;
+      closeModal(winModal);
+      showSecurityAlert(rejectionError);
+      return;
+    }
+
+    if (serverVerified) {
+      // Official progression authorized!
+      if (verifiedUser) {
+        currentUser = normalizeUserObject(verifiedUser);
+      } else {
+        currentUser.currentLevel = levelCompleted + 1;
+        currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, currentUser.currentLevel);
+        currentUser.level = currentUser.maxLevel;
+      }
+      currentUser.seasonResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
+      currentUser.updatedAt = Date.now();
+      saveLocalUser();
+      updateHeaderUI();
+      syncPlayerToCloud(currentUser);
+
+      pendingLevelVictory = null;
+      closeModal(winModal);
+      await loadCurrentLevel();
+      isNextLevelLoading = false;
+    } else {
+      isNextLevelLoading = false;
+      if (nextLevelBtn) {
+        nextLevelBtn.disabled = false;
+        nextLevelBtn.innerHTML = 'Следующий уровень 🚀';
+      }
+    }
   }
 
   engine.onWin = ({ levelNumber, moves, boostersUsed }) => {
@@ -4326,71 +4513,57 @@ async function initColorSortApp() {
       return;
     }
 
+    // Verify engine state strictly
+    if (!engine || !engine.isLevelWon()) {
+      console.warn('[Anti-Cheat] Premature onWin triggered without won board');
+      return;
+    }
+
     if (renderer && renderer.triggerWinConfetti) renderer.triggerWinConfetti();
-    
-    // Server-verified victory progression
-    const completedToken = activeGameSessionToken;
-    const completedMoves = [...activeMovesLog];
-    activeGameSessionToken = null;
-    activeMovesLog = [];
 
-    const previousMaxLevel = currentUser.maxLevel;
-    currentUser.currentLevel = levelNumber + 1;
-    currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, currentUser.currentLevel);
-    currentUser.level = currentUser.maxLevel;
-    currentUser.seasonResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
-    
-    currentUser.updatedAt = Date.now();
-    saveLocalUser();
-    updateHeaderUI();
+    // Prepare pending victory details (do NOT advance currentUser level yet!)
+    const now = Date.now();
+    const durationMs = Math.max(1200, now - (currentLevelStartedAt || now));
+    const totalBoostersUsed = (currentLevelBoostersUsed.hints || 0) +
+                              (currentLevelBoostersUsed.undos || 0) +
+                              (currentLevelBoostersUsed.reveals || 0) +
+                              (currentLevelBoostersUsed.extraBottles || 0);
 
-    // Sync level progression immediately to cloud and backend
-    syncPlayerToCloud(currentUser);
+    const actualMovesCount = activeMovesLog.filter(m => m && m.from !== undefined).length || moves || engine.movesCount || 0;
 
-    // Verify victory with moves replay on server
-    apiCall('/api/game/complete-level', 'POST', {
-      sessionToken: completedToken,
-      moves: completedMoves
-    }).then(res => {
-      if (res && res.success && res.user) {
-        currentUser = normalizeUserObject(res.user);
-        saveLocalUser();
-        updateHeaderUI();
-      } else if (res && res.status === 400 && res.unverified === true) {
-        console.warn('[Complete Level Rejected by Anti-Cheat]', res.error);
-        currentUser.currentLevel = levelNumber;
-        currentUser.maxLevel = previousMaxLevel;
-        currentUser.level = previousMaxLevel;
-        saveLocalUser();
-        updateHeaderUI();
-      } else {
-        // Offline / network glitch / legacy server: preserve player victory!
-        syncPlayerToCloud(currentUser);
-      }
-    }).catch(err => {
-      console.warn('[Complete Level Verification]', err);
-      syncPlayerToCloud(currentUser);
-    });
+    pendingLevelVictory = {
+      levelNumber,
+      sessionToken: activeGameSessionToken,
+      moves: [...activeMovesLog],
+      movesCount: actualMovesCount,
+      boostersUsed: { ...currentLevelBoostersUsed },
+      totalBoostersUsed,
+      startedAt: currentLevelStartedAt,
+      completedAt: now,
+      durationMs
+    };
 
-    // Update win modal message
+    // Populate win modal elements
     const winTitle = document.getElementById('winModalTitle');
     const winSubtext = document.getElementById('winModalSubtext');
-    if (winTitle) winTitle.textContent = t('winTitle', levelNumber);
-    if (winSubtext) winSubtext.textContent = t('winSubtext', currentUser.currentLevel);
+    if (winTitle) winTitle.textContent = t('winTitle', levelNumber) || 'Уровень пройден!';
+    if (winSubtext) winSubtext.textContent = t('winSubtext', levelNumber + 1) || `Уровень ${levelNumber} успешно собран!`;
+    if (winModalMovesCount) winModalMovesCount.textContent = actualMovesCount;
+    if (winModalBoostersCount) winModalBoostersCount.textContent = totalBoostersUsed;
+    if (winModalTimeElapsed) winModalTimeElapsed.textContent = `${Math.max(1, Math.round(durationMs / 1000))} сек.`;
+
+    if (nextLevelBtn) {
+      nextLevelBtn.disabled = false;
+      nextLevelBtn.innerHTML = 'Следующий уровень 🚀';
+    }
 
     if (typeof checkServerStatus === 'function') checkServerStatus(false);
 
-    // Show victory modal
+    // Show victory modal without any auto-advance timer
     setTimeout(() => {
       openModal(winModal);
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-    }, 450);
-
-    // Auto-advance safeguard after 3.2s so player is never stuck
-    if (winAutoAdvanceTimer) clearTimeout(winAutoAdvanceTimer);
-    winAutoAdvanceTimer = setTimeout(() => {
-      advanceToNextLevel();
-    }, 3200);
+    }, 400);
   };
 
   // Move tracking hook for server verification
@@ -4425,6 +4598,9 @@ async function initColorSortApp() {
       engine.startLevel(currentLevelData);
 
       // Start authoritative server game session
+      currentLevelStartedAt = Date.now();
+      currentLevelBoostersUsed = { hints: 0, undos: 0, reveals: 0, extraBottles: 0 };
+      pendingLevelVictory = null;
       activeMovesLog = [];
       activeGameSessionToken = null;
       apiCall('/api/game/start-level', 'POST', {
@@ -5111,6 +5287,7 @@ async function initColorSortApp() {
       if (success) {
         if (activeMovesLog.length > 0) activeMovesLog.pop();
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
+        currentLevelBoostersUsed.undos = (currentLevelBoostersUsed.undos || 0) + 1;
         currentUser.undos = Math.max(0, (currentUser.undos || 0) - 1);
         updateHeaderUI();
         saveLocalUser();
@@ -5152,6 +5329,7 @@ async function initColorSortApp() {
       const hint = engine.getHint();
       if (hint) {
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
+        currentLevelBoostersUsed.hints = (currentLevelBoostersUsed.hints || 0) + 1;
         currentUser.hints = Math.max(0, (currentUser.hints || 0) - 1);
         updateHeaderUI();
         saveLocalUser();
@@ -5201,6 +5379,7 @@ async function initColorSortApp() {
       const res = engine.revealRandomBottle();
       if (res) {
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
+        currentLevelBoostersUsed.reveals = (currentLevelBoostersUsed.reveals || 0) + 1;
         currentUser.reveals = Math.max(0, (currentUser.reveals || 0) - 1);
         if (renderer && renderer.highlightBottleReveal) renderer.highlightBottleReveal(res.bottleIndex);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
@@ -5247,6 +5426,7 @@ async function initColorSortApp() {
       if (added) {
         activeMovesLog.push({ type: 'extra_bottle' });
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
+        currentLevelBoostersUsed.extraBottles = (currentLevelBoostersUsed.extraBottles || 0) + 1;
         currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
         currentUser.extra_bottles = currentUser.extraBottles;
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
@@ -5280,8 +5460,8 @@ async function initColorSortApp() {
 
   if (winModal) {
     winModal.addEventListener('click', (e) => {
-      // Tapping anywhere on the win modal backdrop or card advances to the next level
-      advanceToNextLevel();
+      // Do NOT auto-advance when clicking outside/backdrop. Player must click the nextLevelBtn!
+      e.stopPropagation();
     });
   }
 
