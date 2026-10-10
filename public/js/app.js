@@ -7450,23 +7450,29 @@ async function initColorSortApp() {
   }
 
   // Admin Secret PIN Code Verification (Code: 1986)
-  async function ensureAdminPin() {
-    if (sessionAdminPin === '1986') return sessionAdminPin;
-    const input = prompt('🔐 Введите секретный PIN-код администратора (4 цифры):');
+  async function ensureAdminPin(actionText = '') {
+    const promptMsg = actionText
+      ? `🔐 Введите секретный PIN-код администратора (1986) для ${actionText}:`
+      : '🔐 Введите секретный PIN-код администратора (код 1986):';
+    const input = prompt(promptMsg);
     if (!input || input.trim() !== '1986') {
-      showInfoModal('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора!');
+      showInfoModal('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора (требуется код 1986)!');
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
+      sessionAdminPin = null;
+      window.currentAdminPin = null;
       return null;
     }
     sessionAdminPin = '1986';
-    return sessionAdminPin;
+    window.currentAdminPin = '1986';
+    return '1986';
   }
+  window.ensureAdminPin = ensureAdminPin;
 
   if (adminAddBottleBtn) {
     adminAddBottleBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      const pin = await ensureAdminPin();
+      const pin = await ensureAdminPin('добавления колбочек');
       if (!pin) return;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
       currentUser.extra_bottles = currentUser.extraBottles;
@@ -7479,7 +7485,8 @@ async function initColorSortApp() {
         firstName: currentUser.firstName,
         username: currentUser.username,
         isAdmin: true,
-        extraBottles: 5
+        extraBottles: 5,
+        adminPin: pin
       }).then(res => {
         if (res && res.success && res.user) {
           const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
@@ -7502,7 +7509,7 @@ async function initColorSortApp() {
     adminAddHintsBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      const pin = await ensureAdminPin();
+      const pin = await ensureAdminPin('добавления 5 подсказок');
       if (!pin) return;
       currentUser.hints = (currentUser.hints || 0) + 5;
       normalizeUserObject(currentUser);
@@ -7514,7 +7521,8 @@ async function initColorSortApp() {
         firstName: currentUser.firstName,
         username: currentUser.username,
         isAdmin: true,
-        hints: 5
+        hints: 5,
+        adminPin: pin
       }).then(res => {
         if (res && res.success && res.user && res.user.hints !== undefined) {
           currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
@@ -7533,7 +7541,7 @@ async function initColorSortApp() {
     adminAddUndosBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      const pin = await ensureAdminPin();
+      const pin = await ensureAdminPin('добавления 5 отмен ходов');
       if (!pin) return;
       currentUser.undos = (currentUser.undos || 0) + 5;
       normalizeUserObject(currentUser);
@@ -7545,7 +7553,8 @@ async function initColorSortApp() {
         firstName: currentUser.firstName,
         username: currentUser.username,
         isAdmin: true,
-        undos: 5
+        undos: 5,
+        adminPin: pin
       }).then(res => {
         if (res && res.success && res.user && res.user.undos !== undefined) {
           currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
@@ -7564,7 +7573,7 @@ async function initColorSortApp() {
     adminAddRevealsBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      const pin = await ensureAdminPin();
+      const pin = await ensureAdminPin('добавления 5 открытий цветов');
       if (!pin) return;
       currentUser.reveals = (currentUser.reveals || 0) + 5;
       normalizeUserObject(currentUser);
@@ -7576,7 +7585,8 @@ async function initColorSortApp() {
         firstName: currentUser.firstName,
         username: currentUser.username,
         isAdmin: true,
-        reveals: 5
+        reveals: 5,
+        adminPin: pin
       }).then(res => {
         if (res && res.success && res.user && res.user.reveals !== undefined) {
           currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
@@ -7595,7 +7605,7 @@ async function initColorSortApp() {
     adminAddCoinsBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      const pin = await ensureAdminPin();
+      const pin = await ensureAdminPin('начисления 5.00 GRAM (TON)');
       if (!pin) return;
       const currentBal = parseFloat(currentUser.ton_balance || 0);
       currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
@@ -7609,7 +7619,8 @@ async function initColorSortApp() {
         firstName: currentUser.firstName,
         username: currentUser.username,
         isAdmin: true,
-        tonBalance: 5.0
+        tonBalance: 5.0,
+        adminPin: pin
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
       if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
@@ -7621,7 +7632,7 @@ async function initColorSortApp() {
     adminAddLevelsBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      const pin = await ensureAdminPin();
+      const pin = await ensureAdminPin('добавления 5 уровней');
       if (!pin) return;
       const added = 5;
       const targetLvl = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel || 0)) + added;
@@ -7638,7 +7649,8 @@ async function initColorSortApp() {
         firstName: currentUser.firstName,
         username: currentUser.username,
         isAdmin: true,
-        levels: added
+        levels: added,
+        adminPin: pin
       }).then(res => {
         if (res && res.success && res.user) {
           if (res.user.current_level !== undefined || res.user.max_level !== undefined) {
@@ -7655,7 +7667,7 @@ async function initColorSortApp() {
         }
       }).catch(() => {});
       if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
       showAdminFeedback(t('adminLevelsAddedMsg', currentUser.maxLevel));
     });
   }
@@ -7664,7 +7676,7 @@ async function initColorSortApp() {
     adminAddAllBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      const pin = await ensureAdminPin();
+      const pin = await ensureAdminPin('начисления полного пакета бустеров');
       if (!pin) return;
       currentUser.hints = (currentUser.hints || 0) + 10;
       currentUser.undos = (currentUser.undos || 0) + 10;
@@ -7688,7 +7700,8 @@ async function initColorSortApp() {
         undos: 10,
         reveals: 10,
         extraBottles: 10,
-        tonBalance: 5.0
+        tonBalance: 5.0,
+        adminPin: pin
       }).then(res => {
         if (res && res.success && res.user) {
           if (res.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
@@ -7715,7 +7728,7 @@ async function initColorSortApp() {
     adminSetExactLevelBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
-      const pin = await ensureAdminPin();
+      const pin = await ensureAdminPin('установки точного уровня');
       if (!pin) return;
 
       const rawVal = adminExactLevelInput ? adminExactLevelInput.value : '';
@@ -7742,7 +7755,8 @@ async function initColorSortApp() {
           telegramId: currentUser.telegramId,
           targetTelegramId: currentUser.telegramId,
           isAdmin: true,
-          level: targetLvl
+          level: targetLvl,
+          adminPin: pin
         }).catch(() => {});
 
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
@@ -7754,7 +7768,8 @@ async function initColorSortApp() {
           telegramId: currentUser.telegramId,
           targetTelegramId: targetUserId,
           isAdmin: true,
-          level: targetLvl
+          level: targetLvl,
+          adminPin: pin
         }).then(res => {
           if (res && res.success) {
             showAdminFeedback(`🎯 Игроку ${targetUserId} установлен уровень ${targetLvl}!`);
@@ -7800,6 +7815,9 @@ async function initColorSortApp() {
     confirmResetPurchasesBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+
+      const pin = await ensureAdminPin('сброса покупок');
+      if (!pin) return;
 
       confirmResetPurchasesBtn.disabled = true;
       const originalHtml = confirmResetPurchasesBtn.innerHTML;
@@ -8090,6 +8108,9 @@ async function initColorSortApp() {
     confirmResetSeasonBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+
+      const pin = await ensureAdminPin('сброса сезона');
+      if (!pin) return;
 
       confirmResetSeasonBtn.disabled = true;
       const originalHtml = confirmResetSeasonBtn.innerHTML;
@@ -10597,6 +10618,10 @@ async function initColorSortApp() {
     if (!isAlligatorAdmin(currentUser)) {
       alert('Доступ запрещён: требуются права администратора');
       return;
+    }
+    if (!isTestOnly) {
+      const pin = await ensureAdminPin('рассылки новости всем игрокам');
+      if (!pin) return;
     }
 
     const title = adminNewsTitleInput ? adminNewsTitleInput.value.trim() : '';

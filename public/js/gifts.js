@@ -48,6 +48,9 @@
     const base = getApiBase();
     try {
       const headers = getAuthHeaders();
+      if (body && typeof body === 'object' && body.adminPin) {
+        headers['x-admin-pin'] = body.adminPin;
+      }
       const initData = getTelegramInitData();
       const options = {
         method,
@@ -791,6 +794,16 @@
       return;
     }
 
+    // Strict Secret Admin PIN verification for sending TON coins (code 1986)
+    const pin = typeof window.ensureAdminPin === 'function'
+      ? await window.ensureAdminPin(`отправки ${sendAmount} GRAM игроку «${targetName}»`)
+      : (prompt(`🔐 Введите секретный PIN-код администратора (1986) для отправки ${sendAmount} GRAM игроку «${targetName}»:`) || '').trim();
+    if (!pin || pin !== '1986') {
+      showNotification('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора (требуется код 1986)!');
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
+      return;
+    }
+
     isSending = true;
     const confirmBtn = document.getElementById('btnAdminSendTonConfirm');
     if (confirmBtn) {
@@ -811,7 +824,8 @@
         fromUsername: 'ColorSortGame',
         senderType: 'colorsort',
         createdAt: Date.now(),
-        claimed: false
+        claimed: false,
+        adminPin: pin
       };
 
       // 1. Send to server API and verify authorization
@@ -1216,6 +1230,19 @@
       return;
     }
 
+    let adminPinCode = null;
+    if (isAdmin) {
+      const pin = typeof window.ensureAdminPin === 'function'
+        ? await window.ensureAdminPin(`отправки подарка «${getGiftName(giftType)}» (${sendQty} шт.)`)
+        : (prompt(`🔐 Введите секретный PIN-код администратора (1986) для отправки подарка:`) || '').trim();
+      if (!pin || pin !== '1986') {
+        showNotification('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора (требуется код 1986)!');
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
+        return;
+      }
+      adminPinCode = '1986';
+    }
+
     isSending = true;
 
     try {
@@ -1275,7 +1302,8 @@
         fromUsername: senderUsername,
         senderType: senderType,
         createdAt: Date.now(),
-        claimed: false
+        claimed: false,
+        adminPin: adminPinCode
       };
 
       // Send to server API and verify

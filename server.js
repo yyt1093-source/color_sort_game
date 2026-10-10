@@ -1958,12 +1958,13 @@ app.post('/api/gifts/send', (req, res) => {
       gift.senderId = req.telegramId;
     }
     const isTon = String(gift.giftType || '').toLowerCase() === 'ton' || String(gift.giftType || '').toLowerCase() === 'gram';
-    if (isTon) {
+    const isAdminGift = isTon || String(gift.senderType || '').toLowerCase() === 'colorsort' || String(gift.senderType || '').toLowerCase() === 'admin';
+    if (isAdminGift) {
       const pin = req.headers['x-admin-pin'] || gift.adminPin || gift.adminCode;
       if (String(pin).trim() !== '1986') {
         return res.status(403).json({
           success: false,
-          error: 'Forbidden: Для отправки TON подарков требуется секретный PIN-код администратора (1986)'
+          error: 'Forbidden: Для отправки TON или подарков от имени администратора требуется секретный PIN-код (1986)'
         });
       }
     }
