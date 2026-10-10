@@ -297,7 +297,7 @@
       }
     };
 
-    // 1. Try server API first (fast, reliable SQLite storage, no 429 rate limit)
+    // 1. Try server API first (fast, reliable SQLite storage)
     try {
       const serverRes = await giftApiCall(`/api/gifts/inbox?telegramId=${encodeURIComponent(userId)}`);
       if (serverRes && serverRes.success && Array.isArray(serverRes.gifts)) {
@@ -311,7 +311,26 @@
       }
     } catch (e) {}
 
-    // 2. Fallback / merge local storage
+    // 2. Also fetch from 24/7 KVDB Cloud Inbox (guarantees cross-server real-time delivery)
+    try {
+      const kvdbRes = await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(userId)}?_cb=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      if (kvdbRes.ok) {
+        const cloudGifts = await kvdbRes.json();
+        if (Array.isArray(cloudGifts)) {
+          cloudGifts.forEach(g => {
+            if (g && g.id && !seenIds.has(String(g.id))) {
+              seenIds.add(String(g.id));
+              markIfClaimed(g);
+              inbox.push(g);
+            }
+          });
+        }
+      }
+    } catch (e) {}
+
+    // 3. Fallback / merge local storage
     try {
       const local = localStorage.getItem(`colorsort_gifts_inbox_${userId}`);
       if (local) {
@@ -341,12 +360,18 @@
     if (!userId) return;
     try {
       localStorage.setItem(`colorsort_gifts_inbox_${userId}`, JSON.stringify(inbox));
+      // Save directly to KVDB cloud inbox so it stays updated 24/7
+      await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(userId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inbox.slice(0, 50))
+      }).catch(() => {});
     } catch (e) {}
   }
 
-  // Check Pending Gifts & Update Pulsing Indicators (battery-optimized with 60s cooldown)
+  // Check Pending Gifts & Update Pulsing Indicators (real-time with 10s cooldown)
   let lastGiftCheckTimestamp = 0;
-  const GIFT_CHECK_COOLDOWN_MS = 60000;
+  const GIFT_CHECK_COOLDOWN_MS = 10000;
 
   async function checkPendingGifts(force = false) {
     if (!currentUserRef || !currentUserRef.telegramId) return [];
@@ -651,6 +676,25 @@
       }
 
       // 10. Background sync to server and KVDB
+      currentUserRef.updatedAt = Date.now();
+      try {
+        const pRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(userId)}?_cb=${Date.now()}`, { cache: 'no-store' });
+        const pData = pRes.ok ? await pRes.json() : null;
+        const playerObj = (pData && typeof pData === 'object') ? pData : { telegramId: userId };
+        playerObj.hints = currentUserRef.hints;
+        playerObj.undos = currentUserRef.undos;
+        playerObj.reveals = currentUserRef.reveals;
+        playerObj.extraBottles = currentUserRef.extraBottles;
+        playerObj.extra_bottles = currentUserRef.extraBottles;
+        playerObj.ton_balance = currentUserRef.ton_balance;
+        playerObj.updatedAt = currentUserRef.updatedAt;
+        await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(userId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(playerObj)
+        });
+      } catch (e) {}
+
       giftApiCall('/api/gifts/claim', 'POST', {
         giftId: giftIdStr,
         recipientId: userId
@@ -828,7 +872,22 @@
         adminPin: pin
       };
 
-      // 1. Send to server API and verify authorization
+      // 1. Instantly push gift to recipient's KVDB cloud inbox for real-time delivery
+      try {
+        const kvRes = await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(targetId)}?_cb=${Date.now()}`, { cache: 'no-store' });
+        const existingInbox = kvRes.ok ? await kvRes.json() : [];
+        const arr = Array.isArray(existingInbox) ? existingInbox : [];
+        if (!arr.some(g => String(g.id) === String(newGift.id))) {
+          arr.unshift(newGift);
+        }
+        await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(targetId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(arr.slice(0, 50))
+        });
+      } catch (e) {}
+
+      // 2. Send to server API and verify authorization
       const sendRes = await giftApiCall('/api/gifts/send', 'POST', newGift);
       if (!sendRes || !sendRes.success) {
         throw new Error(sendRes?.error || 'Сервер отклонил отправку TON');
@@ -1254,6 +1313,7 @@
       } else {
         currentUserRef[config.boosterField] = Math.max(0, (Number(currentUserRef[config.boosterField]) || 0) - sendQty);
       }
+      currentUserRef.updatedAt = Date.now();
 
       // 2. Increment daily counter by sent quantity
       const newDailyCount = incrementDailyStats(myId, sendQty);
@@ -1264,6 +1324,27 @@
       if (typeof updateCloudBoosterCallback === 'function') {
         updateCloudBoosterCallback(config.boosterField, currentUserRef[config.boosterField]);
       }
+      if (typeof syncPlayerToCloudCallback === 'function') {
+        syncPlayerToCloudCallback();
+      }
+
+      // Persist sender's newly deducted booster count directly to KVDB so it never resurrects
+      try {
+        const pRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(myId)}?_cb=${Date.now()}`, { cache: 'no-store' });
+        const pData = pRes.ok ? await pRes.json() : null;
+        const playerObj = (pData && typeof pData === 'object') ? pData : { telegramId: myId };
+        playerObj[config.boosterField] = currentUserRef[config.boosterField];
+        if (config.boosterField === 'extraBottles') {
+          playerObj.extraBottles = currentUserRef.extraBottles;
+          playerObj.extra_bottles = currentUserRef.extraBottles;
+        }
+        playerObj.updatedAt = currentUserRef.updatedAt;
+        await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(myId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(playerObj)
+        });
+      } catch (e) {}
 
       // 4. Push gift to recipient's inbox (Server API + Cloud KVDB)
       let senderName = '';
@@ -1305,6 +1386,21 @@
         claimed: false,
         adminPin: adminPinCode
       };
+
+      // Push directly to recipient's KVDB inbox for instantaneous delivery
+      try {
+        const kvRes = await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(targetId)}?_cb=${Date.now()}`, { cache: 'no-store' });
+        const existingInbox = kvRes.ok ? await kvRes.json() : [];
+        const arr = Array.isArray(existingInbox) ? existingInbox : [];
+        if (!arr.some(g => String(g.id) === String(newGift.id))) {
+          arr.unshift(newGift);
+        }
+        await fetch(`${GLOBAL_CLOUD_BASE}/gifts_inbox_${encodeURIComponent(targetId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(arr.slice(0, 50))
+        });
+      } catch (e) {}
 
       // Send to server API and verify
       const sendRes = await giftApiCall('/api/gifts/send', 'POST', newGift);

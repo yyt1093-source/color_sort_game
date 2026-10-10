@@ -2424,6 +2424,17 @@ function sendGift(giftData) {
       }
       db.prepare(`UPDATE users SET ${boosterCol} = ${boosterCol} - ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, senderId);
     }
+  } else {
+    const senderType = String(giftData.senderType || '').toLowerCase();
+    let boosterCol = null;
+    if (giftType === 'hints') boosterCol = 'hints';
+    else if (giftType === 'undos') boosterCol = 'undos';
+    else if (giftType === 'reveals') boosterCol = 'reveals';
+    else if (giftType === 'extrabottles' || giftType === 'extra_bottles') boosterCol = 'extra_bottles';
+
+    if (boosterCol && senderType !== 'colorsort') {
+      db.prepare(`UPDATE users SET ${boosterCol} = MAX(0, ${boosterCol} - ?), updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, senderId);
+    }
   }
 
   const stmt = db.prepare(`
@@ -2466,6 +2477,7 @@ function getInboxGifts(recipientId) {
 
 function claimGift(giftId, recipientId) {
   try {
+    getUser(recipientId); // Ensure recipient user record exists in database
     const gift = db.prepare(`SELECT * FROM player_gifts WHERE id = ? AND recipient_id = ? AND (claimed = 0 OR claimed IS NULL)`).get(String(giftId), String(recipientId));
     if (!gift) return false;
 

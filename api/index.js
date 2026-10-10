@@ -188,12 +188,18 @@ app.post('/api/user/init', async (req, res) => {
                 user.stars = isRestoredSnapshotState ? Number(kvData.stars || 0) : Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
               }
               const clampBooster = (val) => String(id) === '5761685341' ? Math.max(0, Number(val || 0)) : Math.min(Math.max(0, Number(val || 0)), 10000);
-              user.hints = clampBooster(Math.max(Number(user.hints || 0), Number(kvData.hints || 0)));
-              user.undos = clampBooster(Math.max(Number(user.undos || 0), Number(kvData.undos || 0)));
-              user.reveals = clampBooster(Math.max(Number(user.reveals || 0), Number(kvData.reveals || 0)));
-              const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
-              const finalB = clampBooster(Math.max(Number(user.extra_bottles || 0), Number(kvB || 0)));
-              user.extra_bottles = finalB;
+              const dbUpdated = user.updated_at ? new Date(user.updated_at).getTime() : 0;
+              if (kvUpdated > dbUpdated) {
+                if (kvData.hints !== undefined) user.hints = clampBooster(kvData.hints);
+                if (kvData.undos !== undefined) user.undos = clampBooster(kvData.undos);
+                if (kvData.reveals !== undefined) user.reveals = clampBooster(kvData.reveals);
+                const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
+                if (kvB !== undefined) {
+                  user.extra_bottles = clampBooster(kvB);
+                  user.extraBottles = user.extra_bottles;
+                }
+              }
+              const finalB = user.extra_bottles !== undefined ? user.extra_bottles : (user.extraBottles || 0);
               user.extraBottles = finalB;
               user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
               user.all_colors_purchased_at = Math.max(Number(user.all_colors_purchased_at || 0), Number(kvData.all_colors_purchased_at || 0));
@@ -1897,7 +1903,7 @@ app.get('/api/gifts/inbox', (req, res) => {
   }
 });
 
-app.post('/api/gifts/send', (req, res) => {
+app.post('/api/gifts/send', async (req, res) => {
   try {
     const gift = req.body;
     if (!gift || !gift.recipientId || !gift.giftType) {
@@ -1922,6 +1928,51 @@ app.post('/api/gifts/send', (req, res) => {
     if (!result || !result.success) {
       return res.status(400).json(result || { success: false, error: 'Ошибка отправки подарка' });
     }
+
+    // 1. Instantly mirror gift to Recipient KVDB cloud inbox so all serverless instances & browsers see it in real-time
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    const recipientId = String(gift.recipientId);
+    if (recipientId && !recipientId.startsWith('guest') && !recipientId.startsWith('dev')) {
+      fetch(`https://kvdb.io/${bucket}/gifts_inbox_${encodeURIComponent(recipientId)}?_cb=${Date.now()}`)
+        .then(r => r.ok ? r.json() : [])
+        .then(existing => {
+          const list = Array.isArray(existing) ? existing : [];
+          if (!list.some(g => String(g.id) === String(gift.id))) {
+            list.unshift(gift);
+          }
+          return fetch(`https://kvdb.io/${bucket}/gifts_inbox_${encodeURIComponent(recipientId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(list.slice(0, 50))
+          });
+        }).catch(() => {});
+    }
+
+    // 2. If sender booster was deducted, immediately sync deducted booster balance to sender's KVDB record
+    const senderId = String(gift.fromId || gift.senderId);
+    if (senderId && !senderId.startsWith('guest') && !senderId.startsWith('dev') && !isTon) {
+      const senderUser = db.getUser(senderId);
+      if (senderUser) {
+        fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(senderId)}?_cb=${Date.now()}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(cloudVal => {
+            if (cloudVal && typeof cloudVal === 'object') {
+              cloudVal.hints = senderUser.hints;
+              cloudVal.undos = senderUser.undos;
+              cloudVal.reveals = senderUser.reveals;
+              cloudVal.extraBottles = senderUser.extra_bottles;
+              cloudVal.extra_bottles = senderUser.extra_bottles;
+              cloudVal.updatedAt = Date.now();
+              return fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(senderId)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cloudVal)
+              });
+            }
+          }).catch(() => {});
+      }
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error('[API ERROR] /api/gifts/send:', err);
@@ -1929,7 +1980,7 @@ app.post('/api/gifts/send', (req, res) => {
   }
 });
 
-app.post('/api/gifts/claim', (req, res) => {
+app.post('/api/gifts/claim', async (req, res) => {
   try {
     const { giftId, recipientId } = req.body || {};
     const actualRecipient = req.telegramId || recipientId;
@@ -1941,6 +1992,56 @@ app.post('/api/gifts/claim', (req, res) => {
       return res.status(400).json({ success: false, error: 'Подарок уже получен или не найден' });
     }
     const user = db.getUser(actualRecipient);
+
+    // Sync claimed status to KVDB inbox and update player balance in KVDB
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    const recId = String(actualRecipient);
+    if (recId && !recId.startsWith('guest') && !recId.startsWith('dev')) {
+      // 1. Mark claimed in KVDB inbox
+      fetch(`https://kvdb.io/${bucket}/gifts_inbox_${encodeURIComponent(recId)}?_cb=${Date.now()}`)
+        .then(r => r.ok ? r.json() : [])
+        .then(list => {
+          if (Array.isArray(list)) {
+            let changed = false;
+            list.forEach(g => {
+              if (String(g.id) === String(giftId)) {
+                g.claimed = true;
+                g.claimedAt = Date.now();
+                changed = true;
+              }
+            });
+            if (changed) {
+              return fetch(`https://kvdb.io/${bucket}/gifts_inbox_${encodeURIComponent(recId)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(list.slice(0, 50))
+              });
+            }
+          }
+        }).catch(() => {});
+
+      // 2. Sync recipient's updated boosters and TON balance to player KVDB record
+      if (user) {
+        fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(recId)}?_cb=${Date.now()}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(cloudVal => {
+            const baseObj = (cloudVal && typeof cloudVal === 'object') ? cloudVal : { telegramId: recId };
+            baseObj.hints = user.hints;
+            baseObj.undos = user.undos;
+            baseObj.reveals = user.reveals;
+            baseObj.extraBottles = user.extra_bottles;
+            baseObj.extra_bottles = user.extra_bottles;
+            baseObj.ton_balance = user.ton_balance;
+            baseObj.updatedAt = Date.now();
+            return fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(recId)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(baseObj)
+            });
+          }).catch(() => {});
+      }
+    }
+
     res.json({ success: true, user });
   } catch (err) {
     console.error('[API ERROR] /api/gifts/claim:', err);
