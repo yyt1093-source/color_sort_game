@@ -2280,6 +2280,8 @@ body {
   font-size: 11.5px;
   letter-spacing: 0.2px;
   white-space: nowrap;
+}
+
 .profile-tab-btn[data-tab="admin"] {
   border-color: rgba(251, 191, 36, 0.25);
 }
