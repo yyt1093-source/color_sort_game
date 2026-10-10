@@ -178,10 +178,10 @@
           this.revealed[fromIdx][bFrom.length - 1] = true;
         }
 
-        this.checkBottleCompletion(toIdx);
         if (this.onMove) {
           try { this.onMove({ from: fromIdx, to: toIdx, movesCount: this.movesCount }); } catch (e) {}
         }
+        this.checkBottleCompletion(toIdx);
       };
 
       if (window.GameRenderer && window.GameRenderer.animatePour) {
