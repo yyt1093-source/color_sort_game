@@ -100,149 +100,68 @@ async function initColorSortApp() {
     }
   }
 
-  function playRewardedAdModal() {
-    return new Promise((resolve) => {
-      const adModalEl = document.getElementById('rewardedVideoModal');
-      if (!adModalEl) {
-        setTimeout(() => resolve(true), 2500);
-        return;
-      }
-
-      adModalEl.style.zIndex = '99999999';
-      adModalEl.classList.remove('hidden');
-      adModalEl.style.display = 'flex';
-
-      const timelineFill = document.getElementById('adVideoTimeline');
-      const progressFill = document.getElementById('adVideoProgress');
-      const percentText = document.getElementById('adVideoTimer');
-      const closeBtn = document.getElementById('adVideoCloseBtn');
-      const soundBtn = document.getElementById('adSoundToggle');
-
-      let isMuted = false;
-      if (soundBtn) {
-        soundBtn.onclick = () => {
-          isMuted = !isMuted;
-          soundBtn.textContent = isMuted ? '🔇' : '🔊';
-        };
-      }
-
-      let totalDurationMs = 15000; // 15 seconds official short rewarded video duration
-      let startTime = Date.now();
-      let finished = false;
-
-      if (timelineFill) timelineFill.style.width = '0%';
-      if (progressFill) progressFill.style.width = '0%';
-      if (percentText) percentText.textContent = '⏳ 15 сек (0%)';
-
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
-
-      const timerId = setInterval(() => {
-        if (finished) return;
-        const elapsed = Date.now() - startTime;
-        const ratio = Math.min(1, elapsed / totalDurationMs);
-        const percent = Math.round(ratio * 100);
-        const remainingSec = Math.max(0, Math.ceil((totalDurationMs - elapsed) / 1000));
-
-        if (timelineFill) timelineFill.style.width = `${percent}%`;
-        if (progressFill) progressFill.style.width = `${percent}%`;
-        if (percentText) {
-          if (remainingSec > 0) {
-            percentText.textContent = `⏳ ${remainingSec} сек (${percent}%)`;
-          } else {
-            percentText.textContent = '100% ✅';
-          }
-        }
-
-        if (ratio >= 1) {
-          finished = true;
-          clearInterval(timerId);
-          if (percentText) percentText.textContent = '100% ✅ Готово!';
-
-          if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-          if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-
-          setTimeout(() => {
-            adModalEl.classList.add('hidden');
-            adModalEl.style.display = 'none';
-            resolve(true);
-          }, 600);
-        }
-      }, 50);
-
-      if (closeBtn) {
-        closeBtn.onclick = () => {
-          if (!finished) {
-            if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('warning');
-            const confirmClose = confirm('Прервать просмотр рекламы? В таком случае бонус не будет начислен.');
-            if (confirmClose) {
-              finished = true;
-              clearInterval(timerId);
-              adModalEl.classList.add('hidden');
-              adModalEl.style.display = 'none';
-              resolve(false);
-            }
-          } else {
-            clearInterval(timerId);
-            adModalEl.classList.add('hidden');
-            adModalEl.style.display = 'none';
-            resolve(true);
-          }
-        };
-      }
-    });
-  }
-
   async function showRewardedAd() {
     const adModal = document.getElementById('adModal');
     const wasAdModalOpen = adModal && !adModal.classList.contains('hidden') && adModal.style.display !== 'none';
 
-    // Временно скрываем модальное окно выбора бонусов, чтобы видеоплеер занял весь экран
+    // Временно скрываем модальное окно выбора бонусов на время показа рекламы
     if (wasAdModalOpen) {
       adModal.classList.add('hidden');
       adModal.style.display = 'none';
     }
 
     try {
-      // 1. Попытка показа через официальный Adsgram SDK (если доступен в Telegram)
-      if (!AdController && window.Adsgram && adsgramBlockId) {
+      // 1. Проверяем наличие официального SDK Adsgram
+      if (!window.Adsgram) {
+        console.warn('[Adsgram] SDK sad.min.js не загружен');
+        return { success: false, unavailable: true };
+      }
+
+      // 2. Инициализируем AdController, если ещё не инициализирован
+      if (!AdController && adsgramBlockId) {
         try {
           AdController = window.Adsgram.init({
             blockId: adsgramBlockId,
             debug: false
           });
-          console.log('[Adsgram] Инициализация перед показом с Block ID:', adsgramBlockId);
+          console.log('[Adsgram] Инициализирован перед показом с Block ID:', adsgramBlockId);
         } catch (e) {
           console.warn('[Adsgram] Ошибка инициализации перед показом:', e);
+          return { success: false, unavailable: true };
         }
       }
 
-      if (AdController) {
-        try {
-          console.log(`[Adsgram] Запрос официального видеоплеера Adsgram (Block ID: ${adsgramBlockId})...`);
-          const res = await AdController.show();
-          console.log('[Adsgram] Ответ SDK:', res);
-          if (res && (res.done === true || res === true)) {
-            return true;
-          }
-          if (res && res.done === false) {
-            console.warn('[Adsgram] Ролик закрыт пользователем до завершения');
-            return false;
-          }
-        } catch (err) {
-          console.warn('[Adsgram] SDK ошибка / нет рекламы:', err);
-          // Если пользователь сам нажал закрыть в плеере Adsgram
-          if (err && (err.state === 'dismiss' || err.done === false)) {
-            return false;
-          }
-          console.log('[Adsgram] Реклама Adsgram недоступна в данном регионе/устройстве, запускаем резервный видеоплеер...');
-        }
+      if (!AdController) {
+        console.warn('[Adsgram] AdController отсутствует');
+        return { success: false, unavailable: true };
       }
 
-      // 2. Полноэкранный видеоплеер коротких рекламных видео (всегда гарантирует показ и начисление бонусов)
-      console.log('[Ad Player] Запуск полноэкранного видеоплеера бонусов...');
-      return await playRewardedAdModal();
+      console.log(`[Adsgram] Запрос официального показа рекламы (Block ID: ${adsgramBlockId})...`);
+      const res = await AdController.show();
+      console.log('[Adsgram] Ответ SDK:', res);
+
+      // Официальный Adsgram подтвердил полный просмотр ролика
+      if (res && (res.done === true || res === true)) {
+        return { success: true };
+      }
+
+      // Пользователь закрыл ролик до завершения
+      if (res && res.done === false) {
+        console.warn('[Adsgram] Ролик закрыт пользователем до завершения');
+        return { success: false, dismissed: true };
+      }
+
+      return { success: false, unavailable: true };
+    } catch (err) {
+      console.warn('[Adsgram] Ответ SDK / ошибка:', err);
+      // Если пользователь нажал крестик / закрыл ролик
+      if (err && (err.state === 'dismiss' || err.done === false)) {
+        return { success: false, dismissed: true };
+      }
+      // Рекламы нет (no fill), ошибка сети или неподдерживаемый регион
+      return { success: false, unavailable: true, description: err?.description || err?.message };
     } finally {
-      // Восстанавливаем окно выбора бонусов, чтобы игрок видел свой результат
+      // Восстанавливаем окно выбора бонусов
       if (wasAdModalOpen && adModal) {
         adModal.classList.remove('hidden');
         adModal.style.display = 'flex';
@@ -267,8 +186,15 @@ async function initColorSortApp() {
       return false;
     }
 
-    const adWatched = await showRewardedAd();
-    if (!adWatched) return false;
+    const adResult = await showRewardedAd();
+    if (!adResult || !adResult.success) {
+      if (adResult && adResult.dismissed) {
+        showInfoModal('⏳', t('adTitle') || 'Реклама', t('adDismissedDesc') || 'Просмотр рекламы был прерван. Бонус начисляется только за полный просмотр ролика.');
+      } else {
+        showInfoModal('📺', t('adUnavailableTitle') || 'Реклама', t('adUnavailableDesc') || 'Реклама сейчас недоступна. Пожалуйста, попробуйте позже!');
+      }
+      return false;
+    }
 
     // Подтверждение просмотра и начисление бонуса
     let claimRes = null;
@@ -305,6 +231,7 @@ async function initColorSortApp() {
         }
         normalizeUserObject(currentUser);
       }
+      currentUser.updatedAt = Date.now();
       saveLocalUser();
       syncPlayerToCloud(currentUser);
       updateHeaderUI();
@@ -312,7 +239,7 @@ async function initColorSortApp() {
       showInfoModal('🎁', t('bonusTitle') || 'Бонус', claimRes.message || 'Награда успешно начислена!');
       return true;
     } else {
-      const err = (claimRes && claimRes.error) ? claimRes.error : 'Не удалось начислить бонус. Попробуйте ещё раз!';
+      const err = (claimRes && claimRes.error) ? claimRes.error : (t('adUnavailableDesc') || 'Реклама сейчас недоступна. Пожалуйста, попробуйте позже!');
       showInfoModal('⚠️', 'Ошибка', err);
       return false;
     }
@@ -388,6 +315,9 @@ async function initColorSortApp() {
       claimAdBtn: "▶ Смотреть рекламу",
       adStarting: "⏳ Запуск...",
       adClaimed: "✅ Получено! (+1)",
+      adUnavailableTitle: "Реклама недоступна",
+      adUnavailableDesc: "Реклама сейчас недоступна. Пожалуйста, попробуйте позже!",
+      adDismissedDesc: "Просмотр рекламы был прерван. Бонус начисляется только за полный просмотр ролика.",
       adminBadge: "👑 Админ",
       adminPanelTitle: "Панель Администратора",
       adminPanelSub: "Доступно только Аллигатору",
@@ -798,6 +728,9 @@ async function initColorSortApp() {
       claimAdBtn: "▶ Дивитися рекламу",
       adStarting: "⏳ Запуск...",
       adClaimed: "✅ Отримано! (+1)",
+      adUnavailableTitle: "Реклама недоступна",
+      adUnavailableDesc: "Реклама зараз недоступна. Будь ласка, спробуйте пізніше!",
+      adDismissedDesc: "Перегляд реклами було перервано. Бонус нараховується лише за повний перегляд ролика.",
       adminBadge: "👑 Адмін",
       adminPanelTitle: "Панель Адміністратора",
       adminPanelSub: "Доступно тільки Алігатору",
@@ -1184,6 +1117,9 @@ async function initColorSortApp() {
       claimAdBtn: "▶ Watch Ad",
       adStarting: "⏳ Starting...",
       adClaimed: "✅ Received! (+1)",
+      adUnavailableTitle: "Ad Unavailable",
+      adUnavailableDesc: "Ads are currently unavailable. Please try again later!",
+      adDismissedDesc: "Ad playback was interrupted. Bonus is awarded only for watching the full ad.",
       adminBadge: "👑 Admin",
       adminPanelTitle: "Admin Panel",
       adminPanelSub: "Alligator Access Only",
@@ -1570,6 +1506,9 @@ async function initColorSortApp() {
       claimAdBtn: "▶ Werbung ansehen",
       adStarting: "⏳ Startet...",
       adClaimed: "✅ Erhalten! (+1)",
+      adUnavailableTitle: "Werbung nicht verfügbar",
+      adUnavailableDesc: "Werbung ist derzeit nicht verfügbar. Bitte versuchen Sie es später noch einmal!",
+      adDismissedDesc: "Die Wiedergabe wurde unterbrochen. Der Bonus wird nur für das vollständige Ansehen gutgeschrieben.",
       adminBadge: "👑 Admin",
       adminPanelTitle: "Admin-Panel",
       adminPanelSub: "Nur für Alligator verfügbar",
@@ -1943,6 +1882,9 @@ async function initColorSortApp() {
       claimAdBtn: "▶ Žiūrėti reklamą",
       adStarting: "⏳ Paleidžiama...",
       adClaimed: "✅ Gauta! (+1)",
+      adUnavailableTitle: "Reklama nepasiekiama",
+      adUnavailableDesc: "Reklama šiuo metu nepasiekiama. Prašome pabandyti vėliau!",
+      adDismissedDesc: "Reklamos peržiūra buvo nutraukta. Premija suteikiama tik už pilną peržiūrą.",
       adminBadge: "👑 Admin",
       adminPanelTitle: "Administratoriaus skydelis",
       adminPanelSub: "Prieinama tik Aligatoriui",
