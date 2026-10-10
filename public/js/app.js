@@ -239,6 +239,48 @@ async function initColorSortApp() {
     }
   }
 
+  // --- Game Session & Anti-Cheat Move Tracking ---
+  let activeGameSessionToken = null;
+  let activeMovesLog = [];
+
+  // Verified Ad Watching Helper (Server-Authoritative)
+  async function watchRewardedAdForBonus(rewardType) {
+    let tokenRes = null;
+    try {
+      tokenRes = await apiCall('/api/ad-reward/start', 'POST', { rewardType });
+    } catch (e) {}
+
+    if (!tokenRes || !tokenRes.success) {
+      const err = (tokenRes && tokenRes.error) ? tokenRes.error : 'Не удалось запустить рекламу. Попробуйте чуть позже!';
+      showInfoModal('⏳', 'Реклама', err);
+      return false;
+    }
+
+    const adWatched = await showRewardedAd();
+    if (!adWatched) return false;
+
+    let claimRes = null;
+    try {
+      claimRes = await apiCall('/api/ad-reward/claim', 'POST', {
+        adToken: tokenRes.adToken,
+        rewardType
+      });
+    } catch (e) {}
+
+    if (claimRes && claimRes.success && claimRes.user) {
+      currentUser = normalizeUserObject(claimRes.user);
+      saveLocalUser();
+      updateHeaderUI();
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
+      showInfoModal('🎁', t('bonusTitle') || 'Бонус', claimRes.message || 'Награда успешно начислена!');
+      return true;
+    } else {
+      const err = (claimRes && claimRes.error) ? claimRes.error : 'Ошибка подтверждения просмотра рекламы на сервере';
+      showInfoModal('⚠️', 'Ошибка', err);
+      return false;
+    }
+  }
+
   // --- Translations (i18n) for 5 Languages: RU, UK, EN, DE, LT ---
     const TRANSLATIONS = {
     ru: {
@@ -3328,6 +3370,15 @@ async function initColorSortApp() {
     user.hints = Math.max(0, Number(user.hints || 0));
     user.undos = Math.max(0, Number(user.undos || 0));
     user.reveals = Math.max(0, Number(user.reveals || 0));
+
+    // Anti-Cheat: sanitize excessive/hacked booster values for regular players
+    const isAdmin = String(user.telegramId) === '5761685341';
+    if (!isAdmin) {
+      if (user.hints > 50) user.hints = 0;
+      if (user.undos > 50) user.undos = 0;
+      if (user.reveals > 50) user.reveals = 0;
+      if (user.extraBottles > 50) { user.extraBottles = 0; user.extra_bottles = 0; }
+    }
     user.ton_balance = Number(user.ton_balance !== undefined ? user.ton_balance : (user.tonBalance !== undefined ? user.tonBalance : 0));
     user.ton_wallet = String(user.ton_wallet || user.tonWallet || '').trim();
     user.ton_wallet_type = String(user.ton_wallet_type || user.tonWalletType || '').trim();
@@ -3355,26 +3406,7 @@ async function initColorSortApp() {
     currentUser[field] = value;
     if (field === 'extraBottles') currentUser.extra_bottles = value;
     saveLocalUser();
-
-    const syncPayload = {
-      telegramId: currentUser.telegramId,
-      firstName: currentUser.firstName,
-      username: currentUser.username,
-      photoUrl: currentUser.photoUrl,
-      currentLevel: currentUser.currentLevel,
-      maxLevel: currentUser.maxLevel,
-      hints: currentUser.hints,
-      undos: currentUser.undos,
-      reveals: currentUser.reveals,
-      extraBottles: currentUser.extraBottles,
-      extra_bottles: currentUser.extraBottles,
-      shuffles: currentUser.shuffles,
-      ton_balance: currentUser.ton_balance,
-      daily_boosters_days_left: currentUser.daily_boosters_days_left,
-      daily_boosters_last_date: currentUser.daily_boosters_last_date,
-      daily_boosters_purchased_at: currentUser.daily_boosters_purchased_at
-    };
-    apiCall('/api/user/sync', 'POST', syncPayload).catch(() => {});
+    updateHeaderUI();
   }
 
   async function syncPlayerToCloud(user, options = {}) {
@@ -3384,248 +3416,32 @@ async function initColorSortApp() {
     }
     normalizeUserObject(user);
     const id = String(user.telegramId);
-    const isRealTelegramUser = !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id);
 
     const localSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
-    const userSeasonReset = Number(user.seasonResetAt || user.season_reset_at || 0);
-    let maxLvl = Number(user.maxLevel !== undefined ? user.maxLevel : 0);
-    let curLvl = Number(user.currentLevel || 1);
-    let stars = Number(user.stars || 0);
 
-    // Ensure season timestamp is up to date
-    if (localSeasonReset > 0 && userSeasonReset < localSeasonReset) {
-      if (window.__seasonResetKicking) {
-        maxLvl = 0;
-        curLvl = 1;
-        stars = 0;
-        user.maxLevel = 0;
-        user.level = 0;
-        user.currentLevel = 1;
-        user.stars = 0;
-      }
-      user.seasonResetAt = localSeasonReset;
-      user.season_reset_at = localSeasonReset;
-    }
-
-    // 1. Send live signal to single global 24/7 cloud database for all real players
-    if (id && isRealTelegramUser) {
-      try {
-        // Fetch existing cloud player to merge and PRESERVE boosters, balance, and perks!
-        let existingCloud = null;
-        try {
-          const eRes = await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
-          if (eRes.ok) existingCloud = await eRes.json();
-        } catch (e) {}
-
-        const cloudForceTs = Number(existingCloud ? (existingCloud.forceResetAt || existingCloud.accountResetAt || 0) : 0);
-        const localForceTs = Number(localStorage.getItem(`color_sort_force_reset_${id}`) || user.forceResetAt || user.accountResetAt || 0);
-        const isForceResetActive = cloudForceTs > 0 && cloudForceTs > localForceTs;
-
-        const cloudRestoreTs = Number(existingCloud ? (existingCloud.snapshotRestoredAt || 0) : 0);
-        const localRestoreTs = Number(localStorage.getItem(`color_sort_restored_at_${id}`) || user.lastSnapshotRestoredAt || 0);
-        const isRestoreActive = cloudRestoreTs > 0 && cloudRestoreTs > localRestoreTs;
-
-        // Never allow a lower maxLevel to overwrite a higher maxLevel from the cloud unless force reset or snapshot rollback
-        if (existingCloud && !window.__seasonResetKicking) {
-          if (isForceResetActive) {
-            localStorage.setItem(`color_sort_force_reset_${id}`, String(cloudForceTs));
-            user.forceResetAt = cloudForceTs;
-            user.accountResetAt = cloudForceTs;
-            user.maxLevel = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : 10);
-            user.level = user.maxLevel;
-            user.currentLevel = Number(existingCloud.currentLevel !== undefined ? existingCloud.currentLevel : 10);
-            user.stars = Number(existingCloud.stars || 0);
-            user.hints = Number(existingCloud.hints || 0);
-            user.undos = Number(existingCloud.undos || 0);
-            user.reveals = Number(existingCloud.reveals || 0);
-            const exB = Number(existingCloud.extra_bottles !== undefined ? existingCloud.extra_bottles : (existingCloud.extraBottles || 0));
-            user.extraBottles = exB;
-            user.extra_bottles = exB;
-            user.shuffles = Number(existingCloud.shuffles || 0);
-            user.all_colors_until = Number(existingCloud.all_colors_until || 0);
-            user.all_colors_purchased_at = 0;
-            user.daily_boosters_days_left = 0;
-            user.dailyBoostersDaysLeft = 0;
-            user.ton_wallet = '';
-            maxLvl = user.maxLevel;
-            curLvl = user.currentLevel;
-            stars = user.stars;
-          } else if (isRestoreActive) {
-            // Snapshot rollback active: adopt cloud state while preserving any verified higher level
-            localStorage.setItem(`color_sort_restored_at_${id}`, String(cloudRestoreTs));
-            user.lastSnapshotRestoredAt = cloudRestoreTs;
-            const exCloudMax = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : (existingCloud.level || 0));
-            const exCloudCur = Number(existingCloud.currentLevel !== undefined ? existingCloud.currentLevel : (exCloudMax > 0 ? exCloudMax : 1));
-            const exCloudStars = Number(existingCloud.stars || 0);
-            maxLvl = Math.max(maxLvl, exCloudMax);
-            user.maxLevel = Math.max(Number(user.maxLevel || 0), maxLvl);
-            user.level = user.maxLevel;
-            curLvl = Math.max(curLvl, exCloudCur);
-            user.currentLevel = curLvl;
-            stars = Math.max(stars, exCloudStars);
-            user.stars = stars;
-          } else {
-            const exCloudMax = Number(existingCloud.maxLevel !== undefined ? existingCloud.maxLevel : (existingCloud.level || 0));
-            const exCloudCur = Number(existingCloud.currentLevel || 1);
-            const exCloudStars = Number(existingCloud.stars || 0);
-            if (exCloudMax > maxLvl) {
-              maxLvl = exCloudMax;
-              user.maxLevel = maxLvl;
-              user.level = maxLvl;
-            } else if (maxLvl > exCloudMax) {
-              user.maxLevel = maxLvl;
-              user.level = maxLvl;
-            }
-            if (exCloudCur > curLvl) {
-              curLvl = exCloudCur;
-              user.currentLevel = curLvl;
-            }
-            if (exCloudStars > stars) {
-              stars = exCloudStars;
-              user.stars = stars;
-            }
-            if (maxLvl > 0 && curLvl < maxLvl) {
-              curLvl = maxLvl;
-              user.currentLevel = curLvl;
-            }
-            if (maxLvl > 0) {
-              localStorage.setItem(`color_sort_db_level_${id}`, String(maxLvl));
-            }
-          }
-        }
-
-        const finalHints = isForceResetActive ? Number(existingCloud.hints || 0) : Math.max(Number(user.hints || 0), existingCloud ? Number(existingCloud.hints || 0) : 0);
-        const finalUndos = isForceResetActive ? Number(existingCloud.undos || 0) : Math.max(Number(user.undos || 0), existingCloud ? Number(existingCloud.undos || 0) : 0);
-        const finalReveals = isForceResetActive ? Number(existingCloud.reveals || 0) : Math.max(Number(user.reveals || 0), existingCloud ? Number(existingCloud.reveals || 0) : 0);
-        const existingB = existingCloud ? (existingCloud.extra_bottles !== undefined ? existingCloud.extra_bottles : existingCloud.extraBottles) : 0;
-        const finalBottles = isForceResetActive ? Number(existingB || 0) : Math.max(Number(user.extraBottles || 0), Number(existingB || 0));
-        const finalBalance = Math.max(
-          Number(user.ton_balance !== undefined ? user.ton_balance : 0),
-          existingCloud ? Number(existingCloud.ton_balance || existingCloud.tonBalance || 0) : 0
-        );
-        user.ton_balance = finalBalance;
-        const finalAllColors = isForceResetActive ? Number(existingCloud.all_colors_until || 0) : Math.max(Number(user.all_colors_until || 0), existingCloud ? Number(existingCloud.all_colors_until || 0) : 0);
-
-        user.hints = finalHints;
-        user.undos = finalUndos;
-        user.reveals = finalReveals;
-        user.extraBottles = finalBottles;
-        user.extra_bottles = finalBottles;
-        user.all_colors_until = finalAllColors;
-
-        const finalDailyDays = Math.max(Number(user.daily_boosters_days_left || 0), existingCloud ? Number(existingCloud.daily_boosters_days_left || existingCloud.dailyBoostersDaysLeft || 0) : 0);
-        const finalDailyLastDate = user.daily_boosters_last_date || (existingCloud ? (existingCloud.daily_boosters_last_date || existingCloud.dailyBoostersLastDate) : '') || '';
-        const finalDailyPurchasedAt = user.daily_boosters_purchased_at || (existingCloud ? (existingCloud.daily_boosters_purchased_at || existingCloud.dailyBoostersPurchasedAt) : 0) || 0;
-
-        if (finalDailyDays > (user.daily_boosters_days_left || 0)) user.daily_boosters_days_left = finalDailyDays;
-        if (finalDailyLastDate && !user.daily_boosters_last_date) user.daily_boosters_last_date = finalDailyLastDate;
-        if (finalDailyPurchasedAt && !user.daily_boosters_purchased_at) user.daily_boosters_purchased_at = finalDailyPurchasedAt;
-
-        const isDummy = (name) => !name || name === 'Игрок' || name === 'Player' || name === '.';
-        let effectiveFirstName = user.firstName;
-        if (isDummy(effectiveFirstName) && existingCloud && !isDummy(existingCloud.firstName || existingCloud.first_name)) {
-          effectiveFirstName = existingCloud.firstName || existingCloud.first_name;
-          user.firstName = effectiveFirstName;
-        }
-        let effectiveUsername = user.username || '';
-        if (!effectiveUsername && existingCloud && (existingCloud.username || existingCloud.user_name)) {
-          effectiveUsername = existingCloud.username || existingCloud.user_name;
-          user.username = effectiveUsername;
-        }
-        if (isDummy(effectiveFirstName) && effectiveUsername) {
-          effectiveFirstName = `@${effectiveUsername.replace(/^@/, '')}`;
-          user.firstName = effectiveFirstName;
-        }
-
-        const baseRec = IMMUTABLE_PLAYER_BASELINES[id];
-        const baseLevel = baseRec ? Number(baseRec.maxLevel || 0) : 0;
-        const cloudMaxTarget = Math.max(
-          maxLvl,
-          Number(user.maxLevel || 0),
-          baseLevel,
-          existingCloud ? Number(existingCloud.maxLevel || existingCloud.level || existingCloud.max_level || 0) : 0
-        );
-
-        let finalWallet = user.ton_wallet || '';
-        let finalWalletType = user.ton_wallet ? (user.ton_wallet_type || '') : '';
-        if (!options.forceDisconnectWallet && !finalWallet && existingCloud && existingCloud.ton_wallet) {
-          const isManuallyDisconnected = localStorage.getItem(`color_sort_wallet_disconnected_${id}`) === 'true';
-          if (!isManuallyDisconnected) {
-            finalWallet = existingCloud.ton_wallet;
-            finalWalletType = existingCloud.ton_wallet_type || '';
-          }
-        }
-        user.ton_wallet = finalWallet;
-        user.ton_wallet_type = finalWalletType;
-
-        const payload = {
-          telegramId: id,
-          firstName: effectiveFirstName || 'Игрок',
-          username: effectiveUsername || '',
-          photoUrl: user.photoUrl || '',
-          maxLevel: cloudMaxTarget,
-          max_level: cloudMaxTarget,
-          level: cloudMaxTarget,
-          currentLevel: curLvl,
-          current_level: curLvl,
-          stars: 0,
-          hints: finalHints,
-          undos: finalUndos,
-          reveals: finalReveals,
-          extraBottles: finalBottles,
-          extra_bottles: finalBottles,
-          ton_balance: finalBalance,
-          ton_wallet: finalWallet || '',
-          ton_wallet_type: finalWalletType || '',
-          ton_deposits_total: Number(user.ton_deposits_total || 0),
-          ton_deposits_count: Number(user.ton_deposits_count || 0),
-          all_colors_until: finalAllColors,
-          all_colors_purchased_at: Number(user.all_colors_purchased_at || 0),
-          daily_boosters_days_left: finalDailyDays,
-          daily_boosters_last_date: finalDailyLastDate,
-          daily_boosters_purchased_at: finalDailyPurchasedAt,
-          seasonResetAt: localSeasonReset,
-          purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
-          snapshotRestoredAt: Number(user.lastSnapshotRestoredAt || (existingCloud ? existingCloud.snapshotRestoredAt : 0) || 0),
-          updatedAt: Date.now()
-        };
-
-        // Persist directly to central cloud database (works 24/7 on GitHub Pages and all platforms)
-        await fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          keepalive: options && options.keepalive ? true : undefined
-        });
-      } catch (e) {}
-    }
-
-    // 2. Send authenticated sync to backend (which persists to SQLite and forwards to KVDB)
+    // Secure authoritative sync: backend handles SQLite and KVDB authoritatively
     const syncPayload = {
-      telegramId: user.telegramId,
+      telegramId: id,
       firstName: user.firstName,
       username: user.username,
       photoUrl: user.photoUrl,
       currentLevel: user.currentLevel,
-      maxLevel: maxLvl,
-      hints: user.hints,
-      undos: user.undos,
-      reveals: user.reveals,
-      extraBottles: user.extraBottles,
-      extra_bottles: user.extraBottles,
-      shuffles: user.shuffles,
-      ton_balance: user.ton_balance,
       ton_wallet: user.ton_wallet,
       ton_wallet_type: user.ton_wallet_type,
-      daily_boosters_days_left: user.daily_boosters_days_left,
-      daily_boosters_last_date: user.daily_boosters_last_date,
-      daily_boosters_purchased_at: user.daily_boosters_purchased_at,
       seasonResetAt: localSeasonReset,
-      purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
-      starsAdded: 0,
-      coinsAdded: 0
+      purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0)
     };
-    apiCall('/api/user/sync', 'POST', syncPayload, { keepalive: options && options.keepalive ? true : undefined }).catch(() => {});
+
+    try {
+      const res = await apiCall('/api/user/sync', 'POST', syncPayload, {
+        keepalive: options && options.keepalive ? true : undefined
+      });
+      if (res && res.success && res.user) {
+        currentUser = normalizeUserObject(res.user);
+        saveLocalUser();
+        updateHeaderUI();
+      }
+    } catch (e) {}
   }
 
   function getTelegramInitData() {
@@ -4291,7 +4107,12 @@ async function initColorSortApp() {
 
     if (renderer && renderer.triggerWinConfetti) renderer.triggerWinConfetti();
     
-    // Simple victory progression: advance level without coins, stars, or experience
+    // Server-verified victory progression
+    const completedToken = activeGameSessionToken;
+    const completedMoves = [...activeMovesLog];
+    activeGameSessionToken = null;
+    activeMovesLog = [];
+
     currentUser.currentLevel = levelNumber + 1;
     currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, currentUser.currentLevel);
     currentUser.level = currentUser.maxLevel;
@@ -4300,14 +4121,26 @@ async function initColorSortApp() {
     saveLocalUser();
     updateHeaderUI();
 
+    // Verify victory with moves replay on server
+    apiCall('/api/game/complete-level', 'POST', {
+      sessionToken: completedToken,
+      moves: completedMoves
+    }).then(res => {
+      if (res && res.success && res.user) {
+        currentUser = normalizeUserObject(res.user);
+        saveLocalUser();
+        updateHeaderUI();
+      }
+    }).catch(err => {
+      console.warn('[Complete Level Verification]', err);
+    });
+
     // Update win modal message
     const winTitle = document.getElementById('winModalTitle');
     const winSubtext = document.getElementById('winModalSubtext');
     if (winTitle) winTitle.textContent = t('winTitle', levelNumber);
     if (winSubtext) winSubtext.textContent = t('winSubtext', currentUser.currentLevel);
 
-    // Мгновенная отправка сигнала на глобальный единственный сервер (24/7 Cloud DB + API)
-    syncPlayerToCloud(currentUser);
     if (typeof checkServerStatus === 'function') checkServerStatus(false);
 
     // Show victory modal
@@ -4321,6 +4154,18 @@ async function initColorSortApp() {
     winAutoAdvanceTimer = setTimeout(() => {
       advanceToNextLevel();
     }, 3200);
+  };
+
+  // Move tracking hook for server verification
+  engine.onMove = ({ from, to, movesCount }) => {
+    activeMovesLog.push({ from, to });
+    if (activeGameSessionToken) {
+      apiCall('/api/game/move', 'POST', {
+        sessionToken: activeGameSessionToken,
+        from,
+        to
+      }).catch(() => {});
+    }
   };
 
   // 8. Load level immediately
@@ -4341,6 +4186,17 @@ async function initColorSortApp() {
     if (LG && LG.generateLevel) {
       currentLevelData = LG.generateLevel(targetLvl);
       engine.startLevel(currentLevelData);
+
+      // Start authoritative server game session
+      activeMovesLog = [];
+      activeGameSessionToken = null;
+      apiCall('/api/game/start-level', 'POST', {
+        levelNumber: targetLvl
+      }).then(res => {
+        if (res && res.success && res.sessionToken) {
+          activeGameSessionToken = res.sessionToken;
+        }
+      }).catch(() => {});
 
       // Explicitly render board to guarantee DOM is populated immediately
       if (renderer && renderer.renderBoard) {
@@ -4403,14 +4259,13 @@ async function initColorSortApp() {
         loadCurrentLevel();
       }
       const oldLevel = currentUser.currentLevel;
-      if (serverUser.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, Number(serverUser.user.hints || 0));
-      if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, Number(serverUser.user.undos || 0));
-      if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, Number(serverUser.user.reveals || 0));
+      if (serverUser.user.hints !== undefined) currentUser.hints = Number(serverUser.user.hints || 0);
+      if (serverUser.user.undos !== undefined) currentUser.undos = Number(serverUser.user.undos || 0);
+      if (serverUser.user.reveals !== undefined) currentUser.reveals = Number(serverUser.user.reveals || 0);
       const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
       if (serverB !== undefined) {
-        const maxB = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(serverB || 0));
-        currentUser.extraBottles = maxB;
-        currentUser.extra_bottles = maxB;
+        currentUser.extraBottles = Number(serverB || 0);
+        currentUser.extra_bottles = currentUser.extraBottles;
       }
       if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, Number(serverUser.user.all_colors_until || 0));
       if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, Number(serverUser.user.all_colors_purchased_at || 0));
@@ -4967,26 +4822,7 @@ async function initColorSortApp() {
           'У вас 0 отмен хода. Посмотрите короткую рекламу, чтобы получить отмену хода в счётчик!',
           '▶ Смотреть рекламу (+1)',
           async () => {
-            const adWatched = await showRewardedAd();
-            if (adWatched) {
-              currentUser.undos = (currentUser.undos || 0) + 1;
-              normalizeUserObject(currentUser);
-              saveLocalUser();
-              updateHeaderUI();
-              syncPlayerToCloud(currentUser);
-              showInfoModal('🎁', t('bonusUndoTitle'), t('bonusAddedUndo'));
-              apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'undos'
-              }).then(res => {
-                if (res && res.success && res.user && res.user.undos !== undefined) {
-                  currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
-                  normalizeUserObject(currentUser);
-                  saveLocalUser();
-                  updateHeaderUI();
-                }
-              }).catch(() => {});
-            }
+            await watchRewardedAdForBonus('undos');
           }
         );
         return;
@@ -4998,13 +4834,18 @@ async function initColorSortApp() {
         currentUser.undos = Math.max(0, (currentUser.undos || 0) - 1);
         updateHeaderUI();
         saveLocalUser();
-        updateCloudBoosterDirectly('undos', currentUser.undos);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
-        await apiCall('/api/user/sync', 'POST', {
-          telegramId: currentUser.telegramId,
-          undosUsed: 1,
-          undos: currentUser.undos
-        });
+
+        apiCall('/api/game/use-booster', 'POST', {
+          sessionToken: activeGameSessionToken,
+          boosterType: 'undos'
+        }).then(res => {
+          if (res && res.success && res.remaining !== undefined) {
+            currentUser.undos = res.remaining;
+            updateHeaderUI();
+            saveLocalUser();
+          }
+        }).catch(() => {});
       }
     });
   }
@@ -5022,26 +4863,7 @@ async function initColorSortApp() {
           'У вас 0 подсказок. Посмотрите короткую рекламу, чтобы получить подсказку хода в счётчик!',
           '▶ Смотреть рекламу (+1)',
           async () => {
-            const adWatched = await showRewardedAd();
-            if (adWatched) {
-              currentUser.hints = (currentUser.hints || 0) + 1;
-              normalizeUserObject(currentUser);
-              saveLocalUser();
-              updateHeaderUI();
-              syncPlayerToCloud(currentUser);
-              showInfoModal('🎁', t('bonusHintTitle'), t('bonusAddedHint'));
-              apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'hints'
-              }).then(res => {
-                if (res && res.success && res.user && res.user.hints !== undefined) {
-                  currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
-                  normalizeUserObject(currentUser);
-                  saveLocalUser();
-                  updateHeaderUI();
-                }
-              }).catch(() => {});
-            }
+            await watchRewardedAdForBonus('hints');
           }
         );
         return;
@@ -5053,13 +4875,18 @@ async function initColorSortApp() {
         currentUser.hints = Math.max(0, (currentUser.hints || 0) - 1);
         updateHeaderUI();
         saveLocalUser();
-        updateCloudBoosterDirectly('hints', currentUser.hints);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
-        await apiCall('/api/user/sync', 'POST', {
-          telegramId: currentUser.telegramId,
-          hintsUsed: 1,
-          hints: currentUser.hints
-        });
+
+        apiCall('/api/game/use-booster', 'POST', {
+          sessionToken: activeGameSessionToken,
+          boosterType: 'hints'
+        }).then(res => {
+          if (res && res.success && res.remaining !== undefined) {
+            currentUser.hints = res.remaining;
+            updateHeaderUI();
+            saveLocalUser();
+          }
+        }).catch(() => {});
       } else {
         const desc = engine.hasHiddenColors() ? t('noHintDesc') : t('allColorsVisibleDesc');
         showInfoModal('🤷', t('noMovesTitle'), desc || t('noHintDesc'));
@@ -5085,26 +4912,7 @@ async function initColorSortApp() {
           'У вас 0 открытий. Посмотрите короткую рекламу, чтобы получить открытие цвета в счётчик!',
           '▶ Смотреть рекламу (+1)',
           async () => {
-            const adWatched = await showRewardedAd();
-            if (adWatched) {
-              currentUser.reveals = (currentUser.reveals || 0) + 1;
-              normalizeUserObject(currentUser);
-              saveLocalUser();
-              updateHeaderUI();
-              syncPlayerToCloud(currentUser);
-              showInfoModal('🎁', t('bonusRevealTitle'), t('bonusAddedReveal'));
-              apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'reveal_bottle'
-              }).then(res => {
-                if (res && res.success && res.user && res.user.reveals !== undefined) {
-                  currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
-                  normalizeUserObject(currentUser);
-                  saveLocalUser();
-                  updateHeaderUI();
-                }
-              }).catch(() => {});
-            }
+            await watchRewardedAdForBonus('reveal_bottle');
           }
         );
         return;
@@ -5114,17 +4922,22 @@ async function initColorSortApp() {
       if (res) {
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentUser.reveals = Math.max(0, (currentUser.reveals || 0) - 1);
-        updateCloudBoosterDirectly('reveals', currentUser.reveals);
         if (renderer && renderer.highlightBottleReveal) renderer.highlightBottleReveal(res.bottleIndex);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
         updateHeaderUI();
         saveLocalUser();
-        await apiCall('/api/user/sync', 'POST', {
-          telegramId: currentUser.telegramId,
-          revealsUsed: 1,
-          reveals: currentUser.reveals
-        });
+
+        apiCall('/api/game/use-booster', 'POST', {
+          sessionToken: activeGameSessionToken,
+          boosterType: 'reveals'
+        }).then(res => {
+          if (res && res.success && res.remaining !== undefined) {
+            currentUser.reveals = res.remaining;
+            updateHeaderUI();
+            saveLocalUser();
+          }
+        }).catch(() => {});
       }
     });
   }
@@ -5144,31 +4957,7 @@ async function initColorSortApp() {
           t('outOfBottlesPrompt') || 'У вас 0 пустых колб. Посмотрите короткую рекламу, чтобы получить пустую колбу в счётчик!',
           t('claimAdBtn') || '▶ Смотреть рекламу (+1)',
           async () => {
-            const adWatched = await showRewardedAd();
-            if (adWatched) {
-              currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-              currentUser.extra_bottles = currentUser.extraBottles;
-              normalizeUserObject(currentUser);
-              saveLocalUser();
-              updateHeaderUI();
-              syncPlayerToCloud(currentUser);
-              showInfoModal('🎁', t('bonusBottleTitle'), t('bonusAddedBottle'));
-              apiCall('/api/ad-reward', 'POST', {
-                telegramId: currentUser.telegramId,
-                rewardType: 'extra_bottle'
-              }).then(res => {
-                if (res && res.success && res.user) {
-                  const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
-                  if (serverB !== undefined) {
-                    currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
-                    currentUser.extra_bottles = currentUser.extraBottles;
-                    normalizeUserObject(currentUser);
-                    saveLocalUser();
-                    updateHeaderUI();
-                  }
-                }
-              }).catch(() => {});
-            }
+            await watchRewardedAdForBonus('extra_bottle');
           }
         );
         return;
@@ -5179,17 +4968,22 @@ async function initColorSortApp() {
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
         currentUser.extra_bottles = currentUser.extraBottles;
-        updateCloudBoosterDirectly('extraBottles', currentUser.extraBottles);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
         updateHeaderUI();
         saveLocalUser();
-        await apiCall('/api/user/sync', 'POST', {
-          telegramId: currentUser.telegramId,
-          extraBottlesUsed: 1,
-          extraBottles: currentUser.extraBottles,
-          extra_bottles: currentUser.extraBottles
-        });
+
+        apiCall('/api/game/use-booster', 'POST', {
+          sessionToken: activeGameSessionToken,
+          boosterType: 'extra_bottles'
+        }).then(res => {
+          if (res && res.success && res.remaining !== undefined) {
+            currentUser.extraBottles = res.remaining;
+            currentUser.extra_bottles = res.remaining;
+            updateHeaderUI();
+            saveLocalUser();
+          }
+        }).catch(() => {});
       }
     });
   }
@@ -11647,48 +11441,14 @@ async function initColorSortApp() {
       const originalText = t('claimAdBtn') || '▶ Смотреть рекламу';
       btn.textContent = t('adStarting') || '⏳ Запуск...';
 
-      let adWatched = false;
+      let success = false;
       try {
-        adWatched = await showRewardedAd();
+        success = await watchRewardedAdForBonus(rewardType);
       } catch (err) {
         console.error('[Ad Error]', err);
       }
 
-      if (adWatched) {
-        if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
-        else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
-        else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
-        else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') {
-          currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-          currentUser.extra_bottles = currentUser.extraBottles;
-        }
-
-        normalizeUserObject(currentUser);
-        saveLocalUser();
-        updateHeaderUI();
-        syncPlayerToCloud(currentUser);
-
-        apiCall('/api/ad-reward', 'POST', {
-          telegramId: currentUser.telegramId,
-          rewardType
-        }).then(res => {
-          if (res && res.success && res.user) {
-            if (res.user.hints !== undefined) currentUser.hints = Math.max(currentUser.hints || 0, res.user.hints);
-            if (res.user.undos !== undefined) currentUser.undos = Math.max(currentUser.undos || 0, res.user.undos);
-            if (res.user.reveals !== undefined) currentUser.reveals = Math.max(currentUser.reveals || 0, res.user.reveals);
-            const serverB = res.user.extra_bottles !== undefined ? res.user.extra_bottles : res.user.extraBottles;
-            if (serverB !== undefined) {
-              currentUser.extraBottles = Math.max(currentUser.extraBottles || 0, Number(serverB || 0));
-              currentUser.extra_bottles = currentUser.extraBottles;
-            }
-            normalizeUserObject(currentUser);
-            saveLocalUser();
-            updateHeaderUI();
-          }
-        }).catch(() => {});
-
-        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-
+      if (success) {
         btn.textContent = t('adClaimed') || '✅ Получено! (+1)';
         setTimeout(() => {
           btn.textContent = t('claimAdBtn') || originalText;

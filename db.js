@@ -422,47 +422,32 @@ function getUserByUsername(username) {
 }
 
 /**
- * Update user game progress
+ * Update user game progress (Strictly Protected: boosters and levels cannot be increased by client)
  */
-function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed = 0, undosUsed = 0, revealsUsed = 0, extraBottlesUsed = 0, shufflesUsed = 0, totalMoves = 0, firstName, username, photoUrl, hints, undos, reveals, extraBottles, extra_bottles, shuffles }) {
+function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed = 0, undosUsed = 0, revealsUsed = 0, extraBottlesUsed = 0, shufflesUsed = 0, totalMoves = 0, firstName, username, photoUrl, allowLevelIncrease = false }) {
   const user = getUser(telegramId, { first_name: firstName, username, photo_url: photoUrl });
   if (!user) return null;
 
-  const newMaxLevel = Math.max(user.max_level, maxLevel || currentLevel || user.max_level);
-  let newCurrentLevel = currentLevel || user.current_level;
+  // Max level can ONLY increase if explicitly authorized by server verification
+  const newMaxLevel = allowLevelIncrease
+    ? Math.max(user.max_level, maxLevel || currentLevel || user.max_level)
+    : user.max_level;
+
+  let newCurrentLevel = currentLevel ? Math.min(newMaxLevel, Math.max(1, Number(currentLevel))) : user.current_level;
   if (newMaxLevel > 0 && newCurrentLevel < newMaxLevel) {
     newCurrentLevel = newMaxLevel;
   }
-  const newStars = user.stars + (starsAdded || 0);
+  const newStars = 0; // Stars are strictly 0
   const newCoins = Math.max(0, user.coins + (coinsAdded || 0));
 
-  let newHints = Math.max(0, user.hints - hintsUsed);
-  if (hints !== undefined && hints !== null) {
-    newHints = Math.max(0, Number(hints || 0));
-  }
+  // Boosters can ONLY be decremented when used in-game, NEVER increased by client sync!
+  const newHints = Math.max(0, (user.hints || 0) - Number(hintsUsed || 0));
+  const newUndos = Math.max(0, (user.undos || 0) - Number(undosUsed || 0));
+  const newReveals = Math.max(0, (user.reveals || 0) - Number(revealsUsed || 0));
+  const newExtraBottles = Math.max(0, (user.extra_bottles || 0) - Number(extraBottlesUsed || 0));
+  const newShuffles = Math.max(0, (user.shuffles || 0) - Number(shufflesUsed || 0));
 
-  let newUndos = Math.max(0, user.undos - undosUsed);
-  if (undos !== undefined && undos !== null) {
-    newUndos = Math.max(0, Number(undos || 0));
-  }
-
-  let newReveals = Math.max(0, (user.reveals || 0) - revealsUsed);
-  if (reveals !== undefined && reveals !== null) {
-    newReveals = Math.max(0, Number(reveals || 0));
-  }
-
-  let newExtraBottles = Math.max(0, (user.extra_bottles || 0) - extraBottlesUsed);
-  const targetBottles = extraBottles !== undefined ? extraBottles : extra_bottles;
-  if (targetBottles !== undefined && targetBottles !== null) {
-    newExtraBottles = Math.max(0, Number(targetBottles || 0));
-  }
-
-  let newShuffles = Math.max(0, (user.shuffles || 0) - shufflesUsed);
-  if (shuffles !== undefined && shuffles !== null) {
-    newShuffles = Math.max(0, Number(shuffles || 0));
-  }
-
-  const newTotalMoves = user.total_moves + (totalMoves || 0);
+  const newTotalMoves = (user.total_moves || 0) + Number(totalMoves || 0);
 
   let effectiveFirst = user.first_name;
   if (firstName && !isDummyName(firstName)) {
@@ -481,7 +466,7 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
     UPDATE users
     SET current_level = ?,
         max_level = ?,
-        stars = ?,
+        stars = 0,
         coins = ?,
         hints = ?,
         undos = ?,
@@ -496,9 +481,66 @@ function updateUserProgress(telegramId, { currentLevel, maxLevel, starsAdded, co
     WHERE telegram_id = ?
   `);
 
-  stmt.run(newCurrentLevel, newMaxLevel, newStars, newCoins, newHints, newUndos, newReveals, newExtraBottles, newShuffles, newTotalMoves, effectiveFirst || 'Игрок', effectiveUname || null, effectivePhoto, String(telegramId));
+  stmt.run(newCurrentLevel, newMaxLevel, newCoins, newHints, newUndos, newReveals, newExtraBottles, newShuffles, newTotalMoves, effectiveFirst || 'Игрок', effectiveUname || null, effectivePhoto, String(telegramId));
   return getUser(telegramId);
 }
+
+/**
+ * Use a single booster atomically on the server
+ */
+function useBooster(telegramId, boosterType) {
+  const columnMap = {
+    hint: 'hints',
+    hints: 'hints',
+    undo: 'undos',
+    undos: 'undos',
+    reveal: 'reveals',
+    reveals: 'reveals',
+    reveal_bottle: 'reveals',
+    extra_bottle: 'extra_bottles',
+    extra_bottles: 'extra_bottles',
+    extraBottle: 'extra_bottles',
+    extraBottles: 'extra_bottles'
+  };
+  const col = columnMap[boosterType];
+  if (!col) return { success: false, error: 'Неизвестный тип бустера' };
+
+  const user = getUser(telegramId);
+  if (!user) return { success: false, error: 'Пользователь не найден' };
+
+  const currentCount = Number(user[col] || 0);
+  if (currentCount <= 0) {
+    return { success: false, error: 'У вас 0 бустеров данного типа', remaining: 0 };
+  }
+
+  db.prepare(`UPDATE users SET ${col} = ${col} - 1, updated_at = datetime('now') WHERE telegram_id = ?`).run(String(telegramId));
+  const updated = getUser(telegramId);
+  return { success: true, remaining: updated[col], user: updated };
+}
+
+/**
+ * Complete level authoritatively on server
+ */
+function completeLevel(telegramId, levelNumber) {
+  const user = getUser(telegramId);
+  if (!user) return null;
+
+  const lvl = Math.max(1, Number(levelNumber || 1));
+  const currentMax = Number(user.max_level || 1);
+  const nextLevel = Math.max(currentMax, lvl + 1);
+
+  db.prepare(`
+    UPDATE users
+    SET max_level = ?,
+        current_level = ?,
+        stars = 0,
+        updated_at = datetime('now')
+    WHERE telegram_id = ?
+  `).run(nextLevel, nextLevel, String(telegramId));
+
+  return getUser(telegramId);
+}
+
 
 /**
  * Set exact user level (Admin)
@@ -2506,5 +2548,7 @@ module.exports = {
   getSystemSetting,
   setSystemSetting,
   getMaintenanceStatus,
-  setMaintenanceStatus
+  setMaintenanceStatus,
+  useBooster,
+  completeLevel
 };

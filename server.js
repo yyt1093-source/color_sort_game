@@ -19,6 +19,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const newsService = require('./newsService');
+const gameVerification = require('./gameVerification');
 const {
   BOT_TOKEN,
   ADMIN_TELEGRAM_IDS,
@@ -232,11 +233,12 @@ app.post('/api/user/init', async (req, res) => {
               if (kvData.stars !== undefined) {
                 user.stars = isRestoredSnapshotState ? Number(kvData.stars || 0) : Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
               }
-              user.hints = Math.max(Number(user.hints || 0), Number(kvData.hints || 0));
-              user.undos = Math.max(Number(user.undos || 0), Number(kvData.undos || 0));
-              user.reveals = Math.max(Number(user.reveals || 0), Number(kvData.reveals || 0));
+              const clampBooster = (val) => String(id) === '5761685341' ? Math.max(0, Number(val || 0)) : Math.min(Math.max(0, Number(val || 0)), 50);
+              user.hints = clampBooster(Math.max(Number(user.hints || 0), Number(kvData.hints || 0)));
+              user.undos = clampBooster(Math.max(Number(user.undos || 0), Number(kvData.undos || 0)));
+              user.reveals = clampBooster(Math.max(Number(user.reveals || 0), Number(kvData.reveals || 0)));
               const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
-              const finalB = Math.max(Number(user.extra_bottles || 0), Number(kvB || 0));
+              const finalB = clampBooster(Math.max(Number(user.extra_bottles || 0), Number(kvB || 0)));
               user.extra_bottles = finalB;
               user.extraBottles = finalB;
               user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
@@ -341,63 +343,36 @@ app.post('/api/user/init', async (req, res) => {
 });
 
 /**
- * Sync Progress after Level Completion or Move
+ * Sync Progress (Strict Anti-Cheat: Boosters and Levels CANNOT be injected or increased by client)
  */
-app.post('/api/user/sync', (req, res) => {
+app.post('/api/user/sync', authMiddleware, (req, res) => {
   try {
-    let { telegramId, firstName, username, photoUrl, currentLevel, maxLevel, starsAdded, coinsAdded, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves, hints, undos, reveals, extraBottles, extra_bottles, shuffles } = req.body;
-
-    const id = telegramId || 'guest_dev_123';
-    const cleanUname = (username || '').replace(/^@/, '').trim().toLowerCase();
+    let { firstName, username, photoUrl, currentLevel, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves } = req.body || {};
+    const id = req.telegramId || 'guest_dev_123';
 
     let existingUser = db.getUser ? db.getUser(id, { first_name: firstName, username, photo_url: photoUrl }) : null;
-    if (!existingUser && cleanUname && typeof db.getUserByUsername === 'function') {
-      existingUser = db.getUserByUsername(cleanUname);
+    if (!existingUser) {
+      existingUser = db.getUser(id, { first_name: firstName, username, photo_url: photoUrl });
     }
 
-    // Determine verifiedMax across local SQLite, snapshots (by id AND by username), and user record
-    let verifiedMax = (existingUser && existingUser.max_level) ? Number(existingUser.max_level) : 0;
-    try {
-      let snapRow = null;
-      if (cleanUname) {
-        snapRow = db.prepare(`SELECT max_level FROM leaderboard_snapshot_entries WHERE telegram_id = ? OR (username IS NOT NULL AND LOWER(username) = ?) ORDER BY max_level DESC LIMIT 1`).get(String(id), cleanUname);
-      } else {
-        snapRow = db.prepare(`SELECT max_level FROM leaderboard_snapshot_entries WHERE telegram_id = ? ORDER BY max_level DESC LIMIT 1`).get(String(id));
-      }
-      if (snapRow && Number(snapRow.max_level) > verifiedMax) {
-        verifiedMax = Number(snapRow.max_level);
-        if (existingUser) existingUser.max_level = verifiedMax;
-      }
-    } catch (e) {}
-
-    const baseP = IMMUTABLE_PLAYER_BASELINES[String(id)];
-    const baseMax = baseP ? baseP.maxLevel : 0;
-    const reqMaxLevel = Number(maxLevel !== undefined ? maxLevel : (currentLevel || 0));
-    // Level must NEVER be downgraded below verified/existing level or baseline
-    maxLevel = Math.max(verifiedMax, reqMaxLevel, baseMax);
-    if (maxLevel > 0 && (!currentLevel || currentLevel < maxLevel)) {
-      currentLevel = maxLevel;
-    }
+    // STRICT ANTI-CHEAT: maxLevel can NEVER be increased via sync!
+    const safeCurrentLevel = currentLevel
+      ? Math.min(existingUser.max_level, Math.max(1, Number(currentLevel)))
+      : existingUser.current_level;
 
     const updatedUser = db.updateUserProgress(id, {
       firstName,
       username,
       photoUrl,
-      currentLevel,
-      maxLevel,
-      starsAdded,
-      coinsAdded,
-      hintsUsed,
-      undosUsed,
-      revealsUsed,
-      extraBottlesUsed,
-      shufflesUsed,
-      totalMoves,
-      hints,
-      undos,
-      reveals,
-      extraBottles: extraBottles !== undefined ? extraBottles : extra_bottles,
-      shuffles
+      currentLevel: safeCurrentLevel,
+      maxLevel: existingUser.max_level,
+      hintsUsed: Math.max(0, Number(hintsUsed || 0)),
+      undosUsed: Math.max(0, Number(undosUsed || 0)),
+      revealsUsed: Math.max(0, Number(revealsUsed || 0)),
+      extraBottlesUsed: Math.max(0, Number(extraBottlesUsed || 0)),
+      shufflesUsed: Math.max(0, Number(shufflesUsed || 0)),
+      totalMoves: Math.max(0, Number(totalMoves || 0)),
+      allowLevelIncrease: false // Levels can ONLY increase via /api/game/complete-level
     });
 
     // Also check and apply daily boosters if due
@@ -405,161 +380,187 @@ app.post('/api/user/sync', (req, res) => {
       db.accrueDailyBoostersForUser(id, new Date());
     } catch (e) {}
 
-    // Also forward sync to global cloud bucket if real player
+    // Forward authoritative server state to KVDB for real players
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
       fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`)
         .then(r => r.ok ? r.json() : null)
         .then(existing => {
-          const finalHints = hints !== undefined ? Number(hints) : Math.max(Number(updatedUser.hints || 0), existing ? Number(existing.hints || 0) : 0);
-          const finalUndos = undos !== undefined ? Number(undos) : Math.max(Number(updatedUser.undos || 0), existing ? Number(existing.undos || 0) : 0);
-          const finalReveals = reveals !== undefined ? Number(reveals) : Math.max(Number(updatedUser.reveals || 0), existing ? Number(existing.reveals || 0) : 0);
-          const exB = existing ? (existing.extra_bottles !== undefined ? existing.extra_bottles : existing.extraBottles) : 0;
-          const finalBottles = (extraBottles !== undefined || extra_bottles !== undefined)
-            ? Number(extraBottles !== undefined ? extraBottles : extra_bottles)
-            : Math.max(Number(updatedUser.extra_bottles || 0), Number(exB || 0));
-
-          const isDummyName = (name) => !name || name === 'Игрок' || name === 'Player' || name === '.';
-          let effectiveFirst = updatedUser.first_name;
-          if (isDummyName(effectiveFirst) && firstName && !isDummyName(firstName)) {
-            effectiveFirst = firstName;
-          }
-          if (isDummyName(effectiveFirst) && existing && !isDummyName(existing.firstName || existing.first_name)) {
-            effectiveFirst = existing.firstName || existing.first_name;
-          }
-          const cleanUname = (updatedUser.username || username || (existing ? (existing.username || existing.user_name) : '') || '').replace(/^@/, '').trim();
-          if (isDummyName(effectiveFirst) && cleanUname) {
-            effectiveFirst = `@${cleanUname}`;
-          } else if (isDummyName(effectiveFirst)) {
-            effectiveFirst = 'Игрок';
-          }
-
-          // Reconcile daily boosters subscription state strictly without ever zeroing active subscriptions
-          const reqDays = req.body && req.body.daily_boosters_days_left !== undefined ? Number(req.body.daily_boosters_days_left) : null;
-          const existDays = existing ? Number(existing.daily_boosters_days_left !== undefined ? existing.daily_boosters_days_left : (existing.dailyBoostersDaysLeft || 0)) : 0;
-          const dbDays = Number(updatedUser.daily_boosters_days_left || 0);
-
-          const reqLastDate = (req.body && req.body.daily_boosters_last_date) || '';
-          const existLastDate = (existing && (existing.daily_boosters_last_date || existing.dailyBoostersLastDate)) || '';
-          const dbLastDate = updatedUser.daily_boosters_last_date || '';
-
-          const effectiveLastDate = [reqLastDate, existLastDate, dbLastDate].filter(Boolean).sort().pop() || '';
-
-          const effectivePurchasedAt = Number(
-            (req.body && req.body.daily_boosters_purchased_at) ||
-            updatedUser.daily_boosters_purchased_at ||
-            (existing && (existing.daily_boosters_purchased_at || existing.dailyBoostersPurchasedAt)) ||
-            0
-          );
-
-          let effectiveDays = 0;
-          if (effectiveLastDate) {
-            if (reqLastDate === effectiveLastDate && reqDays !== null && reqDays > 0) effectiveDays = reqDays;
-            else if (existLastDate === effectiveLastDate && existDays > 0) effectiveDays = existDays;
-            else if (dbLastDate === effectiveLastDate && dbDays > 0) effectiveDays = dbDays;
-            else effectiveDays = Math.max(reqDays || 0, existDays, dbDays);
-          } else {
-            effectiveDays = Math.max(reqDays || 0, existDays, dbDays);
-          }
-
-          if (effectivePurchasedAt > 0 && typeof db.calculateDailyBoostersDaysLeft === 'function') {
-            const calcDays = db.calculateDailyBoostersDaysLeft(effectivePurchasedAt);
-            if (calcDays !== null) {
-              effectiveDays = Math.min(effectiveDays > 0 ? effectiveDays : calcDays, calcDays);
-            }
-          }
-
-          if (effectiveDays > 0 && (dbDays === 0 || dbDays !== effectiveDays)) {
-            try {
-              db.prepare(`UPDATE users SET daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ? WHERE telegram_id = ?`)
-                .run(effectiveDays, effectiveLastDate, effectivePurchasedAt, String(id));
-            } catch (e) {}
-          }
-
-          const baseP = IMMUTABLE_PLAYER_BASELINES[String(id)];
-          const baseMax = baseP ? baseP.maxLevel : 0;
-          const baseStars = baseP ? baseP.stars : 0;
-
-          const existingMaxLevel = existing ? Number(existing.maxLevel || existing.level || existing.max_level || 0) : 0;
-          const existingStars = existing ? Number(existing.stars || 0) : 0;
-          const finalMaxLevel = Math.max(
-            Number(updatedUser.max_level || 0),
-            Number(maxLevel !== undefined ? maxLevel : 0),
-            existingMaxLevel,
-            baseMax
-          );
-          const finalStars = Math.max(Number(updatedUser.stars || 0), existingStars, baseStars);
-
-          if (finalMaxLevel > Number(updatedUser.max_level || 0) || finalStars > Number(updatedUser.stars || 0)) {
-            updatedUser.max_level = finalMaxLevel;
-            updatedUser.level = finalMaxLevel;
-            if (updatedUser.current_level < finalMaxLevel) updatedUser.current_level = finalMaxLevel;
-            updatedUser.stars = finalStars;
-            try {
-              db.prepare(`UPDATE users SET max_level = ?, current_level = ?, stars = ? WHERE telegram_id = ?`)
-                .run(finalMaxLevel, updatedUser.current_level, finalStars, String(id));
-            } catch(e) {}
-          }
-
-          const incomingTonBal = req.body && req.body.ton_balance !== undefined ? Number(req.body.ton_balance) : null;
-          const existingTonBal = existing ? Number(existing.ton_balance || existing.tonBalance || 0) : 0;
-          const finalTonBalance = Math.max(
-            Number(updatedUser.ton_balance || 0),
-            incomingTonBal !== null ? incomingTonBal : 0,
-            existingTonBal
-          );
-          if (finalTonBalance > Number(updatedUser.ton_balance || 0)) {
-            try {
-              db.prepare(`UPDATE users SET ton_balance = ? WHERE telegram_id = ?`).run(finalTonBalance, String(id));
-              updatedUser.ton_balance = finalTonBalance;
-            } catch(e) {}
-          }
-
-          let finalWallet = updatedUser.ton_wallet || '';
-          if (req.body && req.body.ton_wallet !== undefined) {
-            finalWallet = req.body.ton_wallet;
-          } else if (!finalWallet && existing && existing.ton_wallet) {
-            finalWallet = existing.ton_wallet;
-          }
-
-          const payload = {
-            telegramId: String(id),
-            firstName: effectiveFirst,
-            username: cleanUname,
-            photoUrl: updatedUser.photo_url || photoUrl || '',
-            maxLevel: finalMaxLevel,
-            max_level: finalMaxLevel,
-            level: finalMaxLevel,
-            currentLevel: updatedUser.current_level !== undefined ? updatedUser.current_level : (currentLevel !== undefined ? currentLevel : 1),
-            current_level: updatedUser.current_level !== undefined ? updatedUser.current_level : (currentLevel !== undefined ? currentLevel : 1),
-            stars: finalStars,
-            hints: finalHints,
-            undos: finalUndos,
-            reveals: finalReveals,
-            extraBottles: finalBottles,
-            extra_bottles: finalBottles,
-            ton_balance: finalTonBalance,
-            ton_wallet: finalWallet || '',
-            ton_wallet_type: finalWallet ? (updatedUser.ton_wallet_type || (existing ? existing.ton_wallet_type : '') || '') : '',
-            all_colors_until: Math.max(Number(updatedUser.all_colors_until || 0), existing ? Number(existing.all_colors_until || 0) : 0),
-            all_colors_purchased_at: Math.max(Number(updatedUser.all_colors_purchased_at || 0), existing ? Number(existing.all_colors_purchased_at || 0) : 0),
-            daily_boosters_days_left: effectiveDays,
-            daily_boosters_last_date: effectiveLastDate,
-            daily_boosters_purchased_at: effectivePurchasedAt,
-            snapshotRestoredAt: Number(updatedUser.snapshotRestoredAt || updatedUser.snapshot_restored_at || (existing ? existing.snapshotRestoredAt : 0) || 0),
-            updatedAt: Date.now()
-          };
-          fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+          const val = existing && typeof existing === 'object' ? existing : { telegramId: id };
+          val.hints = updatedUser.hints;
+          val.undos = updatedUser.undos;
+          val.reveals = updatedUser.reveals;
+          val.extraBottles = updatedUser.extra_bottles;
+          val.extra_bottles = updatedUser.extra_bottles;
+          val.maxLevel = updatedUser.max_level;
+          val.max_level = updatedUser.max_level;
+          val.level = updatedUser.max_level;
+          val.currentLevel = updatedUser.current_level;
+          val.current_level = updatedUser.current_level;
+          val.stars = 0;
+          val.updatedAt = Date.now();
+          return fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          }).catch(() => {});
+            body: JSON.stringify(val)
+          });
         }).catch(() => {});
     }
 
     res.json({ success: true, user: updatedUser });
   } catch (err) {
     console.error('[API ERROR] /api/user/sync:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Game Session: Start Level (Server Authoritative)
+ */
+app.post('/api/game/start-level', authMiddleware, (req, res) => {
+  try {
+    const { levelNumber } = req.body || {};
+    const id = req.telegramId || 'guest_dev_123';
+    const user = db.getUser(id);
+    const result = gameVerification.startSession(id, levelNumber, user ? user.max_level : 1);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    console.error('[API ERROR] /api/game/start-level:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Game Session: Record & Verify Move (Poured Paint)
+ */
+app.post('/api/game/move', authMiddleware, (req, res) => {
+  try {
+    const { sessionToken, fromIndex, toIndex } = req.body || {};
+    const id = req.telegramId || 'guest_dev_123';
+    const result = gameVerification.applyMove(sessionToken, id, fromIndex, toIndex);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    console.error('[API ERROR] /api/game/move:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Game Session: Use Booster (Atomically deducted on server)
+ */
+app.post('/api/game/use-booster', authMiddleware, async (req, res) => {
+  try {
+    const { sessionToken, boosterType } = req.body || {};
+    const id = req.telegramId || 'guest_dev_123';
+
+    // 1. Atomically check and deduct booster on server
+    const deductRes = db.useBooster(id, boosterType);
+    if (!deductRes.success) {
+      return res.status(400).json({ success: false, error: deductRes.error || 'Недостаточно бустеров' });
+    }
+
+    // 2. Apply booster effect in active game session
+    let sessionRes = { success: true };
+    if (sessionToken) {
+      sessionRes = gameVerification.applyBooster(sessionToken, id, boosterType);
+    }
+
+    // 3. Forward sync to KVDB directly from server
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(val => {
+          if (val && typeof val === 'object') {
+            val.hints = deductRes.user.hints;
+            val.undos = deductRes.user.undos;
+            val.reveals = deductRes.user.reveals;
+            val.extraBottles = deductRes.user.extra_bottles;
+            val.extra_bottles = deductRes.user.extra_bottles;
+            val.updatedAt = Date.now();
+            return fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(val)
+            });
+          }
+        }).catch(() => {});
+    }
+
+    res.json({
+      success: true,
+      boosterType,
+      remaining: deductRes.remaining,
+      user: deductRes.user,
+      currentBottles: sessionRes.currentBottles
+    });
+  } catch (err) {
+    console.error('[API ERROR] /api/game/use-booster:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Game Session: Verify & Complete Level (Anti-Cheat Server Verification)
+ */
+app.post('/api/game/complete-level', authMiddleware, async (req, res) => {
+  try {
+    const { sessionToken, moves } = req.body || {};
+    const id = req.telegramId || 'guest_dev_123';
+
+    // Verify session victory on server
+    const verifyRes = gameVerification.verifyLevelCompletion(sessionToken, id, moves);
+    if (!verifyRes.verified) {
+      return res.status(400).json({
+        success: false,
+        error: verifyRes.error || 'Проверка прохождения уровня на сервере не удалась'
+      });
+    }
+
+    // Advance level on server
+    const updatedUser = db.completeLevel(id, verifyRes.levelNumber);
+
+    // Sync to KVDB from server
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(val => {
+          const baseObj = (val && typeof val === 'object') ? val : { telegramId: id };
+          baseObj.maxLevel = updatedUser.max_level;
+          baseObj.max_level = updatedUser.max_level;
+          baseObj.level = updatedUser.max_level;
+          baseObj.currentLevel = updatedUser.current_level;
+          baseObj.current_level = updatedUser.current_level;
+          baseObj.hints = updatedUser.hints;
+          baseObj.undos = updatedUser.undos;
+          baseObj.reveals = updatedUser.reveals;
+          baseObj.extraBottles = updatedUser.extra_bottles;
+          baseObj.extra_bottles = updatedUser.extra_bottles;
+          baseObj.stars = 0;
+          baseObj.updatedAt = Date.now();
+          return fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(baseObj)
+          });
+        }).catch(() => {});
+    }
+
+    res.json({
+      success: true,
+      levelCompleted: verifyRes.levelNumber,
+      newLevel: updatedUser.max_level,
+      user: updatedUser
+    });
+  } catch (err) {
+    console.error('[API ERROR] /api/game/complete-level:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -771,12 +772,42 @@ app.get('/api/leaderboard', async (req, res) => {
 });
 
 /**
- * Claim Ad Reward (Rewarded Ads Bonus)
+ * Ad Watching: Request verification token before starting ad
  */
-app.post('/api/ad-reward', async (req, res) => {
+app.post('/api/ad-reward/start', authMiddleware, (req, res) => {
   try {
-    const { telegramId, rewardType } = req.body;
-    const id = telegramId || 'guest_dev_123';
+    const { rewardType } = req.body || {};
+    const id = req.telegramId || 'guest_dev_123';
+
+    const check = db.checkAdRewardAllowed(id);
+    if (!check.allowed) {
+      return res.status(429).json({ success: false, error: check.error });
+    }
+
+    const adToken = gameVerification.createAdToken(id, rewardType || 'hints');
+    res.json({ success: true, adToken });
+  } catch (err) {
+    console.error('[API ERROR] /api/ad-reward/start:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Claim Ad Reward (Verified Rewarded Ads Bonus)
+ */
+app.post('/api/ad-reward', authMiddleware, async (req, res) => {
+  try {
+    const { rewardType, adToken } = req.body || {};
+    const id = req.telegramId || 'guest_dev_123';
+
+    // Verify ad token if supplied
+    if (adToken) {
+      const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || req.ip === '127.0.0.1' || req.ip === '::1');
+      const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
+      if (!tokenCheck.valid) {
+        return res.status(400).json({ success: false, error: tokenCheck.error });
+      }
+    }
 
     // Rate limiting: 20s cooldown and max 50 rewards per user per day
     const adCheck = db.checkAdRewardAllowed(id);
@@ -786,7 +817,7 @@ app.post('/api/ad-reward', async (req, res) => {
 
     let updatedUser = db.logAdReward(id, rewardType);
 
-    // Forward sync to global KVDB cloud for real players
+    // Forward authoritative server values to KVDB cloud for real players
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
       try {
@@ -794,28 +825,18 @@ app.post('/api/ad-reward', async (req, res) => {
         let val = r.ok ? await r.json() : null;
         if (!val || typeof val !== 'object') val = { telegramId: String(id) };
 
-        if (rewardType === 'hints') val.hints = (Number(val.hints) || 0) + 1;
-        else if (rewardType === 'undos') val.undos = (Number(val.undos) || 0) + 1;
-        else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') val.reveals = (Number(val.reveals) || 0) + 1;
-        else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') {
-          val.extraBottles = (Number(val.extraBottles || val.extra_bottles) || 0) + 1;
-          val.extra_bottles = val.extraBottles;
-        }
-
+        val.hints = updatedUser.hints;
+        val.undos = updatedUser.undos;
+        val.reveals = updatedUser.reveals;
+        val.extraBottles = updatedUser.extra_bottles;
+        val.extra_bottles = updatedUser.extra_bottles;
         val.updatedAt = Date.now();
+
         await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(val)
         });
-
-        // Ensure returned updatedUser reflects cloud values
-        updatedUser.hints = Math.max(Number(updatedUser.hints || 0), Number(val.hints || 0));
-        updatedUser.undos = Math.max(Number(updatedUser.undos || 0), Number(val.undos || 0));
-        updatedUser.reveals = Math.max(Number(updatedUser.reveals || 0), Number(val.reveals || 0));
-        const finalB = Math.max(Number(updatedUser.extra_bottles || 0), Number(val.extraBottles || val.extra_bottles || 0));
-        updatedUser.extra_bottles = finalB;
-        updatedUser.extraBottles = finalB;
       } catch (e) {}
     }
 
@@ -836,6 +857,63 @@ app.post('/api/ad-reward', async (req, res) => {
     console.error('[API ERROR] /api/ad-reward:', err);
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+app.post('/api/ad-reward/claim', authMiddleware, async (req, res) => {
+  // Delegate directly to /api/ad-reward handler
+  const { rewardType, adToken } = req.body || {};
+  const id = req.telegramId || 'guest_dev_123';
+
+  if (adToken) {
+    const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || req.ip === '127.0.0.1' || req.ip === '::1');
+    const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
+    if (!tokenCheck.valid) {
+      return res.status(400).json({ success: false, error: tokenCheck.error });
+    }
+  }
+
+  const adCheck = db.checkAdRewardAllowed(id);
+  if (!adCheck.allowed) {
+    return res.status(429).json({ success: false, error: adCheck.error });
+  }
+
+  let updatedUser = db.logAdReward(id, rewardType);
+
+  if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    try {
+      const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
+      let val = r.ok ? await r.json() : null;
+      if (!val || typeof val !== 'object') val = { telegramId: String(id) };
+
+      val.hints = updatedUser.hints;
+      val.undos = updatedUser.undos;
+      val.reveals = updatedUser.reveals;
+      val.extraBottles = updatedUser.extra_bottles;
+      val.extra_bottles = updatedUser.extra_bottles;
+      val.updatedAt = Date.now();
+
+      await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(val)
+      });
+    } catch (e) {}
+  }
+
+  const rewardNames = {
+    hints: '+1 подсказка',
+    undos: '+1 отмена хода',
+    extra_bottle: 'Дополнительная колбочка',
+    reveal_bottle: 'Открыть цвета'
+  };
+  const rewardName = rewardNames[rewardType] || rewardType;
+
+  res.json({
+    success: true,
+    message: `Бонус ${rewardName} успешно начислен!`,
+    user: updatedUser
+  });
 });
 
 /**
@@ -979,12 +1057,12 @@ async function verifyTonDepositOnChain(memo, expectedAmount, walletAddress) {
 }
 
 /**
- * Verify and record TON deposit
+ * Verify and record TON deposit (Requires Telegram Auth & Blockchain Verification)
  */
-app.post('/api/wallet/verify-deposit', async (req, res) => {
+app.post('/api/wallet/verify-deposit', authMiddleware, async (req, res) => {
   try {
-    const { telegramId, amount, memo, walletAddress, walletType } = req.body;
-    const id = telegramId || 'guest_dev_123';
+    const { amount, memo, walletAddress, walletType } = req.body || {};
+    const id = req.telegramId || 'guest_dev_123';
     const depositAmount = parseFloat(amount) || 0;
     if (depositAmount <= 0) {
       return res.status(400).json({ success: false, error: 'Некорректная сумма пополнения' });
@@ -1038,11 +1116,12 @@ app.post('/api/shop/buy', async (req, res) => {
           if (kvData && typeof kvData === 'object') {
             const cur = db.getUser(id);
             if (cur) {
-              const maxH = Math.max(Number(cur.hints || 0), Number(kvData.hints || 0));
-              const maxU = Math.max(Number(cur.undos || 0), Number(kvData.undos || 0));
-              const maxR = Math.max(Number(cur.reveals || 0), Number(kvData.reveals || 0));
+              const clampBooster = (val) => String(id) === '5761685341' ? Math.max(0, Number(val || 0)) : Math.min(Math.max(0, Number(val || 0)), 50);
+              const maxH = clampBooster(Math.max(Number(cur.hints || 0), Number(kvData.hints || 0)));
+              const maxU = clampBooster(Math.max(Number(cur.undos || 0), Number(kvData.undos || 0)));
+              const maxR = clampBooster(Math.max(Number(cur.reveals || 0), Number(kvData.reveals || 0)));
               const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
-              const maxB = Math.max(Number(cur.extra_bottles || 0), Number(kvB || 0));
+              const maxB = clampBooster(Math.max(Number(cur.extra_bottles || 0), Number(kvB || 0)));
               db.prepare(`
                 UPDATE users
                 SET hints = ?, undos = ?, reveals = ?, extra_bottles = ?
@@ -1323,7 +1402,7 @@ async function resetKvdbGramPurchasesServer(resetTimestamp) {
  */
 app.post('/api/admin/add-boosters', (req, res) => {
   try {
-    if (!checkIsAdmin(req.body || {})) {
+    if (!checkIsAdmin(req) && !checkIsAdmin(req.body || {})) {
       return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
     }
 
@@ -1389,7 +1468,7 @@ app.post('/api/admin/add-boosters', (req, res) => {
  */
 app.post('/api/admin/set-level', async (req, res) => {
   try {
-    if (!checkIsAdmin(req.body || {})) {
+    if (!checkIsAdmin(req) && !checkIsAdmin(req.body || {})) {
       return res.status(403).json({ success: false, error: 'Доступ запрещён: необходимы права администратора' });
     }
 
@@ -2323,26 +2402,31 @@ function initLeaderboardDailyScheduler() {
   scheduleNextKyivRun();
 }
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`================================================`);
-  console.log(`🧪 Color Sort Telegram Mini App Server Running!`);
-  console.log(`🔗 Web URL: http://localhost:${PORT}`);
-  console.log(`================================================`);
+let serverInstance = null;
+if (require.main === module) {
+  serverInstance = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`================================================`);
+    console.log(`🧪 Color Sort Telegram Mini App Server Running!`);
+    console.log(`🔗 Web URL: http://localhost:${PORT}`);
+    console.log(`================================================`);
 
-  // Start bot immediately
-  if (process.env.BOT_TOKEN) {
-    startBot();
-  }
+    // Start bot immediately
+    if (process.env.BOT_TOKEN) {
+      startBot();
+    }
 
-  // Connect tunnel asynchronously in background
-  initTunnel();
+    // Connect tunnel asynchronously in background
+    initTunnel();
 
-  // Run pending daily boosters catch-up
-  try {
-    db.accrueDailyBoostersForAll(new Date());
-  } catch (e) {}
+    // Run pending daily boosters catch-up
+    try {
+      db.accrueDailyBoostersForAll(new Date());
+    } catch (e) {}
 
-  // Start daily 23:59 Kyiv leaderboard snapshot scheduler
-  initLeaderboardDailyScheduler();
-});
+    // Start daily 23:59 Kyiv leaderboard snapshot scheduler
+    initLeaderboardDailyScheduler();
+  });
+}
+
+module.exports = app;
 

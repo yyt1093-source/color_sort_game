@@ -97,9 +97,11 @@ function authMiddleware(req, res, next) {
     req.telegramId = authId;
     req.isAuthenticated = true;
 
+    const isAdmin = ADMIN_TELEGRAM_IDS.includes(authId);
+
     // AUTHORIZATION ENFORCEMENT:
-    // If the caller requested an explicit telegramId, it MUST match the authenticated user!
-    if (requestedTargetId && requestedTargetId !== authId) {
+    // If the caller requested an explicit telegramId, it MUST match the authenticated user (unless caller is Admin)!
+    if (requestedTargetId && requestedTargetId !== authId && !isAdmin) {
       console.warn(`[AUTH] 403 Forbidden: User ${authId} attempted to modify account of ${requestedTargetId}`);
       return res.status(403).json({
         success: false,
@@ -108,7 +110,7 @@ function authMiddleware(req, res, next) {
     }
 
     // If claiming gifts, recipientId MUST match the authenticated user!
-    if ((req.path === '/claim' || req.path.endsWith('/claim')) && requestedRecipientId && requestedRecipientId !== authId) {
+    if ((req.path === '/claim' || req.path.endsWith('/claim')) && requestedRecipientId && requestedRecipientId !== authId && !isAdmin) {
       console.warn(`[AUTH] 403 Forbidden: User ${authId} attempted to claim gifts for ${requestedRecipientId}`);
       return res.status(403).json({
         success: false,
@@ -116,9 +118,9 @@ function authMiddleware(req, res, next) {
       });
     }
 
-    // Force downstream parameters to use the verified authenticated ID
+    // Force downstream parameters to use the verified authenticated ID (unless admin managing player)
     if (req.body && typeof req.body === 'object') {
-      if (req.body.telegramId !== undefined) req.body.telegramId = authId;
+      if (req.body.telegramId !== undefined && !isAdmin) req.body.telegramId = authId;
       if (req.path === '/claim' || req.path.endsWith('/claim')) {
         if (req.body.recipientId !== undefined) req.body.recipientId = authId;
       }
