@@ -18,7 +18,7 @@ git push origin main
 
 Write-Host "=== Step 2: Syncing files to 'gh-pages' ===" -ForegroundColor Cyan
 git checkout gh-pages
-git checkout main -- public
+git checkout main -- public .gitignore
 
 # Copy all assets from public/ into root for GitHub Pages
 Copy-Item -Path "public\*" -Destination "." -Recurse -Force
@@ -34,7 +34,6 @@ git push origin gh-pages
 Write-Host "=== Step 3: Returning to 'main' branch ===" -ForegroundColor Cyan
 git checkout main
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue assets, banner_640x360.jpg, game_icon.png, index.html, invite.html, js, referral_art_clean.jpg, referral_share.jpg, splash_cover.jpg, style.css, tonconnect-manifest.json, ton_icon.png, cyberfarm.jpg, sortcolors.jpg
-git clean -fd -e .env -e game_database.sqlite -e test -e "node_modules*" -e node_modules
 
 Write-Host "`n Deployment to live server complete!" -ForegroundColor Green
 Write-Host "Live WebApp URL: https://yyt1093-source.github.io/color_sort_game/" -ForegroundColor Green
