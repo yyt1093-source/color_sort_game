@@ -4162,6 +4162,8 @@ async function initColorSortApp() {
     if (activeGameSessionToken) {
       apiCall('/api/game/move', 'POST', {
         sessionToken: activeGameSessionToken,
+        fromIndex: from,
+        toIndex: to,
         from,
         to
       }).catch(() => {});
@@ -4830,6 +4832,7 @@ async function initColorSortApp() {
 
       const success = engine.undo();
       if (success) {
+        if (activeMovesLog.length > 0) activeMovesLog.pop();
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentUser.undos = Math.max(0, (currentUser.undos || 0) - 1);
         updateHeaderUI();
@@ -4965,6 +4968,7 @@ async function initColorSortApp() {
 
       const added = engine.addExtraBottle();
       if (added) {
+        activeMovesLog.push({ type: 'extra_bottle' });
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
         currentUser.extra_bottles = currentUser.extraBottles;
