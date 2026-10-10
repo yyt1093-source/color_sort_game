@@ -3443,8 +3443,29 @@ async function initColorSortApp() {
     if (!currentUser || !currentUser.telegramId) return;
     currentUser[field] = value;
     if (field === 'extraBottles') currentUser.extra_bottles = value;
+    currentUser.updatedAt = Date.now();
     saveLocalUser();
     updateHeaderUI();
+
+    const myId = String(currentUser.telegramId);
+    if (!myId.startsWith('guest') && !myId.startsWith('dev')) {
+      fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(myId)}?_cb=${Date.now()}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(cloudVal => {
+          const payload = (cloudVal && typeof cloudVal === 'object') ? cloudVal : { telegramId: myId };
+          payload[field] = value;
+          if (field === 'extraBottles') {
+            payload.extraBottles = value;
+            payload.extra_bottles = value;
+          }
+          payload.updatedAt = currentUser.updatedAt;
+          return fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(myId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }).catch(() => {});
+    }
   }
 
   async function syncPlayerToCloud(user, options = {}) {
@@ -3469,6 +3490,37 @@ async function initColorSortApp() {
       seasonResetAt: localSeasonReset,
       purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0)
     };
+
+    // Forward snapshot directly to KVDB as well for 24/7 cross-device consistency
+    if (!id.startsWith('guest') && !id.startsWith('dev')) {
+      fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(cloudVal => {
+          const baseObj = (cloudVal && typeof cloudVal === 'object') ? cloudVal : { telegramId: id };
+          baseObj.firstName = user.firstName || baseObj.firstName;
+          baseObj.username = user.username || baseObj.username;
+          baseObj.maxLevel = Math.max(Number(user.maxLevel || 0), Number(baseObj.maxLevel || 0));
+          baseObj.max_level = baseObj.maxLevel;
+          baseObj.level = baseObj.maxLevel;
+          baseObj.currentLevel = user.currentLevel || baseObj.currentLevel;
+          baseObj.current_level = baseObj.currentLevel;
+          baseObj.hints = user.hints !== undefined ? user.hints : baseObj.hints;
+          baseObj.undos = user.undos !== undefined ? user.undos : baseObj.undos;
+          baseObj.reveals = user.reveals !== undefined ? user.reveals : baseObj.reveals;
+          baseObj.extraBottles = user.extraBottles !== undefined ? user.extraBottles : baseObj.extraBottles;
+          baseObj.extra_bottles = baseObj.extraBottles;
+          baseObj.ton_balance = user.ton_balance !== undefined ? user.ton_balance : baseObj.ton_balance;
+          baseObj.ton_wallet = user.ton_wallet || baseObj.ton_wallet;
+          baseObj.memo_code = user.memo_code || baseObj.memo_code;
+          baseObj.seasonResetAt = localSeasonReset;
+          baseObj.updatedAt = user.updatedAt || Date.now();
+          return fetch(`${GLOBAL_CLOUD_BASE}/player_${encodeURIComponent(id)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(baseObj)
+          });
+        }).catch(() => {});
+    }
 
     try {
       const res = await apiCall('/api/user/sync', 'POST', syncPayload, {
@@ -3924,22 +3976,33 @@ async function initColorSortApp() {
 
           let changed = false;
 
-          if (cloudData.hints !== undefined) {
-            const h = Math.max(currentUser.hints || 0, Number(cloudData.hints || 0));
-            if (h !== currentUser.hints) { currentUser.hints = h; changed = true; }
-          }
-          if (cloudData.undos !== undefined) {
-            const u = Math.max(currentUser.undos || 0, Number(cloudData.undos || 0));
-            if (u !== currentUser.undos) { currentUser.undos = u; changed = true; }
-          }
-          if (cloudData.reveals !== undefined) {
-            const r = Math.max(currentUser.reveals || 0, Number(cloudData.reveals || 0));
-            if (r !== currentUser.reveals) { currentUser.reveals = r; changed = true; }
-          }
-          const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
-          if (cloudB !== undefined) {
-            const b = Math.max(currentUser.extraBottles || 0, currentUser.extra_bottles || 0, Number(cloudB || 0));
-            if (b !== currentUser.extraBottles) { currentUser.extraBottles = b; currentUser.extra_bottles = b; changed = true; }
+          const localUpdatedAt = Number(currentUser.updatedAt || 0);
+          const cloudUpdatedAt = Number(cloudData.updatedAt || 0);
+
+          // If cloud data is strictly newer than our local state, sync cloud booster values directly
+          if (cloudUpdatedAt > localUpdatedAt) {
+            if (cloudData.hints !== undefined) {
+              currentUser.hints = Number(cloudData.hints || 0);
+              changed = true;
+            }
+            if (cloudData.undos !== undefined) {
+              currentUser.undos = Number(cloudData.undos || 0);
+              changed = true;
+            }
+            if (cloudData.reveals !== undefined) {
+              currentUser.reveals = Number(cloudData.reveals || 0);
+              changed = true;
+            }
+            const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
+            if (cloudB !== undefined) {
+              currentUser.extraBottles = Number(cloudB || 0);
+              currentUser.extra_bottles = currentUser.extraBottles;
+              changed = true;
+            }
+          } else {
+            // Local state is newer or equal (player spent boosters, sent gifts, etc.)
+            // Maintain our local booster counts and ensure cloud receives them
+            syncPlayerToCloud(currentUser);
           }
           if (cloudData.all_colors_until !== undefined) {
             const acu = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
@@ -4125,8 +4188,12 @@ async function initColorSortApp() {
     currentUser.level = currentUser.maxLevel;
     currentUser.seasonResetAt = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
     
+    currentUser.updatedAt = Date.now();
     saveLocalUser();
     updateHeaderUI();
+
+    // Sync level progression immediately to cloud and backend
+    syncPlayerToCloud(currentUser);
 
     // Verify victory with moves replay on server
     apiCall('/api/game/complete-level', 'POST', {
@@ -4137,20 +4204,20 @@ async function initColorSortApp() {
         currentUser = normalizeUserObject(res.user);
         saveLocalUser();
         updateHeaderUI();
-      } else {
-        console.warn('[Complete Level Verification Failed]', res && res.error);
-        if (res && res.user) {
-          currentUser = normalizeUserObject(res.user);
-        } else {
-          currentUser.currentLevel = levelNumber;
-          currentUser.maxLevel = previousMaxLevel;
-          currentUser.level = previousMaxLevel;
-        }
+      } else if (res && res.status === 400 && res.unverified === true) {
+        console.warn('[Complete Level Rejected by Anti-Cheat]', res.error);
+        currentUser.currentLevel = levelNumber;
+        currentUser.maxLevel = previousMaxLevel;
+        currentUser.level = previousMaxLevel;
         saveLocalUser();
         updateHeaderUI();
+      } else {
+        // Offline / network glitch / legacy server: preserve player victory!
+        syncPlayerToCloud(currentUser);
       }
     }).catch(err => {
       console.warn('[Complete Level Verification]', err);
+      syncPlayerToCloud(currentUser);
     });
 
     // Update win modal message
@@ -4255,6 +4322,17 @@ async function initColorSortApp() {
         lang: currentLang,
         t: t
       });
+      // Real-time gift listener: check pending gifts immediately and every 12 seconds in the background
+      if (typeof window.GiftsModule.checkPendingGifts === 'function') {
+        window.GiftsModule.checkPendingGifts(false);
+        setInterval(() => {
+          try {
+            if (window.GiftsModule && typeof window.GiftsModule.checkPendingGifts === 'function') {
+              window.GiftsModule.checkPendingGifts(false);
+            }
+          } catch (e) {}
+        }, 12000);
+      }
     } catch (giftInitErr) {
       console.error('[GiftsModule] Safe initialization caught error:', giftInitErr);
     }
@@ -4279,13 +4357,23 @@ async function initColorSortApp() {
         loadCurrentLevel();
       }
       const oldLevel = currentUser.currentLevel;
-      if (serverUser.user.hints !== undefined) currentUser.hints = Number(serverUser.user.hints || 0);
-      if (serverUser.user.undos !== undefined) currentUser.undos = Number(serverUser.user.undos || 0);
-      if (serverUser.user.reveals !== undefined) currentUser.reveals = Number(serverUser.user.reveals || 0);
-      const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
-      if (serverB !== undefined) {
-        currentUser.extraBottles = Number(serverB || 0);
-        currentUser.extra_bottles = currentUser.extraBottles;
+
+      const localUpdatedAt = Number(currentUser.updatedAt || 0);
+      const serverUpdatedAt = serverUser.user.updated_at ? new Date(serverUser.user.updated_at).getTime() : Number(serverUser.user.updatedAt || 0);
+
+      // Only adopt server booster counts if server state is strictly newer than local state
+      if (serverUpdatedAt > localUpdatedAt) {
+        if (serverUser.user.hints !== undefined) currentUser.hints = Number(serverUser.user.hints || 0);
+        if (serverUser.user.undos !== undefined) currentUser.undos = Number(serverUser.user.undos || 0);
+        if (serverUser.user.reveals !== undefined) currentUser.reveals = Number(serverUser.user.reveals || 0);
+        const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
+        if (serverB !== undefined) {
+          currentUser.extraBottles = Number(serverB || 0);
+          currentUser.extra_bottles = currentUser.extraBottles;
+        }
+      } else {
+        // Local state is newer or equal (player spent/gifted boosters): push local state to server and cloud
+        syncPlayerToCloud(currentUser);
       }
       if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, Number(serverUser.user.all_colors_until || 0));
       if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, Number(serverUser.user.all_colors_purchased_at || 0));
