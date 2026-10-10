@@ -256,12 +256,14 @@ function verifyLevelCompletion(token, telegramId, clientMovesLog = null) {
         replayBottles.push([]);
         continue;
       }
-      if (m.from !== undefined && m.to !== undefined) {
-        if (!canPour(replayBottles, m.from, m.to, session.capacity)) {
+      const from = m.from !== undefined ? m.from : m.fromIndex;
+      const to = m.to !== undefined ? m.to : m.toIndex;
+      if (from !== undefined && to !== undefined) {
+        if (!canPour(replayBottles, from, to, session.capacity)) {
           replayValid = false;
           break;
         }
-        executePour(replayBottles, m.from, m.to, session.capacity);
+        executePour(replayBottles, from, to, session.capacity);
       }
     }
 

@@ -50,7 +50,7 @@ app.use('/api', (req, res, next) => {
   const clientKey = (req.body && req.body.telegramId) || (req.query && req.query.telegramId) || realIp || 'client';
   const now = Date.now();
   const windowMs = 60 * 1000;
-  const maxRequests = 300;
+  const maxRequests = 1000;
   
   if (!rateLimiter.has(clientKey)) {
     rateLimiter.set(clientKey, { count: 1, resetTime: now + windowMs });
@@ -438,9 +438,11 @@ app.post('/api/game/start-level', authMiddleware, (req, res) => {
  */
 app.post('/api/game/move', authMiddleware, (req, res) => {
   try {
-    const { sessionToken, fromIndex, toIndex } = req.body || {};
+    const { sessionToken, fromIndex, toIndex, from, to } = req.body || {};
+    const fromIdx = fromIndex !== undefined ? fromIndex : from;
+    const toIdx = toIndex !== undefined ? toIndex : to;
     const id = req.telegramId || 'guest_dev_123';
-    const result = gameVerification.applyMove(sessionToken, id, fromIndex, toIndex);
+    const result = gameVerification.applyMove(sessionToken, id, fromIdx, toIdx);
     if (!result.success) {
       return res.status(400).json(result);
     }
@@ -1099,8 +1101,8 @@ app.post('/api/wallet/verify-deposit', authMiddleware, async (req, res) => {
  */
 app.post('/api/shop/buy', async (req, res) => {
   try {
-    const { telegramId, itemId } = req.body;
-    const id = telegramId || 'guest_dev_123';
+    const { telegramId, itemId } = req.body || {};
+    const id = req.telegramId || telegramId || 'guest_dev_123';
 
     if (!itemId) {
       return res.status(400).json({ success: false, error: 'Не указан ID товара' });
