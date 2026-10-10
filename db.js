@@ -2465,33 +2465,34 @@ function getInboxGifts(recipientId) {
 
 function claimGift(giftId, recipientId) {
   try {
-    const gift = db.prepare(`SELECT * FROM player_gifts WHERE id = ? AND recipient_id = ?`).get(String(giftId), String(recipientId));
+    const gift = db.prepare(`SELECT * FROM player_gifts WHERE id = ? AND recipient_id = ? AND (claimed = 0 OR claimed IS NULL)`).get(String(giftId), String(recipientId));
+    if (!gift) return false;
+
     const stmt = db.prepare(`
       UPDATE player_gifts
       SET claimed = 1, claimed_at = ?
-      WHERE id = ? AND recipient_id = ?
+      WHERE id = ? AND recipient_id = ? AND (claimed = 0 OR claimed IS NULL)
     `);
-    stmt.run(Date.now(), String(giftId), String(recipientId));
+    const info = stmt.run(Date.now(), String(giftId), String(recipientId));
+    if (!info || info.changes === 0) return false;
 
-    if (gift) {
-      const type = String(gift.gift_type || '').toLowerCase();
-      const amount = Number(gift.amount || 1);
-      if (type === 'ton' || type === 'gram' || type === 'ton_balance') {
-        db.prepare(`
-          UPDATE users
-          SET ton_balance = COALESCE(ton_balance, 0) + ?,
-              updated_at = datetime('now')
-          WHERE telegram_id = ?
-        `).run(amount, String(recipientId));
-      } else if (type === 'undos') {
-        db.prepare(`UPDATE users SET undos = COALESCE(undos, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
-      } else if (type === 'hints') {
-        db.prepare(`UPDATE users SET hints = COALESCE(hints, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
-      } else if (type === 'reveals') {
-        db.prepare(`UPDATE users SET reveals = COALESCE(reveals, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
-      } else if (type === 'extrabottles' || type === 'extra_bottles') {
-        db.prepare(`UPDATE users SET extra_bottles = COALESCE(extra_bottles, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
-      }
+    const type = String(gift.gift_type || '').toLowerCase();
+    const amount = Number(gift.amount || 1);
+    if (type === 'ton' || type === 'gram' || type === 'ton_balance') {
+      db.prepare(`
+        UPDATE users
+        SET ton_balance = COALESCE(ton_balance, 0) + ?,
+            updated_at = datetime('now')
+        WHERE telegram_id = ?
+      `).run(amount, String(recipientId));
+    } else if (type === 'undos') {
+      db.prepare(`UPDATE users SET undos = COALESCE(undos, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
+    } else if (type === 'hints') {
+      db.prepare(`UPDATE users SET hints = COALESCE(hints, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
+    } else if (type === 'reveals') {
+      db.prepare(`UPDATE users SET reveals = COALESCE(reveals, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
+    } else if (type === 'extrabottles' || type === 'extra_bottles') {
+      db.prepare(`UPDATE users SET extra_bottles = COALESCE(extra_bottles, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
     }
     return true;
   } catch (err) {

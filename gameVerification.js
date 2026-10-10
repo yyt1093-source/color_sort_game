@@ -290,18 +290,6 @@ function verifyLevelCompletion(token, telegramId, clientMovesLog = null) {
     };
   }
 
-  // Anti-Cheat: Level >= 5 requires at least 1 booster
-  const totalBoosters = (session.boostersUsed.hints || 0) +
-                        (session.boostersUsed.undos || 0) +
-                        (session.boostersUsed.reveals || 0) +
-                        (session.boostersUsed.extraBottles || 0);
-  if (session.levelNumber >= 5 && totalBoosters <= 0) {
-    return {
-      verified: false,
-      error: 'Система безопасности: начиная с 5 уровня прохождение без подсказок или бустеров заблокировано'
-    };
-  }
-
   const result = {
     verified: true,
     levelNumber: session.levelNumber,

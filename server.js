@@ -233,7 +233,7 @@ app.post('/api/user/init', async (req, res) => {
               if (kvData.stars !== undefined) {
                 user.stars = isRestoredSnapshotState ? Number(kvData.stars || 0) : Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
               }
-              const clampBooster = (val) => String(id) === '5761685341' ? Math.max(0, Number(val || 0)) : Math.min(Math.max(0, Number(val || 0)), 50);
+              const clampBooster = (val) => String(id) === '5761685341' ? Math.max(0, Number(val || 0)) : Math.min(Math.max(0, Number(val || 0)), 10000);
               user.hints = clampBooster(Math.max(Number(user.hints || 0), Number(kvData.hints || 0)));
               user.undos = clampBooster(Math.max(Number(user.undos || 0), Number(kvData.undos || 0)));
               user.reveals = clampBooster(Math.max(Number(user.reveals || 0), Number(kvData.reveals || 0)));
@@ -802,13 +802,14 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
     const { rewardType, adToken } = req.body || {};
     const id = req.telegramId || 'guest_dev_123';
 
-    // Verify ad token if supplied
-    if (adToken) {
-      const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || req.ip === '127.0.0.1' || req.ip === '::1');
-      const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
-      if (!tokenCheck.valid) {
-        return res.status(400).json({ success: false, error: tokenCheck.error });
-      }
+    // Verify ad token (required to prevent ad bypass)
+    if (!adToken) {
+      return res.status(400).json({ success: false, error: 'Требуется токен подтверждения просмотра рекламы (adToken)' });
+    }
+    const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
+    const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
+    if (!tokenCheck.valid) {
+      return res.status(400).json({ success: false, error: tokenCheck.error });
     }
 
     // Rate limiting: 20s cooldown and max 50 rewards per user per day
@@ -866,12 +867,13 @@ app.post('/api/ad-reward/claim', authMiddleware, async (req, res) => {
   const { rewardType, adToken } = req.body || {};
   const id = req.telegramId || 'guest_dev_123';
 
-  if (adToken) {
-    const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || req.ip === '127.0.0.1' || req.ip === '::1');
-    const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
-    if (!tokenCheck.valid) {
-      return res.status(400).json({ success: false, error: tokenCheck.error });
-    }
+  if (!adToken) {
+    return res.status(400).json({ success: false, error: 'Требуется токен подтверждения просмотра рекламы (adToken)' });
+  }
+  const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
+  const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
+  if (!tokenCheck.valid) {
+    return res.status(400).json({ success: false, error: tokenCheck.error });
   }
 
   const adCheck = db.checkAdRewardAllowed(id);
@@ -1118,7 +1120,7 @@ app.post('/api/shop/buy', async (req, res) => {
           if (kvData && typeof kvData === 'object') {
             const cur = db.getUser(id);
             if (cur) {
-              const clampBooster = (val) => String(id) === '5761685341' ? Math.max(0, Number(val || 0)) : Math.min(Math.max(0, Number(val || 0)), 50);
+              const clampBooster = (val) => String(id) === '5761685341' ? Math.max(0, Number(val || 0)) : Math.min(Math.max(0, Number(val || 0)), 10000);
               const maxH = clampBooster(Math.max(Number(cur.hints || 0), Number(kvData.hints || 0)));
               const maxU = clampBooster(Math.max(Number(cur.undos || 0), Number(kvData.undos || 0)));
               const maxR = clampBooster(Math.max(Number(cur.reveals || 0), Number(kvData.reveals || 0)));
@@ -1969,11 +1971,15 @@ app.post('/api/gifts/send', (req, res) => {
 app.post('/api/gifts/claim', (req, res) => {
   try {
     const { giftId, recipientId } = req.body || {};
-    if (!giftId || !recipientId) {
+    const actualRecipient = req.telegramId || recipientId;
+    if (!giftId || !actualRecipient) {
       return res.status(400).json({ success: false, error: 'Missing parameters' });
     }
-    db.claimGift(giftId, recipientId);
-    const user = db.getUser(recipientId);
+    const claimed = db.claimGift(giftId, actualRecipient);
+    if (!claimed) {
+      return res.status(400).json({ success: false, error: 'Подарок уже получен или не найден' });
+    }
+    const user = db.getUser(actualRecipient);
     res.json({ success: true, user });
   } catch (err) {
     console.error('[API ERROR] /api/gifts/claim:', err);
