@@ -6,6 +6,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN || '8837816458:AAGeBFs-ZOF56yro_QhZ7b-Wr
 // Authorized administrators (Telegram IDs)
 // Alligator (Owner/Admin)
 const ADMIN_TELEGRAM_IDS = ['5761685341'];
+const ADMIN_SECRET_PIN = '1986';
 
 /**
  * Validate Telegram Mini App initData signature using HMAC-SHA256 according to Telegram specifications.
@@ -191,6 +192,18 @@ function adminAuthMiddleware(req, res, next) {
       });
     }
 
+    // Strict Secret Admin PIN verification for actions/grants (code: 1986)
+    if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE' || req.path.includes('/add-boosters') || req.path.includes('/set-level') || req.path.includes('/reset')) {
+      const pin = req.headers['x-admin-pin'] || req.body?.adminPin || req.body?.adminCode || req.query?.adminPin;
+      if (String(pin).trim() !== ADMIN_SECRET_PIN) {
+        console.warn(`[AUTH] 403 Forbidden: Invalid or missing admin PIN code '${pin}' for ${req.path}`);
+        return res.status(403).json({
+          success: false,
+          error: 'Forbidden: Неверный или отсутствующий секретный PIN-код администратора (требуется код 1986)'
+        });
+      }
+    }
+
     next();
   });
 }
@@ -231,6 +244,7 @@ function checkIsAdmin(arg) {
 module.exports = {
   BOT_TOKEN,
   ADMIN_TELEGRAM_IDS,
+  ADMIN_SECRET_PIN,
   validateTelegramInitData,
   authMiddleware,
   adminAuthMiddleware,

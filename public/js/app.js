@@ -3354,6 +3354,7 @@ async function initColorSortApp() {
         ? 'https://colorsortgame.vercel.app'
         : '');
   const NEWS_API_BASE = API_BASE;
+  let sessionAdminPin = null;
 
   function normalizeUserObject(user) {
     if (!user || typeof user !== 'object') return user;
@@ -3477,6 +3478,9 @@ async function initColorSortApp() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500);
       const headers = getAuthHeaders();
+      if (typeof sessionAdminPin !== 'undefined' && sessionAdminPin) {
+        headers['x-admin-pin'] = sessionAdminPin;
+      }
       const initData = getTelegramInitData();
       const options = { 
         method, 
@@ -3488,6 +3492,9 @@ async function initColorSortApp() {
         const payload = { ...body };
         if (initData && !payload.initData) {
           payload.initData = initData;
+        }
+        if (typeof sessionAdminPin !== 'undefined' && sessionAdminPin && !payload.adminPin) {
+          payload.adminPin = sessionAdminPin;
         }
         options.body = JSON.stringify(payload);
       } else if (body) {
@@ -7442,10 +7449,25 @@ async function initColorSortApp() {
     }, 2800);
   }
 
+  // Admin Secret PIN Code Verification (Code: 1986)
+  async function ensureAdminPin() {
+    if (sessionAdminPin === '1986') return sessionAdminPin;
+    const input = prompt('🔐 Введите секретный PIN-код администратора (4 цифры):');
+    if (!input || input.trim() !== '1986') {
+      showInfoModal('🛑', 'Доступ запрещён', 'Неверный секретный PIN-код администратора!');
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
+      return null;
+    }
+    sessionAdminPin = '1986';
+    return sessionAdminPin;
+  }
+
   if (adminAddBottleBtn) {
-    adminAddBottleBtn.addEventListener('click', (e) => {
+    adminAddBottleBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+      const pin = await ensureAdminPin();
+      if (!pin) return;
       currentUser.extraBottles = (currentUser.extraBottles || 0) + 5;
       currentUser.extra_bottles = currentUser.extraBottles;
       normalizeUserObject(currentUser);
@@ -7477,9 +7499,11 @@ async function initColorSortApp() {
   }
 
   if (adminAddHintsBtn) {
-    adminAddHintsBtn.addEventListener('click', (e) => {
+    adminAddHintsBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+      const pin = await ensureAdminPin();
+      if (!pin) return;
       currentUser.hints = (currentUser.hints || 0) + 5;
       normalizeUserObject(currentUser);
       saveLocalUser();
@@ -7506,9 +7530,11 @@ async function initColorSortApp() {
   }
 
   if (adminAddUndosBtn) {
-    adminAddUndosBtn.addEventListener('click', (e) => {
+    adminAddUndosBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+      const pin = await ensureAdminPin();
+      if (!pin) return;
       currentUser.undos = (currentUser.undos || 0) + 5;
       normalizeUserObject(currentUser);
       saveLocalUser();
@@ -7535,9 +7561,11 @@ async function initColorSortApp() {
   }
 
   if (adminAddRevealsBtn) {
-    adminAddRevealsBtn.addEventListener('click', (e) => {
+    adminAddRevealsBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+      const pin = await ensureAdminPin();
+      if (!pin) return;
       currentUser.reveals = (currentUser.reveals || 0) + 5;
       normalizeUserObject(currentUser);
       saveLocalUser();
@@ -7564,9 +7592,11 @@ async function initColorSortApp() {
   }
 
   if (adminAddCoinsBtn) {
-    adminAddCoinsBtn.addEventListener('click', (e) => {
+    adminAddCoinsBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+      const pin = await ensureAdminPin();
+      if (!pin) return;
       const currentBal = parseFloat(currentUser.ton_balance || 0);
       currentUser.ton_balance = Number((currentBal + 5.0).toFixed(4));
       saveLocalUser();
@@ -7588,9 +7618,11 @@ async function initColorSortApp() {
   }
 
   if (adminAddLevelsBtn) {
-    adminAddLevelsBtn.addEventListener('click', (e) => {
+    adminAddLevelsBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+      const pin = await ensureAdminPin();
+      if (!pin) return;
       const added = 5;
       const targetLvl = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel || 0)) + added;
       currentUser.currentLevel = targetLvl;
@@ -7629,9 +7661,11 @@ async function initColorSortApp() {
   }
 
   if (adminAddAllBtn) {
-    adminAddAllBtn.addEventListener('click', (e) => {
+    adminAddAllBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+      const pin = await ensureAdminPin();
+      if (!pin) return;
       currentUser.hints = (currentUser.hints || 0) + 10;
       currentUser.undos = (currentUser.undos || 0) + 10;
       currentUser.reveals = (currentUser.reveals || 0) + 10;
@@ -7681,6 +7715,8 @@ async function initColorSortApp() {
     adminSetExactLevelBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!isAlligatorAdmin(currentUser)) return;
+      const pin = await ensureAdminPin();
+      if (!pin) return;
 
       const rawVal = adminExactLevelInput ? adminExactLevelInput.value : '';
       const targetLvl = parseInt(rawVal, 10);

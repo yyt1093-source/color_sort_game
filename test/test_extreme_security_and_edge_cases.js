@@ -129,8 +129,8 @@ async function runExtremeSecurityAudit() {
       assert.strictEqual(userAfterDoubleClaim.ton_balance, 2.5, 'Balance must remain 2.5 GRAM (NOT doubled!)');
       console.log('   ✅ Double-claim attack blocked! Duplicate claim returned 400, balance not duplicated.\n');
 
-      // 2. Non-admin TON gift creation rejection
-      console.log('2. Testing Non-admin TON gift creation rejection...');
+      // 2. Non-admin TON gift creation rejection & Admin PIN verification
+      console.log('2. Testing Non-admin TON gift creation rejection & Admin PIN verification...');
       const nonAdminGift = db.sendGift({
         fromId: playerTid,
         recipientId: '12345678',
@@ -138,7 +138,32 @@ async function runExtremeSecurityAudit() {
         amount: 5.0
       });
       assert.strictEqual(nonAdminGift.success, false, 'Non-admin cannot create TON gifts');
-      console.log('   ✅ Non-admin TON gift creation successfully rejected.\n');
+
+      // HTTP: Admin attempts to send TON gift without PIN -> 403 Forbidden
+      const adminTonGiftNoPin = await request('/api/gifts/send', {
+        method: 'POST',
+        headers: { 'x-telegram-init-data': adminInitData },
+        body: { recipientId: playerTid, giftType: 'ton', amount: 5.0 }
+      });
+      assert.strictEqual(adminTonGiftNoPin.status, 403, 'Admin without PIN cannot send TON gift');
+
+      // HTTP: Admin attempts to send TON gift with wrong PIN -> 403 Forbidden
+      const adminTonGiftWrongPin = await request('/api/gifts/send', {
+        method: 'POST',
+        headers: { 'x-telegram-init-data': adminInitData, 'x-admin-pin': '1234' },
+        body: { recipientId: playerTid, giftType: 'ton', amount: 5.0 }
+      });
+      assert.strictEqual(adminTonGiftWrongPin.status, 403, 'Admin with wrong PIN cannot send TON gift');
+
+      // HTTP: Admin sends TON gift with correct PIN 1986 -> 200 OK
+      const adminTonGiftValid = await request('/api/gifts/send', {
+        method: 'POST',
+        headers: { 'x-telegram-init-data': adminInitData, 'x-admin-pin': '1986' },
+        body: { recipientId: playerTid, giftType: 'ton', amount: 5.0 }
+      });
+      assert.strictEqual(adminTonGiftValid.status, 200, 'Admin with PIN 1986 can send TON gift');
+      assert.strictEqual(adminTonGiftValid.data.success, true);
+      console.log('   ✅ TON gifts strictly guarded: Non-admin rejected, Admin PIN 1986 required & verified.\n');
 
       // 3. Ad reward bypass prevention (adToken is mandatory)
       console.log('3. Testing Ad reward bypass prevention (missing adToken)...');

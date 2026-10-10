@@ -11,6 +11,7 @@ const playerActiveSession = new Map(); // telegramId -> token
 
 // Active ad watching tokens
 const activeAdTokens = new Map(); // adToken -> { telegramId, rewardType, startedAt, claimed }
+const playerActiveAdTokens = new Map(); // telegramId -> adToken
 
 // Clean expired sessions periodically (older than 2 hours)
 setInterval(() => {
@@ -310,13 +311,20 @@ function verifyLevelCompletion(token, telegramId, clientMovesLog = null) {
  * Ad Watching Verification
  */
 function createAdToken(telegramId, rewardType) {
+  const tid = String(telegramId);
+  const prevToken = playerActiveAdTokens.get(tid);
+  if (prevToken) {
+    activeAdTokens.delete(prevToken);
+  }
+
   const adToken = crypto.randomBytes(24).toString('hex');
   activeAdTokens.set(adToken, {
-    telegramId: String(telegramId),
+    telegramId: tid,
     rewardType: String(rewardType),
     startedAt: Date.now(),
     claimed: false
   });
+  playerActiveAdTokens.set(tid, adToken);
   return adToken;
 }
 
@@ -339,16 +347,17 @@ function verifyAndClaimAdToken(adToken, telegramId, rewardType, isLocalDev = fal
   }
 
   const elapsed = Date.now() - tokenData.startedAt;
-  const minRequiredMs = isLocalDev ? 1500 : 8000; // Real ads are at least 8-15s
+  const minRequiredMs = isLocalDev ? 1500 : 20000; // Real ads are at least 20-30s
   if (elapsed < minRequiredMs) {
     return {
       valid: false,
-      error: `Реклама не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек.).`
+      error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 20-30 сек.).`
     };
   }
 
   tokenData.claimed = true;
   activeAdTokens.delete(String(adToken));
+  playerActiveAdTokens.delete(String(telegramId));
   return { valid: true };
 }
 

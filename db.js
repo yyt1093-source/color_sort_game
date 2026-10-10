@@ -662,10 +662,10 @@ function checkAdRewardAllowed(telegramId) {
   const last = lastStmt.get(String(telegramId));
   if (last && last.created_at) {
     const lastTime = new Date(last.created_at.replace(' ', 'T') + 'Z').getTime();
-    const elapsed = Date.now() - lastTime;
-    if (elapsed < 20000) {
-      const waitSec = Math.ceil((20000 - elapsed) / 1000);
-      return { allowed: false, error: `Подождите ${waitSec} сек. перед получением следующей награды.` };
+    const cooldownMs = 25000; // 25 seconds cooldown between ad rewards
+    if (elapsed < cooldownMs) {
+      const waitSec = Math.ceil((cooldownMs - elapsed) / 1000);
+      return { allowed: false, error: `Подождите ${waitSec} сек. перед получением следующей награды за рекламу.` };
     }
   }
   return { allowed: true };

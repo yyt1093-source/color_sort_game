@@ -7,8 +7,8 @@ console.log('🧪 RUNNING ADMIN PURCHASES & AD REWARDS RESET TEST SUITE');
 const p1Id = 'player_admin_test_1_' + Date.now();
 const p2Id = 'player_admin_test_2_' + Date.now();
 
-const p1 = db.getUser(p1Id, { first_name: 'Alligator Admin', username: 'alligator' });
-const p2 = db.getUser(p2Id, { first_name: 'Regular Player', username: 'player2' });
+const p1 = db.getUser(p1Id, { first_name: 'Alligator Admin', username: 'alligator_' + Date.now() });
+const p2 = db.getUser(p2Id, { first_name: 'Regular Player', username: 'player2_' + Date.now() });
 
 // Add TON balance, wallet, and boosters to player 1
 db.addBonus(p1Id, {
@@ -123,12 +123,12 @@ assert.strictEqual(db.getAdRewardsCount(p2Id), 0, 'Player 2 ad rewards log must 
 
 console.log('✅ Test 2 (resetGramPurchases) PASSED: ALL players reset to 0, assets preserved, ad log cleared');
 
-// 4. TEST: updateUserProgress allows setting boosters to 0 explicitly
-console.log('\n--- Test 3: updateUserProgress explicit zero assignment ---');
+// 4. TEST: updateUserProgress deducts used boosters atomically
+console.log('\n--- Test 3: updateUserProgress atomic booster deduction ---');
 db.addBonus(p1Id, { hints: 10 });
 assert.strictEqual(db.getUser(p1Id).hints, 10);
-db.updateUserProgress(p1Id, { hints: 0, undos: 0, reveals: 0, extraBottles: 0 });
-assert.strictEqual(db.getUser(p1Id).hints, 0, 'updateUserProgress with hints: 0 must set hints to 0');
+db.updateUserProgress(p1Id, { hintsUsed: 10 });
+assert.strictEqual(db.getUser(p1Id).hints, 0, 'updateUserProgress with hintsUsed: 10 must deduct hints to 0');
 
 console.log('✅ Test 3 (updateUserProgress) PASSED');
 

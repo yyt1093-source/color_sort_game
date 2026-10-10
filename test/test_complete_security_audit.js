@@ -159,16 +159,34 @@ async function runAudit() {
       assert.strictEqual(hackGrant.status, 403, 'Non-admin must receive 403');
       console.log('   ✅ Non-admin blocked from granting bonuses (403 Forbidden).');
 
-      // Admin grant
-      const adminGrant = await request('/api/admin/add-boosters', {
+      // Admin grant without PIN (must fail 403)
+      const adminNoPin = await request('/api/admin/add-boosters', {
         method: 'POST',
         headers: { 'x-telegram-init-data': adminInitData },
+        body: { telegramId: playerTid, hints: 5, tonBalance: 10.0 }
+      });
+      assert.strictEqual(adminNoPin.status, 403, 'Admin without PIN must receive 403');
+      console.log('   ✅ Admin request without PIN rejected (403 Forbidden).');
+
+      // Admin grant with incorrect PIN (must fail 403)
+      const adminWrongPin = await request('/api/admin/add-boosters', {
+        method: 'POST',
+        headers: { 'x-telegram-init-data': adminInitData, 'x-admin-pin': '0000' },
+        body: { telegramId: playerTid, hints: 5, tonBalance: 10.0 }
+      });
+      assert.strictEqual(adminWrongPin.status, 403, 'Admin with wrong PIN must receive 403');
+      console.log('   ✅ Admin request with wrong PIN rejected (403 Forbidden).');
+
+      // Legitimate Admin grant with secret PIN 1986
+      const adminGrant = await request('/api/admin/add-boosters', {
+        method: 'POST',
+        headers: { 'x-telegram-init-data': adminInitData, 'x-admin-pin': '1986' },
         body: { telegramId: playerTid, hints: 5, tonBalance: 10.0 }
       });
       assert.strictEqual(adminGrant.status, 200);
       assert.strictEqual(adminGrant.data.user.hints, 5);
       assert.strictEqual(adminGrant.data.user.ton_balance, 10.0);
-      console.log('   ✅ Admin successfully credited 5 hints and 10.0 GRAM.\n');
+      console.log('   ✅ Admin with secret PIN 1986 successfully credited 5 hints and 10.0 GRAM.\n');
 
       // 6. Legitimate Shop Purchase with verified GRAM
       console.log('6. Testing legitimate shop purchase with verified GRAM...');

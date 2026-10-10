@@ -46,7 +46,7 @@ console.log('\n--- SECTION 2: Database User Accounts & Progress ---');
 const testId = 'test_user_' + Date.now();
 
 runTest('Create/Get User Account', () => {
-  const user = db.getUser(testId, { first_name: 'ТестовыйИгрок', username: 'testplayer' });
+  const user = db.getUser(testId, { first_name: 'ТестовыйИгрок', username: 'testplayer_' + Date.now() });
   assert.ok(user, 'User object should be created');
   assert.strictEqual(user.first_name, 'ТестовыйИгрок');
   assert.strictEqual(user.max_level, 0);
@@ -58,12 +58,11 @@ runTest('Update User Progress after Level Completion', () => {
   const updated = db.updateUserProgress(testId, {
     currentLevel: 2,
     maxLevel: 2,
-    starsAdded: 3,
+    allowLevelIncrease: true,
     coinsAdded: 50
   });
   assert.strictEqual(updated.current_level, 2);
   assert.strictEqual(updated.max_level, 2);
-  assert.strictEqual(updated.stars, 3);
 });
 
 // ------------------------------------------------------------------
@@ -219,7 +218,7 @@ runTest('Reject Referral for Existing Active Player (max_level > 1)', () => {
   const veteranPlayerId = 'veteran_player_' + Date.now();
   const vetUname = 'vet_' + Date.now();
   db.getUser(veteranPlayerId, { first_name: 'ОпытныйИгрок' });
-  db.updateUserProgress(veteranPlayerId, { currentLevel: 5, maxLevel: 5, starsAdded: 15, coinsAdded: 50 });
+  db.updateUserProgress(veteranPlayerId, { currentLevel: 5, maxLevel: 5, allowLevelIncrease: true, coinsAdded: 50 });
   const vetRes = db.registerReferral(refOwnerId, veteranPlayerId, 'ОпытныйИгрок', vetUname);
   assert.strictEqual(vetRes.success, false);
   assert.strictEqual(vetRes.error, 'existing_player');
