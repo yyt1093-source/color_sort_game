@@ -347,11 +347,11 @@ function verifyAndClaimAdToken(adToken, telegramId, rewardType, isLocalDev = fal
   }
 
   const elapsed = Date.now() - tokenData.startedAt;
-  const minRequiredMs = isLocalDev ? 1500 : 20000; // Real ads are at least 20-30s
+  const minRequiredMs = isLocalDev ? 1500 : 14000; // 14 seconds minimum for 15s short video
   if (elapsed < minRequiredMs) {
     return {
       valid: false,
-      error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 20-30 сек.).`
+      error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 15 сек.).`
     };
   }
 

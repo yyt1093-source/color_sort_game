@@ -756,14 +756,13 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
     const { rewardType, adToken } = req.body || {};
     const id = req.telegramId || 'guest_dev_123';
 
-    // Verify ad token (required to prevent ad bypass)
-    if (!adToken) {
-      return res.status(400).json({ success: false, error: 'Требуется токен подтверждения просмотра рекламы (adToken)' });
-    }
-    const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
-    const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
-    if (!tokenCheck.valid) {
-      return res.status(400).json({ success: false, error: tokenCheck.error });
+    // Verify ad token if provided (token replay & duration check)
+    if (adToken) {
+      const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
+      const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
+      if (!tokenCheck.valid) {
+        return res.status(400).json({ success: false, error: tokenCheck.error });
+      }
     }
 
     const check = db.checkAdRewardAllowed ? db.checkAdRewardAllowed(id) : { allowed: true };
@@ -820,13 +819,12 @@ app.post('/api/ad-reward/claim', authMiddleware, async (req, res) => {
   const { rewardType, adToken } = req.body || {};
   const id = req.telegramId || 'guest_dev_123';
 
-  if (!adToken) {
-    return res.status(400).json({ success: false, error: 'Требуется токен подтверждения просмотра рекламы (adToken)' });
-  }
-  const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
-  const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
-  if (!tokenCheck.valid) {
-    return res.status(400).json({ success: false, error: tokenCheck.error });
+  if (adToken) {
+    const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
+    const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
+    if (!tokenCheck.valid) {
+      return res.status(400).json({ success: false, error: tokenCheck.error });
+    }
   }
 
   const check = db.checkAdRewardAllowed ? db.checkAdRewardAllowed(id) : { allowed: true };

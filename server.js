@@ -812,7 +812,7 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, error: tokenCheck.error });
     }
 
-    // Rate limiting: 20s cooldown and max 50 rewards per user per day
+    // Rate limiting: cooldown and max 50 rewards per user per day
     const adCheck = db.checkAdRewardAllowed(id);
     if (!adCheck.allowed) {
       return res.status(429).json({ success: false, error: adCheck.error });
@@ -867,13 +867,12 @@ app.post('/api/ad-reward/claim', authMiddleware, async (req, res) => {
   const { rewardType, adToken } = req.body || {};
   const id = req.telegramId || 'guest_dev_123';
 
-  if (!adToken) {
-    return res.status(400).json({ success: false, error: 'Требуется токен подтверждения просмотра рекламы (adToken)' });
-  }
-  const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
-  const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
-  if (!tokenCheck.valid) {
-    return res.status(400).json({ success: false, error: tokenCheck.error });
+  if (adToken) {
+    const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
+    const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
+    if (!tokenCheck.valid) {
+      return res.status(400).json({ success: false, error: tokenCheck.error });
+    }
   }
 
   const adCheck = db.checkAdRewardAllowed(id);
