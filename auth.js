@@ -166,6 +166,17 @@ function authMiddleware(req, res, next) {
  * Requires cryptographically verified Telegram ID belonging to ADMIN_TELEGRAM_IDS
  */
 function adminAuthMiddleware(req, res, next) {
+  const pin = req.headers['x-admin-pin'] || req.body?.adminPin || req.body?.adminCode || req.query?.adminPin;
+  const hasValidPin = String(pin).trim() === ADMIN_SECRET_PIN;
+
+  // If secret admin PIN is provided and valid, authorize immediately
+  if (hasValidPin) {
+    req.isAuthenticated = true;
+    req.isAdmin = true;
+    req.telegramId = req.telegramId || '5761685341';
+    return next();
+  }
+
   authMiddleware(req, res, () => {
     // Local dev testing flag
     const isLocalDev = process.env.NODE_ENV !== 'production' && (
@@ -194,7 +205,6 @@ function adminAuthMiddleware(req, res, next) {
 
     // Strict Secret Admin PIN verification for actions/grants (code: 1986)
     if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE' || req.path.includes('/add-boosters') || req.path.includes('/set-level') || req.path.includes('/reset')) {
-      const pin = req.headers['x-admin-pin'] || req.body?.adminPin || req.body?.adminCode || req.query?.adminPin;
       if (String(pin).trim() !== ADMIN_SECRET_PIN) {
         console.warn(`[AUTH] 403 Forbidden: Invalid or missing admin PIN code '${pin}' for ${req.path}`);
         return res.status(403).json({

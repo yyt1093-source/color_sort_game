@@ -103,8 +103,21 @@ app.use('/api/admin', adminAuthMiddleware);
 /**
  * Public client config (Adsgram block ID, TON deposit address, etc.)
  */
-app.get('/api/config', (req, res) => {
-  const maint = db.getMaintenanceStatus();
+app.get('/api/config', async (req, res) => {
+  let maint = db.getMaintenanceStatus();
+  if (!maint.active) {
+    try {
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      const r = await fetch(`https://kvdb.io/${bucket}/system_maintenance?_cb=${Date.now()}`, { signal: AbortSignal.timeout(1500) });
+      if (r.ok) {
+        const cloudMaint = await r.json();
+        if (cloudMaint && cloudMaint.active) {
+          db.setMaintenanceStatus(true, cloudMaint.message);
+          maint = db.getMaintenanceStatus();
+        }
+      }
+    } catch (e) {}
+  }
   res.json({
     success: true,
     maintenance: maint.active,
@@ -2302,9 +2315,22 @@ app.post('/api/admin/code-backups', async (req, res) => {
 /**
  * Admin: Get Maintenance Mode Status
  */
-app.get('/api/admin/maintenance', (req, res) => {
+app.get('/api/admin/maintenance', async (req, res) => {
   try {
-    const maint = db.getMaintenanceStatus();
+    let maint = db.getMaintenanceStatus();
+    if (!maint.active) {
+      try {
+        const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+        const r = await fetch(`https://kvdb.io/${bucket}/system_maintenance?_cb=${Date.now()}`, { signal: AbortSignal.timeout(1500) });
+        if (r.ok) {
+          const cloudMaint = await r.json();
+          if (cloudMaint && cloudMaint.active) {
+            db.setMaintenanceStatus(true, cloudMaint.message);
+            maint = db.getMaintenanceStatus();
+          }
+        }
+      } catch (e) {}
+    }
     res.json({
       success: true,
       active: maint.active,
@@ -2325,6 +2351,22 @@ app.post('/api/admin/maintenance', async (req, res) => {
   try {
     const { active, message } = req.body || {};
     const updated = db.setMaintenanceStatus(!!active, message);
+
+    // Sync to KVDB cloud storage for 24/7 cross-instance persistence
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    try {
+      await fetch(`https://kvdb.io/${bucket}/system_maintenance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          active: updated.active,
+          message: updated.message,
+          updatedAt: Date.now()
+        }),
+        signal: AbortSignal.timeout(2000)
+      });
+    } catch (e) {}
+
     console.log(`[ADMIN] Maintenance mode updated: active=${updated.active}, message="${updated.message}"`);
     res.json({
       success: true,
