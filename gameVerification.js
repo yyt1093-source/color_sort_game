@@ -87,13 +87,14 @@ function executePour(bottles, fromIdx, toIdx, capacity = 5) {
 function startSession(telegramId, levelNumber, userMaxLevel) {
   const idStr = String(telegramId);
   const targetLevel = Math.max(1, Number(levelNumber || 1));
-  const maxAllowed = Math.max(1, Number(userMaxLevel || 1));
+  const isAdmin = idStr === '5761685341';
+  const effectiveMax = isAdmin ? 500 : Math.max(1, Number(userMaxLevel || 1));
 
   // Player can only play levels up to maxLevel (or maxLevel + 1 if replaying or current)
-  if (targetLevel > maxAllowed + 1) {
+  if (!isAdmin && targetLevel > effectiveMax + 1) {
     return {
       success: false,
-      error: `Недопустимый уровень ${targetLevel}. Ваш максимальный уровень: ${maxAllowed}.`
+      error: `Недопустимый уровень ${targetLevel}. Ваш максимальный уровень: ${effectiveMax}.`
     };
   }
 
@@ -360,20 +361,22 @@ function verifyLevelCompletion(token, telegramId, clientMovesLog = null, metadat
     };
   }
 
-  // Realistic minimum moves check based on level difficulty
+  const isAdmin = tid === '5761685341';
+
+  // Realistic minimum moves check based on level difficulty (exempt admin)
   const minRealisticMoves = getMinRealisticMoves(levelNumber, colorCount);
   const totalMoves = Math.max(validMovesCount, (session ? session.moves.length : 0), (metadata ? Number(metadata.movesCount || 0) : 0));
 
-  if (totalMoves < minRealisticMoves) {
+  if (!isAdmin && totalMoves < minRealisticMoves) {
     return {
       verified: false,
       error: `Подозрительная активность: уровень ${levelNumber} завершён за ${totalMoves} ходов (минимально требуется от ${minRealisticMoves} ходов)`
     };
   }
 
-  // Realistic completion time check (anti-bot safeguard)
+  // Realistic completion time check (anti-bot safeguard, exempt admin)
   const durationMs = metadata && metadata.durationMs ? Number(metadata.durationMs) : (session ? Date.now() - session.startedAt : 0);
-  if (durationMs > 0) {
+  if (!isAdmin && durationMs > 0) {
     if (durationMs < 2000 || (totalMoves > 0 && durationMs / totalMoves < 40)) {
       return {
         verified: false,

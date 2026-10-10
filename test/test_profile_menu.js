@@ -20,16 +20,16 @@ if (opens !== closes) {
   process.exit(1);
 }
 
-// Verify that profileTabsNav contains ONLY 2 tabs (no admin tab)
+// Verify that profileTabsNav contains profileTabBtnAdmin (starts hidden for regular players)
 const navStart = html.indexOf('id="profileTabsNav"');
 const navEnd = html.indexOf('</div>', navStart);
 const navSlice = html.substring(navStart, navEnd);
 
-if (navSlice.includes('profileTabBtnAdmin') || navSlice.includes('🛡️')) {
-  console.error('ERROR: profileTabsNav still contains admin shield button!');
+if (!navSlice.includes('id="profileTabBtnAdmin"') || !navSlice.includes('🛡️')) {
+  console.error('ERROR: profileTabsNav missing admin shield button for Alligator!');
   process.exit(1);
 }
-console.log('✅ profileTabsNav correctly has ONLY 2 tabs (Profile & Referrals)!');
+console.log('✅ profileTabsNav correctly includes profileTabBtnAdmin for Alligator!');
 
 const requiredIds = [
   'profileTabsNav',

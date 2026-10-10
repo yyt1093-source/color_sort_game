@@ -361,24 +361,32 @@ app.post('/api/user/sync', authMiddleware, (req, res) => {
       existingUser = db.getUser(id, { first_name: firstName, username, photo_url: photoUrl });
     }
 
-    // STRICT ANTI-CHEAT: maxLevel can NEVER be increased via sync!
-    const safeCurrentLevel = currentLevel
-      ? Math.min(existingUser.max_level, Math.max(1, Number(currentLevel)))
-      : existingUser.current_level;
+    const isAlligator = String(id) === '5761685341';
+
+    // STRICT ANTI-CHEAT: regular players cannot increase maxLevel via sync, but Alligator is owner/admin
+    const safeCurrentLevel = isAlligator && currentLevel
+      ? Math.max(existingUser.max_level, Number(currentLevel))
+      : (currentLevel
+          ? Math.min(existingUser.max_level, Math.max(1, Number(currentLevel)))
+          : existingUser.current_level);
+
+    const safeMaxLevel = isAlligator
+      ? Math.max(existingUser.max_level, Number(req.body?.maxLevel || currentLevel || existingUser.max_level))
+      : existingUser.max_level;
 
     const updatedUser = db.updateUserProgress(id, {
       firstName,
       username,
       photoUrl,
       currentLevel: safeCurrentLevel,
-      maxLevel: existingUser.max_level,
+      maxLevel: safeMaxLevel,
       hintsUsed: Math.max(0, Number(hintsUsed || 0)),
       undosUsed: Math.max(0, Number(undosUsed || 0)),
       revealsUsed: Math.max(0, Number(revealsUsed || 0)),
       extraBottlesUsed: Math.max(0, Number(extraBottlesUsed || 0)),
       shufflesUsed: Math.max(0, Number(shufflesUsed || 0)),
       totalMoves: Math.max(0, Number(totalMoves || 0)),
-      allowLevelIncrease: false // Levels can ONLY increase via /api/game/complete-level
+      allowLevelIncrease: isAlligator // Alligator can sync level progress
     });
 
     // Also check and apply daily boosters if due
