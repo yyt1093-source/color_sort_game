@@ -519,14 +519,20 @@ app.post('/api/game/use-booster', authMiddleware, async (req, res) => {
  */
 app.post('/api/game/complete-level', authMiddleware, async (req, res) => {
   try {
-    const { sessionToken, moves } = req.body || {};
+    const { sessionToken, moves, levelNumber, boostersUsed, movesCount, durationMs } = req.body || {};
     const id = req.telegramId || 'guest_dev_123';
 
     // Verify session victory on server
-    const verifyRes = gameVerification.verifyLevelCompletion(sessionToken, id, moves);
+    const verifyRes = gameVerification.verifyLevelCompletion(sessionToken, id, moves, {
+      levelNumber,
+      boostersUsed,
+      movesCount,
+      durationMs
+    });
     if (!verifyRes.verified) {
       return res.status(400).json({
         success: false,
+        unverified: true,
         error: verifyRes.error || 'Проверка прохождения уровня на сервере не удалась'
       });
     }

@@ -224,84 +224,177 @@ function applyBooster(token, telegramId, boosterType) {
   return { success: false, error: 'Неизвестный тип бустера' };
 }
 
+function getMinRealisticMoves(levelNumber, colorCount) {
+  const lvl = Math.max(1, Number(levelNumber || 1));
+  const c = Math.max(5, Number(colorCount || 5));
+  if (lvl === 1) return 6;
+  if (lvl === 2) return 8;
+  if (lvl === 3) return 10;
+  if (lvl === 4) return 12;
+  if (lvl === 5) return 14;
+  // Levels > 5: difficulty increases significantly (9+ colors, hidden layers)
+  return Math.max(15, Math.floor(c * 1.3));
+}
+
 /**
  * Verify level completion (checks victory condition & move log replay)
  */
-function verifyLevelCompletion(token, telegramId, clientMovesLog = null) {
-  const session = sessions.get(token);
-  if (!session) {
-    return { verified: false, error: 'Игровая сессия не найдена или уже завершена' };
+function verifyLevelCompletion(token, telegramId, clientMovesLog = null, metadata = null) {
+  const tid = String(telegramId);
+  let session = token ? sessions.get(token) : null;
+  if (session && session.telegramId !== tid) {
+    return { verified: false, error: 'Доступ запрещён: неверный ID игрока' };
   }
-  if (session.telegramId !== String(telegramId)) {
-    return { verified: false, error: 'Доступ запрещён' };
+
+  let levelNumber = session ? session.levelNumber : (metadata && metadata.levelNumber ? Number(metadata.levelNumber) : null);
+  if (!levelNumber) {
+    return { verified: false, error: 'Игровая сессия не найдена или не указан номер уровня' };
+  }
+
+  let capacity = session ? session.capacity : 5;
+  let colorCount = session ? session.colorCount : 5;
+  let initialBottles = session ? session.initialBottles : null;
+  let boostersUsed = session ? session.boostersUsed : {
+    hints: 0,
+    undos: 0,
+    reveals: 0,
+    extraBottles: 0
+  };
+
+  // Reconstruct level if session expired or missing due to serverless cold start
+  if (!initialBottles) {
+    try {
+      const generated = levelGenerator.generateLevel(levelNumber);
+      capacity = generated.capacity || 5;
+      colorCount = generated.colorCount || 5;
+      initialBottles = JSON.parse(JSON.stringify(generated.bottles));
+    } catch (e) {
+      return { verified: false, error: 'Не удалось сгенерировать уровень для проверки' };
+    }
+  }
+
+  // Merge client boosters metadata if provided
+  if (metadata && metadata.boostersUsed && typeof metadata.boostersUsed === 'object') {
+    const metaBoost = metadata.boostersUsed;
+    boostersUsed.hints = Math.max(boostersUsed.hints || 0, Number(metaBoost.hints || 0));
+    boostersUsed.undos = Math.max(boostersUsed.undos || 0, Number(metaBoost.undos || 0));
+    boostersUsed.reveals = Math.max(boostersUsed.reveals || 0, Number(metaBoost.reveals || 0));
+    boostersUsed.extraBottles = Math.max(boostersUsed.extraBottles || 0, Number(metaBoost.extraBottles || metaBoost.extra_bottles || 0));
   }
 
   let finalWon = false;
+  let validMovesCount = 0;
 
-  // Option 1: Validate session current bottles
-  if (session.isWon || isLevelWon(session.currentBottles, session.capacity)) {
+  // Option 1: Session state check if moves were tracked in real-time
+  if (session && (session.isWon || isLevelWon(session.currentBottles, session.capacity))) {
     finalWon = true;
+    validMovesCount = session.moves.length;
   }
 
-  // Option 2: Replay moves log if provided (for network resiliency)
-  if (!finalWon && Array.isArray(clientMovesLog) && clientMovesLog.length > 0) {
-    const replayBottles = JSON.parse(JSON.stringify(session.initialBottles));
-    // Add extra bottles if used
-    for (let i = 0; i < (session.boostersUsed.extraBottles || 0); i++) {
+  // Option 2: Replay moves log (authoritative check from initial bottles)
+  if (Array.isArray(clientMovesLog) && clientMovesLog.length > 0) {
+    const replayBottles = JSON.parse(JSON.stringify(initialBottles));
+    
+    // Check how many extra bottles are explicitly in the move log vs reported in boostersUsed
+    const explicitExtraInLog = clientMovesLog.filter(m => m && m.type === 'extra_bottle').length;
+    const extraToAddAtStart = Math.max(0, (boostersUsed.extraBottles || 0) - explicitExtraInLog);
+    for (let i = 0; i < extraToAddAtStart; i++) {
       replayBottles.push([]);
     }
 
     let replayValid = true;
-    for (const m of clientMovesLog) {
+    let replayError = null;
+    let replayedPours = 0;
+
+    for (let i = 0; i < clientMovesLog.length; i++) {
+      const m = clientMovesLog[i];
+      if (!m) continue;
+
       if (m.type === 'extra_bottle') {
         replayBottles.push([]);
         continue;
       }
+
       const from = m.from !== undefined ? m.from : m.fromIndex;
       const to = m.to !== undefined ? m.to : m.toIndex;
-      if (from !== undefined && to !== undefined) {
-        if (!canPour(replayBottles, from, to, session.capacity)) {
-          replayValid = false;
-          break;
-        }
-        executePour(replayBottles, from, to, session.capacity);
+      if (from === undefined || to === undefined) continue;
+
+      const fromIdx = Number(from);
+      const toIdx = Number(to);
+
+      if (fromIdx < 0 || fromIdx >= replayBottles.length || toIdx < 0 || toIdx >= replayBottles.length) {
+        replayValid = false;
+        replayError = `Ход #${i + 1}: неверный индекс колбочки (${fromIdx + 1} -> ${toIdx + 1})`;
+        break;
       }
+
+      if (!canPour(replayBottles, fromIdx, toIdx, capacity)) {
+        replayValid = false;
+        replayError = `Ход #${i + 1}: невозможный перелив из колбочки ${fromIdx + 1} в ${toIdx + 1}`;
+        break;
+      }
+
+      executePour(replayBottles, fromIdx, toIdx, capacity);
+      replayedPours++;
     }
 
-    if (replayValid && isLevelWon(replayBottles, session.capacity)) {
+    if (replayValid && isLevelWon(replayBottles, capacity)) {
       finalWon = true;
-      session.currentBottles = replayBottles;
-      session.isWon = true;
+      validMovesCount = replayedPours;
+      if (session) {
+        session.currentBottles = replayBottles;
+        session.isWon = true;
+      }
+    } else if (!replayValid) {
+      return {
+        verified: false,
+        error: replayError || 'Ошибка воспроизведения ходов: недопустимая комбинация переливаний'
+      };
     }
   }
 
   if (!finalWon) {
     return {
       verified: false,
-      error: 'Уровень не завершён: колбочки ещё не отсортированы по цветам'
+      error: 'Уровень не завершён: не все цвета собраны в полные колбочки'
     };
   }
 
-  // Check move count sanity: a level cannot be solved in 0 or 1 moves
-  const totalMoves = session.moves.length || (Array.isArray(clientMovesLog) ? clientMovesLog.length : 0);
-  if (totalMoves < 3) {
+  // Realistic minimum moves check based on level difficulty
+  const minRealisticMoves = getMinRealisticMoves(levelNumber, colorCount);
+  const totalMoves = Math.max(validMovesCount, (session ? session.moves.length : 0), (metadata ? Number(metadata.movesCount || 0) : 0));
+
+  if (totalMoves < minRealisticMoves) {
     return {
       verified: false,
-      error: 'Подозрительная активность: уровень завершён без достаточного количества ходов'
+      error: `Подозрительная активность: уровень ${levelNumber} завершён за ${totalMoves} ходов (минимально требуется от ${minRealisticMoves} ходов)`
     };
+  }
+
+  // Realistic completion time check (anti-bot safeguard)
+  const durationMs = metadata && metadata.durationMs ? Number(metadata.durationMs) : (session ? Date.now() - session.startedAt : 0);
+  if (durationMs > 0) {
+    if (durationMs < 2000 || (totalMoves > 0 && durationMs / totalMoves < 40)) {
+      return {
+        verified: false,
+        error: 'Подозрительная активность: нереалистичная скорость переливаний (защита от ботов)'
+      };
+    }
   }
 
   const result = {
     verified: true,
-    levelNumber: session.levelNumber,
+    levelNumber,
     movesCount: totalMoves,
-    boostersUsed: session.boostersUsed
+    boostersUsed
   };
 
   // Clean up session
-  sessions.delete(token);
-  if (playerActiveSession.get(String(telegramId)) === token) {
-    playerActiveSession.delete(String(telegramId));
+  if (token) {
+    sessions.delete(token);
+    if (playerActiveSession.get(tid) === token) {
+      playerActiveSession.delete(tid);
+    }
   }
 
   return result;
@@ -366,6 +459,7 @@ module.exports = {
   applyMove,
   applyBooster,
   verifyLevelCompletion,
+  getMinRealisticMoves,
   createAdToken,
   verifyAndClaimAdToken,
   isLevelWon,
