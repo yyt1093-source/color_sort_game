@@ -4044,11 +4044,6 @@ async function initColorSortApp() {
 
   async function advanceToNextLevel() {
     if (isNextLevelLoading) return;
-    const currentLvl = Number(currentUser.currentLevel || 1);
-    if (currentLvl >= 5 && Number(engine.boostersUsedInLevel || 0) <= 0) {
-      console.warn('[Security] advanceToNextLevel blocked: level >= 5 without boosters');
-      return;
-    }
     isNextLevelLoading = true;
     if (winAutoAdvanceTimer) {
       clearTimeout(winAutoAdvanceTimer);
@@ -4059,7 +4054,7 @@ async function initColorSortApp() {
     isNextLevelLoading = false;
   }
 
-  engine.onWin = ({ levelNumber, moves, boostersUsed, isSecurityViolation }) => {
+  engine.onWin = ({ levelNumber, moves, boostersUsed }) => {
     if (window.__seasonResetKicking || (typeof isSeasonResetKicked !== 'undefined' && isSeasonResetKicked)) {
       return;
     }
@@ -4072,39 +4067,6 @@ async function initColorSortApp() {
       return;
     }
 
-    const lvlNum = Number(levelNumber || currentUser.currentLevel || 1);
-    const totalBoosters = Number(boostersUsed !== undefined ? boostersUsed : (engine.boostersUsedInLevel || 0));
-
-    // Security Anti-Cheat Check: Starting from Level 5, completing a level without hints/boosters is strictly forbidden!
-    if (lvlNum >= 5 && (isSecurityViolation || totalBoosters <= 0)) {
-      console.warn(`[Security Alert] Completion of level ${lvlNum} blocked: 0 hints/boosters used!`);
-      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playError();
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('error');
-
-      if (securityAlertTitle) securityAlertTitle.textContent = t('securityAlertTitle');
-      if (securityAlertSubtitle) securityAlertSubtitle.textContent = t('securityAlertSubtitle');
-      if (securityAlertRestartBtn) {
-        const btnText = typeof t('securityAlertRestartBtn') === 'function'
-          ? t('securityAlertRestartBtn')(lvlNum)
-          : `${t('securityAlertRestartBtn')} ${lvlNum}`;
-        securityAlertRestartBtn.textContent = btnText;
-      }
-
-      if (securityAlertModal) {
-        openModal(securityAlertModal);
-      } else {
-        alert(`🛑 Система безопасности Color Sort\nЗамечены хакерские действия!`);
-        if (currentLevelData) {
-          engine.startLevel(currentLevelData);
-        } else {
-          loadCurrentLevel();
-        }
-        if (renderer && renderer.renderBoard) renderer.renderBoard(engine);
-        updateHeaderUI();
-      }
-      return;
-    }
-
     if (renderer && renderer.triggerWinConfetti) renderer.triggerWinConfetti();
     
     // Server-verified victory progression
@@ -4113,6 +4075,7 @@ async function initColorSortApp() {
     activeGameSessionToken = null;
     activeMovesLog = [];
 
+    const previousMaxLevel = currentUser.maxLevel;
     currentUser.currentLevel = levelNumber + 1;
     currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, currentUser.currentLevel);
     currentUser.level = currentUser.maxLevel;
@@ -4128,6 +4091,17 @@ async function initColorSortApp() {
     }).then(res => {
       if (res && res.success && res.user) {
         currentUser = normalizeUserObject(res.user);
+        saveLocalUser();
+        updateHeaderUI();
+      } else {
+        console.warn('[Complete Level Verification Failed]', res && res.error);
+        if (res && res.user) {
+          currentUser = normalizeUserObject(res.user);
+        } else {
+          currentUser.currentLevel = levelNumber;
+          currentUser.maxLevel = previousMaxLevel;
+          currentUser.level = previousMaxLevel;
+        }
         saveLocalUser();
         updateHeaderUI();
       }

@@ -233,19 +233,16 @@
       const isWin = this.isLevelWon();
 
       if (isWin && !this.isWon) {
-        const isSecurityViolation = (this.currentLevel >= 5 && (this.boostersUsedInLevel || 0) <= 0);
-        if (!isSecurityViolation) {
-          this.isWon = true;
-          if (typeof window !== 'undefined' && window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playVictory();
-          if (typeof window !== 'undefined' && window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-        }
+        this.isWon = true;
+        if (typeof window !== 'undefined' && window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playVictory();
+        if (typeof window !== 'undefined' && window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (this.onWin) {
           this.onWin({ 
             levelNumber: this.currentLevel, 
             moves: this.movesCount, 
             stars: this.getStarRating(),
             boostersUsed: this.boostersUsedInLevel || 0,
-            isSecurityViolation: isSecurityViolation
+            isSecurityViolation: false
           });
         }
       }
