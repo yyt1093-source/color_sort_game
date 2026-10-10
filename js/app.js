@@ -2443,9 +2443,11 @@ async function initColorSortApp() {
   const ALLIGATOR_TELEGRAM_ID = '5761685341';
 
   function isAlligatorAdmin(user) {
+    if (!user) user = currentUser;
     if (!user) return false;
-    const tid = String(user.telegramId || '').trim();
-    return tid === ALLIGATOR_TELEGRAM_ID || tid === '5761685341';
+    const tid = String(user.telegramId || user.id || '').trim();
+    const uname = String(user.username || user.userName || '').toLowerCase().trim();
+    return tid === ALLIGATOR_TELEGRAM_ID || tid === '5761685341' || uname === 'alligator' || uname === '@alligator' || (typeof sessionAdminPin !== 'undefined' && !!sessionAdminPin);
   }
 
   function applyLanguage(lang) {
@@ -2465,6 +2467,13 @@ async function initColorSortApp() {
     if (profileTabTitleProfile) profileTabTitleProfile.textContent = t('profileTabLabel');
     const profileTabTitleReferrals = document.getElementById('profileTabTitleReferrals');
     if (profileTabTitleReferrals) profileTabTitleReferrals.textContent = t('referralsTabLabel');
+    const profileTabTitleAdmin = document.getElementById('profileTabTitleAdmin');
+    if (profileTabTitleAdmin) profileTabTitleAdmin.textContent = t('adminTabLabel') || 'Админ';
+    const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
+    if (profileTabBtnAdmin) {
+      profileTabBtnAdmin.title = t('adminTabLabel') || 'Панель Администратора';
+      profileTabBtnAdmin.setAttribute('aria-label', t('adminTabLabel') || 'Панель Администратора');
+    }
     if (langSectionTitle) langSectionTitle.textContent = t('langSectionTitle');
     if (restartBtnLabel) restartBtnLabel.textContent = t('restartBtn');
     if (undoBtnLabel) undoBtnLabel.textContent = t('undoBtn');
@@ -7217,9 +7226,9 @@ async function initColorSortApp() {
 
 
 
-  // Profile Tabs Navigation System (Ровно 2 вкладки: Профиль и Рефералы)
+  // Profile Tabs Navigation System (Профиль, Рефералы, Панель Администратора)
   function switchProfileTab(tabName) {
-    const tabs = ['profile', 'referrals'];
+    const tabs = ['profile', 'referrals', 'admin'];
     tabs.forEach(name => {
       const btn = document.getElementById(`profileTabBtn${name.charAt(0).toUpperCase() + name.slice(1)}`);
       const pane = document.getElementById(`profileTabContent${name.charAt(0).toUpperCase() + name.slice(1)}`);
@@ -7241,6 +7250,21 @@ async function initColorSortApp() {
 
     if (tabName === 'referrals') {
       loadReferralsData();
+    } else if (tabName === 'admin') {
+      if (adminPanelSection) {
+        adminPanelSection.classList.remove('hidden');
+      }
+      const navTabs = document.querySelector('.admin-nav-tabs');
+      if (navTabs) {
+        navTabs.style.setProperty('display', 'grid', 'important');
+        navTabs.style.setProperty('grid-template-columns', 'repeat(2, 1fr)', 'important');
+        navTabs.style.setProperty('gap', '8px', 'important');
+        navTabs.style.setProperty('width', '100%', 'important');
+      }
+      if (typeof loadAdminWalletsList === 'function') loadAdminWalletsList();
+      if (typeof loadAdminNewsData === 'function') loadAdminNewsData();
+      if (typeof loadAdminCodeBackups === 'function') loadAdminCodeBackups();
+      if (typeof loadAdminMaintenanceStatus === 'function') loadAdminMaintenanceStatus();
     }
 
     const profileModalContent = document.querySelector('.profile-modal-content');
@@ -7256,6 +7280,22 @@ async function initColorSortApp() {
   // Profile & Language Modal Event Listeners
   function openProfileMenu() {
     const isUserAdmin = isAlligatorAdmin(currentUser);
+    const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
+    if (profileTabBtnAdmin) {
+      if (isUserAdmin) {
+        profileTabBtnAdmin.classList.remove('hidden');
+      } else {
+        profileTabBtnAdmin.classList.add('hidden');
+      }
+    }
+    const profileAdminBadge = document.getElementById('profileAdminBadge');
+    if (profileAdminBadge) {
+      if (isUserAdmin) {
+        profileAdminBadge.classList.remove('hidden');
+      } else {
+        profileAdminBadge.classList.add('hidden');
+      }
+    }
     const profileAdminQuickBtn = document.getElementById('profileAdminQuickBtn');
     if (profileAdminQuickBtn) {
       if (isUserAdmin) {
@@ -7265,8 +7305,7 @@ async function initColorSortApp() {
       }
     }
     if (adminPanelSection) {
-      // Сворачиваем панель администратора по умолчанию при открытии меню
-      adminPanelSection.classList.add('hidden');
+      adminPanelSection.classList.remove('hidden');
     }
     const profileAdminQuickArrow = document.getElementById('profileAdminQuickArrow');
     if (profileAdminQuickArrow) {
@@ -7328,7 +7367,7 @@ async function initColorSortApp() {
     });
   }
 
-  // Profile Modal Tab Switchers (Только 2 вкладки: Профиль и Рефералы)
+  // Profile Modal Tab Switchers (Профиль, Рефералы, Админ)
   const profileTabBtnProfile = document.getElementById('profileTabBtnProfile');
   if (profileTabBtnProfile) {
     profileTabBtnProfile.addEventListener('click', (e) => {
@@ -7345,67 +7384,19 @@ async function initColorSortApp() {
     });
   }
 
-  // Toggle Admin Panel in Bottom of Profile
-  function toggleAdminPanel(forceState) {
-    if (!adminPanelSection) return;
-    const isCurrentlyHidden = adminPanelSection.classList.contains('hidden');
-    const willBeHidden = typeof forceState === 'boolean' ? forceState : !isCurrentlyHidden;
-
-    const quickBtn = document.getElementById('profileAdminQuickBtn');
-    const arrow = document.getElementById('profileAdminQuickArrow');
-
-    if (willBeHidden) {
-      adminPanelSection.classList.add('hidden');
-      if (arrow) arrow.textContent = '▼';
-      if (quickBtn) {
-        quickBtn.classList.remove('active');
-        setTimeout(() => {
-          quickBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 30);
-      }
-    } else {
-      adminPanelSection.classList.remove('hidden');
-      if (arrow) arrow.textContent = '▲';
-      if (quickBtn) {
-        quickBtn.classList.add('active');
-      }
-      const navTabs = document.querySelector('.admin-nav-tabs');
-      if (navTabs) {
-        navTabs.style.setProperty('display', 'grid', 'important');
-        navTabs.style.setProperty('grid-template-columns', 'repeat(2, 1fr)', 'important');
-        navTabs.style.setProperty('gap', '8px', 'important');
-        navTabs.style.setProperty('width', '100%', 'important');
-      }
-      const newsBtn = document.getElementById('adminTabNewsBtn');
-      if (newsBtn) {
-        newsBtn.style.removeProperty('grid-column');
-      }
-      if (typeof loadAdminMaintenanceStatus === 'function') {
-        loadAdminMaintenanceStatus();
-      }
-      setTimeout(() => {
-        adminPanelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 50);
-    }
-
-    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
-      window.TelegramApp.TelegramApp.haptic('light');
-    }
+  const profileTabBtnAdmin = document.getElementById('profileTabBtnAdmin');
+  if (profileTabBtnAdmin) {
+    profileTabBtnAdmin.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchProfileTab('admin');
+    });
   }
 
   const profileAdminQuickBtn = document.getElementById('profileAdminQuickBtn');
   if (profileAdminQuickBtn) {
     profileAdminQuickBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      toggleAdminPanel();
-    });
-  }
-
-  const adminPanelHeader = document.getElementById('adminPanelHeader');
-  if (adminPanelHeader) {
-    adminPanelHeader.addEventListener('click', (e) => {
-      e.preventDefault();
-      toggleAdminPanel(true);
+      switchProfileTab('admin');
     });
   }
 
@@ -7413,8 +7404,7 @@ async function initColorSortApp() {
   if (adminPanelCollapseBtn) {
     adminPanelCollapseBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      toggleAdminPanel(true);
+      switchProfileTab('profile');
     });
   }
 
@@ -7422,9 +7412,10 @@ async function initColorSortApp() {
   if (adminPanelBottomCollapseBtn) {
     adminPanelBottomCollapseBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      toggleAdminPanel(true);
+      switchProfileTab('profile');
     });
   }
+
 
   if (closeProfileModalBtn && profileModal) {
     closeProfileModalBtn.addEventListener('click', () => {
