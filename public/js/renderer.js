@@ -8,6 +8,7 @@
   let activeParticles = [];
   let animFrameId = null;
   const UNIT_HEIGHT = 18;
+  let lastRenderedLevel = null;
 
   function initRenderer(containerEl, canvasEl) {
     boardContainer = containerEl;
@@ -155,11 +156,13 @@
     const hint = engine.hintHighlight;
     const colors = engine.colors;
     const wrapper = boardContainer.closest('.game-board-wrapper');
+    const curLevel = engine.currentLevel || 1;
+    const isLevelChanged = (lastRenderedLevel !== curLevel);
 
     const existingBottles = boardContainer.querySelectorAll('.glass-bottle');
 
-    // In-place update if bottle elements already exist: zero reflow, zero movement of other bottles!
-    if (existingBottles.length === bottles.length) {
+    // In-place update if bottle elements already exist on the exact same level: zero reflow!
+    if (!isLevelChanged && existingBottles.length === bottles.length) {
       existingBottles.forEach((bottleEl, idx) => {
         const layers = bottles[idx];
         const isVanished = !!(layers && layers.vanished);
@@ -193,9 +196,8 @@
       return;
     }
 
-    // Incremental addition (e.g. player bought an extra empty bottle on the current board)
-    // Preserves existing bottle DOM elements so top rows stay in place and bottles are appended downwards!
-    if (existingBottles.length > 0 && existingBottles.length < bottles.length) {
+    // Incremental addition on the exact same level (e.g. player bought an extra empty bottle on the current board)
+    if (!isLevelChanged && existingBottles.length > 0 && existingBottles.length < bottles.length) {
       existingBottles.forEach((bottleEl, idx) => {
         const layers = bottles[idx];
         const isVanished = !!(layers && layers.vanished);
@@ -244,7 +246,8 @@
       return;
     }
 
-    // Full build (only upon new level loading or count change)
+    // Full build (upon new level loading, level number change, or count mismatch)
+    lastRenderedLevel = curLevel;
     boardContainer.innerHTML = '';
     boardContainer.className = 'game-board';
     updateBoardSizeClass(boardContainer, bottles.length);

@@ -3586,28 +3586,40 @@ async function initColorSortApp() {
           currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));
           currentUser.level = currentUser.maxLevel;
         }
-        const cachedDbLvl = Number(localStorage.getItem(`color_sort_db_level_${currentUser.telegramId}`) || 0);
-        if (cachedDbLvl > 0 && (!currentUser.maxLevel || currentUser.maxLevel < cachedDbLvl)) {
-          currentUser.maxLevel = cachedDbLvl;
-          currentUser.level = cachedDbLvl;
-          currentUser.currentLevel = cachedDbLvl;
-        }
-        const userBaseline = IMMUTABLE_PLAYER_BASELINES[String(currentUser.telegramId)];
-        if (userBaseline) {
-          if (Number(currentUser.maxLevel || 0) < userBaseline.maxLevel) {
-            currentUser.maxLevel = userBaseline.maxLevel;
-            currentUser.level = userBaseline.maxLevel;
-            currentUser.currentLevel = userBaseline.maxLevel;
-            currentUser.stars = Math.max(Number(currentUser.stars || 0), userBaseline.stars || 0);
-            try {
-              localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
-              localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(userBaseline.maxLevel));
-              localStorage.setItem('cs_cached_display_level', String(userBaseline.maxLevel));
-            } catch (e) {}
-          }
-        }
         currentUser._localLoaded = true;
       } catch (e) {}
+    }
+
+    // Always enforce cached level and immutable baseline, even if primary local object was empty
+    const cachedDbLvl = Number(localStorage.getItem(`color_sort_db_level_${currentUser.telegramId}`) || 0);
+    if (cachedDbLvl > 0 && (!currentUser.maxLevel || currentUser.maxLevel < cachedDbLvl)) {
+      currentUser.maxLevel = cachedDbLvl;
+      currentUser.level = cachedDbLvl;
+      currentUser.currentLevel = cachedDbLvl;
+    }
+    const cachedDisplayLvl = Number(localStorage.getItem('cs_cached_display_level') || 0);
+    if (cachedDisplayLvl > 0 && (!currentUser.maxLevel || currentUser.maxLevel < cachedDisplayLvl)) {
+      currentUser.maxLevel = cachedDisplayLvl;
+      currentUser.level = cachedDisplayLvl;
+      currentUser.currentLevel = cachedDisplayLvl;
+    }
+    const userBaseline = IMMUTABLE_PLAYER_BASELINES[String(currentUser.telegramId)];
+    if (userBaseline) {
+      if (Number(currentUser.maxLevel || 0) < userBaseline.maxLevel) {
+        currentUser.maxLevel = userBaseline.maxLevel;
+        currentUser.level = userBaseline.maxLevel;
+        currentUser.currentLevel = userBaseline.maxLevel;
+        currentUser.stars = Math.max(Number(currentUser.stars || 0), userBaseline.stars || 0);
+        try {
+          localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
+          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(userBaseline.maxLevel));
+          localStorage.setItem('cs_cached_display_level', String(userBaseline.maxLevel));
+        } catch (e) {}
+      }
+    }
+    if (currentUser.maxLevel > 0) {
+      currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));
+      currentUser.level = currentUser.maxLevel;
     }
     // Safety check for daily boosters backup keys
     const backupAt = Number(localStorage.getItem(`color_sort_daily_boosters_at_${currentUser.telegramId}`) || 0);
@@ -4719,6 +4731,22 @@ async function initColorSortApp() {
       localStorage.setItem('cs_cached_display_level', String(displayLevel));
     } catch (e) {}
 
+    // Unconditional Level-Board Integrity Guardian:
+    // Guarantees board flasks NEVER lag behind header level (e.g. showing Level 1 bottles when header is Level 50)
+    if (typeof LG !== 'undefined' && LG && LG.generateLevel && engine) {
+      if (!currentLevelData || currentLevelData.levelNumber !== displayLevel || engine.currentLevel !== displayLevel) {
+        console.warn(`[Level Guardian] Auto-repairing board desync: Header level is ${displayLevel}, but engine level is ${engine ? engine.currentLevel : 0}. Regenerating board for Level ${displayLevel}...`);
+        currentUser.currentLevel = displayLevel;
+        currentUser.maxLevel = displayLevel;
+        currentUser.level = displayLevel;
+        currentLevelData = LG.generateLevel(displayLevel);
+        engine.startLevel(currentLevelData);
+        if (renderer && renderer.renderBoard) {
+          renderer.renderBoard(engine);
+        }
+      }
+    }
+
     setIfDiff(coinsDisplay, currentUser.coins || 0);
     setIfDiff(hintsCountDisplay, currentUser.hints || 0);
     setIfDiff(undosCountDisplay, currentUser.undos || 0);
@@ -5184,6 +5212,9 @@ async function initColorSortApp() {
           localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(effectiveDbLvl));
           saveLocalUser();
           updateHeaderUI();
+          if (!currentLevelData || currentLevelData.levelNumber !== currentUser.currentLevel) {
+            loadCurrentLevel();
+          }
         } else if (Number(currentUser.maxLevel || 0) > dbLvl) {
           players[selfIndex].maxLevel = currentUser.maxLevel;
           players[selfIndex].level = currentUser.maxLevel;
@@ -11629,7 +11660,7 @@ async function initColorSortApp() {
       currentUser.maxLevel = Math.max(Number(currentUser.maxLevel || 0), targetLvl);
       currentUser.level = currentUser.maxLevel;
 
-      if (!currentLevelData || currentLevelData.levelNumber !== targetLvl) {
+      if (!currentLevelData || currentLevelData.levelNumber !== targetLvl || (engine && engine.currentLevel !== targetLvl)) {
         if (LG && LG.generateLevel) {
           currentLevelData = LG.generateLevel(targetLvl);
           engine.startLevel(currentLevelData);
