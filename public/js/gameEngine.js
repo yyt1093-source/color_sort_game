@@ -16,6 +16,7 @@
       this.onStateChange = null;
       this.onBottleVanished = null;
       this.onWin = null;
+      this.onMove = null;
       this.hintHighlight = null;
       this.revealed = [];
       this.boostersUsedInLevel = 0;
@@ -178,6 +179,9 @@
         }
 
         this.checkBottleCompletion(toIdx);
+        if (this.onMove) {
+          try { this.onMove({ from: fromIdx, to: toIdx, movesCount: this.movesCount }); } catch (e) {}
+        }
       };
 
       if (window.GameRenderer && window.GameRenderer.animatePour) {
