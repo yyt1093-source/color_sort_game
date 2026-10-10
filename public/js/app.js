@@ -148,24 +148,30 @@ async function initColorSortApp() {
       // Пользователь закрыл ролик до завершения
       if (res && res.done === false) {
         console.warn('[Adsgram] Ролик закрыт пользователем до завершения');
+        if (wasAdModalOpen && adModal) {
+          adModal.classList.remove('hidden');
+          adModal.style.display = 'flex';
+        }
         return { success: false, dismissed: true };
       }
 
+      if (wasAdModalOpen && adModal) {
+        adModal.classList.remove('hidden');
+        adModal.style.display = 'flex';
+      }
       return { success: false, unavailable: true };
     } catch (err) {
       console.warn('[Adsgram] Ответ SDK / ошибка:', err);
+      if (wasAdModalOpen && adModal) {
+        adModal.classList.remove('hidden');
+        adModal.style.display = 'flex';
+      }
       // Если пользователь нажал крестик / закрыл ролик
       if (err && (err.state === 'dismiss' || err.done === false)) {
         return { success: false, dismissed: true };
       }
       // Рекламы нет (no fill), ошибка сети или неподдерживаемый регион
       return { success: false, unavailable: true, description: err?.description || err?.message };
-    } finally {
-      // Восстанавливаем окно выбора бонусов
-      if (wasAdModalOpen && adModal) {
-        adModal.classList.remove('hidden');
-        adModal.style.display = 'flex';
-      }
     }
   }
 
@@ -219,24 +225,53 @@ async function initColorSortApp() {
     }
 
     if (claimRes && claimRes.success) {
-      if (claimRes.user) {
-        currentUser = normalizeUserObject(claimRes.user);
-      } else {
-        if (rewardType === 'hints') currentUser.hints = (currentUser.hints || 0) + 1;
-        else if (rewardType === 'undos') currentUser.undos = (currentUser.undos || 0) + 1;
-        else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') currentUser.reveals = (currentUser.reveals || 0) + 1;
-        else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') {
-          currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
-          currentUser.extra_bottles = currentUser.extraBottles;
-        }
-        normalizeUserObject(currentUser);
+      // 1. Надежно добавляем полученную награду в локальный объект пользователя
+      if (rewardType === 'hints') {
+        currentUser.hints = (currentUser.hints || 0) + 1;
+      } else if (rewardType === 'undos') {
+        currentUser.undos = (currentUser.undos || 0) + 1;
+      } else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') {
+        currentUser.reveals = (currentUser.reveals || 0) + 1;
+      } else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') {
+        currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
+        currentUser.extra_bottles = currentUser.extraBottles;
+      } else if (rewardType === 'coins') {
+        currentUser.coins = (currentUser.coins || 0) + 150;
       }
+
+      // 2. Неразрушающее слияние с данными сервера (никогда не зануляем другие бустеры и не сбрасываем уровень!)
+      if (claimRes.user) {
+        const srv = claimRes.user;
+        const srvMaxLvl = Math.max(Number(srv.maxLevel || 0), Number(srv.max_level || 0), Number(srv.level || 0));
+        const srvCurLvl = Math.max(Number(srv.currentLevel || 0), Number(srv.current_level || 0), srvMaxLvl);
+        if (srvMaxLvl > 0) currentUser.maxLevel = Math.max(Number(currentUser.maxLevel || 1), srvMaxLvl);
+        if (srvCurLvl > 0) currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), srvCurLvl, Number(currentUser.maxLevel || 1));
+        currentUser.level = currentUser.maxLevel;
+
+        currentUser.hints = Math.max(Number(currentUser.hints || 0), Number(srv.hints || 0));
+        currentUser.undos = Math.max(Number(currentUser.undos || 0), Number(srv.undos || 0));
+        currentUser.reveals = Math.max(Number(currentUser.reveals || 0), Number(srv.reveals || 0));
+        const srvBottles = Math.max(Number(srv.extraBottles || 0), Number(srv.extra_bottles || 0));
+        currentUser.extraBottles = Math.max(Number(currentUser.extraBottles || 0), srvBottles);
+        currentUser.extra_bottles = currentUser.extraBottles;
+        if (srv.coins) currentUser.coins = Math.max(Number(currentUser.coins || 0), Number(srv.coins || 0));
+      }
+
+      normalizeUserObject(currentUser);
       currentUser.updatedAt = Date.now();
       saveLocalUser();
       syncPlayerToCloud(currentUser);
       updateHeaderUI();
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
-      showInfoModal('🎁', t('bonusTitle') || 'Бонус', claimRes.message || 'Награда успешно начислена!');
+
+      // Закрываем окно рекламы, если оно было открыто
+      const adModal = document.getElementById('adModal');
+      if (adModal) {
+        closeModal(adModal);
+        resetAdModalButtons();
+      }
+
+      // Показываем красивое поздравительное модальное окно с полученной наградой
+      showAdRewardSuccessModal(rewardType);
       return true;
     } else {
       const err = (claimRes && claimRes.error) ? claimRes.error : (t('adUnavailableDesc') || 'Реклама сейчас недоступна. Пожалуйста, попробуйте позже!');
@@ -318,6 +353,16 @@ async function initColorSortApp() {
       adUnavailableTitle: "Реклама недоступна",
       adUnavailableDesc: "Реклама сейчас недоступна. Пожалуйста, попробуйте позже!",
       adDismissedDesc: "Просмотр рекламы был прерван. Бонус начисляется только за полный просмотр ролика.",
+      adSuccessTitle: "Поздравляем! 🎉",
+      adSuccessBottle: "+1 Пустая колба",
+      adSuccessBottleDesc: "Колбочка добавлена в ваш запас!",
+      adSuccessHint: "+1 Подсказка",
+      adSuccessHintDesc: "Подсказка добавлена в ваш запас!",
+      adSuccessUndo: "+1 Шаг назад",
+      adSuccessUndoDesc: "Отмена хода добавлена в ваш запас!",
+      adSuccessReveal: "+1 Открыть цвета",
+      adSuccessRevealDesc: "Открытие цветов добавлено в запас!",
+      adSuccessBtn: "Отлично!",
       adminBadge: "👑 Админ",
       adminPanelTitle: "Панель Администратора",
       adminPanelSub: "Доступно только Аллигатору",
@@ -3004,33 +3049,33 @@ async function initColorSortApp() {
 
   // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
   const IMMUTABLE_PLAYER_BASELINES = {
-    '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
-    '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
-    '8305679959': { maxLevel: 43, firstName: '.', username: '' },
-    '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
-    '5269257903': { maxLevel: 37, firstName: 'Kostya', username: 'Koctya007' },
-    '296239050':  { maxLevel: 35, firstName: 'Sergey', username: 'sergiy121234' },
-    '7116446051': { maxLevel: 27, firstName: 'Марія', username: 'Maria290355' },
-    '1890528535': { maxLevel: 20, firstName: 'Кирилл', username: 'Cristiano717' },
-    '5177916222': { maxLevel: 18, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: 'Diana13031303' },
-    '1803189688': { maxLevel: 16, firstName: 'Andriejus', username: 'Tigras1986' },
-    '1152401670': { maxLevel: 14, firstName: 'Natta', username: 'Smaile82' },
-    '615300433':  { maxLevel: 10, firstName: 'ᅠ', username: 'velzevul999' },
-    '6582657380': { maxLevel: 9, firstName: 'R', username: 'Romanchiiik0' },
-    '1531426251': { maxLevel: 8, firstName: 'Алексей', username: 'Element1914' },
-    '387353019':  { maxLevel: 8, firstName: 'Danil', username: 'danilfrais' },
-    '5403252654': { maxLevel: 8, firstName: 'ВиталийTower🏰', username: 'Tuchkovit' },
-    '7990014996': { maxLevel: 4, firstName: 'Samyrai', username: 'KaLLoooS' },
-    '5991713296': { maxLevel: 4, firstName: 'Юлия', username: '' },
-    '8743109762': { maxLevel: 4, firstName: 'Ірина', username: 'iriskaturgan1' },
-    '1471767067': { maxLevel: 3, firstName: 'Александрович', username: '' },
-    '5253063837': { maxLevel: 3, firstName: '♥️НАТ♥️', username: '' },
-    '5502743854': { maxLevel: 3, firstName: 'Потерял', username: '' },
-    '5709982730': { maxLevel: 3, firstName: 'Алексей PIXLANDS', username: '' },
-    '6573295041': { maxLevel: 3, firstName: 'Smurf 😈hiroll777.space', username: 'SmSmurf7777' },
-    '5839076186': { maxLevel: 1, firstName: 'Женя', username: '' },
-    '7387508554': { maxLevel: 1, firstName: 'Дмитрий', username: '' },
-    '743036609':  { maxLevel: 1, firstName: '@EcoForestTonBot🌿⚒️ MinerGram@klikadobot#TotalHashСвітлана', username: 'Svet11256' }
+  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709', hints: 10, undos: 20, reveals: 5, extraBottles: 10 },
+  '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
+  '8305679959': { maxLevel: 43, firstName: '.', username: '' },
+  '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
+  '5269257903': { maxLevel: 37, firstName: 'Kostya', username: 'Koctya007' },
+  '296239050':  { maxLevel: 35, firstName: 'Sergey', username: 'sergiy121234' },
+  '7116446051': { maxLevel: 27, firstName: 'Марія', username: 'Maria290355' },
+  '1890528535': { maxLevel: 20, firstName: 'Кирилл', username: 'Cristiano717' },
+  '5177916222': { maxLevel: 18, firstName: '⚔️ Gift Kombat Діана 🍀 Anthill', username: 'Diana13031303' },
+  '1803189688': { maxLevel: 16, firstName: 'Andriejus', username: 'Tigras1986' },
+  '1152401670': { maxLevel: 14, firstName: 'Natta', username: 'Smaile82' },
+  '615300433':  { maxLevel: 10, firstName: 'ᅠ', username: 'velzevul999' },
+  '6582657380': { maxLevel: 9, firstName: 'R', username: 'Romanchiiik0' },
+  '1531426251': { maxLevel: 8, firstName: 'Алексей', username: 'Element1914' },
+  '387353019':  { maxLevel: 8, firstName: 'Danil', username: 'danilfrais' },
+  '5403252654': { maxLevel: 8, firstName: 'ВиталийTower🏰', username: 'Tuchkovit' },
+  '7990014996': { maxLevel: 4, firstName: 'Samyrai', username: 'KaLLoooS' },
+  '5991713296': { maxLevel: 4, firstName: 'Юлия', username: '' },
+  '8743109762': { maxLevel: 4, firstName: 'Ірина', username: 'iriskaturgan1' },
+  '1471767067': { maxLevel: 3, firstName: 'Александрович', username: '' },
+  '5253063837': { maxLevel: 3, firstName: '♥️НАТ♥️', username: '' },
+  '5502743854': { maxLevel: 3, firstName: 'Потерял', username: '' },
+  '5709982730': { maxLevel: 3, firstName: 'Алексей PIXLANDS', username: '' },
+  '6573295041': { maxLevel: 3, firstName: 'Smurf 😈hiroll777.space', username: 'SmSmurf7777' },
+  '5839076186': { maxLevel: 1, firstName: 'Женя', username: '' },
+  '7387508554': { maxLevel: 1, firstName: 'Дмитрий', username: '' },
+  '743036609':  { maxLevel: 1, firstName: '@EcoForestTonBot🌿⚒️ MinerGram@klikadobot#TotalHashСвітлана', username: 'Svet11256' }
   };
 
   // Instant pre-population from localStorage for immediate, zero-delay baseline
@@ -3061,12 +3106,25 @@ async function initColorSortApp() {
       currentUser.level = startupBaseline.maxLevel;
       currentUser.currentLevel = startupBaseline.maxLevel;
       currentUser.stars = Math.max(Number(currentUser.stars || 0), startupBaseline.stars || 0);
-      try {
-        localStorage.setItem(`color_sort_user_${userData.telegramId}`, JSON.stringify(currentUser));
-        localStorage.setItem(`color_sort_db_level_${userData.telegramId}`, String(startupBaseline.maxLevel));
-        localStorage.setItem('cs_cached_display_level', String(startupBaseline.maxLevel));
-      } catch (e) {}
     }
+    if (startupBaseline.hints && Number(currentUser.hints || 0) < startupBaseline.hints) {
+      currentUser.hints = startupBaseline.hints;
+    }
+    if (startupBaseline.undos && Number(currentUser.undos || 0) < startupBaseline.undos) {
+      currentUser.undos = startupBaseline.undos;
+    }
+    if (startupBaseline.reveals && Number(currentUser.reveals || 0) < startupBaseline.reveals) {
+      currentUser.reveals = startupBaseline.reveals;
+    }
+    if (startupBaseline.extraBottles && Number(currentUser.extraBottles || 0) < startupBaseline.extraBottles) {
+      currentUser.extraBottles = startupBaseline.extraBottles;
+      currentUser.extra_bottles = startupBaseline.extraBottles;
+    }
+    try {
+      localStorage.setItem(`color_sort_user_${userData.telegramId}`, JSON.stringify(currentUser));
+      localStorage.setItem(`color_sort_db_level_${userData.telegramId}`, String(startupBaseline.maxLevel));
+      localStorage.setItem('cs_cached_display_level', String(startupBaseline.maxLevel));
+    } catch (e) {}
   }
 
   window.isAllColorsActive = function () {
@@ -3326,6 +3384,98 @@ async function initColorSortApp() {
     });
   }
 
+  // --- Ad Reward Celebration Success Modal ---
+  const adRewardSuccessModal = document.getElementById('adRewardSuccessModal');
+  const adRewardSuccessBtn = document.getElementById('adRewardSuccessBtn');
+
+  function showAdRewardSuccessModal(rewardType) {
+    const iconEl = document.getElementById('adRewardSuccessIcon');
+    const titleEl = document.getElementById('adRewardSuccessTitle');
+    const itemEl = document.getElementById('adRewardSuccessItem');
+    const descEl = document.getElementById('adRewardSuccessDesc');
+    const btnEl = document.getElementById('adRewardSuccessBtn');
+
+    const REWARD_MAP = {
+      extra_bottle: {
+        icon: '🧪',
+        item: t('adSuccessBottle') || '+1 Пустая колба',
+        desc: t('adSuccessBottleDesc') || 'Колбочка добавлена в ваш запас!'
+      },
+      extra_bottles: {
+        icon: '🧪',
+        item: t('adSuccessBottle') || '+1 Пустая колба',
+        desc: t('adSuccessBottleDesc') || 'Колбочка добавлена в ваш запас!'
+      },
+      hints: {
+        icon: '💡',
+        item: t('adSuccessHint') || '+1 Подсказка',
+        desc: t('adSuccessHintDesc') || 'Подсказка добавлена в ваш запас!'
+      },
+      undos: {
+        icon: '↩️',
+        item: t('adSuccessUndo') || '+1 Шаг назад',
+        desc: t('adSuccessUndoDesc') || 'Отмена хода добавлена в ваш запас!'
+      },
+      reveal_bottle: {
+        icon: '🔮',
+        item: t('adSuccessReveal') || '+1 Открыть цвета',
+        desc: t('adSuccessRevealDesc') || 'Открытие цветов добавлено в запас!'
+      },
+      reveals: {
+        icon: '🔮',
+        item: t('adSuccessReveal') || '+1 Открыть цвета',
+        desc: t('adSuccessRevealDesc') || 'Открытие цветов добавлено в запас!'
+      },
+      coins: {
+        icon: '🪙',
+        item: '+150 Монет',
+        desc: 'Монеты успешно добавлены на ваш баланс!'
+      }
+    };
+
+    const info = REWARD_MAP[rewardType] || {
+      icon: '🎁',
+      item: 'Награда получена!',
+      desc: 'Бонус успешно добавлен в ваш запас!'
+    };
+
+    if (iconEl) iconEl.textContent = info.icon;
+    if (titleEl) titleEl.textContent = t('adSuccessTitle') || 'Поздравляем! 🎉';
+    if (itemEl) itemEl.textContent = info.item;
+    if (descEl) descEl.textContent = info.desc;
+    if (btnEl) btnEl.textContent = t('adSuccessBtn') || 'Отлично!';
+
+    if (adRewardSuccessModal) {
+      openModal(adRewardSuccessModal);
+    } else {
+      showInfoModal(info.icon, 'Поздравляем! 🎉', `${info.item}\n${info.desc}`);
+    }
+
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('success');
+    }
+    if (window.SoundEngine && window.SoundEngine.SoundEngine) {
+      window.SoundEngine.SoundEngine.playComplete();
+    }
+  }
+
+  if (adRewardSuccessModal) {
+    adRewardSuccessModal.addEventListener('click', (e) => {
+      if (e.target === adRewardSuccessModal) {
+        closeModal(adRewardSuccessModal);
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+      }
+    });
+  }
+
+  if (adRewardSuccessBtn && adRewardSuccessModal) {
+    adRewardSuccessBtn.addEventListener('click', () => {
+      closeModal(adRewardSuccessModal);
+      if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('light');
+      if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playClick();
+    });
+  }
+
   // Server Communication & 24/7 Global Cloud Database
   const GLOBAL_CLOUD_BUCKET = '82kzJTUxZwwFNvg7kUSqgM';
   const GLOBAL_CLOUD_BASE = 'https://kvdb.io/' + GLOBAL_CLOUD_BUCKET;
@@ -3372,13 +3522,46 @@ async function initColorSortApp() {
     user.daily_boosters_days_left = getEffectiveDailyDays(user);
     user.dailyBoostersDaysLeft = user.daily_boosters_days_left;
     user.daily_boosters_last_date = String(user.daily_boosters_last_date || user.dailyBoostersLastDate || '').trim();
-    user.dailyBoostersLastDate = user.daily_boosters_last_date;
+    // Map snake_case levels from server/db to camelCase
+    if (user.max_level !== undefined && (user.maxLevel === undefined || Number(user.max_level) > Number(user.maxLevel))) {
+      user.maxLevel = Number(user.max_level);
+    }
+    if (user.current_level !== undefined && (user.currentLevel === undefined || Number(user.current_level) > Number(user.currentLevel))) {
+      user.currentLevel = Number(user.current_level);
+    }
     if (user.maxLevel !== undefined && Number(user.maxLevel) > 0) {
       user.currentLevel = Math.max(Number(user.currentLevel || 1), Number(user.maxLevel));
       user.level = Math.max(Number(user.level || 0), Number(user.maxLevel));
     } else if (user.currentLevel !== undefined && Number(user.currentLevel) > 1) {
       user.maxLevel = Math.max(Number(user.maxLevel || 0), Number(user.currentLevel));
       user.level = user.maxLevel;
+    }
+    user.max_level = user.maxLevel;
+    user.current_level = user.currentLevel;
+
+    // Enforce immutable player baselines protection
+    const baseEntry = IMMUTABLE_PLAYER_BASELINES[String(user.telegramId)];
+    if (baseEntry) {
+      if (baseEntry.maxLevel && Number(user.maxLevel || 0) < baseEntry.maxLevel) {
+        user.maxLevel = baseEntry.maxLevel;
+        user.max_level = baseEntry.maxLevel;
+        user.currentLevel = Math.max(Number(user.currentLevel || 1), baseEntry.maxLevel);
+        user.current_level = user.currentLevel;
+        user.level = baseEntry.maxLevel;
+      }
+      if (baseEntry.hints && Number(user.hints || 0) < baseEntry.hints) {
+        user.hints = baseEntry.hints;
+      }
+      if (baseEntry.undos && Number(user.undos || 0) < baseEntry.undos) {
+        user.undos = baseEntry.undos;
+      }
+      if (baseEntry.reveals && Number(user.reveals || 0) < baseEntry.reveals) {
+        user.reveals = baseEntry.reveals;
+      }
+      if (baseEntry.extraBottles && Number(user.extraBottles || 0) < baseEntry.extraBottles) {
+        user.extraBottles = baseEntry.extraBottles;
+        user.extra_bottles = baseEntry.extraBottles;
+      }
     }
     return user;
   }
@@ -3612,12 +3795,25 @@ async function initColorSortApp() {
         currentUser.level = userBaseline.maxLevel;
         currentUser.currentLevel = userBaseline.maxLevel;
         currentUser.stars = Math.max(Number(currentUser.stars || 0), userBaseline.stars || 0);
-        try {
-          localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
-          localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(userBaseline.maxLevel));
-          localStorage.setItem('cs_cached_display_level', String(userBaseline.maxLevel));
-        } catch (e) {}
       }
+      if (userBaseline.hints && Number(currentUser.hints || 0) < userBaseline.hints) {
+        currentUser.hints = userBaseline.hints;
+      }
+      if (userBaseline.undos && Number(currentUser.undos || 0) < userBaseline.undos) {
+        currentUser.undos = userBaseline.undos;
+      }
+      if (userBaseline.reveals && Number(currentUser.reveals || 0) < userBaseline.reveals) {
+        currentUser.reveals = userBaseline.reveals;
+      }
+      if (userBaseline.extraBottles && Number(currentUser.extraBottles || 0) < userBaseline.extraBottles) {
+        currentUser.extraBottles = userBaseline.extraBottles;
+        currentUser.extra_bottles = userBaseline.extraBottles;
+      }
+      try {
+        localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
+        localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(userBaseline.maxLevel));
+        localStorage.setItem('cs_cached_display_level', String(userBaseline.maxLevel));
+      } catch (e) {}
     }
     if (currentUser.maxLevel > 0) {
       currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), Number(currentUser.maxLevel));

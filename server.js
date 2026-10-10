@@ -83,7 +83,7 @@ const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
 // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
 const IMMUTABLE_PLAYER_BASELINES = {
-  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709', hints: 10, undos: 20, reveals: 5, extraBottles: 10 },
   '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
   '8305679959': { maxLevel: 43, firstName: '.', username: '' },
   '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
@@ -826,7 +826,7 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
 
     let updatedUser = db.logAdReward(id, rewardType);
 
-    // Forward authoritative server values to KVDB cloud for real players
+    // Forward authoritative server values to KVDB cloud for real players without overwriting existing boosters
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
       try {
@@ -834,11 +834,21 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
         let val = r.ok ? await r.json() : null;
         if (!val || typeof val !== 'object') val = { telegramId: String(id) };
 
-        val.hints = updatedUser.hints;
-        val.undos = updatedUser.undos;
-        val.reveals = updatedUser.reveals;
-        val.extraBottles = updatedUser.extra_bottles;
-        val.extra_bottles = updatedUser.extra_bottles;
+        // Preserve all existing boosters and ensure safe increment
+        val.hints = Math.max(Number(val.hints || 0), Number(updatedUser.hints || 0));
+        val.undos = Math.max(Number(val.undos || 0), Number(updatedUser.undos || 0));
+        val.reveals = Math.max(Number(val.reveals || 0), Number(updatedUser.reveals || 0));
+        const srvBottles = Math.max(Number(val.extraBottles || 0), Number(val.extra_bottles || 0), Number(updatedUser.extra_bottles || 0));
+        val.extraBottles = srvBottles;
+        val.extra_bottles = srvBottles;
+
+        const maxLvl = Math.max(Number(val.maxLevel || val.max_level || 1), Number(updatedUser.max_level || updatedUser.maxLevel || 1));
+        const curLvl = Math.max(Number(val.currentLevel || val.current_level || 1), Number(updatedUser.current_level || updatedUser.currentLevel || 1), maxLvl);
+        val.maxLevel = maxLvl;
+        val.max_level = maxLvl;
+        val.currentLevel = curLvl;
+        val.current_level = curLvl;
+        val.level = maxLvl;
         val.updatedAt = Date.now();
 
         await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
@@ -846,6 +856,23 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(val)
         });
+
+        // Mirror safe values back to updatedUser
+        updatedUser.hints = val.hints;
+        updatedUser.undos = val.undos;
+        updatedUser.reveals = val.reveals;
+        updatedUser.extraBottles = val.extraBottles;
+        updatedUser.extra_bottles = val.extraBottles;
+        updatedUser.maxLevel = val.maxLevel;
+        updatedUser.max_level = val.maxLevel;
+        updatedUser.currentLevel = val.currentLevel;
+        updatedUser.current_level = val.currentLevel;
+        updatedUser.level = val.maxLevel;
+
+        try {
+          db.prepare('UPDATE users SET hints = ?, undos = ?, reveals = ?, extra_bottles = ?, max_level = ?, current_level = ? WHERE telegram_id = ?')
+            .run(val.hints, val.undos, val.reveals, val.extraBottles, val.maxLevel, val.currentLevel, String(id));
+        } catch (e) {}
       } catch (e) {}
     }
 
@@ -860,6 +887,7 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
     res.json({
       success: true,
       message: `Бонус ${rewardName} успешно начислен!`,
+      rewardType,
       user: updatedUser
     });
   } catch (err) {
@@ -895,11 +923,20 @@ app.post('/api/ad-reward/claim', authMiddleware, async (req, res) => {
       let val = r.ok ? await r.json() : null;
       if (!val || typeof val !== 'object') val = { telegramId: String(id) };
 
-      val.hints = updatedUser.hints;
-      val.undos = updatedUser.undos;
-      val.reveals = updatedUser.reveals;
-      val.extraBottles = updatedUser.extra_bottles;
-      val.extra_bottles = updatedUser.extra_bottles;
+      val.hints = Math.max(Number(val.hints || 0), Number(updatedUser.hints || 0));
+      val.undos = Math.max(Number(val.undos || 0), Number(updatedUser.undos || 0));
+      val.reveals = Math.max(Number(val.reveals || 0), Number(updatedUser.reveals || 0));
+      const srvBottles = Math.max(Number(val.extraBottles || 0), Number(val.extra_bottles || 0), Number(updatedUser.extra_bottles || 0));
+      val.extraBottles = srvBottles;
+      val.extra_bottles = srvBottles;
+
+      const maxLvl = Math.max(Number(val.maxLevel || val.max_level || 1), Number(updatedUser.max_level || updatedUser.maxLevel || 1));
+      const curLvl = Math.max(Number(val.currentLevel || val.current_level || 1), Number(updatedUser.current_level || updatedUser.currentLevel || 1), maxLvl);
+      val.maxLevel = maxLvl;
+      val.max_level = maxLvl;
+      val.currentLevel = curLvl;
+      val.current_level = curLvl;
+      val.level = maxLvl;
       val.updatedAt = Date.now();
 
       await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
@@ -907,6 +944,22 @@ app.post('/api/ad-reward/claim', authMiddleware, async (req, res) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(val)
       });
+
+      updatedUser.hints = val.hints;
+      updatedUser.undos = val.undos;
+      updatedUser.reveals = val.reveals;
+      updatedUser.extraBottles = val.extraBottles;
+      updatedUser.extra_bottles = val.extraBottles;
+      updatedUser.maxLevel = val.maxLevel;
+      updatedUser.max_level = val.maxLevel;
+      updatedUser.currentLevel = val.currentLevel;
+      updatedUser.current_level = val.currentLevel;
+      updatedUser.level = val.maxLevel;
+
+      try {
+        db.prepare('UPDATE users SET hints = ?, undos = ?, reveals = ?, extra_bottles = ?, max_level = ?, current_level = ? WHERE telegram_id = ?')
+          .run(val.hints, val.undos, val.reveals, val.extraBottles, val.maxLevel, val.currentLevel, String(id));
+      } catch (e) {}
     } catch (e) {}
   }
 
@@ -921,6 +974,7 @@ app.post('/api/ad-reward/claim', authMiddleware, async (req, res) => {
   res.json({
     success: true,
     message: `Бонус ${rewardName} успешно начислен!`,
+    rewardType,
     user: updatedUser
   });
 });

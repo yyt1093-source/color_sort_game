@@ -207,7 +207,7 @@ function initDatabase() {
 }
 
 const IMMUTABLE_PLAYER_BASELINES = {
-  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709', hints: 10, undos: 20, reveals: 5, extraBottles: 10 },
   '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
   '8305679959': { maxLevel: 43, firstName: '.', username: '' },
   '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
@@ -239,17 +239,21 @@ const IMMUTABLE_PLAYER_BASELINES = {
 function ensureImmutablePlayerBaselines() {
   try {
     const upsertStmt = db.prepare(`
-      INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars)
-      VALUES (?, ?, ?, ?, ?, 0)
+      INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars, hints, undos, reveals, extra_bottles)
+      VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
       ON CONFLICT(telegram_id) DO UPDATE SET
         max_level = MAX(users.max_level, excluded.max_level),
         current_level = MAX(users.current_level, excluded.current_level),
+        hints = MAX(COALESCE(users.hints, 0), excluded.hints),
+        undos = MAX(COALESCE(users.undos, 0), excluded.undos),
+        reveals = MAX(COALESCE(users.reveals, 0), excluded.reveals),
+        extra_bottles = MAX(COALESCE(users.extra_bottles, 0), excluded.extra_bottles),
         stars = 0,
         first_name = CASE WHEN users.first_name IN ('Player', 'Игрок', '.', '') AND excluded.first_name NOT IN ('Player', 'Игрок', '.', '') THEN excluded.first_name ELSE users.first_name END,
         username = CASE WHEN (users.username IS NULL OR users.username = '') AND excluded.username != '' THEN excluded.username ELSE users.username END
     `);
     for (const [tid, p] of Object.entries(IMMUTABLE_PLAYER_BASELINES)) {
-      upsertStmt.run(tid, p.firstName, p.username, p.maxLevel, p.maxLevel);
+      upsertStmt.run(tid, p.firstName, p.username, p.maxLevel, p.maxLevel, p.hints || 0, p.undos || 0, p.reveals || 0, p.extraBottles || 0);
     }
   } catch (e) {}
 }
@@ -355,14 +359,22 @@ function getUser(telegramId, defaultUserData = {}) {
     }
     const baseEntry = IMMUTABLE_PLAYER_BASELINES[String(telegramId)];
     if (baseEntry && user) {
+      let changed = false;
       if (Number(user.max_level || 0) < baseEntry.maxLevel) {
         user.max_level = baseEntry.maxLevel;
         user.level = baseEntry.maxLevel;
         user.current_level = Math.max(Number(user.current_level || 1), baseEntry.maxLevel);
-        user.stars = Math.max(Number(user.stars || 0), baseEntry.stars);
+        user.stars = Math.max(Number(user.stars || 0), baseEntry.stars || 0);
+        changed = true;
+      }
+      if (baseEntry.hints && Number(user.hints || 0) < baseEntry.hints) { user.hints = baseEntry.hints; changed = true; }
+      if (baseEntry.undos && Number(user.undos || 0) < baseEntry.undos) { user.undos = baseEntry.undos; changed = true; }
+      if (baseEntry.reveals && Number(user.reveals || 0) < baseEntry.reveals) { user.reveals = baseEntry.reveals; changed = true; }
+      if (baseEntry.extraBottles && Number(user.extra_bottles || 0) < baseEntry.extraBottles) { user.extra_bottles = baseEntry.extraBottles; changed = true; }
+      if (changed) {
         try {
-          db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ? WHERE telegram_id = ?')
-            .run(user.max_level, user.current_level, user.stars, String(telegramId));
+          db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ? WHERE telegram_id = ?')
+            .run(user.max_level, user.current_level, user.stars || 0, user.hints, user.undos, user.reveals, user.extra_bottles, String(telegramId));
         } catch (e) {}
       }
     }
@@ -393,14 +405,22 @@ function getUser(telegramId, defaultUserData = {}) {
   const createdUser = stmt.get(String(telegramId));
   const baseEntry = IMMUTABLE_PLAYER_BASELINES[String(telegramId)];
   if (baseEntry && createdUser) {
+    let changed = false;
     if (Number(createdUser.max_level || 0) < baseEntry.maxLevel) {
       createdUser.max_level = baseEntry.maxLevel;
       createdUser.level = baseEntry.maxLevel;
       createdUser.current_level = Math.max(Number(createdUser.current_level || 1), baseEntry.maxLevel);
-      createdUser.stars = Math.max(Number(createdUser.stars || 0), baseEntry.stars);
+      createdUser.stars = Math.max(Number(createdUser.stars || 0), baseEntry.stars || 0);
+      changed = true;
+    }
+    if (baseEntry.hints && Number(createdUser.hints || 0) < baseEntry.hints) { createdUser.hints = baseEntry.hints; changed = true; }
+    if (baseEntry.undos && Number(createdUser.undos || 0) < baseEntry.undos) { createdUser.undos = baseEntry.undos; changed = true; }
+    if (baseEntry.reveals && Number(createdUser.reveals || 0) < baseEntry.reveals) { createdUser.reveals = baseEntry.reveals; changed = true; }
+    if (baseEntry.extraBottles && Number(createdUser.extra_bottles || 0) < baseEntry.extraBottles) { createdUser.extra_bottles = baseEntry.extraBottles; changed = true; }
+    if (changed) {
       try {
-        db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ? WHERE telegram_id = ?')
-          .run(createdUser.max_level, createdUser.current_level, createdUser.stars, String(telegramId));
+        db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ? WHERE telegram_id = ?')
+          .run(createdUser.max_level, createdUser.current_level, createdUser.stars || 0, createdUser.hints, createdUser.undos, createdUser.reveals, createdUser.extra_bottles, String(telegramId));
       } catch (e) {}
     }
   }
