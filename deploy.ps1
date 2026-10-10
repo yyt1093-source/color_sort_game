@@ -21,7 +21,7 @@ git checkout gh-pages
 git checkout main -- public .gitignore
 
 # Copy all assets from public/ into root for GitHub Pages
-Copy-Item -Path "public\*" -Destination "." -Recurse -Force
+Get-ChildItem -Path "public" | Copy-Item -Destination "." -Recurse -Force
 
 git add -A
 try {
