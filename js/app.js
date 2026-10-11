@@ -251,10 +251,15 @@ async function initColorSortApp() {
       } catch (e) {}
     }
 
-    if (claimRes && claimRes.success) {
+    const isAdCompleted = Boolean((claimRes && claimRes.success) || (adResult && adResult.success));
+
+    if (isAdCompleted) {
       // 1. Надежно добавляем ровно +1 к запрошенному бустеру и мгновенно сохраняем в облако
       if (rewardType === 'hints') {
         currentUser.hints = (currentUser.hints || 0) + 1;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+        }
         updateCloudBoosterDirectly('hints', currentUser.hints);
       } else if (rewardType === 'undos') {
         currentUser.undos = (currentUser.undos || 0) + 1;
@@ -271,8 +276,8 @@ async function initColorSortApp() {
       }
 
       // 2. Неразрушающее слияние с данными сервера: обновляем только уровни и монеты,
-      // но НИКОГДА не перезаписываем бустеры (hints, extraBottles и др.) устаревшими данными!
-      if (claimRes.user) {
+      // но НИКОГДА не занижаем бустеры (hints, extraBottles и др.) устаревшими данными!
+      if (claimRes && claimRes.user) {
         const srv = claimRes.user;
         const srvMaxLvl = Math.max(Number(srv.maxLevel || 0), Number(srv.max_level || 0), Number(srv.level || 0));
         const srvCurLvl = Math.max(Number(srv.currentLevel || 0), Number(srv.current_level || 0), srvMaxLvl);
@@ -280,6 +285,12 @@ async function initColorSortApp() {
         if (srvCurLvl > 0) currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), srvCurLvl, Number(currentUser.maxLevel || 1));
         currentUser.level = currentUser.maxLevel;
 
+        if (srv.hints !== undefined) {
+          currentUser.hints = Math.max(currentUser.hints, Number(srv.hints));
+          if (currentUser.telegramId) {
+            localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+          }
+        }
         if (srv.coins !== undefined) currentUser.coins = Math.max(Number(currentUser.coins || 0), Number(srv.coins || 0));
       }
 
@@ -3567,7 +3578,7 @@ async function initColorSortApp() {
     // Anti-Cheat: sanitize excessive/hacked booster values for regular players (Admins exempted)
     const isAdmin = isAlligatorAdmin(user);
     if (!isAdmin) {
-      if (user.hints > 50) user.hints = 0;
+      if (user.hints > 10000) user.hints = 10000;
       if (user.undos > 50) user.undos = 0;
       if (user.reveals > 50) user.reveals = 0;
       if (user.extraBottles > 50) { user.extraBottles = 0; user.extra_bottles = 0; }
@@ -3618,6 +3629,9 @@ async function initColorSortApp() {
     if (!currentUser || !currentUser.telegramId) return;
     currentUser[field] = value;
     if (field === 'extraBottles') currentUser.extra_bottles = value;
+    if (field === 'hints') {
+      localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(value));
+    }
     currentUser.updatedAt = Date.now();
     saveLocalUser();
     updateHeaderUI();
@@ -3715,13 +3729,15 @@ async function initColorSortApp() {
         currentUser = normalizeUserObject({
           ...currentUser,
           ...res.user,
-          // CRITICAL: Never let server restore locally spent boosters!
-          hints: Math.min(Number(curHints || 0), Number(res.user.hints !== undefined ? res.user.hints : curHints)),
+          hints: Math.max(Number(curHints || 0), Number(res.user.hints !== undefined ? res.user.hints : curHints)),
           undos: Math.min(Number(curUndos || 0), Number(res.user.undos !== undefined ? res.user.undos : curUndos)),
           reveals: Math.min(Number(curReveals || 0), Number(res.user.reveals !== undefined ? res.user.reveals : curReveals)),
           extraBottles: Math.min(Number(curBottles || 0), Number(res.user.extra_bottles !== undefined ? res.user.extra_bottles : curBottles)),
           extra_bottles: Math.min(Number(curBottles || 0), Number(res.user.extra_bottles !== undefined ? res.user.extra_bottles : curBottles))
         });
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+        }
         saveLocalUser();
         updateHeaderUI();
       }
@@ -3811,6 +3827,9 @@ async function initColorSortApp() {
     currentUser.updatedAt = Date.now();
     normalizeUserObject(currentUser);
     localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
+    if (currentUser.hints !== undefined && currentUser.hints !== null) {
+      localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+    }
     if (Number(currentUser.maxLevel || 0) > 0) {
       localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(currentUser.maxLevel));
       localStorage.setItem('cs_cached_display_level', String(currentUser.maxLevel));
@@ -3849,6 +3868,12 @@ async function initColorSortApp() {
         }
         currentUser._localLoaded = true;
       } catch (e) {}
+    }
+
+    // Always enforce dedicated cached hints floor so hints never disappear on reload or exit
+    const cachedHints = localStorage.getItem(`color_sort_hints_${currentUser.telegramId}`);
+    if (cachedHints !== null && !isNaN(parseInt(cachedHints, 10))) {
+      currentUser.hints = Math.max(Number(currentUser.hints || 0), parseInt(cachedHints, 10));
     }
 
     // Always enforce cached level and immutable baseline, even if primary local object was empty
@@ -4197,7 +4222,10 @@ async function initColorSortApp() {
           // If cloud data is strictly newer than our local state, sync cloud booster values directly
           if (cloudUpdatedAt > localUpdatedAt) {
             if (cloudData.hints !== undefined) {
-              currentUser.hints = Math.min(Number(currentUser.hints || 0), Number(cloudData.hints || 0));
+              currentUser.hints = Math.max(Number(currentUser.hints || 0), Number(cloudData.hints || 0));
+              if (currentUser.telegramId) {
+                localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+              }
               changed = true;
             }
             if (cloudData.undos !== undefined) {
@@ -4215,8 +4243,14 @@ async function initColorSortApp() {
               changed = true;
             }
           } else {
-            // Local state is newer or equal (player spent boosters, sent gifts, etc.)
-            // Maintain our local booster counts and ensure cloud receives them
+            // Local state is newer or equal; if local has 0 hints but cloud has hints, restore hints
+            if (Number(currentUser.hints || 0) === 0 && cloudData.hints !== undefined && Number(cloudData.hints || 0) > 0) {
+              currentUser.hints = Number(cloudData.hints);
+              if (currentUser.telegramId) {
+                localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+              }
+              changed = true;
+            }
             syncPlayerToCloud(currentUser);
           }
           if (cloudData.all_colors_until !== undefined) {
@@ -4529,7 +4563,15 @@ async function initColorSortApp() {
     if (serverVerified) {
       // Official progression authorized!
       if (verifiedUser) {
-        currentUser = normalizeUserObject(verifiedUser);
+        const keptHints = Math.max(Number(currentUser.hints || 0), Number(verifiedUser.hints !== undefined ? verifiedUser.hints : (currentUser.hints || 0)));
+        currentUser = normalizeUserObject({
+          ...currentUser,
+          ...verifiedUser,
+          hints: keptHints
+        });
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+        }
       } else {
         currentUser.currentLevel = levelCompleted + 1;
         currentUser.maxLevel = Math.max(currentUser.maxLevel || 0, currentUser.currentLevel);
@@ -4743,7 +4785,12 @@ async function initColorSortApp() {
 
       // Only adopt server booster counts if server state is strictly newer than local state
       if (serverUpdatedAt > localUpdatedAt) {
-        if (serverUser.user.hints !== undefined) currentUser.hints = Math.min(Number(currentUser.hints || 0), Number(serverUser.user.hints || 0));
+        if (serverUser.user.hints !== undefined) {
+          currentUser.hints = Math.max(Number(currentUser.hints || 0), Number(serverUser.user.hints || 0));
+          if (currentUser.telegramId) {
+            localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+          }
+        }
         if (serverUser.user.undos !== undefined) currentUser.undos = Math.min(Number(currentUser.undos || 0), Number(serverUser.user.undos || 0));
         if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.min(Number(currentUser.reveals || 0), Number(serverUser.user.reveals || 0));
         const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
@@ -4752,7 +4799,13 @@ async function initColorSortApp() {
           currentUser.extra_bottles = currentUser.extraBottles;
         }
       } else {
-        // Local state is newer or equal (player spent/gifted boosters): push local state to server and cloud
+        // Local state is newer or equal; if local has 0 hints but server has hints, restore hints
+        if (Number(currentUser.hints || 0) === 0 && serverUser.user.hints !== undefined && Number(serverUser.user.hints || 0) > 0) {
+          currentUser.hints = Number(serverUser.user.hints);
+          if (currentUser.telegramId) {
+            localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+          }
+        }
         syncPlayerToCloud(currentUser);
       }
       if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, Number(serverUser.user.all_colors_until || 0));
@@ -5396,7 +5449,10 @@ async function initColorSortApp() {
           boosterType: 'hints'
         }).then(res => {
           if (res && res.success && res.remaining !== undefined) {
-            currentUser.hints = Math.min(currentUser.hints, res.remaining);
+            currentUser.hints = res.remaining;
+            if (currentUser.telegramId) {
+              localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+            }
             updateHeaderUI();
             saveLocalUser();
           }
