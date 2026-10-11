@@ -4,6 +4,14 @@
 async function initColorSortApp() {
   console.log('[App] Initializing Color Sort Game...');
 
+  // Hoisted variable declarations to prevent Temporal Dead Zone (TDZ) ReferenceErrors
+  var sessionAdminPin = (typeof window !== 'undefined' && window.currentAdminPin) || (typeof localStorage !== 'undefined' && localStorage.getItem('color_sort_admin_pin')) || null;
+  var isSeasonResetKicked = false;
+  var isServerReloadKicked = false;
+  var lastServerStatusCheck = 0;
+  var SERVER_CHECK_COOLDOWN_MS = 60000;
+  var currentUser = null;
+
   // 1. Init Telegram
   const TG = window.TelegramApp && window.TelegramApp.TelegramApp ? window.TelegramApp.TelegramApp : null;
   if (TG) TG.initTelegram();
@@ -25,7 +33,7 @@ async function initColorSortApp() {
                           checkUname.includes('alligator') ||
                           checkFirst.includes('ALLIGATOR') ||
                           checkTid === '5761685341' ||
-                          (typeof sessionAdminPin !== 'undefined' && sessionAdminPin === '1986') ||
+                          (sessionAdminPin === '1986') ||
                           localStorage.getItem('color_sort_admin_pin') === '1986';
 
   window.__maintenanceBlocked = false;
@@ -3062,7 +3070,7 @@ async function initColorSortApp() {
   }
 
   // 4. App state
-  let currentUser = {
+  currentUser = {
     telegramId: userData.telegramId,
     firstName: userData.firstName,
     username: userData.username || '',
@@ -3509,7 +3517,7 @@ async function initColorSortApp() {
         ? 'https://colorsortgame.vercel.app'
         : '');
   const NEWS_API_BASE = API_BASE;
-  let sessionAdminPin = null;
+  sessionAdminPin = sessionAdminPin || null;
 
   function normalizeUserObject(user) {
     if (!user || typeof user !== 'object') return user;
@@ -4838,7 +4846,7 @@ async function initColorSortApp() {
     }
   }, 100);
 
-  let isSeasonResetKicked = false;
+  isSeasonResetKicked = false;
 
   function triggerSeasonResetKick(resetTimestamp) {
     if (isSeasonResetKicked) return;
@@ -4941,7 +4949,7 @@ async function initColorSortApp() {
   // ==========================================
   // SERVER MAINTENANCE / RELOAD REALTIME KICK
   // ==========================================
-  let isServerReloadKicked = false;
+  isServerReloadKicked = false;
 
   function triggerServerReloadKick(reloadTimestamp) {
     if (isServerReloadKicked) return;
@@ -4996,8 +5004,8 @@ async function initColorSortApp() {
   // Checks execute ONLY on actual events: app launch, level win, tab focus.
   // Strict 60-second cooldown guard prevents excessive network requests.
   // =========================================================================
-  let lastServerStatusCheck = 0;
-  const SERVER_CHECK_COOLDOWN_MS = 60000; // 60s minimum throttle
+  lastServerStatusCheck = 0;
+  SERVER_CHECK_COOLDOWN_MS = 60000; // 60s minimum throttle
 
   async function checkServerStatus(force = false) {
     if (isServerReloadKicked || isSeasonResetKicked) return;
@@ -5048,8 +5056,12 @@ async function initColorSortApp() {
       }
 
       const localReloadAt = Number(localStorage.getItem('color_sort_server_reload_at') || 0);
-      if (reloadAt > 0 && reloadAt > localReloadAt) {
-        triggerServerReloadKick(reloadAt);
+      if (reloadAt > 0) {
+        if (localReloadAt > 0 && reloadAt > localReloadAt && (now - reloadAt < 300000)) {
+          triggerServerReloadKick(reloadAt);
+        } else if (localReloadAt === 0 || reloadAt > localReloadAt) {
+          localStorage.setItem('color_sort_server_reload_at', String(reloadAt));
+        }
       }
     } catch (err) {}
   }
@@ -12096,86 +12108,91 @@ async function initColorSortApp() {
   const startScreen = document.getElementById('startScreen');
   const startGameBtn = document.getElementById('startGameBtn');
 
-  if (startGameBtn) {
-    let isStarting = false;
-    const handleStart = (e) => {
-      if (e && e.cancelable) {
-        e.preventDefault();
-      }
-      if (window.__maintenanceBlocked) return;
-      // If server & cloud data is still synchronizing, wait for sync to finish
-      if (window.__startSyncReady === false) {
-        window.__userWantsStart = true;
-        return;
-      }
-      if (isStarting) return;
-      isStarting = true;
+  let isStarting = false;
+  const handleStart = (e) => {
+    if (e && e.cancelable) {
+      e.preventDefault();
+    }
+    if (window.__maintenanceBlocked) return;
+    // If server & cloud data is still synchronizing, wait for sync to finish
+    if (window.__startSyncReady === false) {
+      window.__userWantsStart = true;
+      return;
+    }
+    if (isStarting) return;
+    isStarting = true;
 
-      justStartedGame = true;
+    window.__gameAlreadyStarted = true;
+    const appEl = document.getElementById('appContainer');
+    if (appEl) {
+      appEl.style.display = 'flex';
+    }
+
+    justStartedGame = true;
+    setTimeout(() => {
+      justStartedGame = false;
+    }, 250);
+
+    // Immediately disable pointer events on start screen to prevent click delays
+    if (startScreen) {
+      startScreen.style.pointerEvents = 'none';
+      startScreen.classList.add('start-screen-hidden');
       setTimeout(() => {
-        justStartedGame = false;
-      }, 250);
+        startScreen.style.display = 'none';
+      }, 180);
+    }
 
-      // Immediately disable pointer events on start screen to prevent click delays
-      if (startScreen) {
-        startScreen.style.pointerEvents = 'none';
-        startScreen.classList.add('start-screen-hidden');
-        setTimeout(() => {
-          startScreen.style.display = 'none';
-          if (startScreen.parentNode) {
-            startScreen.parentNode.removeChild(startScreen);
-          }
-        }, 180);
-      }
+    // Force-hide all modals so nothing pops up over the game
+    document.querySelectorAll('.modal-overlay, .ad-video-overlay').forEach(modal => {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    });
 
-      // Force-hide all modals so nothing pops up over the game
-      document.querySelectorAll('.modal-overlay, .ad-video-overlay').forEach(modal => {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-      });
+    if (window.SoundEngine && window.SoundEngine.SoundEngine) {
+      window.SoundEngine.SoundEngine.initAudio();
+      window.SoundEngine.SoundEngine.playClick();
+    }
+    if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+      window.TelegramApp.TelegramApp.haptic('medium');
+    }
 
-      if (window.SoundEngine && window.SoundEngine.SoundEngine) {
-        window.SoundEngine.SoundEngine.initAudio();
-        window.SoundEngine.SoundEngine.playClick();
-      }
-      if (window.TelegramApp && window.TelegramApp.TelegramApp) {
-        window.TelegramApp.TelegramApp.haptic('medium');
-      }
-
-      // Guarantee current level strictly matches maxLevel and currentLevel
-      const targetLvl = Math.max(1, Number(currentUser.maxLevel || 1), Number(currentUser.currentLevel || 1));
+    // Guarantee current level strictly matches maxLevel and currentLevel
+    const targetLvl = Math.max(1, Number(currentUser ? (currentUser.maxLevel || currentUser.currentLevel || 1) : 1));
+    if (currentUser) {
       currentUser.currentLevel = targetLvl;
       currentUser.maxLevel = Math.max(Number(currentUser.maxLevel || 0), targetLvl);
       currentUser.level = currentUser.maxLevel;
+    }
 
-      if (!currentLevelData || currentLevelData.levelNumber !== targetLvl || (engine && engine.currentLevel !== targetLvl)) {
-        if (LG && LG.generateLevel) {
-          currentLevelData = LG.generateLevel(targetLvl);
-          engine.startLevel(currentLevelData);
-        }
+    if (!currentLevelData || currentLevelData.levelNumber !== targetLvl || (engine && engine.currentLevel !== targetLvl)) {
+      if (LG && LG.generateLevel) {
+        currentLevelData = LG.generateLevel(targetLvl);
+        engine.startLevel(currentLevelData);
       }
+    }
 
-      // Guarantee game board is populated and fully rendered
-      if (renderer && renderer.renderBoard) {
-        renderer.renderBoard(engine);
-      }
-      updateHeaderUI();
-    };
+    // Guarantee game board is populated and fully rendered
+    if (renderer && renderer.renderBoard) {
+      renderer.renderBoard(engine);
+    }
+    updateHeaderUI();
+  };
 
-    window.__triggerStartGame = handleStart;
+  window.__triggerStartGame = handleStart;
 
+  if (startGameBtn) {
     startGameBtn.addEventListener('pointerdown', handleStart);
     startGameBtn.addEventListener('click', handleStart);
     startGameBtn.addEventListener('touchend', handleStart, { passive: true });
-    if (startScreen) {
-      startScreen.addEventListener('click', (e) => {
-        if (!isStarting && e.target === startScreen) handleStart(e);
-      });
-    }
+  }
+  if (startScreen) {
+    startScreen.addEventListener('click', (e) => {
+      if (!isStarting && e.target === startScreen) handleStart(e);
+    });
+  }
 
-    if (window.__startDismissed) {
-      handleStart();
-    }
+  if (window.__startDismissed) {
+    handleStart();
   }
 
   const handleAppExitOrHide = () => {
@@ -12231,10 +12248,16 @@ async function initColorSortApp() {
 
 }
 
+function bootColorSort() {
+  initColorSortApp().catch(err => {
+    console.error('[App] Fatal error during initColorSortApp:', err);
+  });
+}
+
 if (document.body && document.getElementById('gameBoard')) {
-  initColorSortApp();
+  bootColorSort();
 } else if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initColorSortApp);
+  document.addEventListener('DOMContentLoaded', bootColorSort);
 } else {
-  initColorSortApp();
+  bootColorSort();
 }
