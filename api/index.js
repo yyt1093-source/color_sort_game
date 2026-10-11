@@ -320,12 +320,35 @@ app.post('/api/user/init', async (req, res) => {
  */
 app.post('/api/user/sync', authMiddleware, (req, res) => {
   try {
-    let { firstName, username, photoUrl, currentLevel, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves } = req.body || {};
+    let { firstName, username, photoUrl, currentLevel, hintsUsed, undosUsed, revealsUsed, extraBottlesUsed, shufflesUsed, totalMoves, hints, undos, reveals, extraBottles, extra_bottles } = req.body || {};
     const id = req.telegramId || 'guest_dev_123';
 
     let existingUser = db.getUser ? db.getUser(id, { first_name: firstName, username, photo_url: photoUrl }) : null;
     if (!existingUser) {
       existingUser = db.getUser(id, { first_name: firstName, username, photo_url: photoUrl });
+    }
+
+    // If client passes explicit booster balances, allow sync to decrement or update without injection
+    if (hints !== undefined) {
+      const hVal = Math.min(Number(existingUser.hints || 0), Math.max(0, Number(hints)));
+      db.prepare('UPDATE users SET hints = ? WHERE telegram_id = ?').run(hVal, String(id));
+      existingUser.hints = hVal;
+    }
+    if (undos !== undefined) {
+      const uVal = Math.min(Number(existingUser.undos || 0), Math.max(0, Number(undos)));
+      db.prepare('UPDATE users SET undos = ? WHERE telegram_id = ?').run(uVal, String(id));
+      existingUser.undos = uVal;
+    }
+    if (reveals !== undefined) {
+      const rVal = Math.min(Number(existingUser.reveals || 0), Math.max(0, Number(reveals)));
+      db.prepare('UPDATE users SET reveals = ? WHERE telegram_id = ?').run(rVal, String(id));
+      existingUser.reveals = rVal;
+    }
+    const bReq = extraBottles !== undefined ? extraBottles : extra_bottles;
+    if (bReq !== undefined) {
+      const bVal = Math.min(Number(existingUser.extra_bottles || 0), Math.max(0, Number(bReq)));
+      db.prepare('UPDATE users SET extra_bottles = ? WHERE telegram_id = ?').run(bVal, String(id));
+      existingUser.extra_bottles = bVal;
     }
 
     const isAlligator = String(id) === '5761685341';
@@ -443,7 +466,27 @@ app.post('/api/game/use-booster', authMiddleware, async (req, res) => {
     const id = req.telegramId || 'guest_dev_123';
 
     // 1. Atomically check and deduct booster on server
-    const deductRes = db.useBooster(id, boosterType);
+    let deductRes = db.useBooster(id, boosterType);
+    if (!deductRes.success) {
+      // Serverless cold-start or out-of-sync fallback: pull from KVDB first before rejecting
+      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+      try {
+        const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
+        if (r.ok) {
+          const val = await r.json();
+          if (val && typeof val === 'object') {
+            const h = Number(val.hints || 0);
+            const u = Number(val.undos || 0);
+            const rv = Number(val.reveals || 0);
+            const eb = Number(val.extraBottles || val.extra_bottles || 0);
+            db.prepare('UPDATE users SET hints = ?, undos = ?, reveals = ?, extra_bottles = ? WHERE telegram_id = ?')
+              .run(h, u, rv, eb, String(id));
+            deductRes = db.useBooster(id, boosterType);
+          }
+        }
+      } catch (e) {}
+    }
+
     if (!deductRes.success) {
       return res.status(400).json({ success: false, error: deductRes.error || 'Недостаточно бустеров' });
     }
