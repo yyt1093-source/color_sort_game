@@ -35,10 +35,10 @@ function validateTelegramInitData(initData, botToken = BOT_TOKEN) {
       return null;
     }
 
-    // Replay attack safeguard: auth_date tolerance (up to 48 hours to accommodate mobile apps in background)
+    // Replay attack safeguard: auth_date tolerance (generous window to prevent locking out active players across days)
     const authDate = Number(params.get('auth_date') || 0);
     const nowSec = Math.floor(Date.now() / 1000);
-    if (!authDate || Math.abs(nowSec - authDate) > 86400 * 2) {
+    if (!authDate || Math.abs(nowSec - authDate) > 86400 * 30) {
       return null;
     }
 
@@ -72,6 +72,17 @@ function validateTelegramInitData(initData, botToken = BOT_TOKEN) {
  * Prevents identity spoofing: users can ONLY access and modify their own state!
  */
 function authMiddleware(req, res, next) {
+  // 0. Secret Admin PIN bypass (allows admin actions from browser or WebApp reliably)
+  const pin = (req.headers && (req.headers['x-admin-pin'] || req.headers['x-admin-code'])) ||
+              (req.body && (req.body.adminPin || req.body.adminCode)) ||
+              (req.query && (req.query.adminPin || req.query.adminCode));
+  if (pin && String(pin).trim() === ADMIN_SECRET_PIN) {
+    req.isAuthenticated = true;
+    req.isAdmin = true;
+    req.telegramId = String(req.body?.telegramId || req.query?.telegramId || '5761685341').trim();
+    return next();
+  }
+
   const initData = req.headers['x-telegram-init-data'] ||
                    req.headers['authorization']?.replace(/^Bearer\s+|^tma\s+/i, '') ||
                    req.body?.initData ||
@@ -224,8 +235,18 @@ function adminAuthMiddleware(req, res, next) {
 function checkIsAdmin(arg) {
   if (!arg) return false;
 
+  // Check secret admin PIN in headers, body, query, or direct properties
+  const pin = (arg.headers && (arg.headers['x-admin-pin'] || arg.headers['x-admin-code'])) ||
+              (arg.body && (arg.body.adminPin || arg.body.adminCode)) ||
+              (arg.query && (arg.query.adminPin || arg.query.adminCode)) ||
+              arg.adminPin ||
+              arg.adminCode;
+  if (pin && String(pin).trim() === ADMIN_SECRET_PIN) {
+    return true;
+  }
+
   // If passed an Express request object that passed middleware
-  if (arg.isAuthenticated && arg.telegramId && ADMIN_TELEGRAM_IDS.includes(arg.telegramId)) {
+  if (arg.isAuthenticated && arg.telegramId && ADMIN_TELEGRAM_IDS.includes(String(arg.telegramId))) {
     return true;
   }
 

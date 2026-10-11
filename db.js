@@ -680,9 +680,13 @@ function getAdRewardsCount(telegramId) {
  * Validate ad reward eligibility (cooldown + daily cap)
  */
 function checkAdRewardAllowed(telegramId) {
+  // Admin is unconditionally allowed to test rewards without cooldown or cap
+  if (String(telegramId) === '5761685341') {
+    return { allowed: true };
+  }
   const count = getAdRewardsCount(telegramId);
-  if (count >= 50) {
-    return { allowed: false, error: 'Достигнут суточный лимит наград за рекламу (50 в день).' };
+  if (count >= 100) {
+    return { allowed: false, error: 'Достигнут суточный лимит наград за рекламу (100 в день).' };
   }
   const lastStmt = db.prepare(`
     SELECT created_at FROM ad_rewards_log 
@@ -691,12 +695,16 @@ function checkAdRewardAllowed(telegramId) {
   `);
   const last = lastStmt.get(String(telegramId));
   if (last && last.created_at) {
-    const lastTime = new Date(last.created_at.replace(' ', 'T') + 'Z').getTime();
-    const elapsed = Math.max(0, Date.now() - lastTime);
-    const cooldownMs = 15000; // 15 seconds cooldown between ad rewards
-    if (elapsed < cooldownMs) {
-      const waitSec = Math.ceil((cooldownMs - elapsed) / 1000);
-      return { allowed: false, error: `Подождите ${waitSec} сек. перед получением следующей награды за рекламу.` };
+    const raw = String(last.created_at);
+    const isoStr = raw.includes('T') ? raw : raw.replace(' ', 'T') + (raw.endsWith('Z') ? '' : 'Z');
+    const lastTime = new Date(isoStr).getTime();
+    if (!isNaN(lastTime)) {
+      const elapsed = Math.max(0, Date.now() - lastTime);
+      const cooldownMs = 3000; // 3 seconds grace cooldown between ads
+      if (elapsed < cooldownMs) {
+        const waitSec = Math.ceil((cooldownMs - elapsed) / 1000);
+        return { allowed: false, error: `Подождите ${waitSec} сек. перед получением следующей награды за рекламу.` };
+      }
     }
   }
   return { allowed: true };
