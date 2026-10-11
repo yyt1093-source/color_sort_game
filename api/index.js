@@ -827,9 +827,9 @@ app.post('/api/ad-reward/start', authMiddleware, (req, res) => {
 /**
  * Claim Ad Reward (Verified Rewarded Ads Bonus)
  */
-app.post('/api/ad-reward', authMiddleware, async (req, res) => {
+async function handleAdReward(req, res) {
   try {
-    const { rewardType, adToken } = req.body || {};
+    const { rewardType, adToken, currentHints, currentUndos, currentReveals, currentExtraBottles, extraBottles } = req.body || {};
     const id = req.telegramId || 'guest_dev_123';
 
     // Verify ad token if provided (token replay & duration check)
@@ -846,16 +846,53 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
       return res.status(429).json({ success: false, error: check.error });
     }
 
-    let updatedUser = db.logAdReward(id, rewardType);
+    // 1. Sync authoritative client balances before applying reward if provided
+    const ebReq = currentExtraBottles !== undefined ? currentExtraBottles : extraBottles;
+    if (currentHints !== undefined) {
+      db.prepare('UPDATE users SET hints = ? WHERE telegram_id = ?').run(Math.max(0, Number(currentHints)), String(id));
+    }
+    if (currentUndos !== undefined) {
+      db.prepare('UPDATE users SET undos = ? WHERE telegram_id = ?').run(Math.max(0, Number(currentUndos)), String(id));
+    }
+    if (currentReveals !== undefined) {
+      db.prepare('UPDATE users SET reveals = ? WHERE telegram_id = ?').run(Math.max(0, Number(currentReveals)), String(id));
+    }
+    if (ebReq !== undefined) {
+      db.prepare('UPDATE users SET extra_bottles = ? WHERE telegram_id = ?').run(Math.max(0, Number(ebReq)), String(id));
+    }
 
-    // Forward authoritative server values to KVDB cloud for real players without overwriting existing boosters
-    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev') && updatedUser) {
-      const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    // 2. If client did not send counts, check KVDB for cold-start sync
+    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+    let cloudVal = null;
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
       try {
         const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
-        let val = r.ok ? await r.json() : null;
-        if (!val || typeof val !== 'object') val = { telegramId: String(id) };
+        if (r.ok) cloudVal = await r.json();
+        if (cloudVal && typeof cloudVal === 'object') {
+          if (ebReq === undefined && (cloudVal.extraBottles !== undefined || cloudVal.extra_bottles !== undefined)) {
+            const eb = Number(cloudVal.extraBottles !== undefined ? cloudVal.extraBottles : cloudVal.extra_bottles);
+            db.prepare('UPDATE users SET extra_bottles = ? WHERE telegram_id = ?').run(eb, String(id));
+          }
+          if (currentHints === undefined && cloudVal.hints !== undefined) {
+            db.prepare('UPDATE users SET hints = ? WHERE telegram_id = ?').run(Number(cloudVal.hints), String(id));
+          }
+          if (currentUndos === undefined && cloudVal.undos !== undefined) {
+            db.prepare('UPDATE users SET undos = ? WHERE telegram_id = ?').run(Number(cloudVal.undos), String(id));
+          }
+          if (currentReveals === undefined && cloudVal.reveals !== undefined) {
+            db.prepare('UPDATE users SET reveals = ? WHERE telegram_id = ?').run(Number(cloudVal.reveals), String(id));
+          }
+        }
+      } catch (e) {}
+    }
 
+    // 3. Atomically add +1 to the requested reward in SQLite
+    let updatedUser = db.logAdReward(id, rewardType);
+
+    // 4. Forward authoritative server values to KVDB cloud for real players
+    if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev') && updatedUser) {
+      try {
+        let val = cloudVal && typeof cloudVal === 'object' ? cloudVal : { telegramId: String(id) };
         val.hints = updatedUser.hints;
         val.undos = updatedUser.undos;
         val.reveals = updatedUser.reveals;
@@ -875,7 +912,7 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(val),
-          signal: AbortSignal.timeout(2000)
+          signal: AbortSignal.timeout ? AbortSignal.timeout(2000) : undefined
         }).catch(() => {});
       } catch (e) {}
     }
@@ -898,73 +935,10 @@ app.post('/api/ad-reward', authMiddleware, async (req, res) => {
     console.error('[API ERROR] /api/ad-reward:', err);
     res.status(500).json({ success: false, error: err.message });
   }
-});
+}
 
-app.post('/api/ad-reward/claim', authMiddleware, async (req, res) => {
-  const { rewardType, adToken } = req.body || {};
-  const id = req.telegramId || 'guest_dev_123';
-
-  if (adToken) {
-    const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
-    const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
-    if (!tokenCheck.valid) {
-      return res.status(400).json({ success: false, error: tokenCheck.error });
-    }
-  }
-
-  const check = db.checkAdRewardAllowed ? db.checkAdRewardAllowed(id) : { allowed: true };
-  if (!check.allowed) {
-    return res.status(429).json({ success: false, error: check.error });
-  }
-
-  let updatedUser = db.logAdReward(id, rewardType);
-
-  if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev') && updatedUser) {
-    const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
-    try {
-      const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
-      let val = r.ok ? await r.json() : null;
-      if (!val || typeof val !== 'object') val = { telegramId: String(id) };
-
-      val.hints = updatedUser.hints;
-      val.undos = updatedUser.undos;
-      val.reveals = updatedUser.reveals;
-      val.extraBottles = updatedUser.extra_bottles;
-      val.extra_bottles = updatedUser.extra_bottles;
-
-      const maxLvl = Math.max(Number(val.maxLevel || val.max_level || 1), Number(updatedUser.max_level || 1));
-      const curLvl = Math.max(Number(val.currentLevel || val.current_level || 1), Number(updatedUser.current_level || 1), maxLvl);
-      val.maxLevel = maxLvl;
-      val.max_level = maxLvl;
-      val.currentLevel = curLvl;
-      val.current_level = curLvl;
-      val.level = maxLvl;
-      val.updatedAt = Date.now();
-
-      await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(val),
-        signal: AbortSignal.timeout(2000)
-      }).catch(() => {});
-    } catch (e) {}
-  }
-
-  const rewardNames = {
-    hints: '+1 подсказка',
-    undos: '+1 отмена хода',
-    extra_bottle: 'Дополнительная колбочка',
-    reveal_bottle: 'Открыть цвета'
-  };
-  const rewardName = rewardNames[rewardType] || rewardType;
-
-  res.json({
-    success: true,
-    message: `Бонус ${rewardName} успешно начислен!`,
-    rewardType,
-    user: updatedUser
-  });
-});
+app.post('/api/ad-reward', authMiddleware, handleAdReward);
+app.post('/api/ad-reward/claim', authMiddleware, handleAdReward);
 
 /**
  * Save connected TON wallet address
@@ -2026,7 +2000,29 @@ app.post('/api/gifts/send', async (req, res) => {
         });
       }
     }
-    const result = db.sendGift(gift);
+    let result = db.sendGift(gift);
+    if (!result || !result.success) {
+      // Serverless cold-start fallback: pull latest boosters from KVDB before failing
+      const senderId = String(gift.fromId || gift.senderId || req.telegramId || '');
+      if (senderId && !senderId.startsWith('guest') && !senderId.startsWith('dev')) {
+        const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
+        try {
+          const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(senderId)}?_cb=${Date.now()}`);
+          if (r.ok) {
+            const val = await r.json();
+            if (val && typeof val === 'object') {
+              const h = Number(val.hints || 0);
+              const u = Number(val.undos || 0);
+              const rv = Number(val.reveals || 0);
+              const eb = Number(val.extraBottles !== undefined ? val.extraBottles : (val.extra_bottles || 0));
+              db.prepare('UPDATE users SET hints = ?, undos = ?, reveals = ?, extra_bottles = ? WHERE telegram_id = ?')
+                .run(h, u, rv, eb, senderId);
+              result = db.sendGift(gift);
+            }
+          }
+        } catch (e) {}
+      }
+    }
     if (!result || !result.success) {
       return res.status(400).json(result || { success: false, error: 'Ошибка отправки подарка' });
     }

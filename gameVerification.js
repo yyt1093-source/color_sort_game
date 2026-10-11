@@ -403,6 +403,8 @@ function verifyLevelCompletion(token, telegramId, clientMovesLog = null, metadat
   return result;
 }
 
+const AD_SECRET = process.env.AD_TOKEN_SECRET || 'color_sort_ad_verifier_2026';
+
 /**
  * Ad Watching Verification
  */
@@ -413,48 +415,89 @@ function createAdToken(telegramId, rewardType) {
     activeAdTokens.delete(prevToken);
   }
 
-  const adToken = crypto.randomBytes(24).toString('hex');
+  const now = Date.now();
+  const payload = `${tid}:${String(rewardType)}:${now}`;
+  const sig = crypto.createHmac('sha256', AD_SECRET).update(payload).digest('hex').substring(0, 32);
+  const adToken = `adt_${Buffer.from(payload).toString('base64url')}_${sig}`;
+
   activeAdTokens.set(adToken, {
     telegramId: tid,
     rewardType: String(rewardType),
-    startedAt: Date.now(),
+    startedAt: now,
     claimed: false
   });
   playerActiveAdTokens.set(tid, adToken);
   return adToken;
 }
 
-function verifyAndClaimAdToken(adToken, telegramId, rewardType, isLocalDev = false) {
+function verifyAndClaimAdToken(adToken, telegramId, rewardType, isLocalDev = false, skipDurationCheck = false) {
   if (!adToken) {
     return { valid: false, error: 'Отсутствует токен просмотра рекламы' };
   }
-  const tokenData = activeAdTokens.get(String(adToken));
-  if (!tokenData) {
-    return { valid: false, error: 'Недействительный или просроченный токен рекламы' };
-  }
-  if (tokenData.telegramId !== String(telegramId)) {
-    return { valid: false, error: 'Токен рекламы принадлежит другому пользователю' };
-  }
-  if (tokenData.claimed) {
-    return { valid: false, error: 'Этот токен рекламы уже был использован' };
-  }
-  if (tokenData.rewardType !== String(rewardType)) {
-    return { valid: false, error: 'Несоответствие типа награды токену' };
+  const str = String(adToken);
+
+  // 1. In-memory check first (for same-instance requests)
+  const tokenData = activeAdTokens.get(str);
+  if (tokenData) {
+    if (tokenData.telegramId !== String(telegramId)) {
+      return { valid: false, error: 'Токен рекламы принадлежит другому пользователю' };
+    }
+    if (tokenData.claimed) {
+      return { valid: false, error: 'Этот токен рекламы уже был использован' };
+    }
+    if (tokenData.rewardType !== String(rewardType)) {
+      return { valid: false, error: 'Несоответствие типа награды токену' };
+    }
+    const elapsed = Date.now() - tokenData.startedAt;
+    const minRequiredMs = skipDurationCheck ? 0 : (isLocalDev ? 1500 : 14000);
+    if (elapsed < minRequiredMs) {
+      return {
+        valid: false,
+        error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 15 сек.).`
+      };
+    }
+    tokenData.claimed = true;
+    activeAdTokens.delete(str);
+    playerActiveAdTokens.delete(String(telegramId));
+    return { valid: true };
   }
 
-  const elapsed = Date.now() - tokenData.startedAt;
-  const minRequiredMs = isLocalDev ? 1500 : 14000; // 14 seconds minimum for 15s short video
-  if (elapsed < minRequiredMs) {
-    return {
-      valid: false,
-      error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 15 сек.).`
-    };
+  // 2. Stateless HMAC check (for serverless lambdas on Vercel/Render across cold starts)
+  if (str.startsWith('adt_')) {
+    const parts = str.split('_');
+    if (parts.length === 3) {
+      const b64 = parts[1];
+      const sig = parts[2];
+      try {
+        const payload = Buffer.from(b64, 'base64url').toString('utf8');
+        const expectedSig = crypto.createHmac('sha256', AD_SECRET).update(payload).digest('hex').substring(0, 32);
+        if (sig === expectedSig) {
+          const [tId, tReward, tStartedAt] = payload.split(':');
+          if (String(tId) !== String(telegramId)) {
+            return { valid: false, error: 'Токен рекламы принадлежит другому пользователю' };
+          }
+          if (String(tReward) !== String(rewardType)) {
+            return { valid: false, error: 'Несоответствие типа награды токену' };
+          }
+          const started = Number(tStartedAt);
+          const elapsed = Date.now() - started;
+          const minRequiredMs = skipDurationCheck ? 0 : (isLocalDev ? 1500 : 14000);
+          if (elapsed < minRequiredMs) {
+            return {
+              valid: false,
+              error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 15 сек.).`
+            };
+          }
+          if (elapsed > 10 * 60 * 1000) {
+            return { valid: false, error: 'Срок действия токена рекламы истёк (более 10 минут).' };
+          }
+          return { valid: true };
+        }
+      } catch (e) {}
+    }
   }
 
-  tokenData.claimed = true;
-  activeAdTokens.delete(String(adToken));
-  playerActiveAdTokens.delete(String(telegramId));
-  return { valid: true };
+  return { valid: false, error: 'Недействительный или просроченный токен рекламы' };
 }
 
 module.exports = {

@@ -46,9 +46,10 @@ global.localStorage = {
 async function run100ExitEntryCycles() {
   console.log('🧪 RUNNING 100 CONSECUTIVE EXIT & ENTRY CYCLES TEST SUITE\n');
 
-  const testPlayerId = '9999888877';
+  const testPlayerId = 'test_cycle_player_' + Date.now();
   // Clean start
   db.getUser(testPlayerId, { first_name: 'TestPlayer', username: 'tester' });
+  db.prepare('UPDATE users SET hints = 0, undos = 0, reveals = 0, extra_bottles = 0 WHERE telegram_id = ?').run(testPlayerId);
   db.addBonus(testPlayerId, { ton_balance: 50.0 }); // 50 GRAM for buying in chest
 
   // 1. Initial purchases in chest
