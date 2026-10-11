@@ -214,11 +214,16 @@ async function initColorSortApp() {
 
     // Подтверждение просмотра и начисление бонуса
     let claimRes = null;
+    const curB = currentUser ? (currentUser.extraBottles !== undefined ? currentUser.extraBottles : currentUser.extra_bottles) : undefined;
     if (tokenRes && tokenRes.adToken) {
       try {
         claimRes = await apiCall('/api/ad-reward/claim', 'POST', {
           adToken: tokenRes.adToken,
-          rewardType
+          rewardType,
+          currentHints: currentUser ? currentUser.hints : undefined,
+          currentUndos: currentUser ? currentUser.undos : undefined,
+          currentReveals: currentUser ? currentUser.reveals : undefined,
+          currentExtraBottles: curB
         });
       } catch (e) {}
     }
@@ -229,27 +234,36 @@ async function initColorSortApp() {
         claimRes = await apiCall('/api/ad-reward', 'POST', {
           rewardType,
           adToken: tokenRes ? tokenRes.adToken : undefined,
-          telegramId: currentUser ? currentUser.telegramId : undefined
+          telegramId: currentUser ? currentUser.telegramId : undefined,
+          currentHints: currentUser ? currentUser.hints : undefined,
+          currentUndos: currentUser ? currentUser.undos : undefined,
+          currentReveals: currentUser ? currentUser.reveals : undefined,
+          currentExtraBottles: curB
         });
       } catch (e) {}
     }
 
     if (claimRes && claimRes.success) {
-      // 1. Надежно добавляем полученную награду в локальный объект пользователя
+      // 1. Надежно добавляем ровно +1 к запрошенному бустеру и мгновенно сохраняем в облако
       if (rewardType === 'hints') {
         currentUser.hints = (currentUser.hints || 0) + 1;
+        updateCloudBoosterDirectly('hints', currentUser.hints);
       } else if (rewardType === 'undos') {
         currentUser.undos = (currentUser.undos || 0) + 1;
+        updateCloudBoosterDirectly('undos', currentUser.undos);
       } else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') {
         currentUser.reveals = (currentUser.reveals || 0) + 1;
+        updateCloudBoosterDirectly('reveals', currentUser.reveals);
       } else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') {
         currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
         currentUser.extra_bottles = currentUser.extraBottles;
+        updateCloudBoosterDirectly('extraBottles', currentUser.extraBottles);
       } else if (rewardType === 'coins') {
         currentUser.coins = (currentUser.coins || 0) + 150;
       }
 
-      // 2. Неразрушающее слияние с данными сервера (никогда не зануляем другие бустеры и не сбрасываем уровень!)
+      // 2. Неразрушающее слияние с данными сервера: обновляем только уровни и монеты,
+      // но НИКОГДА не перезаписываем бустеры (hints, extraBottles и др.) устаревшими данными!
       if (claimRes.user) {
         const srv = claimRes.user;
         const srvMaxLvl = Math.max(Number(srv.maxLevel || 0), Number(srv.max_level || 0), Number(srv.level || 0));
@@ -258,14 +272,6 @@ async function initColorSortApp() {
         if (srvCurLvl > 0) currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), srvCurLvl, Number(currentUser.maxLevel || 1));
         currentUser.level = currentUser.maxLevel;
 
-        if (srv.hints !== undefined) currentUser.hints = Number(srv.hints);
-        if (srv.undos !== undefined) currentUser.undos = Number(srv.undos);
-        if (srv.reveals !== undefined) currentUser.reveals = Number(srv.reveals);
-        const srvBottles = (srv.extraBottles !== undefined ? srv.extraBottles : srv.extra_bottles);
-        if (srvBottles !== undefined) {
-          currentUser.extraBottles = Number(srvBottles);
-          currentUser.extra_bottles = currentUser.extraBottles;
-        }
         if (srv.coins !== undefined) currentUser.coins = Math.max(Number(currentUser.coins || 0), Number(srv.coins || 0));
       }
 
