@@ -3136,10 +3136,18 @@ async function initColorSortApp() {
 
   // Instant pre-population from localStorage for immediate, zero-delay baseline
   try {
+    const rawHintsEarly = localStorage.getItem(`color_sort_hints_${userData.telegramId}`);
+    if (rawHintsEarly !== null && !isNaN(parseInt(rawHintsEarly, 10))) {
+      currentUser.hints = Math.max(0, parseInt(rawHintsEarly, 10));
+    }
     const rawLocal = localStorage.getItem(`color_sort_user_${userData.telegramId}`);
     if (rawLocal) {
       const parsedLocal = JSON.parse(rawLocal);
+      const preHints = currentUser.hints;
       currentUser = { ...currentUser, ...parsedLocal };
+      const cachedH = localStorage.getItem(`color_sort_hints_${userData.telegramId}`);
+      const hFloor = (cachedH !== null && !isNaN(parseInt(cachedH, 10))) ? parseInt(cachedH, 10) : 0;
+      currentUser.hints = Math.max(Number(currentUser.hints || 0), Number(preHints || 0), hFloor);
       const isLocalDummy = !parsedLocal.firstName || parsedLocal.firstName === 'Игрок' || parsedLocal.firstName === 'Player' || parsedLocal.firstName === '.';
       if (userData.firstName && (isLocalDummy || (userData.firstName !== 'Игрок' && userData.firstName !== 'Player'))) {
         currentUser.firstName = userData.firstName;
@@ -3165,6 +3173,7 @@ async function initColorSortApp() {
     }
     try {
       localStorage.setItem(`color_sort_user_${userData.telegramId}`, JSON.stringify(currentUser));
+      localStorage.setItem(`color_sort_hints_${userData.telegramId}`, String(currentUser.hints || 0));
       localStorage.setItem(`color_sort_db_level_${userData.telegramId}`, String(startupBaseline.maxLevel));
       localStorage.setItem('cs_cached_display_level', String(startupBaseline.maxLevel));
     } catch (e) {}
@@ -3668,6 +3677,9 @@ async function initColorSortApp() {
     const localSeasonReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
 
     // Secure authoritative sync: backend handles SQLite and KVDB authoritatively
+    const cachedLocalHints = localStorage.getItem(`color_sort_hints_${id}`);
+    const resolvedPayloadHints = Math.max(Number(user.hints || 0), (cachedLocalHints !== null && !isNaN(parseInt(cachedLocalHints, 10))) ? parseInt(cachedLocalHints, 10) : 0);
+
     const syncPayload = {
       telegramId: id,
       firstName: user.firstName,
@@ -3678,7 +3690,7 @@ async function initColorSortApp() {
       ton_wallet_type: user.ton_wallet_type,
       seasonResetAt: localSeasonReset,
       purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
-      hints: user.hints,
+      hints: resolvedPayloadHints,
       undos: user.undos,
       reveals: user.reveals,
       extraBottles: user.extraBottles,
@@ -3698,7 +3710,22 @@ async function initColorSortApp() {
           baseObj.level = baseObj.maxLevel;
           baseObj.currentLevel = user.currentLevel || baseObj.currentLevel;
           baseObj.current_level = baseObj.currentLevel;
-          baseObj.hints = user.hints !== undefined ? user.hints : baseObj.hints;
+
+          // Hints Protection: Never wipe positive cloud hints with 0 from uninitialized state!
+          const cloudH = Number(baseObj.hints || 0);
+          const localH = Number(user.hints || 0);
+          const maxH = Math.max(cloudH, localH);
+          baseObj.hints = maxH;
+          if (maxH > localH) {
+            user.hints = maxH;
+            if (user.telegramId) {
+              try {
+                localStorage.setItem(`color_sort_hints_${user.telegramId}`, String(maxH));
+              } catch (e) {}
+            }
+            updateHeaderUI();
+          }
+
           baseObj.undos = user.undos !== undefined ? user.undos : baseObj.undos;
           baseObj.reveals = user.reveals !== undefined ? user.reveals : baseObj.reveals;
           baseObj.extraBottles = user.extraBottles !== undefined ? user.extraBottles : baseObj.extraBottles;
@@ -3725,18 +3752,20 @@ async function initColorSortApp() {
         const curUndos = currentUser.undos;
         const curReveals = currentUser.reveals;
         const curBottles = currentUser.extraBottles;
+        const retHints = res.user.hints !== undefined ? Number(res.user.hints) : curHints;
+        const finalHints = Math.max(Number(curHints || 0), retHints);
 
         currentUser = normalizeUserObject({
           ...currentUser,
           ...res.user,
-          hints: Math.max(Number(curHints || 0), Number(res.user.hints !== undefined ? res.user.hints : curHints)),
+          hints: finalHints,
           undos: Math.min(Number(curUndos || 0), Number(res.user.undos !== undefined ? res.user.undos : curUndos)),
           reveals: Math.min(Number(curReveals || 0), Number(res.user.reveals !== undefined ? res.user.reveals : curReveals)),
           extraBottles: Math.min(Number(curBottles || 0), Number(res.user.extra_bottles !== undefined ? res.user.extra_bottles : curBottles)),
           extra_bottles: Math.min(Number(curBottles || 0), Number(res.user.extra_bottles !== undefined ? res.user.extra_bottles : curBottles))
         });
         if (currentUser.telegramId) {
-          localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+          localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(finalHints));
         }
         saveLocalUser();
         updateHeaderUI();
@@ -4219,15 +4248,22 @@ async function initColorSortApp() {
           const localUpdatedAt = Number(currentUser.updatedAt || 0);
           const cloudUpdatedAt = Number(cloudData.updatedAt || 0);
 
-          // If cloud data is strictly newer than our local state, sync cloud booster values directly
-          if (cloudUpdatedAt > localUpdatedAt) {
-            if (cloudData.hints !== undefined) {
-              currentUser.hints = Math.max(Number(currentUser.hints || 0), Number(cloudData.hints || 0));
-              if (currentUser.telegramId) {
-                localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
-              }
+          // Hints are unconditionally synced to the maximum of local and cloud (never lost on reload or exit)
+          if (cloudData.hints !== undefined) {
+            const cloudH = Number(cloudData.hints || 0);
+            const localH = Number(currentUser.hints || 0);
+            const resolvedH = Math.max(localH, cloudH);
+            if (resolvedH !== currentUser.hints) {
+              currentUser.hints = resolvedH;
               changed = true;
             }
+            if (currentUser.telegramId) {
+              localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(resolvedH));
+            }
+          }
+
+          // If cloud data is strictly newer than our local state, sync other booster values directly
+          if (cloudUpdatedAt > localUpdatedAt) {
             if (cloudData.undos !== undefined) {
               currentUser.undos = Math.min(Number(currentUser.undos || 0), Number(cloudData.undos || 0));
               changed = true;
@@ -4243,15 +4279,10 @@ async function initColorSortApp() {
               changed = true;
             }
           } else {
-            // Local state is newer or equal; if local has 0 hints but cloud has hints, restore hints
-            if (Number(currentUser.hints || 0) === 0 && cloudData.hints !== undefined && Number(cloudData.hints || 0) > 0) {
-              currentUser.hints = Number(cloudData.hints);
-              if (currentUser.telegramId) {
-                localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
-              }
-              changed = true;
+            // Local state is newer or equal; if local has more hints than cloud, sync to cloud
+            if (Number(currentUser.hints || 0) > Number(cloudData.hints || 0)) {
+              syncPlayerToCloud(currentUser);
             }
-            syncPlayerToCloud(currentUser);
           }
           if (cloudData.all_colors_until !== undefined) {
             const acu = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
@@ -4783,14 +4814,23 @@ async function initColorSortApp() {
       const localUpdatedAt = Number(currentUser.updatedAt || 0);
       const serverUpdatedAt = serverUser.user.updated_at ? new Date(serverUser.user.updated_at).getTime() : Number(serverUser.user.updatedAt || 0);
 
-      // Only adopt server booster counts if server state is strictly newer than local state
-      if (serverUpdatedAt > localUpdatedAt) {
-        if (serverUser.user.hints !== undefined) {
-          currentUser.hints = Math.max(Number(currentUser.hints || 0), Number(serverUser.user.hints || 0));
+      // Unconditionally adopt maximum hints across server and local
+      if (serverUser.user.hints !== undefined) {
+        const srvH = Number(serverUser.user.hints || 0);
+        const localH = Number(currentUser.hints || 0);
+        const resolvedH = Math.max(localH, srvH);
+        if (resolvedH !== currentUser.hints) {
+          currentUser.hints = resolvedH;
           if (currentUser.telegramId) {
-            localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+            localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(resolvedH));
           }
+          saveLocalUser();
+          updateHeaderUI();
         }
+      }
+
+      // Only adopt other server booster counts if server state is strictly newer than local state
+      if (serverUpdatedAt > localUpdatedAt) {
         if (serverUser.user.undos !== undefined) currentUser.undos = Math.min(Number(currentUser.undos || 0), Number(serverUser.user.undos || 0));
         if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.min(Number(currentUser.reveals || 0), Number(serverUser.user.reveals || 0));
         const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
@@ -4799,14 +4839,9 @@ async function initColorSortApp() {
           currentUser.extra_bottles = currentUser.extraBottles;
         }
       } else {
-        // Local state is newer or equal; if local has 0 hints but server has hints, restore hints
-        if (Number(currentUser.hints || 0) === 0 && serverUser.user.hints !== undefined && Number(serverUser.user.hints || 0) > 0) {
-          currentUser.hints = Number(serverUser.user.hints);
-          if (currentUser.telegramId) {
-            localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
-          }
+        if (Number(currentUser.hints || 0) > Number(serverUser.user.hints || 0)) {
+          syncPlayerToCloud(currentUser);
         }
-        syncPlayerToCloud(currentUser);
       }
       if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, Number(serverUser.user.all_colors_until || 0));
       if (serverUser.user.all_colors_purchased_at !== undefined) currentUser.all_colors_purchased_at = Math.max(currentUser.all_colors_purchased_at || 0, Number(serverUser.user.all_colors_purchased_at || 0));
