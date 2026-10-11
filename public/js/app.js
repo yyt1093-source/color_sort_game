@@ -3838,6 +3838,7 @@ async function initColorSortApp() {
         currentUser.level = userBaseline.maxLevel;
         currentUser.currentLevel = userBaseline.maxLevel;
         currentUser.stars = Math.max(Number(currentUser.stars || 0), userBaseline.stars || 0);
+      }
       try {
         localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
         localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(userBaseline.maxLevel));
