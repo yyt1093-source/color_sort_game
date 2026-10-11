@@ -875,7 +875,7 @@
     const targetId = String(selectedRecipient.telegramId);
     const targetName = selectedRecipient.displayName || selectedRecipient.firstName || 'Игрок';
 
-    if (myId === targetId) {
+    if (myId === targetId && !isAdmin) {
       showNotification('⚠️', t('errorTitle'), t('giftSelfSendError') || 'Вы не можете отправить подарок самому себе.');
       return;
     }
@@ -1223,8 +1223,8 @@
 
     const myId = String(currentUserRef.telegramId);
     const targetId = String(selectedRecipient.telegramId);
-
-    if (myId === targetId) {
+    const isAdmin = isUserAdmin(currentUserRef);
+    if (myId === targetId && !isAdmin) {
       showNotification('⚠️', t('errorTitle'), t('giftSelfSendError'));
       return;
     }
