@@ -3649,7 +3649,12 @@ async function initColorSortApp() {
       ton_wallet: user.ton_wallet,
       ton_wallet_type: user.ton_wallet_type,
       seasonResetAt: localSeasonReset,
-      purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0)
+      purchasesResetAt: Number(user.purchasesResetAt || user.purchases_reset_at || 0),
+      hints: user.hints,
+      undos: user.undos,
+      reveals: user.reveals,
+      extraBottles: user.extraBottles,
+      extra_bottles: user.extraBottles
     };
 
     // Forward snapshot directly to KVDB as well for 24/7 cross-device consistency
@@ -3688,7 +3693,21 @@ async function initColorSortApp() {
         keepalive: options && options.keepalive ? true : undefined
       });
       if (res && res.success && res.user) {
-        currentUser = normalizeUserObject(res.user);
+        const curHints = currentUser.hints;
+        const curUndos = currentUser.undos;
+        const curReveals = currentUser.reveals;
+        const curBottles = currentUser.extraBottles;
+
+        currentUser = normalizeUserObject({
+          ...currentUser,
+          ...res.user,
+          // CRITICAL: Never let server restore locally spent boosters!
+          hints: Math.min(Number(curHints || 0), Number(res.user.hints !== undefined ? res.user.hints : curHints)),
+          undos: Math.min(Number(curUndos || 0), Number(res.user.undos !== undefined ? res.user.undos : curUndos)),
+          reveals: Math.min(Number(curReveals || 0), Number(res.user.reveals !== undefined ? res.user.reveals : curReveals)),
+          extraBottles: Math.min(Number(curBottles || 0), Number(res.user.extra_bottles !== undefined ? res.user.extra_bottles : curBottles)),
+          extra_bottles: Math.min(Number(curBottles || 0), Number(res.user.extra_bottles !== undefined ? res.user.extra_bottles : curBottles))
+        });
         saveLocalUser();
         updateHeaderUI();
       }
@@ -4164,20 +4183,20 @@ async function initColorSortApp() {
           // If cloud data is strictly newer than our local state, sync cloud booster values directly
           if (cloudUpdatedAt > localUpdatedAt) {
             if (cloudData.hints !== undefined) {
-              currentUser.hints = Number(cloudData.hints || 0);
+              currentUser.hints = Math.min(Number(currentUser.hints || 0), Number(cloudData.hints || 0));
               changed = true;
             }
             if (cloudData.undos !== undefined) {
-              currentUser.undos = Number(cloudData.undos || 0);
+              currentUser.undos = Math.min(Number(currentUser.undos || 0), Number(cloudData.undos || 0));
               changed = true;
             }
             if (cloudData.reveals !== undefined) {
-              currentUser.reveals = Number(cloudData.reveals || 0);
+              currentUser.reveals = Math.min(Number(currentUser.reveals || 0), Number(cloudData.reveals || 0));
               changed = true;
             }
             const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
             if (cloudB !== undefined) {
-              currentUser.extraBottles = Number(cloudB || 0);
+              currentUser.extraBottles = Math.min(Number(currentUser.extraBottles || 0), Number(cloudB || 0));
               currentUser.extra_bottles = currentUser.extraBottles;
               changed = true;
             }
@@ -4710,12 +4729,12 @@ async function initColorSortApp() {
 
       // Only adopt server booster counts if server state is strictly newer than local state
       if (serverUpdatedAt > localUpdatedAt) {
-        if (serverUser.user.hints !== undefined) currentUser.hints = Number(serverUser.user.hints || 0);
-        if (serverUser.user.undos !== undefined) currentUser.undos = Number(serverUser.user.undos || 0);
-        if (serverUser.user.reveals !== undefined) currentUser.reveals = Number(serverUser.user.reveals || 0);
+        if (serverUser.user.hints !== undefined) currentUser.hints = Math.min(Number(currentUser.hints || 0), Number(serverUser.user.hints || 0));
+        if (serverUser.user.undos !== undefined) currentUser.undos = Math.min(Number(currentUser.undos || 0), Number(serverUser.user.undos || 0));
+        if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.min(Number(currentUser.reveals || 0), Number(serverUser.user.reveals || 0));
         const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
         if (serverB !== undefined) {
-          currentUser.extraBottles = Number(serverB || 0);
+          currentUser.extraBottles = Math.min(Number(currentUser.extraBottles || 0), Number(serverB || 0));
           currentUser.extra_bottles = currentUser.extraBottles;
         }
       } else {
@@ -5309,9 +5328,8 @@ async function initColorSortApp() {
         if (activeMovesLog.length > 0) activeMovesLog.pop();
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentLevelBoostersUsed.undos = (currentLevelBoostersUsed.undos || 0) + 1;
-        currentUser.undos = Math.max(0, (currentUser.undos || 0) - 1);
-        updateHeaderUI();
-        saveLocalUser();
+        const newCount = Math.max(0, (currentUser.undos || 0) - 1);
+        updateCloudBoosterDirectly('undos', newCount);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
 
         apiCall('/api/game/use-booster', 'POST', {
@@ -5319,7 +5337,7 @@ async function initColorSortApp() {
           boosterType: 'undos'
         }).then(res => {
           if (res && res.success && res.remaining !== undefined) {
-            currentUser.undos = res.remaining;
+            currentUser.undos = Math.min(currentUser.undos, res.remaining);
             updateHeaderUI();
             saveLocalUser();
           }
@@ -5351,9 +5369,8 @@ async function initColorSortApp() {
       if (hint) {
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentLevelBoostersUsed.hints = (currentLevelBoostersUsed.hints || 0) + 1;
-        currentUser.hints = Math.max(0, (currentUser.hints || 0) - 1);
-        updateHeaderUI();
-        saveLocalUser();
+        const newCount = Math.max(0, (currentUser.hints || 0) - 1);
+        updateCloudBoosterDirectly('hints', newCount);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
 
         apiCall('/api/game/use-booster', 'POST', {
@@ -5361,7 +5378,7 @@ async function initColorSortApp() {
           boosterType: 'hints'
         }).then(res => {
           if (res && res.success && res.remaining !== undefined) {
-            currentUser.hints = res.remaining;
+            currentUser.hints = Math.min(currentUser.hints, res.remaining);
             updateHeaderUI();
             saveLocalUser();
           }
@@ -5401,19 +5418,18 @@ async function initColorSortApp() {
       if (res) {
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentLevelBoostersUsed.reveals = (currentLevelBoostersUsed.reveals || 0) + 1;
-        currentUser.reveals = Math.max(0, (currentUser.reveals || 0) - 1);
+        const newCount = Math.max(0, (currentUser.reveals || 0) - 1);
+        updateCloudBoosterDirectly('reveals', newCount);
         if (renderer && renderer.highlightBottleReveal) renderer.highlightBottleReveal(res.bottleIndex);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-        updateHeaderUI();
-        saveLocalUser();
 
         apiCall('/api/game/use-booster', 'POST', {
           sessionToken: activeGameSessionToken,
           boosterType: 'reveals'
         }).then(res => {
           if (res && res.success && res.remaining !== undefined) {
-            currentUser.reveals = res.remaining;
+            currentUser.reveals = Math.min(currentUser.reveals, res.remaining);
             updateHeaderUI();
             saveLocalUser();
           }
@@ -5448,20 +5464,18 @@ async function initColorSortApp() {
         activeMovesLog.push({ type: 'extra_bottle' });
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentLevelBoostersUsed.extraBottles = (currentLevelBoostersUsed.extraBottles || 0) + 1;
-        currentUser.extraBottles = Math.max(0, (currentUser.extraBottles || 0) - 1);
-        currentUser.extra_bottles = currentUser.extraBottles;
+        const newCount = Math.max(0, (currentUser.extraBottles || 0) - 1);
+        updateCloudBoosterDirectly('extraBottles', newCount);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
-        updateHeaderUI();
-        saveLocalUser();
 
         apiCall('/api/game/use-booster', 'POST', {
           sessionToken: activeGameSessionToken,
           boosterType: 'extra_bottles'
         }).then(res => {
           if (res && res.success && res.remaining !== undefined) {
-            currentUser.extraBottles = res.remaining;
-            currentUser.extra_bottles = res.remaining;
+            currentUser.extraBottles = Math.min(currentUser.extraBottles, res.remaining);
+            currentUser.extra_bottles = currentUser.extraBottles;
             updateHeaderUI();
             saveLocalUser();
           }
