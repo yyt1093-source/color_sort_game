@@ -5,7 +5,7 @@ console.log('🧪 RUNNING BOOSTERS PERSISTENCE ON RELOAD & RE-ENTRY TEST SUITE')
 
 // 1. Setup a test player
 const pId = 'persistence_test_player_' + Date.now();
-const p = db.getUser(pId, { first_name: 'Persistence Tester', username: 'tester' });
+const p = db.getUser(pId, { first_name: 'Persistence Tester', username: 'tester_' + Date.now() });
 
 // Add TON balance to allow purchases
 db.addBonus(pId, { tonBalance: 10.0 });

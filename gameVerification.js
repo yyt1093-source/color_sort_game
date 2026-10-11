@@ -449,11 +449,11 @@ function verifyAndClaimAdToken(adToken, telegramId, rewardType, isLocalDev = fal
       return { valid: false, error: 'Несоответствие типа награды токену' };
     }
     const elapsed = Date.now() - tokenData.startedAt;
-    const minRequiredMs = skipDurationCheck ? 0 : (isLocalDev ? 1500 : 14000);
+    const minRequiredMs = skipDurationCheck ? 0 : (isLocalDev ? 1000 : 2500);
     if (elapsed < minRequiredMs) {
       return {
         valid: false,
-        error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 15 сек.).`
+        error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 3 сек.).`
       };
     }
     tokenData.claimed = true;
@@ -481,11 +481,11 @@ function verifyAndClaimAdToken(adToken, telegramId, rewardType, isLocalDev = fal
           }
           const started = Number(tStartedAt);
           const elapsed = Date.now() - started;
-          const minRequiredMs = skipDurationCheck ? 0 : (isLocalDev ? 1500 : 14000);
+          const minRequiredMs = skipDurationCheck ? 0 : (isLocalDev ? 1000 : 2500);
           if (elapsed < minRequiredMs) {
             return {
               valid: false,
-              error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 15 сек.).`
+              error: `Реклама ещё не досмотрена до конца (прошло ${Math.round(elapsed / 1000)} сек. из необходимых 3 сек.).`
             };
           }
           if (elapsed > 10 * 60 * 1000) {

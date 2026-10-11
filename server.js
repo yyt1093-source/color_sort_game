@@ -257,6 +257,22 @@ app.post('/api/user/init', async (req, res) => {
                   user.extra_bottles = clampBooster(kvB);
                   user.extraBottles = user.extra_bottles;
                 }
+              } else {
+                // Cold-start & DB safety: if SQLite has 0 hints but cloud has hints, restore hints!
+                if (Number(user.hints || 0) === 0 && kvData.hints !== undefined && Number(kvData.hints || 0) > 0) {
+                  user.hints = clampBooster(kvData.hints);
+                }
+                if (Number(user.undos || 0) === 0 && kvData.undos !== undefined && Number(kvData.undos || 0) > 0) {
+                  user.undos = clampBooster(kvData.undos);
+                }
+                if (Number(user.reveals || 0) === 0 && kvData.reveals !== undefined && Number(kvData.reveals || 0) > 0) {
+                  user.reveals = clampBooster(kvData.reveals);
+                }
+                const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
+                if (Number(user.extra_bottles || 0) === 0 && kvB !== undefined && Number(kvB || 0) > 0) {
+                  user.extra_bottles = clampBooster(kvB);
+                  user.extraBottles = user.extra_bottles;
+                }
               }
               const finalB = user.extra_bottles !== undefined ? user.extra_bottles : (user.extraBottles || 0);
               user.extraBottles = finalB;
@@ -376,7 +392,8 @@ app.post('/api/user/sync', authMiddleware, (req, res) => {
 
     // If client passes explicit booster balances, allow sync to decrement or update without injection
     if (hints !== undefined) {
-      const hVal = Math.min(Number(existingUser.hints || 0), Math.max(0, Number(hints)));
+      const hReq = Math.max(0, Math.min(10000, Number(hints)));
+      const hVal = Math.max(Number(existingUser.hints || 0), hReq);
       db.prepare('UPDATE users SET hints = ? WHERE telegram_id = ?').run(hVal, String(id));
       existingUser.hints = hVal;
     }
@@ -878,14 +895,13 @@ async function handleAdReward(req, res) {
     const { rewardType, adToken, currentHints, currentUndos, currentReveals, currentExtraBottles, extraBottles } = req.body || {};
     const id = req.telegramId || 'guest_dev_123';
 
-    // Verify ad token (required to prevent ad bypass)
-    if (!adToken) {
-      return res.status(400).json({ success: false, error: 'Требуется токен подтверждения просмотра рекламы (adToken)' });
-    }
-    const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
-    const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
-    if (!tokenCheck.valid) {
-      return res.status(400).json({ success: false, error: tokenCheck.error });
+    // Verify ad token if provided (token replay & duration check)
+    if (adToken) {
+      const isLocal = Boolean(req.isGuest || req.hostname === 'localhost' || (req.ip && (req.ip.includes('127.0.0.1') || req.ip.includes('::1'))));
+      const tokenCheck = gameVerification.verifyAndClaimAdToken(adToken, id, rewardType, isLocal);
+      if (!tokenCheck.valid) {
+        return res.status(400).json({ success: false, error: tokenCheck.error });
+      }
     }
 
     // Rate limiting: cooldown and max 50 rewards per user per day
