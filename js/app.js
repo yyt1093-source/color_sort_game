@@ -258,13 +258,15 @@ async function initColorSortApp() {
         if (srvCurLvl > 0) currentUser.currentLevel = Math.max(Number(currentUser.currentLevel || 1), srvCurLvl, Number(currentUser.maxLevel || 1));
         currentUser.level = currentUser.maxLevel;
 
-        currentUser.hints = Math.max(Number(currentUser.hints || 0), Number(srv.hints || 0));
-        currentUser.undos = Math.max(Number(currentUser.undos || 0), Number(srv.undos || 0));
-        currentUser.reveals = Math.max(Number(currentUser.reveals || 0), Number(srv.reveals || 0));
-        const srvBottles = Math.max(Number(srv.extraBottles || 0), Number(srv.extra_bottles || 0));
-        currentUser.extraBottles = Math.max(Number(currentUser.extraBottles || 0), srvBottles);
-        currentUser.extra_bottles = currentUser.extraBottles;
-        if (srv.coins) currentUser.coins = Math.max(Number(currentUser.coins || 0), Number(srv.coins || 0));
+        if (srv.hints !== undefined) currentUser.hints = Number(srv.hints);
+        if (srv.undos !== undefined) currentUser.undos = Number(srv.undos);
+        if (srv.reveals !== undefined) currentUser.reveals = Number(srv.reveals);
+        const srvBottles = (srv.extraBottles !== undefined ? srv.extraBottles : srv.extra_bottles);
+        if (srvBottles !== undefined) {
+          currentUser.extraBottles = Number(srvBottles);
+          currentUser.extra_bottles = currentUser.extraBottles;
+        }
+        if (srv.coins !== undefined) currentUser.coins = Math.max(Number(currentUser.coins || 0), Number(srv.coins || 0));
       }
 
       normalizeUserObject(currentUser);
@@ -3078,7 +3080,7 @@ async function initColorSortApp() {
 
   // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
   const IMMUTABLE_PLAYER_BASELINES = {
-  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709', hints: 10, undos: 20, reveals: 5, extraBottles: 10 },
+  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
   '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
   '8305679959': { maxLevel: 43, firstName: '.', username: '' },
   '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
@@ -3135,19 +3137,6 @@ async function initColorSortApp() {
       currentUser.level = startupBaseline.maxLevel;
       currentUser.currentLevel = startupBaseline.maxLevel;
       currentUser.stars = Math.max(Number(currentUser.stars || 0), startupBaseline.stars || 0);
-    }
-    if (startupBaseline.hints && Number(currentUser.hints || 0) < startupBaseline.hints) {
-      currentUser.hints = startupBaseline.hints;
-    }
-    if (startupBaseline.undos && Number(currentUser.undos || 0) < startupBaseline.undos) {
-      currentUser.undos = startupBaseline.undos;
-    }
-    if (startupBaseline.reveals && Number(currentUser.reveals || 0) < startupBaseline.reveals) {
-      currentUser.reveals = startupBaseline.reveals;
-    }
-    if (startupBaseline.extraBottles && Number(currentUser.extraBottles || 0) < startupBaseline.extraBottles) {
-      currentUser.extraBottles = startupBaseline.extraBottles;
-      currentUser.extra_bottles = startupBaseline.extraBottles;
     }
     try {
       localStorage.setItem(`color_sort_user_${userData.telegramId}`, JSON.stringify(currentUser));
@@ -3607,19 +3596,6 @@ async function initColorSortApp() {
         user.current_level = user.currentLevel;
         user.level = baseEntry.maxLevel;
       }
-      if (baseEntry.hints && Number(user.hints || 0) < baseEntry.hints) {
-        user.hints = baseEntry.hints;
-      }
-      if (baseEntry.undos && Number(user.undos || 0) < baseEntry.undos) {
-        user.undos = baseEntry.undos;
-      }
-      if (baseEntry.reveals && Number(user.reveals || 0) < baseEntry.reveals) {
-        user.reveals = baseEntry.reveals;
-      }
-      if (baseEntry.extraBottles && Number(user.extraBottles || 0) < baseEntry.extraBottles) {
-        user.extraBottles = baseEntry.extraBottles;
-        user.extra_bottles = baseEntry.extraBottles;
-      }
     }
     return user;
   }
@@ -3862,20 +3838,6 @@ async function initColorSortApp() {
         currentUser.level = userBaseline.maxLevel;
         currentUser.currentLevel = userBaseline.maxLevel;
         currentUser.stars = Math.max(Number(currentUser.stars || 0), userBaseline.stars || 0);
-      }
-      if (userBaseline.hints && Number(currentUser.hints || 0) < userBaseline.hints) {
-        currentUser.hints = userBaseline.hints;
-      }
-      if (userBaseline.undos && Number(currentUser.undos || 0) < userBaseline.undos) {
-        currentUser.undos = userBaseline.undos;
-      }
-      if (userBaseline.reveals && Number(currentUser.reveals || 0) < userBaseline.reveals) {
-        currentUser.reveals = userBaseline.reveals;
-      }
-      if (userBaseline.extraBottles && Number(currentUser.extraBottles || 0) < userBaseline.extraBottles) {
-        currentUser.extraBottles = userBaseline.extraBottles;
-        currentUser.extra_bottles = userBaseline.extraBottles;
-      }
       try {
         localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
         localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(userBaseline.maxLevel));
@@ -4706,7 +4668,7 @@ async function initColorSortApp() {
         lang: currentLang,
         t: t
       });
-      // Real-time gift listener: check pending gifts immediately and every 12 seconds in the background
+      // Real-time gift listener: check pending gifts immediately and every 5 seconds in the background
       if (typeof window.GiftsModule.checkPendingGifts === 'function') {
         window.GiftsModule.checkPendingGifts(false);
         setInterval(() => {
@@ -4715,7 +4677,7 @@ async function initColorSortApp() {
               window.GiftsModule.checkPendingGifts(false);
             }
           } catch (e) {}
-        }, 12000);
+        }, 5000);
       }
     } catch (giftInitErr) {
       console.error('[GiftsModule] Safe initialization caught error:', giftInitErr);

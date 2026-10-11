@@ -369,9 +369,11 @@
     } catch (e) {}
   }
 
-  // Check Pending Gifts & Update Pulsing Indicators (real-time with 10s cooldown)
+  // Check Pending Gifts & Update Pulsing Indicators (real-time with fast 2.5s cooldown)
   let lastGiftCheckTimestamp = 0;
-  const GIFT_CHECK_COOLDOWN_MS = 10000;
+  const GIFT_CHECK_COOLDOWN_MS = 2500;
+  let seenGiftIds = new Set();
+  let isInitialGiftCheck = true;
 
   async function checkPendingGifts(force = false) {
     if (!currentUserRef || !currentUserRef.telegramId) return [];
@@ -388,6 +390,40 @@
     const inbox = await fetchCloudInbox(userId);
     cachedInbox = inbox;
     const unclaimed = inbox.filter(g => !g.claimed && !isGiftIdClaimed(userId, g.id));
+
+    // Instant toast notification when a new gift arrives in real-time
+    if (!isInitialGiftCheck) {
+      let newlyArrivedGifts = [];
+      unclaimed.forEach(g => {
+        const gid = String(g.id);
+        if (!seenGiftIds.has(gid)) {
+          newlyArrivedGifts.push(g);
+        }
+      });
+
+      if (newlyArrivedGifts.length > 0) {
+        if (window.TelegramApp && window.TelegramApp.TelegramApp) {
+          window.TelegramApp.TelegramApp.haptic('success');
+        }
+        if (window.SoundEngine && window.SoundEngine.SoundEngine) {
+          window.SoundEngine.SoundEngine.playComplete();
+        }
+        const first = newlyArrivedGifts[0];
+        const sName = first.fromName || (first.fromUsername ? `@${first.fromUsername}` : 'Друг');
+        const gName = getGiftName(first.giftType);
+        showNotification(
+          '🎁',
+          'Вам пришёл подарок!',
+          `🎁 Игрок ${sName} отправил вам подарок: ${first.giftIcon || '🎁'} ${gName} (+${first.amount || 1})! Заберите его во вкладке «Подарки».`
+        );
+        if (isReceiveViewOpen()) {
+          renderReceiveView();
+        }
+      }
+    }
+
+    unclaimed.forEach(g => seenGiftIds.add(String(g.id)));
+    isInitialGiftCheck = false;
 
     updateIndicatorStyles(unclaimed.length);
     return unclaimed;
@@ -620,10 +656,16 @@
         if (typeof syncPlayerToCloudCallback === 'function') {
           syncPlayerToCloudCallback();
         }
-      } else if (field === 'extraBottles') {
+      } else if (field === 'extraBottles' || field === 'extra_bottles' || field === 'extrabottles' || field === 'extrabottle') {
         const cur = Math.max(Number(currentUserRef.extraBottles || 0), Number(currentUserRef.extra_bottles || 0));
         currentUserRef.extraBottles = cur + addAmount;
         currentUserRef.extra_bottles = currentUserRef.extraBottles;
+      } else if (field === 'undos' || field === 'undo') {
+        currentUserRef.undos = (Number(currentUserRef.undos) || 0) + addAmount;
+      } else if (field === 'hints' || field === 'hint') {
+        currentUserRef.hints = (Number(currentUserRef.hints) || 0) + addAmount;
+      } else if (field === 'reveals' || field === 'reveal' || field === 'reveal_bottle') {
+        currentUserRef.reveals = (Number(currentUserRef.reveals) || 0) + addAmount;
       } else {
         currentUserRef[field] = (Number(currentUserRef[field]) || 0) + addAmount;
       }
@@ -1101,6 +1143,27 @@
         const tid = String(p.telegramId || p.telegram_id || '');
         return name.includes(q) || uname.includes(q) || tid.includes(q);
       });
+
+      // If not found in cached list, query server /api/users/search
+      if (filtered.length === 0) {
+        try {
+          const searchRes = await giftApiCall(`/api/users/search?q=${encodeURIComponent(q)}`);
+          if (searchRes && searchRes.success && Array.isArray(searchRes.users) && searchRes.users.length > 0) {
+            searchRes.users.forEach(u => {
+              if (String(u.telegram_id) !== myId && !filtered.some(f => String(f.telegramId || f.telegram_id) === String(u.telegram_id))) {
+                filtered.push({
+                  telegramId: String(u.telegram_id),
+                  firstName: u.first_name,
+                  username: u.username || '',
+                  photoUrl: u.photo_url || '',
+                  maxLevel: Number(u.max_level || 1),
+                  level: Number(u.max_level || 1)
+                });
+              }
+            });
+          }
+        } catch (e) {}
+      }
     }
 
     listEl.innerHTML = '';
@@ -1911,7 +1974,7 @@
       } else {
         stopModalPolling();
       }
-    }, 60000);
+    }, 3000);
   }
 
   function stopModalPolling() {
