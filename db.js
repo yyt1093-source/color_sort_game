@@ -207,7 +207,7 @@ function initDatabase() {
 }
 
 const IMMUTABLE_PLAYER_BASELINES = {
-  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709', hints: 10, undos: 20, reveals: 5, extraBottles: 10 },
+  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
   '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
   '8305679959': { maxLevel: 43, firstName: '.', username: '' },
   '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
@@ -239,21 +239,17 @@ const IMMUTABLE_PLAYER_BASELINES = {
 function ensureImmutablePlayerBaselines() {
   try {
     const upsertStmt = db.prepare(`
-      INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars, hints, undos, reveals, extra_bottles)
-      VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
+      INSERT INTO users (telegram_id, first_name, username, max_level, current_level, stars)
+      VALUES (?, ?, ?, ?, ?, 0)
       ON CONFLICT(telegram_id) DO UPDATE SET
         max_level = MAX(users.max_level, excluded.max_level),
         current_level = MAX(users.current_level, excluded.current_level),
-        hints = MAX(COALESCE(users.hints, 0), excluded.hints),
-        undos = MAX(COALESCE(users.undos, 0), excluded.undos),
-        reveals = MAX(COALESCE(users.reveals, 0), excluded.reveals),
-        extra_bottles = MAX(COALESCE(users.extra_bottles, 0), excluded.extra_bottles),
         stars = 0,
         first_name = CASE WHEN users.first_name IN ('Player', 'Игрок', '.', '') AND excluded.first_name NOT IN ('Player', 'Игрок', '.', '') THEN excluded.first_name ELSE users.first_name END,
         username = CASE WHEN (users.username IS NULL OR users.username = '') AND excluded.username != '' THEN excluded.username ELSE users.username END
     `);
     for (const [tid, p] of Object.entries(IMMUTABLE_PLAYER_BASELINES)) {
-      upsertStmt.run(tid, p.firstName, p.username, p.maxLevel, p.maxLevel, p.hints || 0, p.undos || 0, p.reveals || 0, p.extraBottles || 0);
+      upsertStmt.run(tid, p.firstName, p.username, p.maxLevel, p.maxLevel);
     }
   } catch (e) {}
 }
@@ -367,14 +363,10 @@ function getUser(telegramId, defaultUserData = {}) {
         user.stars = Math.max(Number(user.stars || 0), baseEntry.stars || 0);
         changed = true;
       }
-      if (baseEntry.hints && Number(user.hints || 0) < baseEntry.hints) { user.hints = baseEntry.hints; changed = true; }
-      if (baseEntry.undos && Number(user.undos || 0) < baseEntry.undos) { user.undos = baseEntry.undos; changed = true; }
-      if (baseEntry.reveals && Number(user.reveals || 0) < baseEntry.reveals) { user.reveals = baseEntry.reveals; changed = true; }
-      if (baseEntry.extraBottles && Number(user.extra_bottles || 0) < baseEntry.extraBottles) { user.extra_bottles = baseEntry.extraBottles; changed = true; }
       if (changed) {
         try {
-          db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ? WHERE telegram_id = ?')
-            .run(user.max_level, user.current_level, user.stars || 0, user.hints, user.undos, user.reveals, user.extra_bottles, String(telegramId));
+          db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ? WHERE telegram_id = ?')
+            .run(user.max_level, user.current_level, user.stars || 0, String(telegramId));
         } catch (e) {}
       }
     }
@@ -413,14 +405,10 @@ function getUser(telegramId, defaultUserData = {}) {
       createdUser.stars = Math.max(Number(createdUser.stars || 0), baseEntry.stars || 0);
       changed = true;
     }
-    if (baseEntry.hints && Number(createdUser.hints || 0) < baseEntry.hints) { createdUser.hints = baseEntry.hints; changed = true; }
-    if (baseEntry.undos && Number(createdUser.undos || 0) < baseEntry.undos) { createdUser.undos = baseEntry.undos; changed = true; }
-    if (baseEntry.reveals && Number(createdUser.reveals || 0) < baseEntry.reveals) { createdUser.reveals = baseEntry.reveals; changed = true; }
-    if (baseEntry.extraBottles && Number(createdUser.extra_bottles || 0) < baseEntry.extraBottles) { createdUser.extra_bottles = baseEntry.extraBottles; changed = true; }
     if (changed) {
       try {
-        db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ?, hints = ?, undos = ?, reveals = ?, extra_bottles = ? WHERE telegram_id = ?')
-          .run(createdUser.max_level, createdUser.current_level, createdUser.stars || 0, createdUser.hints, createdUser.undos, createdUser.reveals, createdUser.extra_bottles, String(telegramId));
+        db.prepare('UPDATE users SET max_level = ?, current_level = ?, stars = ? WHERE telegram_id = ?')
+          .run(createdUser.max_level, createdUser.current_level, createdUser.stars || 0, String(telegramId));
       } catch (e) {}
     }
   }
@@ -438,6 +426,28 @@ function getUserByUsername(username) {
     return db.prepare('SELECT * FROM users WHERE LOWER(username) = ?').get(clean);
   } catch (e) {
     return null;
+  }
+}
+
+/**
+ * Search users by username, first name or Telegram ID
+ */
+function searchUsers(query) {
+  if (!query) return [];
+  const clean = String(query).replace(/^@/, '').trim();
+  if (!clean) return [];
+  try {
+    const rows = db.prepare(`
+      SELECT telegram_id, first_name, username, photo_url, max_level
+      FROM users
+      WHERE (LOWER(username) LIKE ? OR LOWER(first_name) LIKE ? OR telegram_id = ?)
+        AND telegram_id NOT LIKE 'guest%' AND telegram_id NOT LIKE 'dev%'
+      ORDER BY max_level DESC
+      LIMIT 25
+    `).all(`%${clean.toLowerCase()}%`, `%${clean.toLowerCase()}%`, clean);
+    return rows;
+  } catch (e) {
+    return [];
   }
 }
 
@@ -2423,17 +2433,22 @@ function sendGift(giftData) {
   if (!senderId || !recipientId || amount <= 0) return { success: false, error: 'Неверные данные подарка' };
 
   const isAdmin = senderId === '5761685341';
+  const isHints = giftType === 'hints' || giftType === 'hint';
+  const isUndos = giftType === 'undos' || giftType === 'undo';
+  const isReveals = giftType === 'reveals' || giftType === 'reveal' || giftType === 'reveal_bottle';
+  const isBottles = giftType === 'extrabottles' || giftType === 'extra_bottles' || giftType === 'extrabottle' || giftType === 'extra_bottle';
+  let boosterCol = null;
+  if (isHints) boosterCol = 'hints';
+  else if (isUndos) boosterCol = 'undos';
+  else if (isReveals) boosterCol = 'reveals';
+  else if (isBottles) boosterCol = 'extra_bottles';
+
   if (!isAdmin) {
     // Check sender has enough boosters/balance
     const sender = getUser(senderId);
     if (!sender) return { success: false, error: 'Отправитель не найден' };
 
-    let boosterCol = null;
-    if (giftType === 'hints') boosterCol = 'hints';
-    else if (giftType === 'undos') boosterCol = 'undos';
-    else if (giftType === 'reveals') boosterCol = 'reveals';
-    else if (giftType === 'extrabottles' || giftType === 'extra_bottles') boosterCol = 'extra_bottles';
-    else if (giftType === 'ton' || giftType === 'gram') {
+    if (giftType === 'ton' || giftType === 'gram') {
       return { success: false, error: 'Только администратор может дарить TON/GRAM' };
     }
 
@@ -2446,12 +2461,6 @@ function sendGift(giftData) {
     }
   } else {
     const senderType = String(giftData.senderType || '').toLowerCase();
-    let boosterCol = null;
-    if (giftType === 'hints') boosterCol = 'hints';
-    else if (giftType === 'undos') boosterCol = 'undos';
-    else if (giftType === 'reveals') boosterCol = 'reveals';
-    else if (giftType === 'extrabottles' || giftType === 'extra_bottles') boosterCol = 'extra_bottles';
-
     if (boosterCol && senderType !== 'colorsort') {
       db.prepare(`UPDATE users SET ${boosterCol} = MAX(0, ${boosterCol} - ?), updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, senderId);
     }
@@ -2518,13 +2527,13 @@ function claimGift(giftId, recipientId) {
             updated_at = datetime('now')
         WHERE telegram_id = ?
       `).run(amount, String(recipientId));
-    } else if (type === 'undos') {
+    } else if (type === 'undos' || type === 'undo') {
       db.prepare(`UPDATE users SET undos = COALESCE(undos, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
-    } else if (type === 'hints') {
+    } else if (type === 'hints' || type === 'hint') {
       db.prepare(`UPDATE users SET hints = COALESCE(hints, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
-    } else if (type === 'reveals') {
+    } else if (type === 'reveals' || type === 'reveal' || type === 'reveal_bottle') {
       db.prepare(`UPDATE users SET reveals = COALESCE(reveals, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
-    } else if (type === 'extrabottles' || type === 'extra_bottles') {
+    } else if (type === 'extrabottles' || type === 'extra_bottles' || type === 'extrabottle' || type === 'extra_bottle') {
       db.prepare(`UPDATE users SET extra_bottles = COALESCE(extra_bottles, 0) + ?, updated_at = datetime('now') WHERE telegram_id = ?`).run(amount, String(recipientId));
     }
     return true;
@@ -2540,6 +2549,7 @@ module.exports = {
   exec: (sql) => db.exec(sql),
   getUser,
   getUserByUsername,
+  searchUsers,
   updateUserProgress,
   getLeaderboard,
   logAdReward,
