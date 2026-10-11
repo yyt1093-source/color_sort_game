@@ -247,9 +247,12 @@ app.post('/api/user/init', async (req, res) => {
                 user.stars = isRestoredSnapshotState ? Number(kvData.stars || 0) : Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
               }
               const clampBooster = (val) => String(id) === '5761685341' ? Math.max(0, Number(val || 0)) : Math.min(Math.max(0, Number(val || 0)), 10000);
+              // Hints are unconditionally preserved to maximum of SQLite and cloud KVDB (never wiped on cold-start)
+              if (kvData.hints !== undefined) {
+                user.hints = Math.max(Number(user.hints || 0), clampBooster(kvData.hints));
+              }
               const dbUpdated = user.updated_at ? new Date(user.updated_at).getTime() : 0;
               if (kvUpdated > dbUpdated) {
-                if (kvData.hints !== undefined) user.hints = clampBooster(kvData.hints);
                 if (kvData.undos !== undefined) user.undos = clampBooster(kvData.undos);
                 if (kvData.reveals !== undefined) user.reveals = clampBooster(kvData.reveals);
                 const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
@@ -258,10 +261,6 @@ app.post('/api/user/init', async (req, res) => {
                   user.extraBottles = user.extra_bottles;
                 }
               } else {
-                // Cold-start & DB safety: if SQLite has 0 hints but cloud has hints, restore hints!
-                if (Number(user.hints || 0) === 0 && kvData.hints !== undefined && Number(kvData.hints || 0) > 0) {
-                  user.hints = clampBooster(kvData.hints);
-                }
                 if (Number(user.undos || 0) === 0 && kvData.undos !== undefined && Number(kvData.undos || 0) > 0) {
                   user.undos = clampBooster(kvData.undos);
                 }
@@ -454,7 +453,14 @@ app.post('/api/user/sync', authMiddleware, (req, res) => {
         .then(r => r.ok ? r.json() : null)
         .then(existing => {
           const val = existing && typeof existing === 'object' ? existing : { telegramId: id };
-          val.hints = updatedUser.hints;
+          const maxHints = Math.max(Number(val.hints || 0), Number(updatedUser.hints || 0));
+          val.hints = maxHints;
+          if (maxHints > Number(updatedUser.hints || 0)) {
+            try {
+              db.prepare('UPDATE users SET hints = ? WHERE telegram_id = ?').run(maxHints, String(id));
+              updatedUser.hints = maxHints;
+            } catch (e) {}
+          }
           val.undos = updatedUser.undos;
           val.reveals = updatedUser.reveals;
           val.extraBottles = updatedUser.extra_bottles;
@@ -913,7 +919,10 @@ async function handleAdReward(req, res) {
     // 1. Sync authoritative client balances before applying reward if provided
     const ebReq = currentExtraBottles !== undefined ? currentExtraBottles : extraBottles;
     if (currentHints !== undefined) {
-      db.prepare('UPDATE users SET hints = ? WHERE telegram_id = ?').run(Math.max(0, Number(currentHints)), String(id));
+      const existingUser = db.getUser ? db.getUser(id) : null;
+      const curDbHints = Number(existingUser ? existingUser.hints : 0);
+      const safeHints = Math.max(curDbHints, Math.max(0, Number(currentHints)));
+      db.prepare('UPDATE users SET hints = ? WHERE telegram_id = ?').run(safeHints, String(id));
     }
     if (currentUndos !== undefined) {
       db.prepare('UPDATE users SET undos = ? WHERE telegram_id = ?').run(Math.max(0, Number(currentUndos)), String(id));
@@ -957,7 +966,7 @@ async function handleAdReward(req, res) {
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
       try {
         let val = cloudVal && typeof cloudVal === 'object' ? cloudVal : { telegramId: String(id) };
-        val.hints = updatedUser.hints;
+        val.hints = Math.max(Number(val.hints || 0), Number(updatedUser.hints || 0));
         val.undos = updatedUser.undos;
         val.reveals = updatedUser.reveals;
         val.extraBottles = updatedUser.extra_bottles;
