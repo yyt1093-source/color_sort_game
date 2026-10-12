@@ -3139,8 +3139,8 @@ async function initColorSortApp() {
 
   // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
   const IMMUTABLE_PLAYER_BASELINES = {
-  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
-  '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
+  '5761685341': { maxLevel: 53, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+  '7458436672': { maxLevel: 61, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
   '8305679959': { maxLevel: 43, firstName: '.', username: '' },
   '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
   '5269257903': { maxLevel: 37, firstName: 'Kostya', username: 'Koctya007' },
@@ -3241,8 +3241,8 @@ async function initColorSortApp() {
       if (Number(currentUser.hints || 0) > 0) {
         localStorage.setItem(`color_sort_hints_${userData.telegramId}`, String(currentUser.hints));
       }
-      localStorage.setItem(`color_sort_db_level_${userData.telegramId}`, String(startupBaseline.maxLevel));
-      localStorage.setItem('cs_cached_display_level', String(startupBaseline.maxLevel));
+      localStorage.setItem(`color_sort_db_level_${userData.telegramId}`, String(currentUser.maxLevel));
+      localStorage.setItem('cs_cached_display_level', String(currentUser.maxLevel));
     } catch (e) {}
   }
 
@@ -4117,8 +4117,8 @@ async function initColorSortApp() {
       }
       try {
         localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
-        localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(userBaseline.maxLevel));
-        localStorage.setItem('cs_cached_display_level', String(userBaseline.maxLevel));
+        localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(currentUser.maxLevel));
+        localStorage.setItem('cs_cached_display_level', String(currentUser.maxLevel));
       } catch (e) {}
     }
     if (currentUser.maxLevel > 0) {
