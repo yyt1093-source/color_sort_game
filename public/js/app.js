@@ -267,13 +267,22 @@ async function initColorSortApp() {
         updateCloudBoosterDirectly('hints', currentUser.hints);
       } else if (normType === 'undos' || normType === 'undo') {
         currentUser.undos = (currentUser.undos || 0) + 1;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(currentUser.undos));
+        }
         updateCloudBoosterDirectly('undos', currentUser.undos);
       } else if (normType === 'reveal_bottle' || normType === 'reveals' || normType === 'reveal') {
         currentUser.reveals = (currentUser.reveals || 0) + 1;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(currentUser.reveals));
+        }
         updateCloudBoosterDirectly('reveals', currentUser.reveals);
       } else if (normType === 'extra_bottle' || normType === 'extra_bottles' || normType === 'extrabottle') {
         currentUser.extraBottles = (currentUser.extraBottles || 0) + 1;
         currentUser.extra_bottles = currentUser.extraBottles;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(currentUser.extraBottles));
+        }
         updateCloudBoosterDirectly('extraBottles', currentUser.extraBottles);
       } else if (normType === 'coins') {
         currentUser.coins = (currentUser.coins || 0) + 150;
@@ -295,12 +304,25 @@ async function initColorSortApp() {
             localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
           }
         }
-        if (srv.undos !== undefined) currentUser.undos = Math.max(Number(currentUser.undos || 0), Number(srv.undos || 0));
-        if (srv.reveals !== undefined) currentUser.reveals = Math.max(Number(currentUser.reveals || 0), Number(srv.reveals || 0));
+        if (srv.undos !== undefined) {
+          currentUser.undos = Math.max(Number(currentUser.undos || 0), Number(srv.undos || 0));
+          if (currentUser.telegramId) {
+            localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(currentUser.undos));
+          }
+        }
+        if (srv.reveals !== undefined) {
+          currentUser.reveals = Math.max(Number(currentUser.reveals || 0), Number(srv.reveals || 0));
+          if (currentUser.telegramId) {
+            localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(currentUser.reveals));
+          }
+        }
         const srvEb = srv.extra_bottles !== undefined ? srv.extra_bottles : srv.extraBottles;
         if (srvEb !== undefined) {
           currentUser.extraBottles = Math.max(Number(currentUser.extraBottles || 0), Number(srvEb || 0));
           currentUser.extra_bottles = currentUser.extraBottles;
+          if (currentUser.telegramId) {
+            localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(currentUser.extraBottles));
+          }
         }
         if (srv.ton_balance !== undefined) currentUser.ton_balance = Math.max(Number(currentUser.ton_balance || 0), Number(srv.ton_balance || 0));
         if (srv.coins !== undefined) currentUser.coins = Math.max(Number(currentUser.coins || 0), Number(srv.coins || 0));
@@ -3152,14 +3174,45 @@ async function initColorSortApp() {
     if (rawHintsEarly !== null && !isNaN(parseInt(rawHintsEarly, 10))) {
       currentUser.hints = Math.max(0, parseInt(rawHintsEarly, 10));
     }
+    const rawUndosEarly = localStorage.getItem(`color_sort_undos_${userData.telegramId}`);
+    if (rawUndosEarly !== null && !isNaN(parseInt(rawUndosEarly, 10))) {
+      currentUser.undos = Math.max(0, parseInt(rawUndosEarly, 10));
+    }
+    const rawRevealsEarly = localStorage.getItem(`color_sort_reveals_${userData.telegramId}`);
+    if (rawRevealsEarly !== null && !isNaN(parseInt(rawRevealsEarly, 10))) {
+      currentUser.reveals = Math.max(0, parseInt(rawRevealsEarly, 10));
+    }
+    const rawBottlesEarly = localStorage.getItem(`color_sort_extra_bottles_${userData.telegramId}`);
+    if (rawBottlesEarly !== null && !isNaN(parseInt(rawBottlesEarly, 10))) {
+      currentUser.extraBottles = Math.max(0, parseInt(rawBottlesEarly, 10));
+      currentUser.extra_bottles = currentUser.extraBottles;
+    }
+
     const rawLocal = localStorage.getItem(`color_sort_user_${userData.telegramId}`);
     if (rawLocal) {
       const parsedLocal = JSON.parse(rawLocal);
       const preHints = currentUser.hints;
+      const preUndos = currentUser.undos;
+      const preReveals = currentUser.reveals;
+      const preBottles = currentUser.extraBottles;
       currentUser = { ...currentUser, ...parsedLocal };
       const cachedH = localStorage.getItem(`color_sort_hints_${userData.telegramId}`);
       const hFloor = (cachedH !== null && !isNaN(parseInt(cachedH, 10))) ? parseInt(cachedH, 10) : 0;
       currentUser.hints = Math.max(Number(currentUser.hints || 0), Number(preHints || 0), hFloor);
+
+      const cachedU = localStorage.getItem(`color_sort_undos_${userData.telegramId}`);
+      const uFloor = (cachedU !== null && !isNaN(parseInt(cachedU, 10))) ? parseInt(cachedU, 10) : 0;
+      currentUser.undos = Math.max(Number(currentUser.undos || 0), Number(preUndos || 0), uFloor);
+
+      const cachedR = localStorage.getItem(`color_sort_reveals_${userData.telegramId}`);
+      const rFloor = (cachedR !== null && !isNaN(parseInt(cachedR, 10))) ? parseInt(cachedR, 10) : 0;
+      currentUser.reveals = Math.max(Number(currentUser.reveals || 0), Number(preReveals || 0), rFloor);
+
+      const cachedB = localStorage.getItem(`color_sort_extra_bottles_${userData.telegramId}`);
+      const bFloor = (cachedB !== null && !isNaN(parseInt(cachedB, 10))) ? parseInt(cachedB, 10) : 0;
+      currentUser.extraBottles = Math.max(Number(currentUser.extraBottles || 0), Number(preBottles || 0), bFloor);
+      currentUser.extra_bottles = currentUser.extraBottles;
+
       const isLocalDummy = !parsedLocal.firstName || parsedLocal.firstName === 'Игрок' || parsedLocal.firstName === 'Player' || parsedLocal.firstName === '.';
       if (userData.firstName && (isLocalDummy || (userData.firstName !== 'Игрок' && userData.firstName !== 'Player'))) {
         currentUser.firstName = userData.firstName;
@@ -3185,7 +3238,9 @@ async function initColorSortApp() {
     }
     try {
       localStorage.setItem(`color_sort_user_${userData.telegramId}`, JSON.stringify(currentUser));
-      localStorage.setItem(`color_sort_hints_${userData.telegramId}`, String(currentUser.hints || 0));
+      if (Number(currentUser.hints || 0) > 0) {
+        localStorage.setItem(`color_sort_hints_${userData.telegramId}`, String(currentUser.hints));
+      }
       localStorage.setItem(`color_sort_db_level_${userData.telegramId}`, String(startupBaseline.maxLevel));
       localStorage.setItem('cs_cached_display_level', String(startupBaseline.maxLevel));
     } catch (e) {}
@@ -3241,23 +3296,13 @@ async function initColorSortApp() {
     const dP = Date.UTC(pParts[0], pParts[1] - 1, pParts[2]);
     const dNow = Date.UTC(nowParts[0], nowParts[1] - 1, nowParts[2]);
     const diffDays = Math.round((dNow - dP) / (24 * 3600 * 1000));
-    let cutoffsPassed = Math.max(0, diffDays);
-    if (nowKyiv.hour === 23 && nowKyiv.minute >= 59) {
-      cutoffsPassed += 1;
-    }
+    const cutoffsPassed = Math.max(0, diffDays);
     return Math.max(0, totalDays - cutoffsPassed);
   }
 
   function getEffectiveDailyDays(user, nowInput = new Date()) {
     if (!user) return 0;
-    const pAt = Number(user.daily_boosters_purchased_at || user.dailyBoostersPurchasedAt || 0);
     const rawDays = Number(user.daily_boosters_days_left !== undefined ? user.daily_boosters_days_left : (user.dailyBoostersDaysLeft || 0));
-    if (pAt > 0) {
-      const calcDays = calculateDailyBoostersDaysLeft(pAt, nowInput);
-      if (calcDays !== null) {
-        return Math.min(rawDays > 0 ? rawDays : calcDays, calcDays);
-      }
-    }
     return Math.max(0, rawDays);
   }
 
@@ -3654,6 +3699,15 @@ async function initColorSortApp() {
     if (field === 'hints') {
       localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(value));
     }
+    if (field === 'undos') {
+      localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(value));
+    }
+    if (field === 'reveals') {
+      localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(value));
+    }
+    if (field === 'extraBottles' || field === 'extra_bottles') {
+      localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(value));
+    }
     currentUser.updatedAt = Date.now();
     saveLocalUser();
     updateHeaderUI();
@@ -3728,10 +3782,10 @@ async function initColorSortApp() {
           baseObj.currentLevel = user.currentLevel || baseObj.currentLevel;
           baseObj.current_level = baseObj.currentLevel;
 
-          // Hints Protection: Never wipe positive cloud hints with 0 from uninitialized state!
+          // Boosters Protection: Never wipe positive cloud boosters with 0 from uninitialized state!
           const cloudH = Number(baseObj.hints || 0);
           const localH = Number(user.hints || 0);
-          const maxH = Math.max(cloudH, localH);
+          const maxH = window.__explicitHintUsed ? localH : Math.max(cloudH, localH);
           baseObj.hints = maxH;
           if (maxH > localH) {
             user.hints = maxH;
@@ -3740,13 +3794,62 @@ async function initColorSortApp() {
                 localStorage.setItem(`color_sort_hints_${user.telegramId}`, String(maxH));
               } catch (e) {}
             }
-            updateHeaderUI();
           }
 
-          baseObj.undos = user.undos !== undefined ? user.undos : baseObj.undos;
-          baseObj.reveals = user.reveals !== undefined ? user.reveals : baseObj.reveals;
-          baseObj.extraBottles = user.extraBottles !== undefined ? user.extraBottles : baseObj.extraBottles;
-          baseObj.extra_bottles = baseObj.extraBottles;
+          const cloudU = Number(baseObj.undos || 0);
+          const localU = Number(user.undos || 0);
+          const maxU = window.__explicitUndoUsed ? localU : Math.max(cloudU, localU);
+          baseObj.undos = maxU;
+          if (maxU > localU) {
+            user.undos = maxU;
+            if (user.telegramId) {
+              try {
+                localStorage.setItem(`color_sort_undos_${user.telegramId}`, String(maxU));
+              } catch (e) {}
+            }
+          }
+
+          const cloudR = Number(baseObj.reveals || 0);
+          const localR = Number(user.reveals || 0);
+          const maxR = window.__explicitRevealUsed ? localR : Math.max(cloudR, localR);
+          baseObj.reveals = maxR;
+          if (maxR > localR) {
+            user.reveals = maxR;
+            if (user.telegramId) {
+              try {
+                localStorage.setItem(`color_sort_reveals_${user.telegramId}`, String(maxR));
+              } catch (e) {}
+            }
+          }
+
+          const cloudB = Number(baseObj.extraBottles !== undefined ? baseObj.extraBottles : (baseObj.extra_bottles || 0));
+          const localB = Number(user.extraBottles !== undefined ? user.extraBottles : (user.extra_bottles || 0));
+          const maxB = window.__explicitBottleUsed ? localB : Math.max(cloudB, localB);
+          baseObj.extraBottles = maxB;
+          baseObj.extra_bottles = maxB;
+          if (maxB > localB) {
+            user.extraBottles = maxB;
+            user.extra_bottles = maxB;
+            if (user.telegramId) {
+              try {
+                localStorage.setItem(`color_sort_extra_bottles_${user.telegramId}`, String(maxB));
+              } catch (e) {}
+            }
+          }
+          updateHeaderUI();
+
+          const effUserDays = Number(user.daily_boosters_days_left !== undefined ? user.daily_boosters_days_left : (user.dailyBoostersDaysLeft || 0));
+          const effCloudDays = Number(baseObj.daily_boosters_days_left !== undefined ? baseObj.daily_boosters_days_left : (baseObj.dailyBoostersDaysLeft || 0));
+          const maxDays = Math.max(effUserDays, effCloudDays);
+          if (maxDays > 0) {
+            baseObj.daily_boosters_days_left = maxDays;
+            baseObj.dailyBoostersDaysLeft = maxDays;
+            baseObj.daily_boosters_last_date = user.daily_boosters_last_date || baseObj.daily_boosters_last_date || '';
+            baseObj.dailyBoostersLastDate = baseObj.daily_boosters_last_date;
+            baseObj.daily_boosters_purchased_at = Math.max(Number(user.daily_boosters_purchased_at || 0), Number(baseObj.daily_boosters_purchased_at || 0));
+            baseObj.dailyBoostersPurchasedAt = baseObj.daily_boosters_purchased_at;
+          }
+
           baseObj.ton_balance = user.ton_balance !== undefined ? user.ton_balance : baseObj.ton_balance;
           baseObj.ton_wallet = user.ton_wallet || baseObj.ton_wallet;
           baseObj.memo_code = user.memo_code || baseObj.memo_code;
@@ -3877,9 +3980,46 @@ async function initColorSortApp() {
   function saveLocalUser() {
     currentUser.updatedAt = Date.now();
     normalizeUserObject(currentUser);
+
+    // Safeguard all 4 boosters: never let boosters decrease on reload, exit, or save UNLESS explicit in-game deduction occurred
+    const existingHintsStr = localStorage.getItem(`color_sort_hints_${currentUser.telegramId}`);
+    const existingHints = (existingHintsStr !== null && !isNaN(parseInt(existingHintsStr, 10))) ? parseInt(existingHintsStr, 10) : 0;
+    if (existingHints > Number(currentUser.hints || 0) && !window.__explicitHintUsed) {
+      currentUser.hints = existingHints;
+    }
+
+    const existingUndosStr = localStorage.getItem(`color_sort_undos_${currentUser.telegramId}`);
+    const existingUndos = (existingUndosStr !== null && !isNaN(parseInt(existingUndosStr, 10))) ? parseInt(existingUndosStr, 10) : 0;
+    if (existingUndos > Number(currentUser.undos || 0) && !window.__explicitUndoUsed) {
+      currentUser.undos = existingUndos;
+    }
+
+    const existingRevealsStr = localStorage.getItem(`color_sort_reveals_${currentUser.telegramId}`);
+    const existingReveals = (existingRevealsStr !== null && !isNaN(parseInt(existingRevealsStr, 10))) ? parseInt(existingRevealsStr, 10) : 0;
+    if (existingReveals > Number(currentUser.reveals || 0) && !window.__explicitRevealUsed) {
+      currentUser.reveals = existingReveals;
+    }
+
+    const existingBottlesStr = localStorage.getItem(`color_sort_extra_bottles_${currentUser.telegramId}`);
+    const existingBottles = (existingBottlesStr !== null && !isNaN(parseInt(existingBottlesStr, 10))) ? parseInt(existingBottlesStr, 10) : 0;
+    if (existingBottles > Number(currentUser.extraBottles || 0) && !window.__explicitBottleUsed) {
+      currentUser.extraBottles = existingBottles;
+      currentUser.extra_bottles = existingBottles;
+    }
+
     localStorage.setItem(`color_sort_user_${currentUser.telegramId}`, JSON.stringify(currentUser));
     if (currentUser.hints !== undefined && currentUser.hints !== null) {
       localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+    }
+    if (currentUser.undos !== undefined && currentUser.undos !== null) {
+      localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(currentUser.undos));
+    }
+    if (currentUser.reveals !== undefined && currentUser.reveals !== null) {
+      localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(currentUser.reveals));
+    }
+    const curEb = currentUser.extraBottles !== undefined ? currentUser.extraBottles : currentUser.extra_bottles;
+    if (curEb !== undefined && curEb !== null) {
+      localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(curEb));
     }
     if (Number(currentUser.maxLevel || 0) > 0) {
       localStorage.setItem(`color_sort_db_level_${currentUser.telegramId}`, String(currentUser.maxLevel));
@@ -3895,13 +4035,27 @@ async function initColorSortApp() {
     }
   }
   function loadLocalUser() {
+    let parsedHints = 0, parsedUndos = 0, parsedReveals = 0, parsedBottles = 0;
     const data = localStorage.getItem(`color_sort_user_${currentUser.telegramId}`);
     if (data) {
       try {
         const parsed = JSON.parse(data);
+        parsedHints = Number(parsed.hints || 0);
+        parsedUndos = Number(parsed.undos || 0);
+        parsedReveals = Number(parsed.reveals || 0);
+        parsedBottles = Number(parsed.extraBottles !== undefined ? parsed.extraBottles : (parsed.extra_bottles || 0));
         const savedFirst = currentUser.firstName;
         const savedUname = currentUser.username;
+        const preHints = currentUser.hints;
+        const preUndos = currentUser.undos;
+        const preReveals = currentUser.reveals;
+        const preBottles = currentUser.extraBottles;
         currentUser = { ...currentUser, ...parsed };
+        currentUser.hints = Math.max(Number(currentUser.hints || 0), Number(preHints || 0), parsedHints);
+        currentUser.undos = Math.max(Number(currentUser.undos || 0), Number(preUndos || 0), parsedUndos);
+        currentUser.reveals = Math.max(Number(currentUser.reveals || 0), Number(preReveals || 0), parsedReveals);
+        currentUser.extraBottles = Math.max(Number(currentUser.extraBottles || 0), Number(preBottles || 0), parsedBottles);
+        currentUser.extra_bottles = currentUser.extraBottles;
         const isParsedDummy = !parsed.firstName || parsed.firstName === 'Игрок' || parsed.firstName === 'Player' || parsed.firstName === '.';
         if (savedFirst && (isParsedDummy || (savedFirst !== 'Игрок' && savedFirst !== 'Player'))) {
           currentUser.firstName = savedFirst;
@@ -3921,10 +4075,23 @@ async function initColorSortApp() {
       } catch (e) {}
     }
 
-    // Always enforce dedicated cached hints floor so hints never disappear on reload or exit
+    // Always enforce dedicated cached booster floors so boosters never disappear on reload or exit
     const cachedHints = localStorage.getItem(`color_sort_hints_${currentUser.telegramId}`);
     if (cachedHints !== null && !isNaN(parseInt(cachedHints, 10))) {
-      currentUser.hints = Math.max(Number(currentUser.hints || 0), parseInt(cachedHints, 10));
+      currentUser.hints = Math.max(Number(currentUser.hints || 0), parseInt(cachedHints, 10), parsedHints);
+    }
+    const cachedUndos = localStorage.getItem(`color_sort_undos_${currentUser.telegramId}`);
+    if (cachedUndos !== null && !isNaN(parseInt(cachedUndos, 10))) {
+      currentUser.undos = Math.max(Number(currentUser.undos || 0), parseInt(cachedUndos, 10), parsedUndos);
+    }
+    const cachedReveals = localStorage.getItem(`color_sort_reveals_${currentUser.telegramId}`);
+    if (cachedReveals !== null && !isNaN(parseInt(cachedReveals, 10))) {
+      currentUser.reveals = Math.max(Number(currentUser.reveals || 0), parseInt(cachedReveals, 10), parsedReveals);
+    }
+    const cachedBottles = localStorage.getItem(`color_sort_extra_bottles_${currentUser.telegramId}`);
+    if (cachedBottles !== null && !isNaN(parseInt(cachedBottles, 10))) {
+      currentUser.extraBottles = Math.max(Number(currentUser.extraBottles || 0), parseInt(cachedBottles, 10), parsedBottles);
+      currentUser.extra_bottles = currentUser.extraBottles;
     }
 
     // Always enforce cached level and immutable baseline, even if primary local object was empty
@@ -4270,11 +4437,9 @@ async function initColorSortApp() {
           const localUpdatedAt = Number(currentUser.updatedAt || 0);
           const cloudUpdatedAt = Number(cloudData.updatedAt || 0);
 
-          // Hints are unconditionally synced to the maximum of local and cloud (never lost on reload or exit)
+          // All 4 boosters are unconditionally synced to the maximum of local and cloud (never lost on reload or exit)
           if (cloudData.hints !== undefined) {
-            const cloudH = Number(cloudData.hints || 0);
-            const localH = Number(currentUser.hints || 0);
-            const resolvedH = Math.max(localH, cloudH);
+            const resolvedH = Math.max(Number(currentUser.hints || 0), Number(cloudData.hints || 0));
             if (resolvedH !== currentUser.hints) {
               currentUser.hints = resolvedH;
               changed = true;
@@ -4283,28 +4448,44 @@ async function initColorSortApp() {
               localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(resolvedH));
             }
           }
+          if (cloudData.undos !== undefined) {
+            const resolvedU = Math.max(Number(currentUser.undos || 0), Number(cloudData.undos || 0));
+            if (resolvedU !== currentUser.undos) {
+              currentUser.undos = resolvedU;
+              changed = true;
+            }
+            if (currentUser.telegramId) {
+              localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(resolvedU));
+            }
+          }
+          if (cloudData.reveals !== undefined) {
+            const resolvedR = Math.max(Number(currentUser.reveals || 0), Number(cloudData.reveals || 0));
+            if (resolvedR !== currentUser.reveals) {
+              currentUser.reveals = resolvedR;
+              changed = true;
+            }
+            if (currentUser.telegramId) {
+              localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(resolvedR));
+            }
+          }
+          const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
+          if (cloudB !== undefined) {
+            const resolvedB = Math.max(Number(currentUser.extraBottles || 0), Number(cloudB || 0));
+            if (resolvedB !== currentUser.extraBottles) {
+              currentUser.extraBottles = resolvedB;
+              currentUser.extra_bottles = resolvedB;
+              changed = true;
+            }
+            if (currentUser.telegramId) {
+              localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(resolvedB));
+            }
+          }
 
-          // If cloud data is strictly newer than our local state, sync other booster values directly
-          if (cloudUpdatedAt > localUpdatedAt) {
-            if (cloudData.undos !== undefined) {
-              currentUser.undos = Math.min(Number(currentUser.undos || 0), Number(cloudData.undos || 0));
-              changed = true;
-            }
-            if (cloudData.reveals !== undefined) {
-              currentUser.reveals = Math.min(Number(currentUser.reveals || 0), Number(cloudData.reveals || 0));
-              changed = true;
-            }
-            const cloudB = cloudData.extra_bottles !== undefined ? cloudData.extra_bottles : cloudData.extraBottles;
-            if (cloudB !== undefined) {
-              currentUser.extraBottles = Math.min(Number(currentUser.extraBottles || 0), Number(cloudB || 0));
-              currentUser.extra_bottles = currentUser.extraBottles;
-              changed = true;
-            }
-          } else {
-            // Local state is newer or equal; if local has more hints than cloud, sync to cloud
-            if (Number(currentUser.hints || 0) > Number(cloudData.hints || 0)) {
-              syncPlayerToCloud(currentUser);
-            }
+          if (Number(currentUser.hints || 0) > Number(cloudData.hints || 0) ||
+              Number(currentUser.undos || 0) > Number(cloudData.undos || 0) ||
+              Number(currentUser.reveals || 0) > Number(cloudData.reveals || 0) ||
+              Number(currentUser.extraBottles || 0) > Number(cloudB || 0)) {
+            syncPlayerToCloud(currentUser);
           }
           if (cloudData.all_colors_until !== undefined) {
             const acu = Math.max(Number(currentUser.all_colors_until || 0), Number(cloudData.all_colors_until || 0));
@@ -4420,6 +4601,9 @@ async function initColorSortApp() {
             if (!currentLevelData || currentLevelData.levelNumber !== currentUser.currentLevel) {
               loadCurrentLevel();
             }
+          }
+          if (currentUser.daily_boosters_days_left > 0 || (currentUser.daily_boosters_purchased_at && Number(currentUser.daily_boosters_purchased_at) > 0)) {
+            checkAndApplyClientDailyBoosters();
           }
         }
       }).catch(() => {}).finally(() => {
@@ -4572,7 +4756,11 @@ async function initColorSortApp() {
         moves: completedMoves,
         boostersUsed,
         movesCount,
-        durationMs
+        durationMs,
+        hints: Number(currentUser.hints || 0),
+        undos: Number(currentUser.undos || 0),
+        reveals: Number(currentUser.reveals || 0),
+        extraBottles: Number(currentUser.extraBottles || 0)
       });
 
       if (res && res.success) {
@@ -4617,12 +4805,19 @@ async function initColorSortApp() {
       // Official progression authorized!
       if (verifiedUser) {
         const keptHints = Math.max(Number(currentUser.hints || 0), Number(verifiedUser.hints !== undefined ? verifiedUser.hints : (currentUser.hints || 0)));
+        const keptUndos = Math.max(Number(currentUser.undos || 0), Number(verifiedUser.undos !== undefined ? verifiedUser.undos : (currentUser.undos || 0)));
+        const keptReveals = Math.max(Number(currentUser.reveals || 0), Number(verifiedUser.reveals !== undefined ? verifiedUser.reveals : (currentUser.reveals || 0)));
+        const keptBottles = Math.max(Number(currentUser.extraBottles || currentUser.extra_bottles || 0), Number((verifiedUser.extra_bottles !== undefined ? verifiedUser.extra_bottles : (verifiedUser.extraBottles || 0))));
         currentUser = normalizeUserObject({
           ...currentUser,
           ...verifiedUser,
-          hints: keptHints
+          hints: keptHints,
+          undos: keptUndos,
+          reveals: keptReveals,
+          extraBottles: keptBottles,
+          extra_bottles: keptBottles
         });
-        if (currentUser.telegramId) {
+        if (currentUser.telegramId && keptHints > 0) {
           localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
         }
       } else {
@@ -4814,7 +5009,14 @@ async function initColorSortApp() {
   }
 
   // Background Cloud Sync & Init (non-blocking for instant startup)
-  apiCall('/api/user/init', 'POST', userData).then(serverUser => {
+  const initPayload = {
+    ...userData,
+    hints: Number(currentUser.hints || 0),
+    undos: Number(currentUser.undos || 0),
+    reveals: Number(currentUser.reveals || 0),
+    extraBottles: Number(currentUser.extraBottles || 0)
+  };
+  apiCall('/api/user/init', 'POST', initPayload).then(serverUser => {
     if (serverUser && serverUser.success && serverUser.user) {
       const localReset = Number(localStorage.getItem('color_sort_season_reset_at') || 0);
       const serverReset = Number(serverUser.seasonResetAt || 0);
@@ -4836,30 +5038,51 @@ async function initColorSortApp() {
       const localUpdatedAt = Number(currentUser.updatedAt || 0);
       const serverUpdatedAt = serverUser.user.updated_at ? new Date(serverUser.user.updated_at).getTime() : Number(serverUser.user.updatedAt || 0);
 
-      // Unconditionally adopt maximum hints across server and local
+      // Unconditionally adopt maximum boosters across server and local (never downgrade)
       if (serverUser.user.hints !== undefined) {
         const srvH = Number(serverUser.user.hints || 0);
         const localH = Number(currentUser.hints || 0);
         const resolvedH = Math.max(localH, srvH);
-        if (resolvedH !== currentUser.hints) {
-          currentUser.hints = resolvedH;
-          if (currentUser.telegramId) {
-            localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(resolvedH));
-          }
-          saveLocalUser();
-          updateHeaderUI();
+        currentUser.hints = resolvedH;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(resolvedH));
         }
       }
-
-      // Unconditionally adopt maximum boosters across server and local (never downgrade)
-      if (serverUser.user.undos !== undefined) currentUser.undos = Math.max(Number(currentUser.undos || 0), Number(serverUser.user.undos || 0));
-      if (serverUser.user.reveals !== undefined) currentUser.reveals = Math.max(Number(currentUser.reveals || 0), Number(serverUser.user.reveals || 0));
+      if (serverUser.user.undos !== undefined) {
+        const srvU = Number(serverUser.user.undos || 0);
+        const localU = Number(currentUser.undos || 0);
+        const resolvedU = Math.max(localU, srvU);
+        currentUser.undos = resolvedU;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(resolvedU));
+        }
+      }
+      if (serverUser.user.reveals !== undefined) {
+        const srvR = Number(serverUser.user.reveals || 0);
+        const localR = Number(currentUser.reveals || 0);
+        const resolvedR = Math.max(localR, srvR);
+        currentUser.reveals = resolvedR;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(resolvedR));
+        }
+      }
       const serverB = serverUser.user.extra_bottles !== undefined ? serverUser.user.extra_bottles : serverUser.user.extraBottles;
       if (serverB !== undefined) {
-        currentUser.extraBottles = Math.max(Number(currentUser.extraBottles || 0), Number(serverB || 0));
-        currentUser.extra_bottles = currentUser.extraBottles;
+        const srvB = Number(serverB || 0);
+        const localB = Number(currentUser.extraBottles || 0);
+        const resolvedB = Math.max(localB, srvB);
+        currentUser.extraBottles = resolvedB;
+        currentUser.extra_bottles = resolvedB;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(resolvedB));
+        }
       }
-      if (Number(currentUser.hints || 0) > Number(serverUser.user.hints || 0)) {
+      saveLocalUser();
+      updateHeaderUI();
+      if (Number(currentUser.hints || 0) > Number(serverUser.user.hints || 0) ||
+          Number(currentUser.undos || 0) > Number(serverUser.user.undos || 0) ||
+          Number(currentUser.reveals || 0) > Number(serverUser.user.reveals || 0) ||
+          Number(currentUser.extraBottles || 0) > Number(serverB || 0)) {
         syncPlayerToCloud(currentUser);
       }
       if (serverUser.user.all_colors_until !== undefined) currentUser.all_colors_until = Math.max(currentUser.all_colors_until || 0, Number(serverUser.user.all_colors_until || 0));
@@ -5449,8 +5672,14 @@ async function initColorSortApp() {
         if (activeMovesLog.length > 0) activeMovesLog.pop();
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentLevelBoostersUsed.undos = (currentLevelBoostersUsed.undos || 0) + 1;
+        window.__explicitUndoUsed = true;
         const newCount = Math.max(0, (currentUser.undos || 0) - 1);
+        currentUser.undos = newCount;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(newCount));
+        }
         updateCloudBoosterDirectly('undos', newCount);
+        window.__explicitUndoUsed = false;
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
 
         apiCall('/api/game/use-booster', 'POST', {
@@ -5458,9 +5687,14 @@ async function initColorSortApp() {
           boosterType: 'undos'
         }).then(res => {
           if (res && res.success && res.remaining !== undefined) {
-            currentUser.undos = Math.min(currentUser.undos, res.remaining);
+            window.__explicitUndoUsed = true;
+            currentUser.undos = res.remaining;
+            if (currentUser.telegramId) {
+              localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(currentUser.undos));
+            }
             updateHeaderUI();
             saveLocalUser();
+            window.__explicitUndoUsed = false;
           }
         }).catch(() => {});
       }
@@ -5490,8 +5724,14 @@ async function initColorSortApp() {
       if (hint) {
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentLevelBoostersUsed.hints = (currentLevelBoostersUsed.hints || 0) + 1;
+        window.__explicitHintUsed = true;
         const newCount = Math.max(0, (currentUser.hints || 0) - 1);
+        currentUser.hints = newCount;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(newCount));
+        }
         updateCloudBoosterDirectly('hints', newCount);
+        window.__explicitHintUsed = false;
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('medium');
 
         apiCall('/api/game/use-booster', 'POST', {
@@ -5499,12 +5739,14 @@ async function initColorSortApp() {
           boosterType: 'hints'
         }).then(res => {
           if (res && res.success && res.remaining !== undefined) {
+            window.__explicitHintUsed = true;
             currentUser.hints = res.remaining;
             if (currentUser.telegramId) {
               localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
             }
             updateHeaderUI();
             saveLocalUser();
+            window.__explicitHintUsed = false;
           }
         }).catch(() => {});
       } else {
@@ -5542,8 +5784,14 @@ async function initColorSortApp() {
       if (res) {
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentLevelBoostersUsed.reveals = (currentLevelBoostersUsed.reveals || 0) + 1;
+        window.__explicitRevealUsed = true;
         const newCount = Math.max(0, (currentUser.reveals || 0) - 1);
+        currentUser.reveals = newCount;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(newCount));
+        }
         updateCloudBoosterDirectly('reveals', newCount);
+        window.__explicitRevealUsed = false;
         if (renderer && renderer.highlightBottleReveal) renderer.highlightBottleReveal(res.bottleIndex);
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
@@ -5553,9 +5801,14 @@ async function initColorSortApp() {
           boosterType: 'reveals'
         }).then(res => {
           if (res && res.success && res.remaining !== undefined) {
-            currentUser.reveals = Math.min(currentUser.reveals, res.remaining);
+            window.__explicitRevealUsed = true;
+            currentUser.reveals = res.remaining;
+            if (currentUser.telegramId) {
+              localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(currentUser.reveals));
+            }
             updateHeaderUI();
             saveLocalUser();
+            window.__explicitRevealUsed = false;
           }
         }).catch(() => {});
       }
@@ -5588,8 +5841,15 @@ async function initColorSortApp() {
         activeMovesLog.push({ type: 'extra_bottle' });
         engine.boostersUsedInLevel = (engine.boostersUsedInLevel || 0) + 1;
         currentLevelBoostersUsed.extraBottles = (currentLevelBoostersUsed.extraBottles || 0) + 1;
+        window.__explicitBottleUsed = true;
         const newCount = Math.max(0, (currentUser.extraBottles || 0) - 1);
+        currentUser.extraBottles = newCount;
+        currentUser.extra_bottles = newCount;
+        if (currentUser.telegramId) {
+          localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(newCount));
+        }
         updateCloudBoosterDirectly('extraBottles', newCount);
+        window.__explicitBottleUsed = false;
         if (window.TelegramApp && window.TelegramApp.TelegramApp) window.TelegramApp.TelegramApp.haptic('success');
         if (window.SoundEngine && window.SoundEngine.SoundEngine) window.SoundEngine.SoundEngine.playComplete();
 
@@ -5598,10 +5858,15 @@ async function initColorSortApp() {
           boosterType: 'extra_bottles'
         }).then(res => {
           if (res && res.success && res.remaining !== undefined) {
-            currentUser.extraBottles = Math.min(currentUser.extraBottles, res.remaining);
+            window.__explicitBottleUsed = true;
+            currentUser.extraBottles = res.remaining;
             currentUser.extra_bottles = currentUser.extraBottles;
+            if (currentUser.telegramId) {
+              localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(currentUser.extraBottles));
+            }
             updateHeaderUI();
             saveLocalUser();
+            window.__explicitBottleUsed = false;
           }
         }).catch(() => {});
       }
@@ -6847,7 +7112,7 @@ async function initColorSortApp() {
     if (!wasInitCredited) {
       localStorage.setItem(initCreditedKey, '1');
       currentUser.daily_boosters_init_credited = true;
-      if (!currentUser.daily_boosters_purchased_at) {
+      if (!currentUser.daily_boosters_last_date) {
         currentUser.hints = (currentUser.hints || 0) + 10;
         currentUser.undos = (currentUser.undos || 0) + 10;
         currentUser.reveals = (currentUser.reveals || 0) + 10;
@@ -6855,6 +7120,11 @@ async function initColorSortApp() {
         currentUser.extra_bottles = currentUser.extraBottles;
         currentUser.daily_boosters_last_date = kyiv.dateStr;
         currentUser.dailyBoostersLastDate = kyiv.dateStr;
+
+        localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+        localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(currentUser.undos));
+        localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(currentUser.reveals));
+        localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(currentUser.extraBottles));
 
         localStorage.setItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`, String(currentUser.daily_boosters_days_left || 0));
         localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, kyiv.dateStr);
@@ -6867,13 +7137,7 @@ async function initColorSortApp() {
       }
     }
 
-    let latestEligibleDate = null;
-    if (kyiv.hour === 23 && kyiv.minute >= 59) {
-      latestEligibleDate = kyiv.dateStr;
-    } else {
-      const yesterday = new Date(now.getTime() - 24 * 3600 * 1000);
-      latestEligibleDate = getKyivDateTimeBrowser(yesterday).dateStr;
-    }
+    const latestEligibleDate = kyiv.dateStr;
 
     let lastDate = (currentUser.daily_boosters_last_date || '').trim();
     if (!lastDate) {
@@ -6908,6 +7172,11 @@ async function initColorSortApp() {
     currentUser.dailyBoostersDaysLeft = currentUser.daily_boosters_days_left;
     currentUser.daily_boosters_last_date = latestEligibleDate;
     currentUser.dailyBoostersLastDate = latestEligibleDate;
+
+    localStorage.setItem(`color_sort_hints_${currentUser.telegramId}`, String(currentUser.hints));
+    localStorage.setItem(`color_sort_undos_${currentUser.telegramId}`, String(currentUser.undos));
+    localStorage.setItem(`color_sort_reveals_${currentUser.telegramId}`, String(currentUser.reveals));
+    localStorage.setItem(`color_sort_extra_bottles_${currentUser.telegramId}`, String(currentUser.extraBottles));
 
     localStorage.setItem(`color_sort_daily_boosters_days_${currentUser.telegramId}`, String(currentUser.daily_boosters_days_left || 0));
     localStorage.setItem(`color_sort_daily_boosters_date_${currentUser.telegramId}`, currentUser.daily_boosters_last_date || '');
@@ -12327,6 +12596,24 @@ async function initColorSortApp() {
   const handleAppExitOrHide = () => {
     try {
       if (currentUser && currentUser.telegramId) {
+        // Enforce booster floors so boosters never disappear on reload, exit, or app hide
+        const cachedH = localStorage.getItem(`color_sort_hints_${currentUser.telegramId}`);
+        if (cachedH !== null && !isNaN(parseInt(cachedH, 10))) {
+          currentUser.hints = Math.max(Number(currentUser.hints || 0), parseInt(cachedH, 10));
+        }
+        const cachedU = localStorage.getItem(`color_sort_undos_${currentUser.telegramId}`);
+        if (cachedU !== null && !isNaN(parseInt(cachedU, 10))) {
+          currentUser.undos = Math.max(Number(currentUser.undos || 0), parseInt(cachedU, 10));
+        }
+        const cachedR = localStorage.getItem(`color_sort_reveals_${currentUser.telegramId}`);
+        if (cachedR !== null && !isNaN(parseInt(cachedR, 10))) {
+          currentUser.reveals = Math.max(Number(currentUser.reveals || 0), parseInt(cachedR, 10));
+        }
+        const cachedB = localStorage.getItem(`color_sort_extra_bottles_${currentUser.telegramId}`);
+        if (cachedB !== null && !isNaN(parseInt(cachedB, 10))) {
+          currentUser.extraBottles = Math.max(Number(currentUser.extraBottles || 0), parseInt(cachedB, 10));
+          currentUser.extra_bottles = currentUser.extraBottles;
+        }
         saveLocalUser();
         const id = String(currentUser.telegramId);
         if (id && !id.startsWith('guest') && !id.startsWith('dev') && /^\d+$/.test(id)) {
