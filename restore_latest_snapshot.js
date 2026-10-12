@@ -10,8 +10,8 @@ async function run() {
   console.log('🔄 RESTORING LATEST LEADERBOARD BACKUP SAVE FROM ADMIN PANEL');
   console.log('================================================================\n');
 
-  // 1. Fetch the latest valid snapshot payload (ID: 1791149202825 for 05.10.2026)
-  const targetSnapshotId = '1791149202825';
+  // 1. Fetch the latest valid snapshot payload (ID: 1791536313645 for 12.10.2026)
+  const targetSnapshotId = '1791536313645';
   console.log(`📡 Fetching snapshot ${targetSnapshotId} from KVDB...`);
   const snapRes = await fetch(`${GLOBAL_CLOUD_BASE}/leaderboard_snapshot_${targetSnapshotId}?_cb=${Date.now()}`);
   if (!snapRes.ok) {
@@ -119,15 +119,6 @@ async function run() {
   const now = Date.now();
   let updatedCount = 0;
 
-  // Zero out users not in snapshot from active leaderboard
-  const snapTids = new Set(snapshotData.players.map(p => String(p.telegram_id)));
-  const allDbUsers = db.db.prepare(`SELECT telegram_id, max_level FROM users`).all();
-  for (const u of allDbUsers) {
-    if (!snapTids.has(String(u.telegram_id)) && Number(u.max_level || 0) > 0) {
-      db.db.prepare(`UPDATE users SET max_level = 0, current_level = 1, stars = 0 WHERE telegram_id = ?`).run(u.telegram_id);
-    }
-  }
-
   for (const p of snapshotData.players) {
     const tid = String(p.telegram_id);
     const snapLvl = Number(p.level || 1);
@@ -140,11 +131,11 @@ async function run() {
     if (!localUser) {
       localUser = db.getUser(tid); // creates default if not exists
     }
-    const finalLevel = snapLvl;
+    const finalLevel = Math.max(localUser ? Number(localUser.max_level || 0) : 0, snapLvl);
 
     db.db.prepare(`
       UPDATE users 
-      SET max_level = ?, current_level = ?, first_name = COALESCE(NULLIF(first_name, ''), ?), username = COALESCE(NULLIF(username, ''), ?), updated_at = datetime('now')
+      SET max_level = MAX(users.max_level, ?), current_level = MAX(users.current_level, ?), first_name = COALESCE(NULLIF(first_name, ''), ?), username = COALESCE(NULLIF(username, ''), ?), updated_at = datetime('now')
       WHERE telegram_id = ?
     `).run(finalLevel, finalLevel, snapName, snapUsername, tid);
 
@@ -157,7 +148,7 @@ async function run() {
       }
     } catch (e) {}
 
-    const targetCloudLevel = snapLvl;
+    const targetCloudLevel = Math.max(kvUser ? Number(kvUser.maxLevel || kvUser.level || 0) : 0, finalLevel);
 
     const updatedKvPayload = {
       ...(kvUser || {}),

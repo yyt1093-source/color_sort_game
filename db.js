@@ -207,8 +207,8 @@ function initDatabase() {
 }
 
 const IMMUTABLE_PLAYER_BASELINES = {
-  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
-  '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
+  '5761685341': { maxLevel: 53, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+  '7458436672': { maxLevel: 61, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
   '8305679959': { maxLevel: 43, firstName: '.', username: '' },
   '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
   '5269257903': { maxLevel: 37, firstName: 'Kostya', username: 'Koctya007' },
@@ -2108,16 +2108,12 @@ async function restoreLeaderboardSnapshot(snapshotId) {
   // 2. Transactional SQLite update
   db.exec('BEGIN TRANSACTION');
   try {
-    // A. Total clean wipe: completely zero out all current levels, stars, and moves across all players
-    db.prepare(`
-      UPDATE users 
-      SET max_level = 0, current_level = 1, stars = 0, total_moves = 0, updated_at = datetime('now')
-    `).run();
-
-    // B. Set exact level and stars for snapshot players
+    // A. Update snapshot players with non-decreasing levels (never wipe or downgrade active players)
     const updateUserStmt = db.prepare(`
       UPDATE users 
-      SET max_level = ?, current_level = ?, stars = ?,
+      SET max_level = MAX(users.max_level, ?),
+          current_level = MAX(users.current_level, ?),
+          stars = MAX(users.stars, ?),
           first_name = COALESCE(NULLIF(?, ''), first_name),
           username = COALESCE(NULLIF(?, ''), username),
           updated_at = datetime('now')
@@ -2130,11 +2126,14 @@ async function restoreLeaderboardSnapshot(snapshotId) {
     `);
 
     for (const [tid, sp] of snapMap.entries()) {
+      const baseLvl = IMMUTABLE_PLAYER_BASELINES[tid]?.maxLevel || 0;
+      const targetLvl = Math.max(sp.lvl, baseLvl);
+      const targetStars = Math.max(sp.stars, IMMUTABLE_PLAYER_BASELINES[tid]?.stars || 0);
       const existing = db.prepare(`SELECT telegram_id FROM users WHERE telegram_id = ?`).get(tid);
       if (existing) {
-        updateUserStmt.run(sp.lvl, sp.lvl, sp.stars, sp.name, sp.username, tid);
+        updateUserStmt.run(targetLvl, targetLvl, targetStars, sp.name, sp.username, tid);
       } else {
-        insertUserStmt.run(tid, sp.name, sp.username, sp.lvl, sp.lvl, sp.stars);
+        insertUserStmt.run(tid, sp.name, sp.username, targetLvl, targetLvl, targetStars);
       }
     }
 
@@ -2377,7 +2376,7 @@ function ensureActiveSnapshotApplied() {
   try {
     let activeId = getActiveSnapshotId();
     if (!activeId) {
-      const realSnap = db.prepare(`SELECT id FROM leaderboard_snapshots WHERE id = '1791149202825' OR id > 1000000000 ORDER BY created_at_ts DESC, id DESC LIMIT 1`).get();
+      const realSnap = db.prepare(`SELECT id FROM leaderboard_snapshots ORDER BY created_at_ts DESC, id DESC LIMIT 1`).get();
       if (realSnap && realSnap.id) {
         activeId = String(realSnap.id);
         db.prepare(`
@@ -2393,7 +2392,6 @@ function ensureActiveSnapshotApplied() {
 
     const uCount = db.prepare(`SELECT COUNT(*) as c FROM users WHERE max_level >= 1`).get();
     if (uCount && uCount.c <= 1) {
-      db.prepare(`UPDATE users SET max_level = 0, current_level = 1, stars = 0, total_moves = 0, updated_at = datetime('now')`).run();
       const updateUserStmt = db.prepare(`
         UPDATE users 
         SET max_level = MAX(users.max_level, ?), current_level = MAX(users.current_level, ?), stars = MAX(users.stars, ?),

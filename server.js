@@ -83,8 +83,8 @@ const MAINTENANCE_ALLOWED_USERNAMES = ['alligator0709', 'maria290355'];
 
 // Immutable verified player baselines keyed strictly by Telegram ID (permanent and unchangeable)
 const IMMUTABLE_PLAYER_BASELINES = {
-  '5761685341': { maxLevel: 50, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
-  '7458436672': { maxLevel: 47, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
+  '5761685341': { maxLevel: 53, firstName: 'ALLIGATOR', username: 'ALLIGATOR0709' },
+  '7458436672': { maxLevel: 61, firstName: 'Руслан', username: 'ruslan_aliyevvv' },
   '8305679959': { maxLevel: 43, firstName: '.', username: '' },
   '8982516215': { maxLevel: 42, firstName: 'Qwerty', username: 'sinisterx3' },
   '5269257903': { maxLevel: 37, firstName: 'Kostya', username: 'Koctya007' },
@@ -527,11 +527,18 @@ app.post('/api/user/sync', authMiddleware, (req, res) => {
             }
           }
 
-          val.maxLevel = updatedUser.max_level;
-          val.max_level = updatedUser.max_level;
-          val.level = updatedUser.max_level;
-          val.currentLevel = updatedUser.current_level;
-          val.current_level = updatedUser.current_level;
+          const effectiveMaxLvl = Math.max(Number(val.maxLevel || 0), Number(updatedUser.max_level || 0), Number(req.body?.maxLevel || 0));
+          val.maxLevel = effectiveMaxLvl;
+          val.max_level = effectiveMaxLvl;
+          val.level = effectiveMaxLvl;
+          val.currentLevel = Math.max(Number(val.currentLevel || 1), Number(updatedUser.current_level || 1), Number(req.body?.currentLevel || 1));
+          val.current_level = val.currentLevel;
+          if (effectiveMaxLvl > Number(updatedUser.max_level || 0)) {
+            try {
+              db.prepare('UPDATE users SET max_level = ?, current_level = MAX(current_level, ?) WHERE telegram_id = ?').run(effectiveMaxLvl, effectiveMaxLvl, String(id));
+              updatedUser.max_level = effectiveMaxLvl;
+            } catch (e) {}
+          }
           val.stars = 0;
           val.updatedAt = Date.now();
           return fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
@@ -717,11 +724,11 @@ app.post('/api/game/complete-level', authMiddleware, async (req, res) => {
         const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
         const val = r.ok ? await r.json() : null;
         const baseObj = (val && typeof val === 'object') ? val : { telegramId: id };
-        baseObj.maxLevel = updatedUser.max_level;
-        baseObj.max_level = updatedUser.max_level;
-        baseObj.level = updatedUser.max_level;
-        baseObj.currentLevel = updatedUser.current_level;
-        baseObj.current_level = updatedUser.current_level;
+        baseObj.maxLevel = Math.max(Number(baseObj.maxLevel || 0), updatedUser.max_level);
+        baseObj.max_level = baseObj.maxLevel;
+        baseObj.level = baseObj.maxLevel;
+        baseObj.currentLevel = Math.max(Number(baseObj.currentLevel || 1), updatedUser.current_level);
+        baseObj.current_level = baseObj.currentLevel;
 
         // Boosters are preserved strictly: NEVER overwritten with 0 on serverless cold starts
         const safeHints = Math.max(Number(baseObj.hints || 0), Number(updatedUser.hints || 0), Number(req.body?.hints || 0));
