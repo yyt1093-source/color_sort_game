@@ -201,32 +201,19 @@ app.post('/api/user/init', async (req, res) => {
                 user.stars = isRestoredSnapshotState ? Number(kvData.stars || 0) : Math.max(Number(user.stars || 0), Number(kvData.stars || 0));
               }
               const clampBooster = (val) => String(id) === '5761685341' ? Math.max(0, Number(val || 0)) : Math.min(Math.max(0, Number(val || 0)), 10000);
-              // Hints are unconditionally preserved to maximum of SQLite and cloud KVDB (never wiped on cold-start)
-              if (kvData.hints !== undefined) {
-                user.hints = Math.max(Number(user.hints || 0), clampBooster(kvData.hints));
-              }
-              const dbUpdated = user.updated_at ? new Date(user.updated_at).getTime() : 0;
-              if (kvUpdated > dbUpdated) {
-                if (kvData.undos !== undefined) user.undos = clampBooster(kvData.undos);
-                if (kvData.reveals !== undefined) user.reveals = clampBooster(kvData.reveals);
-                const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
-                if (kvB !== undefined) {
-                  user.extra_bottles = clampBooster(kvB);
-                  user.extraBottles = user.extra_bottles;
-                }
-              } else {
-                if (Number(user.undos || 0) === 0 && kvData.undos !== undefined && Number(kvData.undos || 0) > 0) {
-                  user.undos = clampBooster(kvData.undos);
-                }
-                if (Number(user.reveals || 0) === 0 && kvData.reveals !== undefined && Number(kvData.reveals || 0) > 0) {
-                  user.reveals = clampBooster(kvData.reveals);
-                }
-                const kvB = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
-                if (Number(user.extra_bottles || 0) === 0 && kvB !== undefined && Number(kvB || 0) > 0) {
-                  user.extra_bottles = clampBooster(kvB);
-                  user.extraBottles = user.extra_bottles;
-                }
-              }
+              const reqHints = req.body && req.body.hints !== undefined ? clampBooster(req.body.hints) : 0;
+              const reqUndos = req.body && req.body.undos !== undefined ? clampBooster(req.body.undos) : 0;
+              const reqReveals = req.body && req.body.reveals !== undefined ? clampBooster(req.body.reveals) : 0;
+              const reqEb = req.body && (req.body.extraBottles !== undefined || req.body.extra_bottles !== undefined) ? clampBooster(req.body.extraBottles !== undefined ? req.body.extraBottles : req.body.extra_bottles) : 0;
+
+              // All 4 boosters are unconditionally preserved to maximum of SQLite, cloud KVDB, and client payload (never wiped on cold-start or reload)
+              const kvEb = kvData.extra_bottles !== undefined ? kvData.extra_bottles : kvData.extraBottles;
+              user.hints = Math.max(Number(user.hints || 0), clampBooster(kvData.hints || 0), reqHints);
+              user.undos = Math.max(Number(user.undos || 0), clampBooster(kvData.undos || 0), reqUndos);
+              user.reveals = Math.max(Number(user.reveals || 0), clampBooster(kvData.reveals || 0), reqReveals);
+              user.extra_bottles = Math.max(Number(user.extra_bottles || 0), clampBooster(kvEb || 0), reqEb);
+              user.extraBottles = user.extra_bottles;
+
               const finalB = user.extra_bottles !== undefined ? user.extra_bottles : (user.extraBottles || 0);
               user.extraBottles = finalB;
               user.all_colors_until = Math.max(Number(user.all_colors_until || 0), Number(kvData.all_colors_until || 0));
@@ -249,12 +236,6 @@ app.post('/api/user/init', async (req, res) => {
               if (kAt && (!user.daily_boosters_purchased_at || kAt > user.daily_boosters_purchased_at)) {
                 user.daily_boosters_purchased_at = kAt;
               }
-              if (user.daily_boosters_purchased_at > 0 && typeof db.calculateDailyBoostersDaysLeft === 'function') {
-                const calcDays = db.calculateDailyBoostersDaysLeft(user.daily_boosters_purchased_at);
-                if (calcDays !== null) {
-                  user.daily_boosters_days_left = Math.min(Number(user.daily_boosters_days_left || calcDays), calcDays);
-                }
-              }
               if (kvData.ton_wallet && !user.ton_wallet) user.ton_wallet = kvData.ton_wallet;
               if (kvData.memo_code && !user.memo_code) user.memo_code = kvData.memo_code;
               if (kvData.ton_balance !== undefined) {
@@ -268,6 +249,16 @@ app.post('/api/user/init', async (req, res) => {
                   WHERE telegram_id = ?
                 `).run(user.max_level, user.current_level, user.stars, user.hints, user.undos, user.reveals, finalB, Number(user.ton_balance || 0), user.all_colors_until, user.all_colors_purchased_at, Number(user.daily_boosters_days_left || 0), user.daily_boosters_last_date || '', Number(user.daily_boosters_purchased_at || 0), String(id));
               } catch (e) {}
+
+              // If SQLite user has higher booster counts than KVDB, update KVDB so KVDB never lags behind
+              const kvB = Number(kvData.extraBottles !== undefined ? kvData.extraBottles : (kvData.extra_bottles || 0));
+              if (user.hints > Number(kvData.hints || 0) || user.undos > Number(kvData.undos || 0) || user.reveals > Number(kvData.reveals || 0) || finalB > kvB) {
+                fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ...kvData, hints: user.hints, undos: user.undos, reveals: user.reveals, extraBottles: finalB, extra_bottles: finalB, updatedAt: Date.now() })
+                }).catch(() => {});
+              }
             }
           }
         }
@@ -354,20 +345,37 @@ app.post('/api/user/sync', authMiddleware, (req, res) => {
       existingUser.hints = hVal;
     }
     if (undos !== undefined) {
-      const uVal = Math.min(Number(existingUser.undos || 0), Math.max(0, Number(undos)));
+      const uReq = Math.max(0, Math.min(10000, Number(undos)));
+      const uVal = Math.max(Number(existingUser.undos || 0), uReq);
       db.prepare('UPDATE users SET undos = ? WHERE telegram_id = ?').run(uVal, String(id));
       existingUser.undos = uVal;
     }
     if (reveals !== undefined) {
-      const rVal = Math.min(Number(existingUser.reveals || 0), Math.max(0, Number(reveals)));
+      const rReq = Math.max(0, Math.min(10000, Number(reveals)));
+      const rVal = Math.max(Number(existingUser.reveals || 0), rReq);
       db.prepare('UPDATE users SET reveals = ? WHERE telegram_id = ?').run(rVal, String(id));
       existingUser.reveals = rVal;
     }
     const bReq = extraBottles !== undefined ? extraBottles : extra_bottles;
     if (bReq !== undefined) {
-      const bVal = Math.min(Number(existingUser.extra_bottles || 0), Math.max(0, Number(bReq)));
+      const bReqVal = Math.max(0, Math.min(10000, Number(bReq)));
+      const bVal = Math.max(Number(existingUser.extra_bottles || 0), bReqVal);
       db.prepare('UPDATE users SET extra_bottles = ? WHERE telegram_id = ?').run(bVal, String(id));
       existingUser.extra_bottles = bVal;
+    }
+
+    if (req.body?.daily_boosters_days_left !== undefined) {
+      const bDays = Number(req.body.daily_boosters_days_left);
+      const curDays = Number(existingUser.daily_boosters_days_left || 0);
+      if (bDays > curDays) {
+        existingUser.daily_boosters_days_left = bDays;
+        if (req.body.daily_boosters_last_date) existingUser.daily_boosters_last_date = req.body.daily_boosters_last_date;
+        if (req.body.daily_boosters_purchased_at) existingUser.daily_boosters_purchased_at = Number(req.body.daily_boosters_purchased_at);
+        try {
+          db.prepare('UPDATE users SET daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ? WHERE telegram_id = ?')
+            .run(existingUser.daily_boosters_days_left, existingUser.daily_boosters_last_date || '', Number(existingUser.daily_boosters_purchased_at || 0), String(id));
+        } catch (e) {}
+      }
     }
 
     const isAlligator = String(id) === '5761685341';
@@ -383,7 +391,7 @@ app.post('/api/user/sync', authMiddleware, (req, res) => {
       ? Math.max(existingUser.max_level, Number(req.body?.maxLevel || currentLevel || existingUser.max_level))
       : existingUser.max_level;
 
-    const updatedUser = db.updateUserProgress(id, {
+    let updatedUser = db.updateUserProgress(id, {
       firstName,
       username,
       photoUrl,
@@ -400,7 +408,10 @@ app.post('/api/user/sync', authMiddleware, (req, res) => {
 
     // Also check and apply daily boosters if due
     try {
-      db.accrueDailyBoostersForUser(id, new Date());
+      const accrueRes = db.accrueDailyBoostersForUser(id, new Date());
+      if (accrueRes && accrueRes.accrued && accrueRes.user) {
+        updatedUser = accrueRes.user;
+      }
     } catch (e) {}
 
     // Forward authoritative server state to KVDB for real players
@@ -409,6 +420,7 @@ app.post('/api/user/sync', authMiddleware, (req, res) => {
       fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`)
         .then(r => r.ok ? r.json() : null)
         .then(existing => {
+          const val = existing && typeof existing === 'object' ? existing : { telegramId: id };
           const reqHints = Number(req.body?.hints !== undefined ? req.body.hints : 0);
           const maxHints = Math.max(Number(val.hints || 0), Number(updatedUser.hints || 0), reqHints);
           val.hints = maxHints;
@@ -458,6 +470,18 @@ app.post('/api/user/sync', authMiddleware, (req, res) => {
               db.prepare('UPDATE users SET ton_balance = ? WHERE telegram_id = ?').run(maxTon, String(id));
               updatedUser.ton_balance = maxTon;
             } catch (e) {}
+          }
+          if (updatedUser.daily_boosters_days_left !== undefined) {
+            val.daily_boosters_days_left = Math.max(Number(val.daily_boosters_days_left || 0), Number(updatedUser.daily_boosters_days_left || 0));
+            val.dailyBoostersDaysLeft = val.daily_boosters_days_left;
+            if (updatedUser.daily_boosters_last_date) {
+              val.daily_boosters_last_date = updatedUser.daily_boosters_last_date;
+              val.dailyBoostersLastDate = updatedUser.daily_boosters_last_date;
+            }
+            if (updatedUser.daily_boosters_purchased_at) {
+              val.daily_boosters_purchased_at = updatedUser.daily_boosters_purchased_at;
+              val.dailyBoostersPurchasedAt = updatedUser.daily_boosters_purchased_at;
+            }
           }
           val.maxLevel = updatedUser.max_level;
           val.max_level = updatedUser.max_level;
@@ -567,11 +591,32 @@ app.post('/api/game/use-booster', authMiddleware, async (req, res) => {
         .then(r => r.ok ? r.json() : null)
         .then(val => {
           if (val && typeof val === 'object') {
-            val.hints = deductRes.user.hints;
-            val.undos = deductRes.user.undos;
-            val.reveals = deductRes.user.reveals;
-            val.extraBottles = deductRes.user.extra_bottles;
-            val.extra_bottles = deductRes.user.extra_bottles;
+            const normB = String(boosterType || '').toLowerCase();
+            if (normB === 'hints' || normB === 'hint') {
+              val.hints = Math.max(0, (val.hints !== undefined ? Number(val.hints) : deductRes.user.hints) - 1);
+            } else {
+              val.hints = Math.max(Number(val.hints || 0), Number(deductRes.user.hints || 0));
+            }
+            if (normB === 'undos' || normB === 'undo') {
+              val.undos = Math.max(0, (val.undos !== undefined ? Number(val.undos) : deductRes.user.undos) - 1);
+            } else {
+              val.undos = Math.max(Number(val.undos || 0), Number(deductRes.user.undos || 0));
+            }
+            if (normB === 'reveal_bottle' || normB === 'reveals' || normB === 'reveal') {
+              val.reveals = Math.max(0, (val.reveals !== undefined ? Number(val.reveals) : deductRes.user.reveals) - 1);
+            } else {
+              val.reveals = Math.max(Number(val.reveals || 0), Number(deductRes.user.reveals || 0));
+            }
+            if (normB === 'extra_bottle' || normB === 'extra_bottles' || normB === 'extrabottle') {
+              const bCur = val.extra_bottles !== undefined ? val.extra_bottles : val.extraBottles;
+              const bNew = Math.max(0, (bCur !== undefined ? Number(bCur) : deductRes.user.extra_bottles) - 1);
+              val.extraBottles = bNew;
+              val.extra_bottles = bNew;
+            } else {
+              const bPreserved = Math.max(Number(val.extraBottles || val.extra_bottles || 0), Number(deductRes.user.extra_bottles || 0));
+              val.extraBottles = bPreserved;
+              val.extra_bottles = bPreserved;
+            }
             val.updatedAt = Date.now();
             return fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
               method: 'POST',
@@ -619,33 +664,63 @@ app.post('/api/game/complete-level', authMiddleware, async (req, res) => {
     }
 
     // Advance level on server
-    const updatedUser = db.completeLevel(id, verifyRes.levelNumber);
+    let updatedUser = db.completeLevel(id, verifyRes.levelNumber);
 
     // Sync to KVDB from server
     if (id && !String(id).startsWith('guest') && !String(id).startsWith('dev')) {
       const bucket = process.env.KVDB_BUCKET || '82kzJTUxZwwFNvg7kUSqgM';
-      fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(val => {
-          const baseObj = (val && typeof val === 'object') ? val : { telegramId: id };
-          baseObj.maxLevel = updatedUser.max_level;
-          baseObj.max_level = updatedUser.max_level;
-          baseObj.level = updatedUser.max_level;
-          baseObj.currentLevel = updatedUser.current_level;
-          baseObj.current_level = updatedUser.current_level;
-          baseObj.hints = updatedUser.hints;
-          baseObj.undos = updatedUser.undos;
-          baseObj.reveals = updatedUser.reveals;
-          baseObj.extraBottles = updatedUser.extra_bottles;
-          baseObj.extra_bottles = updatedUser.extra_bottles;
-          baseObj.stars = 0;
-          baseObj.updatedAt = Date.now();
-          return fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(baseObj)
-          });
-        }).catch(() => {});
+      try {
+        const r = await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}?_cb=${Date.now()}`);
+        const val = r.ok ? await r.json() : null;
+        const baseObj = (val && typeof val === 'object') ? val : { telegramId: id };
+        baseObj.maxLevel = updatedUser.max_level;
+        baseObj.max_level = updatedUser.max_level;
+        baseObj.level = updatedUser.max_level;
+        baseObj.currentLevel = updatedUser.current_level;
+        baseObj.current_level = updatedUser.current_level;
+
+        // Boosters are preserved strictly: NEVER overwritten with 0 on serverless cold starts
+        const safeHints = Math.max(Number(baseObj.hints || 0), Number(updatedUser.hints || 0), Number(req.body?.hints || 0));
+        const safeUndos = Math.max(Number(baseObj.undos || 0), Number(updatedUser.undos || 0), Number(req.body?.undos || 0));
+        const safeReveals = Math.max(Number(baseObj.reveals || 0), Number(updatedUser.reveals || 0), Number(req.body?.reveals || 0));
+        const safeBottles = Math.max(Number(baseObj.extraBottles || baseObj.extra_bottles || 0), Number(updatedUser.extra_bottles || 0), Number(req.body?.extraBottles || req.body?.extra_bottles || 0));
+
+        baseObj.hints = safeHints;
+        baseObj.undos = safeUndos;
+        baseObj.reveals = safeReveals;
+        baseObj.extraBottles = safeBottles;
+        baseObj.extra_bottles = safeBottles;
+        if (updatedUser.daily_boosters_days_left !== undefined) {
+          baseObj.daily_boosters_days_left = Math.max(Number(baseObj.daily_boosters_days_left || 0), Number(updatedUser.daily_boosters_days_left || 0));
+          baseObj.dailyBoostersDaysLeft = baseObj.daily_boosters_days_left;
+          if (updatedUser.daily_boosters_last_date) {
+            baseObj.daily_boosters_last_date = updatedUser.daily_boosters_last_date;
+            baseObj.dailyBoostersLastDate = updatedUser.daily_boosters_last_date;
+          }
+          if (updatedUser.daily_boosters_purchased_at) {
+            baseObj.daily_boosters_purchased_at = updatedUser.daily_boosters_purchased_at;
+            baseObj.dailyBoostersPurchasedAt = updatedUser.daily_boosters_purchased_at;
+          }
+        }
+        baseObj.stars = 0;
+        baseObj.updatedAt = Date.now();
+
+        // Also ensure server SQLite adopts the safe booster counts
+        try {
+          db.prepare('UPDATE users SET hints = ?, undos = ?, reveals = ?, extra_bottles = ? WHERE telegram_id = ?')
+            .run(safeHints, safeUndos, safeReveals, safeBottles, String(id));
+          updatedUser.hints = safeHints;
+          updatedUser.undos = safeUndos;
+          updatedUser.reveals = safeReveals;
+          updatedUser.extra_bottles = safeBottles;
+        } catch (e) {}
+
+        await fetch(`https://kvdb.io/${bucket}/player_${encodeURIComponent(id)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(baseObj)
+        });
+      } catch (kvErr) {}
     }
 
     res.json({

@@ -530,7 +530,9 @@ function useBooster(telegramId, boosterType) {
     extra_bottle: 'extra_bottles',
     extra_bottles: 'extra_bottles',
     extraBottle: 'extra_bottles',
-    extraBottles: 'extra_bottles'
+    extraBottles: 'extra_bottles',
+    bottle: 'extra_bottles',
+    bottles: 'extra_bottles'
   };
   const col = columnMap[boosterType];
   if (!col) return { success: false, error: 'Неизвестный тип бустера' };
@@ -651,13 +653,14 @@ function logAdReward(telegramId, rewardType) {
   `);
   insertStmt.run(String(telegramId), rewardType);
 
+  const rType = String(rewardType || '').toLowerCase();
   let bonus = { coins: 0, hints: 0, undos: 0, reveals: 0, extra_bottles: 0, shuffles: 0 };
-  if (rewardType === 'hints') bonus.hints = 1;
-  else if (rewardType === 'undos') bonus.undos = 1;
-  else if (rewardType === 'reveal_bottle' || rewardType === 'reveals') bonus.reveals = 1;
-  else if (rewardType === 'extra_bottle' || rewardType === 'extra_bottles') bonus.extra_bottles = 1;
-  else if (rewardType === 'shuffle_colors' || rewardType === 'shuffles') bonus.shuffles = 1;
-  else if (rewardType === 'coins') bonus.coins = 150;
+  if (rType === 'hints' || rType === 'hint') bonus.hints = 1;
+  else if (rType === 'undos' || rType === 'undo') bonus.undos = 1;
+  else if (rType === 'reveal_bottle' || rType === 'reveals' || rType === 'reveal') bonus.reveals = 1;
+  else if (rType === 'extra_bottle' || rType === 'extra_bottles' || rType === 'bottle') bonus.extra_bottles = 1;
+  else if (rType === 'shuffle_colors' || rType === 'shuffles' || rType === 'shuffle') bonus.shuffles = 1;
+  else if (rType === 'coins' || rType === 'coin') bonus.coins = 150;
   else bonus.coins = 100;
 
   return addBonus(telegramId, bonus);
@@ -1052,15 +1055,9 @@ function buyShopItem(telegramId, itemId) {
     const currentDays = Number(user.daily_boosters_days_left || 0);
     const newDays = currentDays + 30;
     // The first daily accrual (+10 of each booster) is credited immediately upon activation!
-    // If activated before 23:59:00 Kyiv, the Day 1 23:59 accrual will happen at 23:59 TONIGHT!
-    // Therefore, initialLastDate is set to yesterday so that today's 23:59 accrual fires.
-    // If activated at or after 23:59:00 Kyiv, today's 23:59 has already passed, so initialLastDate = kyiv.dateStr.
-    const isAtOrAfter2359 = (kyiv.hour === 23 && kyiv.minute >= 59);
-    let initialLastDate = kyiv.dateStr;
-    if (!isAtOrAfter2359) {
-      const prevDate = new Date(now - 24 * 3600 * 1000);
-      initialLastDate = getKyivDateTime(prevDate).dateStr;
-    }
+    // initialLastDate is set to today (kyiv.dateStr) because today's accrual is credited right now.
+    // Starting tomorrow (new calendar day), subsequent daily accruals will fire when user enters.
+    const initialLastDate = kyiv.dateStr;
 
     const updateStmt = db.prepare(`
       UPDATE users
@@ -1148,7 +1145,7 @@ function buyShopItem(telegramId, itemId) {
 
 /**
  * Accrue daily boosters (+10 hints, +10 undos, +10 reveals, +10 bottles)
- * for a specific user if 23:59 Kyiv has arrived/passed.
+ * for a specific user if a new calendar day has arrived.
  * Strictly idempotent: tracks daily_boosters_last_date so each day is only credited once.
  */
 function accrueDailyBoostersForUser(telegramId, nowInput = new Date()) {
@@ -1159,18 +1156,12 @@ function accrueDailyBoostersForUser(telegramId, nowInput = new Date()) {
   if (daysLeft <= 0) return { accrued: false, user };
 
   const kyiv = getKyivDateTime(nowInput);
-  const isAtOrAfter2359 = (kyiv.hour === 23 && kyiv.minute >= 59);
+  const latestEligibleDate = kyiv.dateStr;
 
-  let latestEligibleDate = kyiv.dateStr;
-  if (!isAtOrAfter2359) {
-    const prevDate = new Date(nowInput.getTime() - 24 * 3600 * 1000);
-    latestEligibleDate = getKyivDateTime(prevDate).dateStr;
-  }
-
-  let lastDate = user.daily_boosters_last_date || '';
+  let lastDate = (user.daily_boosters_last_date || '').trim();
   if (!lastDate) {
-    const dBefore = new Date(new Date(latestEligibleDate + 'T12:00:00Z').getTime() - 24 * 3600 * 1000);
-    lastDate = getKyivDateTime(dBefore).dateStr;
+    const prevDate = new Date(nowInput.getTime() - 24 * 3600 * 1000);
+    lastDate = getKyivDateTime(prevDate).dateStr;
   }
 
   if (lastDate >= latestEligibleDate) {
@@ -1180,7 +1171,7 @@ function accrueDailyBoostersForUser(telegramId, nowInput = new Date()) {
   const d1 = new Date(lastDate + 'T12:00:00Z');
   const d2 = new Date(latestEligibleDate + 'T12:00:00Z');
   const diffDays = Math.round((d2.getTime() - d1.getTime()) / (24 * 3600 * 1000));
-  const dueCount = Math.min(daysLeft, Math.max(0, diffDays));
+  const dueCount = Math.min(daysLeft, Math.max(1, diffDays));
 
   if (dueCount <= 0) return { accrued: false, user };
 
@@ -1213,10 +1204,6 @@ function accrueDailyBoostersForUser(telegramId, nowInput = new Date()) {
 /**
  * Calculate exact remaining subscription days based on Kyiv time
  * elapsed since purchase date.
- * Purchase Day (Day 1) before 23:59:00 Kyiv: 30 days left.
- * Day 1 at/after 23:59:00 until Day 2 23:58:59: 29 days left.
- * Day 2 at/after 23:59:00 until Day 3 23:58:59: 28 days left.
- * And so on.
  */
 function calculateDailyBoostersDaysLeft(purchasedAt, nowInput = new Date(), totalDays = 30) {
   const pAt = Number(purchasedAt || 0);
@@ -1230,10 +1217,7 @@ function calculateDailyBoostersDaysLeft(purchasedAt, nowInput = new Date(), tota
   const dNow = Date.UTC(nowParts[0], nowParts[1] - 1, nowParts[2]);
   const diffDays = Math.round((dNow - dP) / (24 * 3600 * 1000));
 
-  let cutoffsPassed = Math.max(0, diffDays);
-  if (nowKyiv.hour === 23 && nowKyiv.minute >= 59) {
-    cutoffsPassed += 1;
-  }
+  const cutoffsPassed = Math.max(0, diffDays);
   return Math.max(0, totalDays - cutoffsPassed);
 }
 
@@ -1253,9 +1237,21 @@ function accrueDailyBoostersForAll(nowInput = new Date(), additionalPlayers = []
         const pAt = Number(p.daily_boosters_purchased_at || p.dailyBoostersPurchasedAt || 0);
         if (tid && pDays > 0) {
           const u = getUser(tid);
-          if (u && Number(u.daily_boosters_days_left || 0) < pDays) {
-            db.prepare(`UPDATE users SET daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ? WHERE telegram_id = ?`)
-              .run(pDays, pDate, pAt, tid);
+          if (u) {
+            const hCloud = Number(p.hints || 0);
+            const uCloud = Number(p.undos || 0);
+            const rCloud = Number(p.reveals || 0);
+            const bCloud = Number(p.extraBottles !== undefined ? p.extraBottles : (p.extra_bottles || 0));
+            const newHints = Math.max(Number(u.hints || 0), hCloud);
+            const newUndos = Math.max(Number(u.undos || 0), uCloud);
+            const newReveals = Math.max(Number(u.reveals || 0), rCloud);
+            const newBottles = Math.max(Number(u.extra_bottles || 0), bCloud);
+            const newDays = Math.max(Number(u.daily_boosters_days_left || 0), pDays);
+            const newDate = pDate || u.daily_boosters_last_date || '';
+            const newPurchasedAt = pAt || u.daily_boosters_purchased_at || 0;
+
+            db.prepare(`UPDATE users SET hints = ?, undos = ?, reveals = ?, extra_bottles = ?, daily_boosters_days_left = ?, daily_boosters_last_date = ?, daily_boosters_purchased_at = ? WHERE telegram_id = ?`)
+              .run(newHints, newUndos, newReveals, newBottles, newDays, newDate, newPurchasedAt, tid);
           }
         }
       }
