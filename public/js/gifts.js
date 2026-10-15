@@ -1238,7 +1238,6 @@
       return;
     }
 
-    const isAdmin = isUserAdmin(currentUserRef);
     const dailyStats = getDailyStats(myId);
     const remainingDaily = MAX_DAILY_GIFTS - dailyStats.count;
 
