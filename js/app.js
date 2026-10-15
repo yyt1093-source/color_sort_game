@@ -215,12 +215,9 @@ async function initColorSortApp() {
       if (adResult && adResult.dismissed) {
         showInfoModal('⏳', t('adTitle') || 'Реклама', t('adDismissedDesc') || 'Просмотр рекламы был прерван. Бонус начисляется только за полный просмотр ролика.');
         return false;
-      } else if (isAlligatorAdmin(currentUser)) {
-        console.log('[Adsgram] Admin / developer test mode: simulation fallback granted');
-      } else {
-        showInfoModal('📺', t('adUnavailableTitle') || 'Реклама', t('adUnavailableDesc') || 'Реклама сейчас недоступна. Пожалуйста, попробуйте позже!');
-        return false;
       }
+      showInfoModal('📺', t('adUnavailableTitle') || 'Реклама', t('adUnavailableDesc') || 'Зачекайте, реклама недоступна. Будь ласка, спробуйте пізніше!');
+      return false;
     }
 
     // Подтверждение просмотра и начисление бонуса
@@ -254,7 +251,7 @@ async function initColorSortApp() {
       } catch (e) {}
     }
 
-    const isAdCompleted = Boolean((claimRes && claimRes.success) || (adResult && adResult.success) || isAlligatorAdmin(currentUser));
+    const isAdCompleted = Boolean(adResult && adResult.success && ((claimRes && claimRes.success) || true));
 
     if (isAdCompleted) {
       // 1. Надежно добавляем ровно +1 к запрошенному бустеру и мгновенно сохраняем в облако
@@ -422,7 +419,7 @@ async function initColorSortApp() {
       adStarting: "⏳ Запуск...",
       adClaimed: "✅ Получено! (+1)",
       adUnavailableTitle: "Реклама недоступна",
-      adUnavailableDesc: "Реклама сейчас недоступна. Пожалуйста, попробуйте позже!",
+      adUnavailableDesc: "Подождите, реклама недоступна. Пожалуйста, попробуйте позже!",
       adDismissedDesc: "Просмотр рекламы был прерван. Бонус начисляется только за полный просмотр ролика.",
       adSuccessTitle: "Поздравляем! 🎉",
       adSuccessBottle: "+1 Пустая колба",
@@ -845,7 +842,7 @@ async function initColorSortApp() {
       adStarting: "⏳ Запуск...",
       adClaimed: "✅ Отримано! (+1)",
       adUnavailableTitle: "Реклама недоступна",
-      adUnavailableDesc: "Реклама зараз недоступна. Будь ласка, спробуйте пізніше!",
+      adUnavailableDesc: "Зачекайте, реклама недоступна. Будь ласка, спробуйте пізніше!",
       adDismissedDesc: "Перегляд реклами було перервано. Бонус нараховується лише за повний перегляд ролика.",
       adminBadge: "👑 Адмін",
       adminPanelTitle: "Панель Адміністратора",
@@ -5710,9 +5707,9 @@ async function initColorSortApp() {
       if ((currentUser.hints || 0) <= 0) {
         showInfoModal(
           '💡',
-          'Подсказка',
-          'У вас 0 подсказок. Посмотрите короткую рекламу, чтобы получить подсказку хода в счётчик!',
-          '▶ Смотреть рекламу (+1)',
+          t('hintBtn') || 'Подсказка',
+          t('outOfHintsPrompt') || 'У вас 0 подсказок. Посмотрите короткую рекламу, чтобы получить подсказку хода в счётчик!',
+          '▶ ' + (t('claimAdBtn') ? t('claimAdBtn').replace(/^▶\s*/, '') : 'Смотреть рекламу') + ' (+1)',
           async () => {
             await watchRewardedAdForBonus('hints');
           }
